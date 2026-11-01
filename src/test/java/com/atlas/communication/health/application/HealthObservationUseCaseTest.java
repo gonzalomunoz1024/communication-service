@@ -50,7 +50,7 @@ class HealthObservationUseCaseTest {
     private static final Instant NOW = Instant.parse("2026-11-01T12:00:00Z");
     /** Thresholds of 1 so every observation is decisive; debouncing is covered by HealthMonitorTest. */
     private static final HealthMonitor.Policy POLICY = new HealthMonitor.Policy("vmforge-sre",
-            30, 5000, 1, 1, Severity.MAJOR, Severity.MINOR, Audience.INTERNAL, null);
+            30, 5000, 1, 1, Severity.MAJOR, Severity.MINOR, Audience.INTERNAL, null, null);
 
     @Mock
     private HealthMonitorRepositoryPort monitors;

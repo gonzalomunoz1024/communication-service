@@ -52,7 +52,7 @@ class RestControllerHealthAdapterTest {
     private static HealthMonitor monitor() {
         return HealthMonitor.create("m1", "vmforge", "vm-api", "http://vm-api/actuator/health",
                 new HealthMonitor.Policy("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
-                        Severity.MINOR, Audience.CUSTOMERS, null), NOW);
+                        Severity.MINOR, Audience.CUSTOMERS, null, null), NOW);
     }
 
     @Test

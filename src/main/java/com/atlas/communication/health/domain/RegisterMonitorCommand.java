@@ -3,6 +3,7 @@ package com.atlas.communication.health.domain;
 import com.atlas.communication.common.domain.Audience;
 import com.atlas.communication.common.domain.Severity;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
@@ -22,5 +23,6 @@ public record RegisterMonitorCommand(
         Severity downSeverity,
         Severity degradedSeverity,
         Audience audience,
-        @Min(1) Integer staleAfterSeconds) {
+        @Min(1) Integer staleAfterSeconds,
+        @Min(0) @Max(100) Integer minHealthyPercent) {
 }

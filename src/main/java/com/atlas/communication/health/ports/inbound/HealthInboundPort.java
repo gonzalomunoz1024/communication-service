@@ -1,5 +1,6 @@
 package com.atlas.communication.health.ports.inbound;
 
+import com.atlas.communication.health.domain.HealthInstance;
 import com.atlas.communication.health.domain.HealthMonitor;
 import com.atlas.communication.health.domain.HealthReportCommand;
 import com.atlas.communication.health.domain.RegisterMonitorCommand;
@@ -17,6 +18,9 @@ public interface HealthInboundPort {
     Mono<HealthMonitor> register(RegisterMonitorCommand command);
 
     Mono<HealthMonitor> get(String id);
+
+    /** The instances (pods) that have reported for a monitor, including ones that left; 404 if unknown. */
+    Flux<HealthInstance> instances(String id);
 
     /** All monitors, optionally narrowed to one tenant. */
     Flux<HealthMonitor> list(String tenantId);

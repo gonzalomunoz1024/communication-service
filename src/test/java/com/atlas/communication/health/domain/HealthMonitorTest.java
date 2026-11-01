@@ -19,7 +19,7 @@ class HealthMonitorTest {
     private static HealthMonitor.Policy policy(int failureThreshold, int recoveryThreshold,
             Integer staleAfterSeconds) {
         return new HealthMonitor.Policy("health-monitor", 30, 5000, failureThreshold,
-                recoveryThreshold, Severity.MAJOR, Severity.MINOR, Audience.CUSTOMERS, staleAfterSeconds);
+                recoveryThreshold, Severity.MAJOR, Severity.MINOR, Audience.CUSTOMERS, staleAfterSeconds, null);
     }
 
     private static HealthMonitor probed() {
@@ -55,11 +55,11 @@ class HealthMonitorTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> HealthMonitor.create("m", "t", "s", null,
                 new HealthMonitor.Policy("p", 1, 5000, 2, 2, Severity.MAJOR, Severity.MINOR,
-                        Audience.CUSTOMERS, null), NOW))
+                        Audience.CUSTOMERS, null, null), NOW))
                 .hasMessageContaining("intervalSeconds");
         assertThatThrownBy(() -> HealthMonitor.create("m", "t", "s", null,
                 new HealthMonitor.Policy("p", 30, 5000, 2, 2, Severity.INFO, Severity.MINOR,
-                        Audience.CUSTOMERS, null), NOW))
+                        Audience.CUSTOMERS, null, null), NOW))
                 .hasMessageContaining("downSeverity");
         assertThatThrownBy(() -> HealthMonitor.create("m", " ", "s", null, POLICY, NOW))
                 .hasMessageContaining("tenantId");

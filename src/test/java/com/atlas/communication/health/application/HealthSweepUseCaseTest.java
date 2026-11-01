@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,10 +21,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.atlas.communication.common.domain.Audience;
 import com.atlas.communication.common.domain.Severity;
+import com.atlas.communication.health.domain.HealthInstance;
 import com.atlas.communication.health.domain.HealthMonitor;
 import com.atlas.communication.health.domain.HealthReport;
 import com.atlas.communication.health.domain.HealthSource;
 import com.atlas.communication.health.domain.HealthStatus;
+import com.atlas.communication.health.ports.outbound.HealthInstanceRepositoryPort;
 import com.atlas.communication.health.ports.outbound.HealthMonitorRepositoryPort;
 
 import reactor.core.publisher.Flux;
@@ -34,9 +37,15 @@ import reactor.test.StepVerifier;
 class HealthSweepUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-11-01T12:00:00Z");
+    private static final HealthProperties.Defaults DEFAULTS = new HealthProperties.Defaults(
+            "health-monitor", 30, 5000, 2, 2, Severity.MAJOR, Severity.MINOR, Audience.CUSTOMERS, 50, 90);
+    /** No startup grace, so the existing staleness tests see the sweep at work right away. */
+    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 0, 0.3, DEFAULTS);
 
     @Mock
     private HealthMonitorRepositoryPort monitors;
+    @Mock
+    private HealthInstanceRepositoryPort instances;
     @Mock
     private HealthObservationUseCase observation;
 
@@ -44,12 +53,22 @@ class HealthSweepUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new HealthSweepUseCase(monitors, observation, Clock.fixed(NOW, ZoneOffset.UTC));
+        useCase = new HealthSweepUseCase(monitors, instances, observation, PROPERTIES,
+                Clock.fixed(NOW, ZoneOffset.UTC));
+    }
+
+    private static HealthInstance instance(String monitorId, String pod, boolean left, Instant lastSeenAt) {
+        return new HealthInstance(monitorId, pod, HealthStatus.UP, List.of(), null, null, null, null,
+                null, null, left, lastSeenAt);
+    }
+
+    private static HealthMonitor silent(String id) {
+        return HealthMonitor.create(id, "vmforge", id, null, policy(60), NOW.minusSeconds(120));
     }
 
     private static HealthMonitor.Policy policy(Integer staleAfterSeconds) {
         return new HealthMonitor.Policy("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
-                Severity.MINOR, Audience.CUSTOMERS, staleAfterSeconds);
+                Severity.MINOR, Audience.CUSTOMERS, staleAfterSeconds, null);
     }
 
     private static HealthMonitor probed(String id, Instant lastProbeAt) {
@@ -82,6 +101,7 @@ class HealthSweepUseCaseTest {
                 policy(60), NOW.minusSeconds(120));
         HealthMonitor fresh = HealthMonitor.create("fresh", "vmforge", "fresh", null, policy(60), NOW);
         when(monitors.findAll(null)).thenReturn(Flux.just(silent, fresh));
+        when(instances.findByMonitor("silent")).thenReturn(Flux.empty());
         when(observation.observe(eq(silent), any(), eq(NOW))).thenReturn(Mono.just(silent));
 
         StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
@@ -109,5 +129,79 @@ class HealthSweepUseCaseTest {
     void emptySweepIsQuiet() {
         when(monitors.findAll(null)).thenReturn(Flux.empty());
         StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
+    }
+
+    // --- staleness guards ---
+
+    @Test
+    void silenceIsNotTrustedDuringTheStartupGrace() {
+        HealthSweepUseCase justStarted = new HealthSweepUseCase(monitors, instances, observation,
+                new HealthProperties(5000, 300_000, 0.3, DEFAULTS), Clock.fixed(NOW, ZoneOffset.UTC));
+        HealthMonitor due = probed("due", null);
+        when(monitors.findAll(null)).thenReturn(Flux.just(silent("silent"), due));
+        when(observation.probe(eq(due), any())).thenReturn(Mono.just(due)); // probes are not affected
+
+        StepVerifier.create(justStarted.sweep(NOW)).expectNext(1L).verifyComplete();
+        verify(observation, never()).observe(any(), any(), any());
+
+        // five minutes later the grace is over and the silent monitor is declared DOWN
+        when(instances.findByMonitor("silent")).thenReturn(Flux.empty());
+        when(observation.observe(any(), any(), any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        Instant later = NOW.plusSeconds(300);
+        StepVerifier.create(justStarted.sweep(later)).expectNext(2L).verifyComplete();
+        verify(observation).observe(any(), any(), eq(later));
+    }
+
+    @Test
+    void silenceIsNotTrustedWhenMostMonitorsGoSilentTogether() {
+        HealthMonitor fresh = HealthMonitor.create("fresh", "vmforge", "fresh", null, policy(60), NOW);
+        when(monitors.findAll(null)).thenReturn(Flux.just(silent("a"), silent("b"), silent("c"), fresh));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
+        verify(observation, never()).observe(any(), any(), any());
+    }
+
+    @Test
+    void oneSilentMonitorAmongManyIsStillDeclaredDown() {
+        HealthMonitor fresh1 = HealthMonitor.create("f1", "vmforge", "f1", null, policy(60), NOW);
+        HealthMonitor fresh2 = HealthMonitor.create("f2", "vmforge", "f2", null, policy(60), NOW);
+        HealthMonitor fresh3 = HealthMonitor.create("f3", "vmforge", "f3", null, policy(60), NOW);
+        HealthMonitor silent = silent("silent");
+        when(monitors.findAll(null)).thenReturn(Flux.just(silent, fresh1, fresh2, fresh3));
+        when(instances.findByMonitor("silent")).thenReturn(Flux.empty());
+        when(observation.observe(eq(silent), any(), eq(NOW))).thenReturn(Mono.just(silent));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+    }
+
+    @Test
+    void aServiceWhosePodsAllLeftIsScaledToZeroNotStale() {
+        HealthMonitor silent = silent("silent");
+        when(monitors.findAll(null)).thenReturn(Flux.just(silent));
+        when(instances.findByMonitor("silent")).thenReturn(Flux.just(
+                instance("silent", "pod-a", true, NOW.minusSeconds(100)),
+                instance("silent", "pod-b", true, NOW.minusSeconds(110))));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
+        verify(observation, never()).observe(any(), any(), any());
+    }
+
+    @Test
+    void aServiceWhosePodsWentSilentIsDownAndNamesThem() {
+        HealthMonitor silent = silent("silent");
+        when(monitors.findAll(null)).thenReturn(Flux.just(silent));
+        when(instances.findByMonitor("silent")).thenReturn(Flux.just(
+                instance("silent", "pod-a", true, NOW.minusSeconds(100)),
+                instance("silent", "pod-b", false, NOW.minusSeconds(110))));
+        when(observation.observe(eq(silent), any(), eq(NOW))).thenReturn(Mono.just(silent));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+
+        ArgumentCaptor<HealthReport> report = ArgumentCaptor.forClass(HealthReport.class);
+        verify(observation).observe(eq(silent), report.capture(), eq(NOW));
+        assertThat(report.getValue().status()).isEqualTo(HealthStatus.DOWN);
+        assertThat(report.getValue().source()).isEqualTo(HealthSource.STALE);
+        assertThat(report.getValue().message()).startsWith("1 pod has not reported since").contains("pod-b")
+                .doesNotContain("pod-a");
     }
 }

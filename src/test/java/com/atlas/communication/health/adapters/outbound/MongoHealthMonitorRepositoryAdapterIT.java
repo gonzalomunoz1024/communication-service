@@ -28,7 +28,7 @@ class MongoHealthMonitorRepositoryAdapterIT {
 
     private static final Instant NOW = Instant.parse("2026-11-01T12:00:00Z");
     private static final HealthMonitor.Policy POLICY = new HealthMonitor.Policy("health-monitor",
-            15, 2000, 3, 1, Severity.CRITICAL, Severity.INFO, Audience.INTERNAL, 90);
+            15, 2000, 3, 1, Severity.CRITICAL, Severity.INFO, Audience.INTERNAL, 90, null);
 
     @Autowired
     private HealthMonitorMongoRepository repository;
