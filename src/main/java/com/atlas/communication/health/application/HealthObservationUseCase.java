@@ -107,7 +107,7 @@ public class HealthObservationUseCase {
                     }
                     UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(
                             notice.severity(), notice.title(), notice.body(), null, null,
-                            null, null, null, ACTOR, current.version());
+                            null, null, null, null, ACTOR, current.version());
                     return publishing.update(id, cmd).thenReturn(marked);
                 })
                 .onErrorResume(ResponseStatusException.class, ex -> {
@@ -129,7 +129,7 @@ public class HealthObservationUseCase {
         CreateCommunicationCommand cmd = new CreateCommunicationCommand(monitor.tenantId(),
                 monitor.policy().publisher(), notice.type(), notice.severity(), notice.title(),
                 notice.body(), List.of(monitor.service()), monitor.policy().audience(), false,
-                null, null, null, monitor.externalRef());
+                null, null, null, monitor.externalRef(), null);
         return publishing.create(monitor.state().openCommunicationId(), cmd)
                 .doOnNext(c -> log.info("monitor {} opened {} {} for {}/{}", monitor.id(),
                         c.type(), c.id(), monitor.tenantId(), monitor.service()));

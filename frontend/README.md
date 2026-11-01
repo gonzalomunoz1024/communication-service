@@ -40,6 +40,10 @@ The form enforces the same invariants as `Communication#validateInvariants` befo
 (severity floor for OUTAGE/INCIDENT, `endsAt` for MAINTENANCE, time ordering, length caps), and
 shows the service's `{"error": …}` text when it rejects a request anyway.
 
+An optional **ServiceNow incident** field ties a notice to the ticket behind it (`ticket.number`,
+`INC0012345`). The service upper-cases the number and, when it knows the instance, adds a link;
+the feed card shows the ticket as a chip that opens the incident.
+
 ## Porting to another UI
 
 Everything specific to outages lives in `src/outages/` and depends only on React and

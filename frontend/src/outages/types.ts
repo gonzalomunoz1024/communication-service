@@ -18,6 +18,16 @@ export type CommunicationStatus = 'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'EXPIRED' |
 
 export type CommunicationEventType = 'SNAPSHOT' | 'CREATED' | 'UPDATED' | 'ACTIVATED' | 'EXPIRED' | 'RETIRED'
 
+/**
+ * The tracker ticket behind a notice, optional on every notice. `system` defaults to servicenow;
+ * the service upper-cases the number and fills `url` when it knows the ServiceNow instance.
+ */
+export interface Ticket {
+  system?: string
+  number: string
+  url?: string
+}
+
 /** POST /v1/communications body. Instants are ISO-8601 strings. */
 export interface CreateCommunication {
   tenantId: string
@@ -33,6 +43,8 @@ export interface CreateCommunication {
   endsAt?: string
   expiresAt?: string
   externalRef?: string
+  /** optional; `externalRef` defaults to its number */
+  ticket?: Ticket
 }
 
 /** Fields shared by the feed projection and the full aggregate. */
@@ -51,6 +63,7 @@ interface CommunicationFields {
   endsAt?: string
   expiresAt?: string
   externalRef?: string
+  ticket?: Ticket
   updatedAt: string
 }
 

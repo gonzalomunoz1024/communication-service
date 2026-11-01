@@ -4,6 +4,13 @@ import { SEVERITIES, type CommunicationType, type CreateCommunication, type Seve
 export const TITLE_MAX = 200
 export const BODY_MAX_BYTES = 16 * 1024
 export const SERVICES_MAX = 20
+/** What the service accepts as a ServiceNow incident number, after trimming and upper-casing (communication.tickets.number-pattern). */
+export const TICKET_NUMBER_PATTERN = /^INC\d{7}$/
+
+/** The incident number as the service will store it. */
+export function normaliseTicket(raw: string): string {
+  return raw.trim().toUpperCase()
+}
 
 /** What the publish form edits: strings straight from the inputs. */
 export interface OutageDraft {
@@ -21,6 +28,8 @@ export interface OutageDraft {
   endsAt: string
   expiresAt: string
   externalRef: string
+  /** ServiceNow incident number, optional */
+  ticket: string
   draft: boolean
 }
 
@@ -38,6 +47,7 @@ export function emptyDraft(tenantId = '', publisher = ''): OutageDraft {
     endsAt: '',
     expiresAt: '',
     externalRef: '',
+    ticket: '',
     draft: false,
   }
 }
@@ -72,6 +82,8 @@ export function validate(d: OutageDraft, now = Date.now()): DraftErrors {
   if ((d.type === 'OUTAGE' || d.type === 'INCIDENT') && SEVERITIES.indexOf(d.severity) < SEVERITIES.indexOf('MINOR')) {
     e.severity = `${d.type === 'OUTAGE' ? 'Outages' : 'Incidents'} need MINOR or higher`
   }
+  const ticket = normaliseTicket(d.ticket)
+  if (ticket && !TICKET_NUMBER_PATTERN.test(ticket)) e.ticket = 'Not an incident number; expected INC0012345'
   const start = d.startsAt ? new Date(d.startsAt).getTime() : now
   if (d.type === 'MAINTENANCE' && !d.endsAt) e.endsAt = 'Maintenance needs an end time'
   if (d.endsAt && new Date(d.endsAt).getTime() <= start) e.endsAt = 'Must be after the start'
@@ -82,6 +94,7 @@ export function validate(d: OutageDraft, now = Date.now()): DraftErrors {
 /** The POST /v1/communications body for a valid draft. */
 export function toRequest(d: OutageDraft): CreateCommunication {
   const services = parseServices(d.services)
+  const ticket = normaliseTicket(d.ticket)
   return {
     tenantId: d.tenantId.trim(),
     publisher: d.publisher.trim(),
@@ -96,5 +109,6 @@ export function toRequest(d: OutageDraft): CreateCommunication {
     endsAt: localToIso(d.endsAt),
     expiresAt: localToIso(d.expiresAt),
     externalRef: d.externalRef.trim() || undefined,
+    ticket: ticket ? { system: 'servicenow', number: ticket } : undefined,
   }
 }
