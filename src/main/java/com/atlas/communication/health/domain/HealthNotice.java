@@ -31,6 +31,7 @@ public record HealthNotice(CommunicationType type, Severity severity, String tit
             case PROBE -> " (probe of " + monitor.url() + ")";
             case PUSH -> " (reported by the service)";
             case STALE -> " (no health report received since " + monitor.staleBaseline() + ")";
+            case ROLLUP -> " (rolled up from the service's pods)";
         });
         sb.append('.');
         if (report.message() != null && !report.message().isBlank()) {

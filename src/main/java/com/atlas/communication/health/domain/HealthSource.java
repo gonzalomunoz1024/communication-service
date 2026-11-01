@@ -7,5 +7,7 @@ public enum HealthSource {
     /** The monitored service reported its own health (push). */
     PUSH,
     /** Synthesized: a push-only service has been silent longer than its staleness window. */
-    STALE
+    STALE,
+    /** Synthesized: one status rolled up from the reports of a service's instances (pods). */
+    ROLLUP
 }

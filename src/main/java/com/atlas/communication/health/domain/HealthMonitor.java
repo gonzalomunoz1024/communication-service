@@ -34,7 +34,11 @@ public record HealthMonitor(
     public static final int MIN_TIMEOUT_MS = 100;
     public static final int MAX_TIMEOUT_MS = 60_000;
 
-    /** How a monitor observes and what it publishes. */
+    /**
+     * How a monitor observes and what it publishes. {@code minHealthyPercent} only matters for
+     * services that report per instance: the share of live pods that must be UP for the
+     * service to count as UP (null: {@link HealthRollup#DEFAULT_MIN_HEALTHY_PERCENT}).
+     */
     public record Policy(
             String publisher,
             int intervalSeconds,
@@ -44,7 +48,8 @@ public record HealthMonitor(
             Severity downSeverity,
             Severity degradedSeverity,
             Audience audience,
-            Integer staleAfterSeconds) {
+            Integer staleAfterSeconds,
+            Integer minHealthyPercent) {
 
         void validate() {
             require(publisher != null && !publisher.isBlank(), "publisher is required");
@@ -61,6 +66,8 @@ public record HealthMonitor(
             require(audience != null, "audience is required");
             require(staleAfterSeconds == null || staleAfterSeconds >= 1,
                     "staleAfterSeconds must be at least 1");
+            require(minHealthyPercent == null || (minHealthyPercent >= 0 && minHealthyPercent <= 100),
+                    "minHealthyPercent must be between 0 and 100");
         }
     }
 

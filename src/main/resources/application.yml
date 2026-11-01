@@ -51,6 +51,11 @@ communication:
   health:
     # how often the scheduler looks for monitors due for a probe / stale push-only services
     sweep-interval-ms: 5000
+    # silent services are not declared DOWN this long after this service starts (our own
+    # restart must not read as everyone's outage)...
+    stale-grace-after-start-ms: 300000
+    # ...nor while more than this share of the monitors that can go stale are silent at once
+    stale-pause-fraction: 0.3
     # policy a monitor inherits for anything not set at registration
     defaults:
       publisher: health-monitor
@@ -61,3 +66,7 @@ communication:
       down-severity: MAJOR
       degraded-severity: MINOR
       audience: CUSTOMERS
+      # for services that report per pod (the health sidecar): share of live pods that must be
+      # UP for the service to count as UP, and the staleness window their monitors get
+      min-healthy-percent: 50
+      instance-stale-after-seconds: 90

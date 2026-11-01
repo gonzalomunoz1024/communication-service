@@ -1,0 +1,31 @@
+# Reference values. A library chart's values are not merged into the consuming chart, so copy
+# the keys you want to change under csHealthSidecar: in your own values.yaml; every key has
+# the same default in the template.
+csHealthSidecar:
+  image:
+    repository: registry.example.com/platform/health-sidecar
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+  # Required: where reports go and which tenant they belong to.
+  endpoint: https://communication.apps.example.com
+  tenant: retail
+  cluster: ""
+  # Optional: defaults to the app.kubernetes.io/name label, then the workload name.
+  service: ""
+  clientId: ""
+  # Optional probe pinning (leave empty for discovery): auto|actuator|http|tcp, port, path, scheme.
+  probe: auto
+  port: ""
+  path: ""
+  scheme: ""
+  interval: 15s
+  heartbeat: 30s
+  # Extra environment variables, e.g. CS_CA_FILE with a mounted internal CA.
+  extraEnv: []
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 32Mi

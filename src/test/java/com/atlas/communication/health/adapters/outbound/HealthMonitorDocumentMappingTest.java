@@ -45,7 +45,7 @@ class HealthMonitorDocumentMappingTest {
     @Test
     void nestedRecordsAndEnumsSurviveWriteAndRead() {
         HealthMonitor.Policy policy = new HealthMonitor.Policy("health-monitor", 15, 2000, 3, 1,
-                Severity.CRITICAL, Severity.INFO, Audience.INTERNAL, 90);
+                Severity.CRITICAL, Severity.INFO, Audience.INTERNAL, 90, null);
         HealthReport report = new HealthReport(HealthStatus.DOWN,
                 List.of(new ComponentHealth("db", HealthStatus.DOWN, "error=refused")),
                 "HTTP 503", HealthSource.PROBE, NOW);
@@ -71,7 +71,7 @@ class HealthMonitorDocumentMappingTest {
     void pushOnlyMonitorWithInitialStateRoundTrips() {
         HealthMonitor monitor = HealthMonitor.create("m2", "vmforge", "billing", null,
                 new HealthMonitor.Policy("svc", 30, 5000, 2, 2, Severity.MAJOR, Severity.MINOR,
-                        Audience.CUSTOMERS, null), NOW);
+                        Audience.CUSTOMERS, null, null), NOW);
         Document bson = new Document();
         converter.write(HealthMonitorDocument.fromDomain(monitor), bson);
         HealthMonitor back = converter.read(HealthMonitorDocument.class, bson).toDomain();

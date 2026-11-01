@@ -16,7 +16,7 @@ class HealthNoticeTest {
 
     private static final Instant NOW = Instant.parse("2026-11-01T12:00:00Z");
     private static final HealthMonitor.Policy POLICY = new HealthMonitor.Policy("health-monitor",
-            30, 5000, 2, 2, Severity.CRITICAL, Severity.INFO, Audience.CUSTOMERS, null);
+            30, 5000, 2, 2, Severity.CRITICAL, Severity.INFO, Audience.CUSTOMERS, null, null);
 
     private static HealthMonitor monitor(String url) {
         return HealthMonitor.create("m1", "vmforge", "vm-api", url, POLICY, NOW);

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.atlas.communication.health.application.HealthMonitorUseCase;
+import com.atlas.communication.health.domain.HealthInstance;
 import com.atlas.communication.health.domain.HealthMonitor;
 import com.atlas.communication.health.domain.HealthReportCommand;
 import com.atlas.communication.health.domain.RegisterMonitorCommand;
@@ -55,6 +56,14 @@ public class RestControllerHealthAdapter implements HealthInboundPort {
     @Operation(summary = "One monitor, including streaks and the notice it has open")
     public Mono<HealthMonitor> get(@PathVariable String id) {
         return useCase.get(id);
+    }
+
+    @Override
+    @GetMapping("/monitors/{id}/instances")
+    @Operation(summary = "The pods that report for a monitor: last status, when they were last heard from,"
+            + " and whether they left cleanly")
+    public Flux<HealthInstance> instances(@PathVariable String id) {
+        return useCase.instances(id);
     }
 
     @DeleteMapping("/monitors/{id}")

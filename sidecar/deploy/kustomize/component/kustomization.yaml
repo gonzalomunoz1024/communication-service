@@ -1,0 +1,16 @@
+# Kustomize component that adds the health sidecar to every Deployment and StatefulSet of the
+# kustomization that includes it. Nothing in the app's own manifests changes.
+#
+#   # kustomization.yaml of the app
+#   components:
+#     - https://github.com/gonzalomunoz1024/communication-service/sidecar/deploy/kustomize/component?ref=main
+#
+# The sidecar reads CS_ENDPOINT, CS_TENANT and CS_CLUSTER from a ConfigMap named
+# cs-health-sidecar in the namespace (see ../example for one way to create it).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+patches:
+  - path: add-sidecar.yaml
+    target:
+      kind: (Deployment|StatefulSet)

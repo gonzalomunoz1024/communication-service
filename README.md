@@ -123,12 +123,37 @@ off for local experiments.
 | POST | `/v1/health/monitors/{id}/probe` | probe now instead of waiting for the interval; 409 for push-only |
 | DELETE | `/v1/health/monitors/{id}` | 204; retires any notice the monitor has open |
 | POST | `/v1/health/reports` | push a health report; first contact auto-registers a push-only monitor; 202 |
+| GET | `/v1/health/monitors/{id}/instances` | the pods that report for a monitor (last status, last seen, left cleanly or not); 404 |
 
 A monitor is one `(tenantId, service)` and publishes as `publisher` (default `health-monitor`).
 Per-monitor policy, all optional at registration (defaults in `application.yml` under
 `communication.health.defaults`): `intervalSeconds` (≥5), `timeoutMs`, `failureThreshold`,
 `recoveryThreshold`, `downSeverity` (≥ MINOR), `degradedSeverity`, `audience`,
-`staleAfterSeconds` (push-only: silent longer than this counts as DOWN).
+`staleAfterSeconds` (push-only: silent longer than this counts as DOWN), `minHealthyPercent`
+(services that report per pod: share of live pods that must be UP, default 50).
+
+**Services with many pods (the health sidecar)**
+
+A report that names its `instance` (`{"id": "<pod>", "node", "cluster", "namespace", "version",
+"leaving"}`) is recorded per pod and the service's status is rolled up from every live pod
+before the debounce sees it, so pods of one service never reset each other's streaks:
+
+- a pod is live while heard from within `staleAfterSeconds` (auto-registered: 90 s) and has
+  not sent `leaving: true`; pods still reporting `UNKNOWN` (starting) are live but not counted;
+- all counted pods UP → UP; none UP → DOWN (DEGRADED if one still serves in part); some UP →
+  DEGRADED when any pod reports a failing dependency or fewer than `minHealthyPercent` are UP,
+  otherwise UP ("4 of 5 pods UP": readiness already keeps callers away from the bad pod);
+- a service whose pods all said goodbye was scaled to zero and is never declared stale; one
+  whose pods went silent is DOWN after the window, naming them.
+
+Two pods reporting in the same instant collide on the monitor's version check; the service
+retries the report a couple of times before answering 409. The sweep also refuses to trust
+silence for 5 minutes after it starts and while more than 30% of silence-capable monitors
+are silent together (`communication.health.stale-grace-after-start-ms`, `stale-pause-fraction`),
+so our own restart or an egress problem never reads as everyone's outage.
+
+[`sidecar/`](sidecar/README.md) holds the OpenShift sidecar that produces these reports
+with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attach it.
 
 **How observations become communications**
 
