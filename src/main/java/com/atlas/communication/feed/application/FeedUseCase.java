@@ -69,18 +69,37 @@ public class FeedUseCase implements FeedInboundPort {
 
     @Override
     public Flux<CommunicationEvent> stream(FeedQuery query) {
-        return Flux.defer(() -> {
+        return stream(query, null);
+    }
+
+    @Override
+    public Flux<CommunicationEvent> stream(FeedQuery query, Long lastEventId) {
+        if (lastEventId == null) {
+            return snapshotThenLive(query);
+        }
+        return events.canResumeAfter(lastEventId)
+                .flatMapMany(resumable -> resumable
+                        ? events.streamAfter(query.tenantId(), lastEventId)
+                                .filter(e -> matches(query, e.communication()))
+                        : snapshotThenLive(query));
+    }
+
+    /**
+     * The live bus is subscribed first, so nothing emitted during the snapshot query is lost;
+     * clients upsert by communication id, so a snapshot/live overlap is harmless. Snapshot frames
+     * carry this node's log position, so a client that reconnects with it as Last-Event-ID resumes
+     * exactly where its snapshot left off.
+     */
+    private Flux<CommunicationEvent> snapshotThenLive(FeedQuery query) {
+        Flux<CommunicationEvent> live = events.stream()
+                .filter(e -> matches(query, e.communication()));
+        Flux<CommunicationEvent> snapshot = Flux.defer(() -> {
             Instant now = clock.instant();
-            // Subscribe to the hot bus first, then prepend the snapshot: events emitted while
-            // the snapshot query runs are buffered rather than missed. Clients upsert by
-            // communication id, so a snapshot/live overlap is harmless.
-            Flux<CommunicationEvent> live = events.stream()
-                    .filter(e -> matches(query, e.communication()));
-            Flux<CommunicationEvent> snapshot = repository
-                    .query(toStoreQuery(withFirstPage(query), now))
-                    .map(c -> new CommunicationEvent(0, CommunicationEventType.SNAPSHOT, now, c));
-            return Flux.merge(snapshot, live);
+            long position = events.position();
+            return repository.query(toStoreQuery(withFirstPage(query), now))
+                    .map(c -> new CommunicationEvent(position, CommunicationEventType.SNAPSHOT, now, c));
         });
+        return Flux.merge(live, snapshot);
     }
 
     private CommunicationQuery toStoreQuery(FeedQuery query, Instant activeAt) {

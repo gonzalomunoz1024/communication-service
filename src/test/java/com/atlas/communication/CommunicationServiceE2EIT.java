@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,6 +109,59 @@ class CommunicationServiceE2EIT {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.items[?(@.id=='%s')].history".formatted(created.id())).exists();
+    }
+
+    @Test
+    void reconnectingWithLastEventIdReplaysWhatWasMissed() {
+        Communication first = publishOutage("INC-e2e-replay-1");
+
+        // first connection: remember the id of the first frame about our outage (a snapshot
+        // stamped with the log position, or the live created event, whichever comes first)
+        CommunicationEvent seen = client.get()
+                .uri("/v1/feed/stream?tenantId=vmforge&service=vm-api")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult(CommunicationEvent.class)
+                .getResponseBody()
+                .filter(e -> e.communication().id().equals(first.id()))
+                .blockFirst(Duration.ofSeconds(30));
+        assertThat(seen).isNotNull();
+
+        // while disconnected: the outage is retired and another one is published
+        client.post().uri("/v1/communications/{id}/retire", first.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("actor", "admin", "note", "resolved"))
+                .exchange()
+                .expectStatus().isOk();
+        Communication second = publishOutage("INC-e2e-replay-2");
+
+        // reconnect with Last-Event-ID: the gap is replayed in order, with no snapshot frames
+        Set<String> ours = Set.of(first.id(), second.id());
+        FluxExchangeResult<CommunicationEvent> resumed = client.get()
+                .uri("/v1/feed/stream?tenantId=vmforge&service=vm-api")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .header("Last-Event-ID", Long.toString(seen.seq()))
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult(CommunicationEvent.class);
+        StepVerifier.create(resumed.getResponseBody()
+                        .doOnNext(e -> assertThat(e.type()).isNotEqualTo(CommunicationEventType.SNAPSHOT))
+                        .filter(e -> ours.contains(e.communication().id()))
+                        // the first outage's created event may precede the snapshot we resumed from
+                        .skipWhile(e -> e.type() == CommunicationEventType.CREATED
+                                && e.communication().id().equals(first.id()))
+                        .take(2))
+                .assertNext(e -> {
+                    assertThat(e.type()).isEqualTo(CommunicationEventType.RETIRED);
+                    assertThat(e.communication().id()).isEqualTo(first.id());
+                })
+                .assertNext(e -> {
+                    assertThat(e.type()).isEqualTo(CommunicationEventType.CREATED);
+                    assertThat(e.communication().id()).isEqualTo(second.id());
+                })
+                .expectComplete()
+                .verify(Duration.ofSeconds(30));
     }
 
     @Test

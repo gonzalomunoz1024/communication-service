@@ -55,11 +55,7 @@ public class PublishingUseCase implements PublishingInboundPort {
                 cmd.affectedServices(), cmd.audience(), cmd.draft(),
                 cmd.startsAt(), cmd.endsAt(), cmd.expiresAt(), cmd.externalRef(), now);
         return repository.save(communication)
-                .doOnNext(saved -> {
-                    if (saved.status() != CommunicationStatus.DRAFT) {
-                        events.emit(CommunicationEventType.CREATED, saved);
-                    }
-                });
+                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.CREATED, saved));
     }
 
     @Override
@@ -97,11 +93,7 @@ public class PublishingUseCase implements PublishingInboundPort {
                             cmd.endsAt(), cmd.expiresAt(), actorOr(cmd.actor(), current), now);
                     return repository.save(updated);
                 })
-                .doOnNext(saved -> {
-                    if (saved.status() != CommunicationStatus.DRAFT) {
-                        events.emit(CommunicationEventType.UPDATED, saved);
-                    }
-                });
+                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.UPDATED, saved));
     }
 
     @Override
@@ -117,7 +109,7 @@ public class PublishingUseCase implements PublishingInboundPort {
                             ? CommunicationStatus.SCHEDULED : CommunicationStatus.ACTIVE;
                     return repository.save(current.withStatus(target, current.publisher(), now));
                 })
-                .doOnNext(saved -> events.emit(CommunicationEventType.CREATED, saved));
+                .flatMap(saved -> announce(CommunicationEventType.CREATED, saved));
     }
 
     @Override
@@ -132,12 +124,21 @@ public class PublishingUseCase implements PublishingInboundPort {
                     default -> repository
                             .save(current.withStatus(CommunicationStatus.RETIRED,
                                     actorOr(req.actor(), current), req.note(), now))
-                            .doOnNext(saved -> events.emit(CommunicationEventType.RETIRED, saved));
+                            .flatMap(saved -> announce(CommunicationEventType.RETIRED, saved));
                 });
     }
 
     private static String actorOr(String actor, Communication fallback) {
         return actor == null || actor.isBlank() ? fallback.publisher() : actor;
+    }
+
+    /** Appends the event to the shared log; the saved communication is returned either way. */
+    private Mono<Communication> announce(CommunicationEventType type, Communication saved) {
+        return events.emit(type, saved).thenReturn(saved);
+    }
+
+    private Mono<Communication> announceUnlessDraft(CommunicationEventType type, Communication saved) {
+        return saved.status() == CommunicationStatus.DRAFT ? Mono.just(saved) : announce(type, saved);
     }
 
     private static <T> Mono<T> notFound(String id) {

@@ -2,7 +2,11 @@ package com.atlas.communication.feed.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -152,23 +156,64 @@ class FeedUseCaseTest {
     }
 
     @Test
-    void streamEmitsSnapshotThenMatchingLiveEvents() {
+    void streamEmitsMatchingLiveEventsAndASnapshotStampedWithThePosition() {
         Communication visible = outage("c1", NOW.minusSeconds(60), null);
         Communication otherTenant = Communication.create("x1", "otherpod", "sre",
                 CommunicationType.OUTAGE, Severity.MAJOR, "other", null, List.of(), null, false,
                 NOW, null, null, null, NOW);
         when(repository.query(any())).thenReturn(Flux.just(visible));
+        when(events.position()).thenReturn(42L);
         when(events.stream()).thenReturn(Flux.just(
                 new CommunicationEvent(7, CommunicationEventType.RETIRED, NOW, otherTenant),
                 new CommunicationEvent(8, CommunicationEventType.RETIRED, NOW, visible)));
 
+        // the live bus is subscribed before the snapshot query runs; with cold test sources that
+        // puts the live event first (in production the order is whichever arrives first)
         StepVerifier.create(useCase.stream(query(0, 100)).take(2))
-                .assertNext(e -> assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT))
                 .assertNext(e -> {
                     assertThat(e.type()).isEqualTo(CommunicationEventType.RETIRED);
                     assertThat(e.seq()).isEqualTo(8);
                 })
+                .assertNext(e -> {
+                    assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT);
+                    assertThat(e.seq()).isEqualTo(42);
+                    assertThat(e.communication().id()).isEqualTo("c1");
+                })
                 .verifyComplete();
+    }
+
+    @Test
+    void streamResumesFromLastEventIdWhileTheLogStillHasIt() {
+        Communication visible = outage("c1", NOW.minusSeconds(60), null);
+        Communication otherService = Communication.create("c2", "vmforge", "sre",
+                CommunicationType.OUTAGE, Severity.MAJOR, "billing", null, List.of("billing"), null,
+                false, NOW, null, null, null, NOW);
+        when(events.canResumeAfter(8)).thenReturn(Mono.just(true));
+        when(events.streamAfter("vmforge", 8)).thenReturn(Flux.just(
+                new CommunicationEvent(9, CommunicationEventType.UPDATED, NOW, otherService),
+                new CommunicationEvent(10, CommunicationEventType.RETIRED, NOW, visible)));
+
+        FeedQuery filtered = new FeedQuery("vmforge", "vm-api", null, null, null, null, true, 0, 100);
+        StepVerifier.create(useCase.stream(filtered, 8L))
+                .assertNext(e -> {
+                    assertThat(e.seq()).isEqualTo(10);
+                    assertThat(e.type()).isEqualTo(CommunicationEventType.RETIRED);
+                })
+                .verifyComplete();
+        verify(repository, never()).query(any());
+    }
+
+    @Test
+    void streamFallsBackToASnapshotWhenLastEventIdIsTooOld() {
+        Communication visible = outage("c1", NOW.minusSeconds(60), null);
+        when(events.canResumeAfter(3)).thenReturn(Mono.just(false));
+        when(events.stream()).thenReturn(Flux.empty());
+        when(repository.query(any())).thenReturn(Flux.just(visible));
+
+        StepVerifier.create(useCase.stream(query(0, 100), 3L))
+                .assertNext(e -> assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT))
+                .verifyComplete();
+        verify(events, never()).streamAfter(any(), anyLong());
     }
 
     @Test
@@ -177,7 +222,8 @@ class FeedUseCaseTest {
                 CommunicationType.HEALTH, Severity.INFO, "note", null, List.of("billing"), null,
                 false, NOW, null, null, null, NOW);
         Communication majorMatch = outage("c3", NOW, null);
-        when(repository.query(any())).thenReturn(Flux.empty());
+        // take(1) below cancels before the deferred snapshot query would run
+        lenient().when(repository.query(any())).thenReturn(Flux.empty());
         when(events.stream()).thenReturn(Flux.just(
                 new CommunicationEvent(1, CommunicationEventType.CREATED, NOW, minorOther),
                 new CommunicationEvent(2, CommunicationEventType.CREATED, NOW, majorMatch)));
