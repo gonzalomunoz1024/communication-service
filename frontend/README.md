@@ -16,10 +16,15 @@ npm run dev          # http://localhost:3000, proxies /v1 to http://localhost:80
 COMM_BACKEND=http://localhost:18080 npm run dev   # a service elsewhere
 ```
 
-Start the service first (the [root README](../README.md) has the build command; Mongo on 27017).
+Start the service first (`./gradlew bootRun` from the repository root, Mongo on 27017; the
+[root README](../README.md) has the details).
 The dev server proxies `/v1` so the browser never needs CORS. For a static build
 (`npm run build` → `dist/`), serve it behind the same host as the API, or set
 `VITE_API_BASE=https://comm.example.com` at build time.
+
+Every request carries `X-Client-Id: communication-frontend`, which the service requires of every
+caller; set `VITE_CLIENT_ID` at build time to identify a host app by its repository name instead.
+The live stream passes the same id as `?clientId=`, because `EventSource` cannot set headers.
 
 `npm test` runs the unit tests (validation, feed state, client); `npm run typecheck` type-checks.
 

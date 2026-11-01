@@ -136,6 +136,16 @@ class CommunicationTest {
     }
 
     @Test
+    void transitionNoteIsRecordedInAudit() {
+        Communication retired = outage(null, null, false)
+                .withStatus(CommunicationStatus.RETIRED, "health-monitor", "recovered: UP", NOW);
+        assertThat(retired.history().get(1).action()).isEqualTo("ACTIVE -> RETIRED: recovered: UP");
+        Communication noNote = outage(null, null, false)
+                .withStatus(CommunicationStatus.RETIRED, "admin", " ", NOW);
+        assertThat(noNote.history().get(1).action()).isEqualTo("ACTIVE -> RETIRED");
+    }
+
+    @Test
     void contentUpdateKeepsUnsetFieldsAndValidates() {
         Communication c = outage(null, NOW.plusSeconds(600), false);
         Communication updated = c.withContent(Severity.CRITICAL, null, "new body", null, null,

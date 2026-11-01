@@ -41,8 +41,16 @@ public class PublishingUseCase implements PublishingInboundPort {
 
     @Override
     public Mono<Communication> create(CreateCommunicationCommand cmd) {
+        return create(UUID.randomUUID().toString(), cmd);
+    }
+
+    /**
+     * Create under a caller-chosen id. Not exposed over HTTP; lets automated publishers (health
+     * monitors) record the id they are about to publish before the communication exists.
+     */
+    public Mono<Communication> create(String id, CreateCommunicationCommand cmd) {
         Instant now = clock.instant();
-        Communication communication = Communication.create(UUID.randomUUID().toString(),
+        Communication communication = Communication.create(id,
                 cmd.tenantId(), cmd.publisher(), cmd.type(), cmd.severity(), cmd.title(), cmd.body(),
                 cmd.affectedServices(), cmd.audience(), cmd.draft(),
                 cmd.startsAt(), cmd.endsAt(), cmd.expiresAt(), cmd.externalRef(), now);
@@ -123,7 +131,7 @@ public class PublishingUseCase implements PublishingInboundPort {
                             "communication " + id + " already expired; retiring would rewrite history"));
                     default -> repository
                             .save(current.withStatus(CommunicationStatus.RETIRED,
-                                    actorOr(req.actor(), current), now))
+                                    actorOr(req.actor(), current), req.note(), now))
                             .doOnNext(saved -> events.emit(CommunicationEventType.RETIRED, saved));
                 });
     }

@@ -20,6 +20,10 @@ springdoc:
     path: /swagger-ui.html
 
 communication:
+  client-id:
+    # every /v1 request must name its caller (repository name) in X-Client-Id, or ?clientId= for
+    # EventSource clients; identification only, nothing is verified. Set false for local experiments.
+    required: true
   sweep:
     interval-ms: 30000
   feed:
@@ -29,3 +33,16 @@ communication:
   limits:
     title-max: 200
     body-max-bytes: 16384
+  health:
+    # how often the scheduler looks for monitors due for a probe / stale push-only services
+    sweep-interval-ms: 5000
+    # policy a monitor inherits for anything not set at registration
+    defaults:
+      publisher: health-monitor
+      interval-seconds: 30
+      timeout-ms: 5000
+      failure-threshold: 2
+      recovery-threshold: 2
+      down-severity: MAJOR
+      degraded-severity: MINOR
+      audience: CUSTOMERS
