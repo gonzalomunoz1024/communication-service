@@ -15,6 +15,7 @@ import com.atlas.communication.common.domain.CommunicationQuery;
 import com.atlas.communication.common.domain.CommunicationStatus;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Page;
+import com.atlas.communication.common.domain.Ticket;
 import com.atlas.communication.common.ports.outbound.CommunicationEventsPort;
 import com.atlas.communication.common.ports.outbound.CommunicationRepositoryPort;
 import com.atlas.communication.publishing.domain.CreateCommunicationCommand;
@@ -29,7 +30,8 @@ import reactor.core.publisher.Mono;
  * All command-side business rules. Event policy: consumers only hear about communications
  * they could see, so DRAFTs are silent — CREATED fires on first non-draft save (create or
  * publish), UPDATED on content changes to visible items, RETIRED on retire; the sweeper owns
- * ACTIVATED/EXPIRED.
+ * ACTIVATED/EXPIRED. A ticket is optional on every communication; one given goes through
+ * {@link TicketPolicy#normalise} on the way in.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,10 +40,11 @@ public class PublishingUseCase implements PublishingInboundPort {
     private final CommunicationRepositoryPort repository;
     private final CommunicationEventsPort events;
     private final Clock clock;
+    private final TicketPolicy tickets;
 
     @Override
     public Mono<Communication> create(CreateCommunicationCommand cmd) {
-        return create(UUID.randomUUID().toString(), cmd);
+        return Mono.defer(() -> create(UUID.randomUUID().toString(), cmd, tickets.normalise(cmd.ticket())));
     }
 
     /**
@@ -49,17 +52,19 @@ public class PublishingUseCase implements PublishingInboundPort {
      * monitors) record the id they are about to publish before the communication exists.
      */
     public Mono<Communication> create(String id, CreateCommunicationCommand cmd) {
+        return Mono.defer(() -> create(id, cmd, tickets.normalise(cmd.ticket())));
+    }
+
+    private Mono<Communication> create(String id, CreateCommunicationCommand cmd, Ticket ticket) {
         Instant now = clock.instant();
+        String externalRef = cmd.externalRef() != null && !cmd.externalRef().isBlank()
+                ? cmd.externalRef() : ticket == null ? null : ticket.number();
         Communication communication = Communication.create(id,
                 cmd.tenantId(), cmd.publisher(), cmd.type(), cmd.severity(), cmd.title(), cmd.body(),
                 cmd.affectedServices(), cmd.audience(), cmd.draft(),
-                cmd.startsAt(), cmd.endsAt(), cmd.expiresAt(), cmd.externalRef(), now);
+                cmd.startsAt(), cmd.endsAt(), cmd.expiresAt(), externalRef, ticket, now);
         return repository.save(communication)
-                .doOnNext(saved -> {
-                    if (saved.status() != CommunicationStatus.DRAFT) {
-                        events.emit(CommunicationEventType.CREATED, saved);
-                    }
-                });
+                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.CREATED, saved));
     }
 
     @Override
@@ -92,16 +97,14 @@ public class PublishingUseCase implements PublishingInboundPort {
                         return Mono.error(conflict("expectedVersion " + cmd.expectedVersion()
                                 + " does not match current version " + current.version()));
                     }
-                    Communication updated = current.withContent(cmd.severity(), cmd.title(),
-                            cmd.body(), cmd.affectedServices(), cmd.audience(), cmd.startsAt(),
-                            cmd.endsAt(), cmd.expiresAt(), actorOr(cmd.actor(), current), now);
+                    String actor = actorOr(cmd.actor(), current);
+                    Communication updated = current
+                            .withContent(cmd.severity(), cmd.title(), cmd.body(), cmd.affectedServices(),
+                                    cmd.audience(), cmd.startsAt(), cmd.endsAt(), cmd.expiresAt(), actor, now)
+                            .withTicket(tickets.normalise(cmd.ticket()), actor, now);
                     return repository.save(updated);
                 })
-                .doOnNext(saved -> {
-                    if (saved.status() != CommunicationStatus.DRAFT) {
-                        events.emit(CommunicationEventType.UPDATED, saved);
-                    }
-                });
+                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.UPDATED, saved));
     }
 
     @Override
@@ -117,7 +120,7 @@ public class PublishingUseCase implements PublishingInboundPort {
                             ? CommunicationStatus.SCHEDULED : CommunicationStatus.ACTIVE;
                     return repository.save(current.withStatus(target, current.publisher(), now));
                 })
-                .doOnNext(saved -> events.emit(CommunicationEventType.CREATED, saved));
+                .flatMap(saved -> announce(CommunicationEventType.CREATED, saved));
     }
 
     @Override
@@ -132,12 +135,21 @@ public class PublishingUseCase implements PublishingInboundPort {
                     default -> repository
                             .save(current.withStatus(CommunicationStatus.RETIRED,
                                     actorOr(req.actor(), current), req.note(), now))
-                            .doOnNext(saved -> events.emit(CommunicationEventType.RETIRED, saved));
+                            .flatMap(saved -> announce(CommunicationEventType.RETIRED, saved));
                 });
     }
 
     private static String actorOr(String actor, Communication fallback) {
         return actor == null || actor.isBlank() ? fallback.publisher() : actor;
+    }
+
+    /** Appends the event to the shared log; the saved communication is returned either way. */
+    private Mono<Communication> announce(CommunicationEventType type, Communication saved) {
+        return events.emit(type, saved).thenReturn(saved);
+    }
+
+    private Mono<Communication> announceUnlessDraft(CommunicationEventType type, Communication saved) {
+        return saved.status() == CommunicationStatus.DRAFT ? Mono.just(saved) : announce(type, saved);
     }
 
     private static <T> Mono<T> notFound(String id) {

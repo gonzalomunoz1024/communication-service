@@ -24,6 +24,7 @@ public record Communication(
         Instant endsAt,
         Instant expiresAt,
         String externalRef,
+        Ticket ticket,
         Instant createdAt,
         Instant updatedAt,
         Long version,
@@ -38,11 +39,21 @@ public record Communication(
         history = history == null ? List.of() : List.copyOf(history);
     }
 
-    /** Creates a new communication, applying defaults and validating invariants. */
+    /** Creates a new communication that is not tied to a ticket; see the overload. */
     public static Communication create(String id, String tenantId, String publisher,
             CommunicationType type, Severity severity, String title, String body,
             List<String> affectedServices, Audience audience, boolean draft,
             Instant startsAt, Instant endsAt, Instant expiresAt, String externalRef, Instant now) {
+        return create(id, tenantId, publisher, type, severity, title, body, affectedServices,
+                audience, draft, startsAt, endsAt, expiresAt, externalRef, null, now);
+    }
+
+    /** Creates a new communication, applying defaults and validating invariants. */
+    public static Communication create(String id, String tenantId, String publisher,
+            CommunicationType type, Severity severity, String title, String body,
+            List<String> affectedServices, Audience audience, boolean draft,
+            Instant startsAt, Instant endsAt, Instant expiresAt, String externalRef,
+            Ticket ticket, Instant now) {
         Instant effectiveStart = startsAt == null ? now : startsAt;
         Instant effectiveExpiry = expiresAt == null && type == CommunicationType.MAINTENANCE
                 ? endsAt : expiresAt;
@@ -50,7 +61,7 @@ public record Communication(
                 : effectiveStart.isAfter(now) ? CommunicationStatus.SCHEDULED : CommunicationStatus.ACTIVE;
         Communication created = new Communication(id, tenantId, publisher, type, severity, title, body,
                 affectedServices, audience == null ? Audience.CUSTOMERS : audience, initial,
-                effectiveStart, endsAt, effectiveExpiry, externalRef, now, now, null,
+                effectiveStart, endsAt, effectiveExpiry, externalRef, ticket, now, now, null,
                 List.of(new AuditEntry(now, publisher, "created (" + initial + ")")));
         created.validateInvariants();
         return created;
@@ -70,8 +81,24 @@ public record Communication(
                 newStartsAt == null ? startsAt : newStartsAt,
                 newEndsAt == null ? endsAt : newEndsAt,
                 newExpiresAt == null ? expiresAt : newExpiresAt,
-                externalRef, createdAt, now, version,
+                externalRef, ticket, createdAt, now, version,
                 appended(now, actor, "updated"));
+        updated.validateInvariants();
+        return updated;
+    }
+
+    /**
+     * Ties the communication to a ticket, or replaces the one it has; appends audit. No ticket,
+     * or the ticket it already has, is a no-op.
+     */
+    public Communication withTicket(Ticket newTicket, String actor, Instant now) {
+        if (newTicket == null || newTicket.equals(ticket)) {
+            return this;
+        }
+        String action = (ticket == null ? "ticket attached: " : "ticket changed to ") + newTicket.number();
+        Communication updated = new Communication(id, tenantId, publisher, type, severity, title, body,
+                affectedServices, audience, status, startsAt, endsAt, expiresAt, externalRef, newTicket,
+                createdAt, now, version, appended(now, actor, action));
         updated.validateInvariants();
         return updated;
     }
@@ -89,7 +116,7 @@ public record Communication(
         }
         String action = status + " -> " + next + (note == null || note.isBlank() ? "" : ": " + note);
         return new Communication(id, tenantId, publisher, type, severity, title, body,
-                affectedServices, audience, next, startsAt, endsAt, expiresAt, externalRef,
+                affectedServices, audience, next, startsAt, endsAt, expiresAt, externalRef, ticket,
                 createdAt, now, version, appended(now, actor, action));
     }
 
@@ -144,6 +171,8 @@ public record Communication(
         if (type == CommunicationType.INCIDENT || type == CommunicationType.OUTAGE) {
             require(severity.atLeast(Severity.MINOR), type + " requires severity MINOR or higher");
         }
+        require(ticket == null || (ticket.number() != null && !ticket.number().isBlank()),
+                "ticket.number is required");
     }
 
     private List<AuditEntry> appended(Instant at, String actor, String action) {

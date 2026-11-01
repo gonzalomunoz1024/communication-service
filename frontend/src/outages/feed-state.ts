@@ -29,6 +29,7 @@ export function toFeedItem(c: Communication, now = Date.now()): FeedItem {
     endsAt: c.endsAt,
     expiresAt: c.expiresAt,
     externalRef: c.externalRef,
+    ticket: c.ticket,
     updatedAt: c.updatedAt,
   }
 }

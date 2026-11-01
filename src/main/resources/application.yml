@@ -24,6 +24,21 @@ communication:
     # every /v1 request must name its caller (repository name) in X-Client-Id, or ?clientId= for
     # EventSource clients; identification only, nothing is verified. Set false for local experiments.
     required: true
+  events:
+    # shared event log (communication_events): every instance appends to it and tails it, so SSE
+    # subscribers on any node see every event; a client reconnecting with Last-Event-ID gets what
+    # it missed while the log still holds it
+    poll-interval-ms: 500
+    retention: P1D
+  tickets:
+    # a communication may carry the ServiceNow incident behind it (ticket.number); this is what an
+    # incident number looks like, checked after trimming and upper-casing
+    number-pattern: 'INC\d{7}'
+  servicenow:
+    # optional: your instance, e.g. https://acme.service-now.com. When set, a ServiceNow ticket that
+    # comes without a url gets a link to the incident. Nothing is called; syncing the ticket's status
+    # is a later, separate switch.
+    instance-url:
   sweep:
     interval-ms: 30000
   feed:

@@ -92,6 +92,46 @@ class CommunicationTest {
     }
 
     @Test
+    void ticketIsKeptThroughContentAndStatusChanges() {
+        Ticket ticket = Ticket.serviceNow("INC0012345");
+        Communication c = Communication.create("c1", "vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "down", null, List.of(), null, false, null, null, null, null, ticket, NOW);
+        assertThat(c.ticket()).isEqualTo(ticket);
+        assertThat(c.withContent(Severity.CRITICAL, null, null, null, null, null, null, null, "sre", NOW)
+                .ticket()).isEqualTo(ticket);
+        assertThat(c.withStatus(CommunicationStatus.RETIRED, "sre", NOW).ticket()).isEqualTo(ticket);
+        assertThat(outage(null, null, false).ticket()).isNull();
+    }
+
+    @Test
+    void withTicketAttachesOrReplacesAndAuditsOnlyRealChanges() {
+        Ticket ticket = Ticket.serviceNow("INC0012345");
+        Communication without = outage(null, null, false);
+        assertThat(without.withTicket(null, "sre", NOW)).isSameAs(without);
+
+        Instant later = NOW.plusSeconds(30);
+        Communication attached = without.withTicket(ticket, "sre", later);
+        assertThat(attached.ticket()).isEqualTo(ticket);
+        assertThat(attached.updatedAt()).isEqualTo(later);
+        assertThat(attached.history()).hasSize(2);
+        assertThat(attached.history().get(1).action()).isEqualTo("ticket attached: INC0012345");
+
+        assertThat(attached.withTicket(ticket, "sre", later.plusSeconds(1))).isSameAs(attached);
+        Communication changed = attached.withTicket(Ticket.serviceNow("INC0099999"), "sre", later);
+        assertThat(changed.ticket().number()).isEqualTo("INC0099999");
+        assertThat(changed.history().get(2).action()).isEqualTo("ticket changed to INC0099999");
+    }
+
+    @Test
+    void aTicketNeedsANumber() {
+        assertThatThrownBy(() -> Communication.create("c1", "vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "down", null, List.of(), null, false, null, null, null, null,
+                new Ticket("servicenow", " ", null), NOW))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ticket.number is required");
+    }
+
+    @Test
     void effectiveStatusDerivesFromTimeNotStoredStatus() {
         Communication c = outage(NOW, NOW.plusSeconds(600), false);
         assertThat(c.effectiveStatus(NOW)).isEqualTo(CommunicationStatus.ACTIVE);

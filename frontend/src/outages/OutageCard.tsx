@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button, Icon, Input, StateTag, Tag, cx, longDate, relativeTime } from '../ui'
 import { SEVERITY_TONE, titleCase } from './display'
+import { TicketTag } from './TicketTag'
 import type { FeedItem } from './types'
 
 export interface OutageCardProps {
@@ -45,7 +46,8 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
           <Tag tone={SEVERITY_TONE[item.severity]}>{titleCase(item.severity)}</Tag>
           <Tag outline>{titleCase(item.type)}</Tag>
           {item.audience !== 'CUSTOMERS' && <Tag outline>{titleCase(item.audience)}</Tag>}
-          {item.externalRef && (
+          {item.ticket && <TicketTag ticket={item.ticket} />}
+          {item.externalRef && item.externalRef !== item.ticket?.number && (
             <Tag mono outline>
               {item.externalRef}
             </Tag>

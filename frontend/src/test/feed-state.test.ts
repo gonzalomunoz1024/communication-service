@@ -54,6 +54,11 @@ describe('applyEvent', () => {
   it('does not add a draft', () => {
     expect(applyEvent([], event('CREATED', comm({ status: 'DRAFT' })), now)).toEqual([])
   })
+  it('keeps the ticket when projecting', () => {
+    const ticket = { system: 'servicenow', number: 'INC0012345', url: 'https://acme.service-now.com/x' }
+    expect(toFeedItem(comm({ ticket }), now).ticket).toEqual(ticket)
+    expect(toFeedItem(comm(), now).ticket).toBeUndefined()
+  })
   it('drops history when projecting', () => {
     const item = toFeedItem(comm({ history: [{ at: 'x', actor: 'y', action: 'z' }], version: 3 }), now)
     expect('history' in item).toBe(false)

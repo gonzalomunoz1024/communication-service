@@ -89,7 +89,7 @@ class HealthObservationUseCaseTest {
                 null, null, null, "health:m1:1", NOW);
         Communication versioned = new Communication(c.id(), c.tenantId(), c.publisher(), c.type(),
                 c.severity(), c.title(), c.body(), c.affectedServices(), c.audience(), c.status(),
-                c.startsAt(), c.endsAt(), c.expiresAt(), c.externalRef(), c.createdAt(),
+                c.startsAt(), c.endsAt(), c.expiresAt(), c.externalRef(), c.ticket(), c.createdAt(),
                 c.updatedAt(), version, c.history());
         return status == CommunicationStatus.ACTIVE ? versioned
                 : versioned.withStatus(status, "admin", NOW);
