@@ -16,6 +16,12 @@ export const STATUS_TONE: Record<CommunicationStatus, Tone> = {
   RETIRED: 'healthy',
 }
 
+/** "servicenow" → "ServiceNow"; any other tracker title-cased. */
+export function ticketSystemLabel(system?: string): string {
+  if (!system || system.toLowerCase() === 'servicenow') return 'ServiceNow'
+  return titleCase(system)
+}
+
 /** "OUTAGE" → "Outage" */
 export function titleCase(word: string): string {
   return word.charAt(0) + word.slice(1).toLowerCase()

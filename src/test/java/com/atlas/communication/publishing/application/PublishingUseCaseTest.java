@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.atlas.communication.common.domain.AuditEntry;
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
@@ -29,11 +30,13 @@ import com.atlas.communication.common.domain.CommunicationStatus;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Page;
 import com.atlas.communication.common.domain.Severity;
+import com.atlas.communication.common.domain.Ticket;
 import com.atlas.communication.common.ports.outbound.CommunicationEventsPort;
 import com.atlas.communication.common.ports.outbound.CommunicationRepositoryPort;
 import com.atlas.communication.publishing.domain.CreateCommunicationCommand;
 import com.atlas.communication.publishing.domain.RetireRequest;
 import com.atlas.communication.publishing.domain.UpdateCommunicationCommand;
+import com.atlas.communication.servicenow.application.ServiceNowProperties;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -53,15 +56,22 @@ class PublishingUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new PublishingUseCase(repository, events, Clock.fixed(NOW, ZoneOffset.UTC));
+        useCase = new PublishingUseCase(repository, events, Clock.fixed(NOW, ZoneOffset.UTC),
+                new TicketPolicy(new TicketsProperties("INC\\d{7}"),
+                        new ServiceNowProperties("https://acme.service-now.com")));
         lenient().when(events.emit(any(), any())).thenAnswer(inv -> Mono.just(
                 new CommunicationEvent(1, inv.getArgument(0), NOW, inv.getArgument(1))));
     }
 
     private static CreateCommunicationCommand createCommand(boolean draft, Instant startsAt) {
+        return createCommand(draft, startsAt, "INC1", null);
+    }
+
+    private static CreateCommunicationCommand createCommand(boolean draft, Instant startsAt,
+            String externalRef, Ticket ticket) {
         return new CreateCommunicationCommand("vmforge", "vmforge-sre", CommunicationType.OUTAGE,
                 Severity.MAJOR, "API degradation", "details", List.of("vm-api"), null, draft,
-                startsAt, null, null, "INC1");
+                startsAt, null, null, externalRef, ticket);
     }
 
     /** A persisted communication: like create() but carrying a stored version. */
@@ -71,7 +81,7 @@ class PublishingUseCaseTest {
                 List.of("vm-api"), null, draft, startsAt, null, null, "INC1", NOW);
         return new Communication(c.id(), c.tenantId(), c.publisher(), c.type(), c.severity(),
                 c.title(), c.body(), c.affectedServices(), c.audience(), c.status(), c.startsAt(),
-                c.endsAt(), c.expiresAt(), c.externalRef(), c.createdAt(), c.updatedAt(), 0L,
+                c.endsAt(), c.expiresAt(), c.externalRef(), c.ticket(), c.createdAt(), c.updatedAt(), 0L,
                 c.history());
     }
 
@@ -135,7 +145,7 @@ class PublishingUseCaseTest {
         when(repository.findById("c1")).thenReturn(Mono.just(saved(false, null)));
 
         UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(null, "new title", null,
-                null, null, null, null, null, "sre", 99L);
+                null, null, null, null, null, null, "sre", 99L);
         StepVerifier.create(useCase.update("c1", cmd))
                 .expectErrorSatisfies(ex -> {
                     assertThat(((ResponseStatusException) ex).getStatusCode())
@@ -154,7 +164,7 @@ class PublishingUseCaseTest {
         when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
         UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(Severity.CRITICAL, null,
-                null, null, null, null, null, null, "sre", current.version());
+                null, null, null, null, null, null, null, "sre", current.version());
         StepVerifier.create(useCase.update("c1", cmd))
                 .assertNext(c -> assertThat(c.severity()).isEqualTo(Severity.CRITICAL))
                 .verifyComplete();
@@ -167,7 +177,7 @@ class PublishingUseCaseTest {
         when(repository.findById("c1")).thenReturn(Mono.just(retired));
 
         UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(null, "t", null, null,
-                null, null, null, null, "sre", retired.version());
+                null, null, null, null, null, "sre", retired.version());
         StepVerifier.create(useCase.update("c1", cmd))
                 .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(HttpStatus.CONFLICT))
@@ -215,6 +225,87 @@ class PublishingUseCaseTest {
                 .verifyComplete();
         verify(repository, never()).save(any());
         verify(events, never()).emit(any(), any());
+    }
+
+    @Test
+    void createNormalisesTheTicketLinksItAndDefaultsExternalRefToItsNumber() {
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(useCase.create(createCommand(false, null, null, new Ticket(null, " inc0012345 ", null))))
+                .assertNext(c -> {
+                    assertThat(c.ticket()).isEqualTo(new Ticket("servicenow", "INC0012345",
+                            "https://acme.service-now.com/nav_to.do?uri=incident.do%3Fsysparm_query%3Dnumber%3DINC0012345"));
+                    assertThat(c.externalRef()).isEqualTo("INC0012345");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void anExplicitExternalRefWinsOverTheTicketNumber() {
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(useCase.create(createCommand(false, null, "INC1", Ticket.serviceNow("INC0012345"))))
+                .assertNext(c -> {
+                    assertThat(c.externalRef()).isEqualTo("INC1");
+                    assertThat(c.ticket().number()).isEqualTo("INC0012345");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void noTicketMeansNoTicketAndNoExternalRef() {
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(useCase.create(createCommand(false, null, null, null)))
+                .assertNext(c -> {
+                    assertThat(c.ticket()).isNull();
+                    assertThat(c.externalRef()).isNull();
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void aMalformedTicketNumberIs400AndSavesNothing() {
+        StepVerifier.create(useCase.create(createCommand(false, null, null, Ticket.serviceNow("INC-4821"))))
+                .expectErrorSatisfies(ex -> assertThat(ex).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessageContaining("INC-4821"))
+                .verify();
+        verify(repository, never()).save(any());
+        verify(events, never()).emit(any(), any());
+    }
+
+    @Test
+    void automatedPublishersGetTheSameTicketHandling() {
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(useCase.create("health-notice", createCommand(false, null, "health:m1:1",
+                Ticket.serviceNow("inc0000007"))))
+                .assertNext(c -> {
+                    assertThat(c.id()).isEqualTo("health-notice");
+                    assertThat(c.externalRef()).isEqualTo("health:m1:1");
+                    assertThat(c.ticket().number()).isEqualTo("INC0000007");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void updateAttachesATicketNormalisedAndAudited() {
+        Communication current = saved(false, null);
+        when(repository.findById("c1")).thenReturn(Mono.just(current));
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(null, null, null, null, null,
+                null, null, null, new Ticket(null, "inc0000042", null), "sre", current.version());
+        StepVerifier.create(useCase.update("c1", cmd))
+                .assertNext(c -> {
+                    assertThat(c.ticket().number()).isEqualTo("INC0000042");
+                    assertThat(c.ticket().url()).startsWith("https://acme.service-now.com/");
+                    assertThat(c.externalRef()).isEqualTo("INC1");
+                    assertThat(c.history()).extracting(AuditEntry::action)
+                            .contains("ticket attached: INC0000042");
+                })
+                .verifyComplete();
+        verify(events).emit(eq(CommunicationEventType.UPDATED), any());
     }
 
     @Test

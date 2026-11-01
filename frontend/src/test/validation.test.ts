@@ -24,6 +24,11 @@ describe('validate', () => {
     expect(validate({ ...base, startsAt: '2026-11-02T10:00', expiresAt: '2026-11-02T10:00' }).expiresAt).toBeDefined()
     expect(validate({ ...base, startsAt: '2026-11-02T10:00', endsAt: '2026-11-02T11:00' })).toEqual({})
   })
+  it('takes an optional ServiceNow incident and checks its shape', () => {
+    expect(validate({ ...base, ticket: '' })).toEqual({})
+    expect(validate({ ...base, ticket: ' inc0012345 ' })).toEqual({})
+    expect(validate({ ...base, ticket: 'INC-4821' }).ticket).toMatch(/INC0012345/)
+  })
   it('caps the title at 200 characters and the service list at 20', () => {
     expect(validate({ ...base, title: 'x'.repeat(201) }).title).toBeDefined()
     expect(validate({ ...base, services: Array.from({ length: 21 }, (_, i) => `s${i}`).join(',') }).services).toBeDefined()
@@ -48,5 +53,9 @@ describe('toRequest', () => {
   })
   it('sends draft only when set', () => {
     expect(toRequest({ ...base, draft: true }).draft).toBe(true)
+  })
+  it('sends the incident upper-cased as a ServiceNow ticket, or no ticket at all', () => {
+    expect(toRequest({ ...base, ticket: ' inc0012345 ' }).ticket).toEqual({ system: 'servicenow', number: 'INC0012345' })
+    expect(toRequest(base).ticket).toBeUndefined()
   })
 })

@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent } from 'react'
 import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
 import type { CommunicationClient } from './api'
 import { SEVERITY_TONE, TYPE_HINT, titleCase } from './display'
+import { TicketTag } from './TicketTag'
 import { AUDIENCES, COMMUNICATION_TYPES, SEVERITIES, type Communication, type CommunicationType, type Severity, type Audience } from './types'
 import { TITLE_MAX, emptyDraft, parseServices, toRequest, validate, type DraftErrors, type OutageDraft } from './validation'
 
@@ -137,6 +138,10 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
               </div>
             )}
           </Field>
+
+          <Field label="ServiceNow incident" htmlFor={f('ticket')} error={errors.ticket} hint="Optional. The INC tracking this; consumers get a link to it.">
+            <Input id={f('ticket')} mono value={draft.ticket} invalid={!!errors.ticket} placeholder="INC0012345" onChange={(e) => set('ticket', e.target.value)} />
+          </Field>
         </div>
       </Card>
 
@@ -168,8 +173,8 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
               options={AUDIENCES.map((a) => ({ value: a, label: titleCase(a) }))}
             />
           </Field>
-          <Field label="External reference" htmlFor={f('ref')} hint="Ticket or incident id, optional.">
-            <Input id={f('ref')} mono value={draft.externalRef} placeholder="INC-4821" onChange={(e) => set('externalRef', e.target.value)} />
+          <Field label="External reference" htmlFor={f('ref')} hint="Idempotency key, optional; defaults to the incident number.">
+            <Input id={f('ref')} mono value={draft.externalRef} placeholder="payments-2026-11-01" onChange={(e) => set('externalRef', e.target.value)} />
           </Field>
         </div>
       </Card>
@@ -252,6 +257,7 @@ function Published({ communication: c, onAnother, onViewFeed }: { communication:
           <Tag mono outline>
             {c.id}
           </Tag>
+          {c.ticket && <TicketTag ticket={c.ticket} />}
         </div>
         <div className="mt-2 flex gap-2">
           <Button onClick={onAnother} icon="plus">

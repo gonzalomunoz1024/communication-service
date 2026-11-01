@@ -15,6 +15,7 @@ import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.atlas.communication.common.domain.Communication;
+import com.atlas.communication.common.domain.Ticket;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
 import com.atlas.communication.common.domain.CommunicationStatus;
@@ -50,7 +51,8 @@ class CommunicationServiceE2EIT {
                         "title", "API degradation in eu-west",
                         "body", "We are investigating **elevated errors**.",
                         "affectedServices", java.util.List.of("vm-api"),
-                        "externalRef", externalRef))
+                        "externalRef", externalRef,
+                        "ticket", Map.of("number", "INC0012345")))
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().exists("Location")
@@ -162,6 +164,72 @@ class CommunicationServiceE2EIT {
                 })
                 .expectComplete()
                 .verify(Duration.ofSeconds(30));
+    }
+
+    @Test
+    void ticketContracts() {
+        // a ticket is optional; one given is normalised, linked into the configured instance,
+        // and becomes the externalRef unless one was set
+        Map<String, Object> withTicket = Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                "severity", "MAJOR", "title", "with ticket", "ticket", Map.of("number", " inc0077001 "));
+        Communication created = client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(withTicket)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Communication.class)
+                .returnResult().getResponseBody();
+        assertThat(created.ticket()).isEqualTo(new Ticket("servicenow", "INC0077001",
+                "https://acme.service-now.com/nav_to.do?uri=incident.do%3Fsysparm_query%3Dnumber%3DINC0077001"));
+        assertThat(created.externalRef()).isEqualTo("INC0077001");
+
+        // the feed carries it, and the same ticket again is the same notice (409 through externalRef)
+        client.get().uri("/v1/feed?tenantId=vmforge&type=OUTAGE")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.items[?(@.id=='" + created.id() + "')].ticket.number").isEqualTo("INC0077001")
+                .jsonPath("$.items[?(@.id=='" + created.id() + "')].ticket.url").isEqualTo(created.ticket().url());
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(withTicket)
+                .exchange()
+                .expectStatus().isEqualTo(409);
+
+        // a number that is not an incident -> 400
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "bad ticket", "ticket", Map.of("number", "INC-4821")))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg).contains("INC-4821"));
+
+        // a ticket can be attached later, and the audit says so
+        Communication draft = client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "ticket comes later", "draft", true))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Communication.class)
+                .returnResult().getResponseBody();
+        assertThat(draft.ticket()).isNull();
+        client.put().uri("/v1/communications/{id}", draft.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("ticket", Map.of("number", "INC0077002"), "expectedVersion", draft.version()))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.ticket.number").isEqualTo("INC0077002")
+                .jsonPath("$.history[2].action").isEqualTo("ticket attached: INC0077002");
+        client.post().uri("/v1/communications/{id}/publish", draft.id())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo("ACTIVE")
+                .jsonPath("$.ticket.number").isEqualTo("INC0077002");
     }
 
     @Test

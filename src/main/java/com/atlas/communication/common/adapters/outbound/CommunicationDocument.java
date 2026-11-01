@@ -16,6 +16,7 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationStatus;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Severity;
+import com.atlas.communication.common.domain.Ticket;
 
 /**
  * Mongo mapping of {@link Communication}. {@code severityRank} is denormalized from the
@@ -49,6 +50,7 @@ public class CommunicationDocument {
     Instant endsAt;
     Instant expiresAt;
     String externalRef;
+    Ticket ticket;
     Instant createdAt;
     Instant updatedAt;
     @Version
@@ -72,6 +74,7 @@ public class CommunicationDocument {
         doc.endsAt = c.endsAt();
         doc.expiresAt = c.expiresAt();
         doc.externalRef = c.externalRef();
+        doc.ticket = c.ticket();
         doc.createdAt = c.createdAt();
         doc.updatedAt = c.updatedAt();
         doc.version = c.version();
@@ -81,7 +84,7 @@ public class CommunicationDocument {
 
     public Communication toDomain() {
         return new Communication(id, tenantId, publisher, type, severity, title, body,
-                affectedServices, audience, status, startsAt, endsAt, expiresAt, externalRef,
+                affectedServices, audience, status, startsAt, endsAt, expiresAt, externalRef, ticket,
                 createdAt, updatedAt, version, history);
     }
 }

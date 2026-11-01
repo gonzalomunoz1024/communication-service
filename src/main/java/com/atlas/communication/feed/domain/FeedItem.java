@@ -8,6 +8,7 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationStatus;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Severity;
+import com.atlas.communication.common.domain.Ticket;
 
 /**
  * Consumer-facing projection: audit history omitted, {@code status} is the effective status
@@ -28,11 +29,12 @@ public record FeedItem(
         Instant endsAt,
         Instant expiresAt,
         String externalRef,
+        Ticket ticket,
         Instant updatedAt) {
 
     public static FeedItem from(Communication c, Instant now) {
         return new FeedItem(c.id(), c.tenantId(), c.publisher(), c.type(), c.severity(),
                 c.title(), c.body(), c.affectedServices(), c.audience(), c.effectiveStatus(now),
-                c.startsAt(), c.endsAt(), c.expiresAt(), c.externalRef(), c.updatedAt());
+                c.startsAt(), c.endsAt(), c.expiresAt(), c.externalRef(), c.ticket(), c.updatedAt());
     }
 }

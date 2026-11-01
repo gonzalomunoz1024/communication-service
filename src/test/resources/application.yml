@@ -16,6 +16,10 @@ communication:
   events:
     poll-interval-ms: 100
     retention: P1D
+  tickets:
+    number-pattern: 'INC\d{7}'
+  servicenow:
+    instance-url: https://acme.service-now.com
   sweep:
     interval-ms: 60000
   feed:

@@ -49,6 +49,14 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
   SSE events; concurrent-save conflicts are skipped, making it safe to run multi-instance.
 - **Idempotency**: `externalRef` (e.g. an INC/CHG ticket id) is unique per tenant (partial
   unique index); a duplicate publish returns 409.
+- **Tickets (optional)**: a communication can carry the ServiceNow incident behind it
+  (`ticket.number`, e.g. `INC0012345`; `ticket.system` names another tracker). The number is
+  trimmed, upper-cased and checked against `communication.tickets.number-pattern`; with
+  `communication.servicenow.instance-url` set, `ticket.url` links straight to the incident. The
+  ticket rides on the feed and SSE payloads, can be attached later with `PUT`, and `externalRef`
+  defaults to its number so the same incident is not published twice by accident (set
+  `externalRef` yourself for a second notice on one ticket). Nothing calls ServiceNow; syncing
+  the ticket's status is a separate, later switch.
 - **Concurrency**: documents carry a version (`@Version`); `PUT` requires `expectedVersion`
   and mismatches return 409.
 - **SSE contract**: on subscribe, one `snapshot` event per currently-visible item, then live
@@ -81,7 +89,7 @@ off for local experiments.
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/v1/communications` | 201 + Location; 400 validation; 409 duplicate externalRef |
+| POST | `/v1/communications` | 201 + Location; 400 validation (incl. a malformed `ticket.number`); 409 duplicate externalRef |
 | GET | `/v1/communications/{id}` | any status, includes audit history; 404 |
 | GET | `/v1/communications?tenantId=…&status=&type=&page=&size=` | publisher's own list |
 | PUT | `/v1/communications/{id}` | partial update + required `expectedVersion`; 409 on conflict/terminal |
@@ -166,11 +174,11 @@ hard crash, which can no longer push anything, is still detected.
 ## Curl cookbook
 
 ```bash
-# publish an outage correlated to an INC ticket, expiring at 18:00 UTC
+# publish an outage tied to its ServiceNow incident (externalRef defaults to the number), expiring at 18:00 UTC
 curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{
   "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR",
   "title":"API degradation in eu-west","body":"We are investigating **elevated errors**.",
-  "affectedServices":["vm-api"],"externalRef":"INC0012345",
+  "affectedServices":["vm-api"],"ticket":{"number":"INC0012345"},
   "expiresAt":"2026-10-14T18:00:00Z"}'
 
 # schedule a maintenance window (expiry defaults to the window end)
