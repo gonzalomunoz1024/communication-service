@@ -1,0 +1,269 @@
+import { useId, useState, type FormEvent } from 'react'
+import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
+import type { CommunicationClient } from './api'
+import { SEVERITY_TONE, TYPE_HINT, titleCase } from './display'
+import { AUDIENCES, COMMUNICATION_TYPES, SEVERITIES, type Communication, type CommunicationType, type Severity, type Audience } from './types'
+import { TITLE_MAX, emptyDraft, parseServices, toRequest, validate, type DraftErrors, type OutageDraft } from './validation'
+
+/** HEALTH is raised by the health-check flow, not by people. */
+const PUBLISHABLE_TYPES = COMMUNICATION_TYPES.filter((t) => t !== 'HEALTH')
+
+export interface PublishOutageFormProps {
+  client: CommunicationClient
+  /** prefilled tenant; the field stays editable unless `lockTenant` */
+  tenantId?: string
+  lockTenant?: boolean
+  /** prefilled publisher (team or person) */
+  publisher?: string
+  onPublished?: (communication: Communication) => void
+  /** "View in feed" on the confirmation */
+  onViewFeed?: () => void
+}
+
+/** Publish an outage (or incident, maintenance, change) to communication-service. */
+export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher = '', onPublished, onViewFeed }: PublishOutageFormProps) {
+  const id = useId()
+  const [draft, setDraft] = useState<OutageDraft>(() => emptyDraft(tenantId, publisher))
+  const [errors, setErrors] = useState<DraftErrors>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [published, setPublished] = useState<Communication | null>(null)
+  const [showTiming, setShowTiming] = useState(false)
+
+  // a tenant chosen elsewhere (the header) flows in until the user edits the field here
+  const [tenantTouched, setTenantTouched] = useState(false)
+  const effective: OutageDraft = tenantTouched && !lockTenant ? draft : { ...draft, tenantId }
+
+  const set = <K extends keyof OutageDraft>(key: K, value: OutageDraft[K]) => {
+    setDraft((d) => ({ ...d, [key]: value }))
+    if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }))
+  }
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    const found = validate(effective)
+    setErrors(found)
+    if (Object.values(found).some(Boolean)) {
+      if (found.startsAt || found.endsAt || found.expiresAt) setShowTiming(true)
+      return
+    }
+    setSubmitting(true)
+    setServerError(null)
+    try {
+      const saved = await client.publish(toRequest(effective))
+      setPublished(saved)
+      onPublished?.(saved)
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const reset = () => {
+    setDraft((d) => ({ ...emptyDraft(d.tenantId, d.publisher), type: d.type }))
+    setErrors({})
+    setServerError(null)
+    setPublished(null)
+    setShowTiming(false)
+  }
+
+  if (published) {
+    return <Published communication={published} onAnother={reset} onViewFeed={onViewFeed} />
+  }
+
+  const services = parseServices(draft.services)
+  const f = (name: string) => `${id}-${name}`
+
+  return (
+    <form onSubmit={submit} noValidate className="flex flex-col gap-5">
+      <Card title="What's happening" subtitle="Consumers of the feed see exactly this.">
+        <div className="flex flex-col gap-4">
+          <Field label="Type" hint={TYPE_HINT[draft.type]}>
+            <Segmented<CommunicationType>
+              ariaLabel="Communication type"
+              className="flex-wrap"
+              value={draft.type}
+              onChange={(v) => set('type', v)}
+              options={PUBLISHABLE_TYPES.map((t) => ({ value: t, label: titleCase(t) }))}
+            />
+          </Field>
+
+          <Field label="Severity" error={errors.severity}>
+            <Segmented<Severity>
+              ariaLabel="Severity"
+              value={draft.severity}
+              onChange={(v) => set('severity', v)}
+              options={SEVERITIES.map((s) => ({ value: s, label: titleCase(s) }))}
+            />
+          </Field>
+
+          <Field label="Title" required htmlFor={f('title')} error={errors.title} hint={`${draft.title.length}/${TITLE_MAX}`}>
+            <Input
+              id={f('title')}
+              value={draft.title}
+              maxLength={TITLE_MAX}
+              invalid={!!errors.title}
+              placeholder="Payments API returning 503s"
+              onChange={(e) => set('title', e.target.value)}
+            />
+          </Field>
+
+          <Field label="Details" htmlFor={f('body')} error={errors.body} hint="Impact, workaround, next update. Plain text.">
+            <Textarea
+              id={f('body')}
+              rows={5}
+              value={draft.body}
+              invalid={!!errors.body}
+              placeholder="Card payments fail for roughly 30% of requests. Retries succeed. Next update in 30 minutes."
+              onChange={(e) => set('body', e.target.value)}
+            />
+          </Field>
+
+          <Field
+            label="Affected services"
+            htmlFor={f('services')}
+            error={errors.services}
+            hint="Comma separated. Consumers filter the feed by these names."
+          >
+            <Input id={f('services')} mono value={draft.services} invalid={!!errors.services} placeholder="payments-api, checkout-web" onChange={(e) => set('services', e.target.value)} />
+            {services.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {services.map((s) => (
+                  <Tag key={s} mono size="sm" icon="tag">
+                    {s}
+                  </Tag>
+                ))}
+              </div>
+            )}
+          </Field>
+        </div>
+      </Card>
+
+      <Card title="Who and where">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Tenant" required htmlFor={f('tenant')} error={errors.tenantId} hint="The tenant whose feed this lands in.">
+            <Input
+              id={f('tenant')}
+              mono
+              value={effective.tenantId}
+              disabled={lockTenant}
+              invalid={!!errors.tenantId}
+              placeholder="acme"
+              onChange={(e) => {
+                setTenantTouched(true)
+                set('tenantId', e.target.value)
+              }}
+            />
+          </Field>
+          <Field label="Publisher" required htmlFor={f('publisher')} error={errors.publisher} hint="Your team or name, recorded in the audit trail.">
+            <Input id={f('publisher')} value={draft.publisher} invalid={!!errors.publisher} placeholder="payments-oncall" onChange={(e) => set('publisher', e.target.value)} />
+          </Field>
+          <Field label="Audience" htmlFor={f('audience')}>
+            <Select
+              id={f('audience')}
+              ariaLabel="Audience"
+              value={draft.audience}
+              onChange={(v) => set('audience', v as Audience)}
+              options={AUDIENCES.map((a) => ({ value: a, label: titleCase(a) }))}
+            />
+          </Field>
+          <Field label="External reference" htmlFor={f('ref')} hint="Ticket or incident id, optional.">
+            <Input id={f('ref')} mono value={draft.externalRef} placeholder="INC-4821" onChange={(e) => set('externalRef', e.target.value)} />
+          </Field>
+        </div>
+      </Card>
+
+      <Card
+        title="Timing"
+        subtitle={showTiming ? 'Times are in your local time zone.' : 'Starts now and stays up until you retire it.'}
+        actions={
+          <Button size="sm" variant="ghost" icon={showTiming ? 'chevron-down' : 'calendar'} onClick={() => setShowTiming((v) => !v)}>
+            {showTiming ? 'Hide' : 'Schedule'}
+          </Button>
+        }
+      >
+        {showTiming ? (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Starts" htmlFor={f('starts')} error={errors.startsAt} hint="Empty means now.">
+              <input id={f('starts')} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.startsAt} onChange={(e) => set('startsAt', e.target.value)} />
+            </Field>
+            <Field label="Ends" required={draft.type === 'MAINTENANCE'} htmlFor={f('ends')} error={errors.endsAt} hint="Expected resolution.">
+              <input id={f('ends')} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.endsAt} onChange={(e) => set('endsAt', e.target.value)} />
+            </Field>
+            <Field label="Expires" htmlFor={f('expires')} error={errors.expiresAt} hint="Drops off the feed then.">
+              <input id={f('expires')} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.expiresAt} onChange={(e) => set('expiresAt', e.target.value)} />
+            </Field>
+          </div>
+        ) : undefined}
+      </Card>
+
+      {serverError && (
+        <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical">
+          <Icon name="alert-triangle" size={16} className="mt-0.5 shrink-0" />
+          <span>
+            <span className="font-medium">The service rejected this.</span> {serverError}
+          </span>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <label className="flex items-center gap-2.5 text-sm text-secondary">
+          <Switch size="sm" label="Save as draft" checked={draft.draft} onChange={(v) => set('draft', v)} />
+          Save as draft (not visible to consumers)
+        </label>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={reset} disabled={submitting}>
+            Clear
+          </Button>
+          <Button type="submit" variant={draft.draft ? 'secondary' : 'primary'} icon="send" loading={submitting}>
+            {draft.draft ? 'Save draft' : `Publish ${titleCase(draft.type).toLowerCase()}`}
+          </Button>
+        </div>
+      </div>
+    </form>
+  )
+}
+
+function Published({ communication: c, onAnother, onViewFeed }: { communication: Communication; onAnother: () => void; onViewFeed?: () => void }) {
+  const live = c.status === 'ACTIVE'
+  return (
+    <Card className="animate-scale-in">
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <div className={cx('flex h-12 w-12 items-center justify-center rounded-full', live ? 'bg-healthy-tint text-healthy' : 'bg-accent-tint text-accent')}>
+          <Icon name="check" size={22} strokeWidth={2.2} />
+        </div>
+        <div>
+          <p className="text-title3 font-semibold text-primary">
+            {c.status === 'DRAFT' ? 'Draft saved' : live ? `${titleCase(c.type)} published` : `${titleCase(c.type)} scheduled`}
+          </p>
+          <p className="mt-1 text-sm text-secondary">
+            {c.status === 'DRAFT'
+              ? 'Consumers will not see it until it is published.'
+              : live
+                ? `Live in the ${c.tenantId} feed now.`
+                : `Goes live ${relativeTime(c.startsAt)}.`}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          <Tag tone={SEVERITY_TONE[c.severity]} dot>
+            {titleCase(c.severity)}
+          </Tag>
+          <Tag mono outline>
+            {c.id}
+          </Tag>
+        </div>
+        <div className="mt-2 flex gap-2">
+          <Button onClick={onAnother} icon="plus">
+            Publish another
+          </Button>
+          {onViewFeed && c.status !== 'DRAFT' && (
+            <Button variant="primary" onClick={onViewFeed} iconRight="external">
+              View in feed
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+}
