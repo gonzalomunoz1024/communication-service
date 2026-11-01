@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -60,16 +61,20 @@ public class RestControllerFeedAdapter {
     }
 
     @GetMapping(value = "/feed/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @Operation(summary = "SSE: snapshot of visible items, then live lifecycle events")
+    @Operation(summary = "SSE: snapshot of visible items, then live lifecycle events; "
+            + "send Last-Event-ID (or ?lastEventId=) to resume where you left off instead")
     public Flux<ServerSentEvent<CommunicationEvent>> stream(
             @RequestParam String tenantId,
             @RequestParam(required = false) String service,
             @RequestParam(required = false) CommunicationType type,
             @RequestParam(required = false) Severity severity,
-            @RequestParam(required = false) Audience audience) {
+            @RequestParam(required = false) Audience audience,
+            @RequestParam(required = false) Long lastEventId,
+            @RequestHeader(name = "Last-Event-ID", required = false) String lastEventIdHeader) {
         FeedQuery query = new FeedQuery(tenantId, service, type, severity, audience,
                 null, true, 0, Page.MAX_SIZE);
-        Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query).map(e ->
+        Long resumeAfter = lastEventId != null ? lastEventId : parseEventId(lastEventIdHeader);
+        Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query, resumeAfter).map(e ->
                 ServerSentEvent.<CommunicationEvent>builder()
                         .id(Long.toString(e.seq()))
                         .event(e.type().name().toLowerCase())
@@ -79,5 +84,17 @@ public class RestControllerFeedAdapter {
                 .interval(KEEPALIVE_INTERVAL, KEEPALIVE_INTERVAL)
                 .map(i -> ServerSentEvent.<CommunicationEvent>builder().comment("keepalive").build());
         return Flux.merge(data, keepalive);
+    }
+
+    /** Browsers echo the last {@code id:} verbatim; anything that is not one of ours means a fresh start. */
+    private static Long parseEventId(String header) {
+        if (header == null || header.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(header.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

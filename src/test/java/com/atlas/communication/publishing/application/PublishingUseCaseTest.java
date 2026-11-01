@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -21,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.atlas.communication.common.domain.Communication;
+import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
 import com.atlas.communication.common.domain.CommunicationQuery;
 import com.atlas.communication.common.domain.CommunicationStatus;
@@ -52,6 +54,8 @@ class PublishingUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new PublishingUseCase(repository, events, Clock.fixed(NOW, ZoneOffset.UTC));
+        lenient().when(events.emit(any(), any())).thenAnswer(inv -> Mono.just(
+                new CommunicationEvent(1, inv.getArgument(0), NOW, inv.getArgument(1))));
     }
 
     private static CreateCommunicationCommand createCommand(boolean draft, Instant startsAt) {

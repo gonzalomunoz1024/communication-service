@@ -57,7 +57,7 @@ public class StatusSweepUseCase {
     private Mono<Communication> transition(Communication communication, CommunicationStatus target,
             CommunicationEventType eventType, Instant now) {
         return repository.save(communication.withStatus(target, "sweeper", now))
-                .doOnNext(saved -> events.emit(eventType, saved))
+                .flatMap(saved -> events.emit(eventType, saved).thenReturn(saved))
                 .onErrorResume(ex -> {
                     log.warn("skipping sweep transition {} -> {} for {}: {}",
                             communication.status(), target, communication.id(), ex.getMessage());

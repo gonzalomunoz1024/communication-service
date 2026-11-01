@@ -53,8 +53,14 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
   and mismatches return 409.
 - **SSE contract**: on subscribe, one `snapshot` event per currently-visible item, then live
   `created/updated/activated/expired/retired` events filtered server-side per subscriber;
-  monotonic `id:` sequence; keepalive comments every 15s. Reconnects are self-healing (fresh
-  snapshot); `Last-Event-ID` replay is a documented v2 gap.
+  `id:` is a global sequence number from the shared event log; keepalive comments every 15s.
+  A client that reconnects with `Last-Event-ID` (browsers do this on their own; `?lastEventId=`
+  for curl) gets every event it missed, in order, while the log still holds it
+  (`communication.events.retention`, default 1 day); otherwise it gets a fresh snapshot.
+- **Multi-instance**: events go through a shared log in Mongo (`communication_events`) that every
+  instance appends to and tails (`communication.events.poll-interval-ms`, default 500 ms), so a
+  notice published through any node reaches subscribers on every node. It is a poll, not a change
+  stream, so a standalone Mongo works; live latency is bounded by the interval.
 - **Scheduled visibility**: future-dated items are hidden from the feed, except SCHEDULED
   MAINTENANCE within the lookahead window (`communication.feed.upcoming-window`, default 7d).
   Drafts are invisible to consumers everywhere; EXPIRED/RETIRED stay retrievable by permalink.
@@ -178,6 +184,9 @@ curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:8080/v1/feed?tenantId=vmforge
 # live stream (keep open in a second terminal; -N disables buffering)
 curl -N -H 'X-Client-Id: vmforge-tools' 'localhost:8080/v1/feed/stream?tenantId=vmforge'
 
+# resume after a disconnect: everything after event 1234 in order, then live (browsers send Last-Event-ID)
+curl -N -H 'X-Client-Id: vmforge-tools' 'localhost:8080/v1/feed/stream?tenantId=vmforge&lastEventId=1234'
+
 # retire (the stream terminal shows the retired event)
 curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications/<id>/retire \
   -H 'Content-Type: application/json' -d '{"actor":"admin","note":"resolved"}'
@@ -195,9 +204,9 @@ curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/health/monitor
 - **Identification, not auth**: every `/v1` call must name its caller in `X-Client-Id` (repository
   name), which is logged but never verified; tenant/publisher are still request fields. Admin routes
   are path-segregated so a gateway/filter can protect `/v1/admin/**` wholesale when identity lands.
-- **In-process event bus**: SSE fan-out is single-node. Scaling out means swapping the
-  `CommunicationEventsPort` adapter for Mongo change streams or a broker — no domain changes.
-- **No `Last-Event-ID` replay**: reconnecting SSE clients get a fresh snapshot instead.
+- **Event fan-out is polled**: live events reach subscribers within the poll interval (500 ms by
+  default). Mongo change streams would make it immediate but need a replica set; they would sit
+  behind the same `CommunicationEventsPort`.
 - **Probe targets are not restricted**: registering a monitor makes the service GET that URL, so
   monitor registration belongs behind the same auth as publishing; an allow-list of probe hosts is
   the v2 hardening.

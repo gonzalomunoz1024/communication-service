@@ -13,6 +13,9 @@ communication:
   client-id:
     # HTTP tests send X-Client-Id; ClientIdWebFilterTest covers the rejections
     required: true
+  events:
+    poll-interval-ms: 100
+    retention: P1D
   sweep:
     interval-ms: 60000
   feed:

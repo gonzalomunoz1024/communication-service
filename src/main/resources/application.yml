@@ -24,6 +24,12 @@ communication:
     # every /v1 request must name its caller (repository name) in X-Client-Id, or ?clientId= for
     # EventSource clients; identification only, nothing is verified. Set false for local experiments.
     required: true
+  events:
+    # shared event log (communication_events): every instance appends to it and tails it, so SSE
+    # subscribers on any node see every event; a client reconnecting with Last-Event-ID gets what
+    # it missed while the log still holds it
+    poll-interval-ms: 500
+    retention: P1D
   sweep:
     interval-ms: 30000
   feed:
