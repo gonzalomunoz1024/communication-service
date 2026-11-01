@@ -1,0 +1,157 @@
+package com.atlas.communication.common.domain;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * The communication aggregate. Immutable; every mutation returns a copy with an appended
+ * {@link AuditEntry}. Stored {@code status} converges via the background sweeper, but reads
+ * must use {@link #effectiveStatus(Instant)} so visibility is exact regardless of sweeper lag.
+ */
+public record Communication(
+        String id,
+        String tenantId,
+        String publisher,
+        CommunicationType type,
+        Severity severity,
+        String title,
+        String body,
+        List<String> affectedServices,
+        Audience audience,
+        CommunicationStatus status,
+        Instant startsAt,
+        Instant endsAt,
+        Instant expiresAt,
+        String externalRef,
+        Instant createdAt,
+        Instant updatedAt,
+        Long version,
+        List<AuditEntry> history) {
+
+    public static final int TITLE_MAX = 200;
+    public static final int BODY_MAX_BYTES = 16 * 1024;
+    public static final int HISTORY_MAX = 50;
+
+    public Communication {
+        affectedServices = affectedServices == null ? List.of() : List.copyOf(affectedServices);
+        history = history == null ? List.of() : List.copyOf(history);
+    }
+
+    /** Creates a new communication, applying defaults and validating invariants. */
+    public static Communication create(String id, String tenantId, String publisher,
+            CommunicationType type, Severity severity, String title, String body,
+            List<String> affectedServices, Audience audience, boolean draft,
+            Instant startsAt, Instant endsAt, Instant expiresAt, String externalRef, Instant now) {
+        Instant effectiveStart = startsAt == null ? now : startsAt;
+        Instant effectiveExpiry = expiresAt == null && type == CommunicationType.MAINTENANCE
+                ? endsAt : expiresAt;
+        CommunicationStatus initial = draft ? CommunicationStatus.DRAFT
+                : effectiveStart.isAfter(now) ? CommunicationStatus.SCHEDULED : CommunicationStatus.ACTIVE;
+        Communication created = new Communication(id, tenantId, publisher, type, severity, title, body,
+                affectedServices, audience == null ? Audience.CUSTOMERS : audience, initial,
+                effectiveStart, endsAt, effectiveExpiry, externalRef, now, now, null,
+                List.of(new AuditEntry(now, publisher, "created (" + initial + ")")));
+        created.validateInvariants();
+        return created;
+    }
+
+    /** Applies a content update, keeping identity/lifecycle fields; appends audit. */
+    public Communication withContent(Severity newSeverity, String newTitle, String newBody,
+            List<String> newAffectedServices, Audience newAudience,
+            Instant newStartsAt, Instant newEndsAt, Instant newExpiresAt, String actor, Instant now) {
+        Communication updated = new Communication(id, tenantId, publisher, type,
+                newSeverity == null ? severity : newSeverity,
+                newTitle == null ? title : newTitle,
+                newBody == null ? body : newBody,
+                newAffectedServices == null ? affectedServices : newAffectedServices,
+                newAudience == null ? audience : newAudience,
+                status,
+                newStartsAt == null ? startsAt : newStartsAt,
+                newEndsAt == null ? endsAt : newEndsAt,
+                newExpiresAt == null ? expiresAt : newExpiresAt,
+                externalRef, createdAt, now, version,
+                appended(now, actor, "updated"));
+        updated.validateInvariants();
+        return updated;
+    }
+
+    /** Transitions the stored status, enforcing the state machine; appends audit. */
+    public Communication withStatus(CommunicationStatus next, String actor, Instant now) {
+        if (!canTransitionTo(next)) {
+            throw new IllegalArgumentException(
+                    "illegal transition " + status + " -> " + next + " for communication " + id);
+        }
+        return new Communication(id, tenantId, publisher, type, severity, title, body,
+                affectedServices, audience, next, startsAt, endsAt, expiresAt, externalRef,
+                createdAt, now, version, appended(now, actor, status + " -> " + next));
+    }
+
+    public boolean canTransitionTo(CommunicationStatus next) {
+        return switch (status) {
+            case DRAFT -> next == CommunicationStatus.SCHEDULED || next == CommunicationStatus.ACTIVE
+                    || next == CommunicationStatus.RETIRED;
+            case SCHEDULED -> next == CommunicationStatus.ACTIVE || next == CommunicationStatus.RETIRED;
+            case ACTIVE -> next == CommunicationStatus.EXPIRED || next == CommunicationStatus.RETIRED;
+            case EXPIRED, RETIRED -> false;
+        };
+    }
+
+    /**
+     * The status a reader should see at {@code now}: DRAFT/RETIRED/EXPIRED as stored,
+     * otherwise derived from the time window. Never trusts stored SCHEDULED/ACTIVE.
+     */
+    public CommunicationStatus effectiveStatus(Instant now) {
+        if (status == CommunicationStatus.DRAFT || status == CommunicationStatus.RETIRED
+                || status == CommunicationStatus.EXPIRED) {
+            return status;
+        }
+        if (expiresAt != null && !now.isBefore(expiresAt)) {
+            return CommunicationStatus.EXPIRED;
+        }
+        if (now.isBefore(startsAt)) {
+            return CommunicationStatus.SCHEDULED;
+        }
+        return CommunicationStatus.ACTIVE;
+    }
+
+    /** Whether the communication is visible as ACTIVE at instant {@code t}. */
+    public boolean activeAt(Instant t) {
+        return effectiveStatus(t) == CommunicationStatus.ACTIVE;
+    }
+
+    public void validateInvariants() {
+        require(tenantId != null && !tenantId.isBlank(), "tenantId is required");
+        require(publisher != null && !publisher.isBlank(), "publisher is required");
+        require(type != null, "type is required");
+        require(severity != null, "severity is required");
+        require(title != null && !title.isBlank(), "title is required");
+        require(title == null || title.length() <= TITLE_MAX, "title exceeds " + TITLE_MAX + " characters");
+        require(body == null || body.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= BODY_MAX_BYTES,
+                "body exceeds " + BODY_MAX_BYTES + " bytes");
+        require(startsAt != null, "startsAt is required");
+        if (type == CommunicationType.MAINTENANCE) {
+            require(endsAt != null, "MAINTENANCE requires endsAt");
+        }
+        require(endsAt == null || endsAt.isAfter(startsAt), "endsAt must be after startsAt");
+        require(expiresAt == null || expiresAt.isAfter(startsAt), "expiresAt must be after startsAt");
+        if (type == CommunicationType.INCIDENT || type == CommunicationType.OUTAGE) {
+            require(severity.atLeast(Severity.MINOR), type + " requires severity MINOR or higher");
+        }
+    }
+
+    private List<AuditEntry> appended(Instant at, String actor, String action) {
+        List<AuditEntry> next = new ArrayList<>(history);
+        next.add(new AuditEntry(at, actor == null ? "unknown" : actor, action));
+        if (next.size() > HISTORY_MAX) {
+            next = next.subList(next.size() - HISTORY_MAX, next.size());
+        }
+        return List.copyOf(next);
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+}
