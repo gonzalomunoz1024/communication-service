@@ -23,7 +23,7 @@ function tabFromHash(): Tab {
 /** Single page, two tabs: the feed consumers see and the form publishers use. */
 export default function App() {
   const { mode, cycle } = useTheme()
-  const client = useMemo(() => createCommunicationClient(import.meta.env.VITE_API_BASE ?? ''), [])
+  const client = useMemo(() => createCommunicationClient(import.meta.env.VITE_API_BASE ?? '', { clientId: import.meta.env.VITE_CLIENT_ID }), [])
   const [tab, setTab] = useState<Tab>(tabFromHash)
   const [tenantId, setTenantId] = useState(() => readStored(TENANT_KEY, 'acme'))
   const [publisher, setPublisher] = useState(() => readStored(PUBLISHER_KEY, ''))

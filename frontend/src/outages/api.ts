@@ -57,17 +57,34 @@ async function errorMessage(res: Response): Promise<string> {
   return `${res.status} ${res.statusText}`.trim()
 }
 
+/** Sent as `X-Client-Id` on every request; the service rejects calls that carry none. */
+export const DEFAULT_CLIENT_ID = 'communication-frontend'
+
+export interface ClientOptions {
+  /** how this app identifies itself to the service (its repository name); defaults to DEFAULT_CLIENT_ID */
+  clientId?: string
+  fetchImpl?: typeof fetch
+}
+
 /**
  * A typed client for communication-service.
  * @param baseUrl origin the service is served from; '' means same origin (the Vite proxy in dev)
  */
-export function createCommunicationClient(baseUrl = '', fetchImpl: typeof fetch = (...a) => fetch(...a)): CommunicationClient {
+export function createCommunicationClient(
+  baseUrl = '',
+  { clientId = DEFAULT_CLIENT_ID, fetchImpl = (...a) => fetch(...a) }: ClientOptions = {},
+): CommunicationClient {
   const root = baseUrl.replace(/\/$/, '')
 
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await fetchImpl(`${root}${path}`, {
       ...init,
-      headers: { Accept: 'application/json', ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
+      headers: {
+        Accept: 'application/json',
+        'X-Client-Id': clientId,
+        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init?.headers,
+      },
     })
     if (!res.ok) throw new ApiError(res.status, await errorMessage(res))
     return (await res.json()) as T
@@ -85,7 +102,8 @@ export function createCommunicationClient(baseUrl = '', fetchImpl: typeof fetch 
       }),
 
     stream: (filter, { onEvent, onConnection }) => {
-      const source = new EventSource(`${root}/v1/feed/stream?${feedQuery(filter)}`)
+      // EventSource cannot set headers, so the stream identifies itself in the query instead
+      const source = new EventSource(`${root}/v1/feed/stream?${feedQuery(filter, { clientId })}`)
       // the server names each frame after its event type, lower-cased
       const listener = (e: MessageEvent<string>) => {
         try {

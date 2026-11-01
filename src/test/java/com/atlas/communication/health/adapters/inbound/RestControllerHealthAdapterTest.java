@@ -3,11 +3,13 @@ package com.atlas.communication.health.adapters.inbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -19,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.mockito.ArgumentCaptor;
 
 import com.atlas.communication.common.domain.Audience;
+import com.atlas.communication.config.ClientIdWebFilter;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.health.application.HealthMonitorUseCase;
 import com.atlas.communication.health.domain.HealthMonitor;
@@ -39,10 +42,27 @@ class RestControllerHealthAdapterTest {
     @MockitoBean
     private HealthMonitorUseCase useCase;
 
+    @BeforeEach
+    void identifyAsTestClient() {
+        client = client.mutate()
+                .defaultHeader(ClientIdWebFilter.HEADER, "communication-service-tests")
+                .build();
+    }
+
     private static HealthMonitor monitor() {
         return HealthMonitor.create("m1", "vmforge", "vm-api", "http://vm-api/actuator/health",
                 new HealthMonitor.Policy("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
                         Severity.MINOR, Audience.CUSTOMERS, null), NOW);
+    }
+
+    @Test
+    void callsWithoutAClientIdNeverReachTheController() {
+        client.mutate().defaultHeaders(h -> h.remove(ClientIdWebFilter.HEADER)).build()
+                .get().uri("/v1/health/monitors?tenantId=vmforge")
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody().jsonPath("$.error").exists();
+        verifyNoInteractions(useCase);
     }
 
     @Test
