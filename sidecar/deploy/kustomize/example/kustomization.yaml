@@ -1,0 +1,18 @@
+# Example overlay: an existing app plus the sidecar component and the ConfigMap it reads.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+
+components:
+  - ../component
+
+configMapGenerator:
+  - name: cs-health-sidecar
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - CS_ENDPOINT=https://communication.apps.example.com
+      - CS_TENANT=retail
+      - CS_CLUSTER=ocp-east

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cs-health-sidecar
+description: Library chart that renders the communication-service health sidecar container
+type: library
+version: 1.0.0
+appVersion: "1.0.0"
