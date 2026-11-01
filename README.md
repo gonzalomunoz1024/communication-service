@@ -62,6 +62,15 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 
 ## API (v1)
 
+### Identify yourself
+
+Every `/v1/**` request must carry `X-Client-Id: <your repository name>`; without it the service
+answers `401 {"error": "missing X-Client-Id header …"}`. Browser `EventSource` cannot set headers,
+so the stream also accepts `?clientId=`. The id is logged with each request so a notice can be
+traced to the system that sent it. It is identification, not authentication: nothing is verified.
+In Swagger UI use **Authorize** once; `communication.client-id.required=false` switches the check
+off for local experiments.
+
 ### Publisher commands
 
 | Method | Path | Notes |
@@ -133,13 +142,13 @@ Per-monitor policy, all optional at registration (defaults in `application.yml` 
 
 ```bash
 # pull: point a monitor at the app's Actuator health endpoint
-curl -s -X POST localhost:8080/v1/health/monitors -H 'Content-Type: application/json' -d '{
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/health/monitors -H 'Content-Type: application/json' -d '{
   "tenantId":"vmforge","service":"vm-api","url":"http://vm-api:8080/actuator/health",
   "intervalSeconds":15,"failureThreshold":2,"recoveryThreshold":2}'
 
 # push: the app forwards its own health document (same shape as /actuator/health) plus tenant+service,
 # e.g. from a scheduled task or a HealthIndicator listener; dependencies that are down are listed
-curl -s -X POST localhost:8080/v1/health/reports -H 'Content-Type: application/json' -d '{
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/health/reports -H 'Content-Type: application/json' -d '{
   "tenantId":"vmforge","service":"vm-api","status":"DOWN",
   "components":{"db":{"status":"DOWN","details":{"error":"Connection refused"}},"ping":{"status":"UP"}},
   "message":"primary database unreachable"}'
@@ -152,39 +161,40 @@ hard crash, which can no longer push anything, is still detected.
 
 ```bash
 # publish an outage correlated to an INC ticket, expiring at 18:00 UTC
-curl -s -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{
   "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR",
   "title":"API degradation in eu-west","body":"We are investigating **elevated errors**.",
   "affectedServices":["vm-api"],"externalRef":"INC0012345",
   "expiresAt":"2026-10-14T18:00:00Z"}'
 
 # schedule a maintenance window (expiry defaults to the window end)
-curl -s -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{
   "tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO",
   "title":"Planned upgrade","startsAt":"2026-10-15T01:00:00Z","endsAt":"2026-10-15T03:00:00Z"}'
 
 # what VMForge shows its customers right now
-curl -s 'localhost:8080/v1/feed?tenantId=vmforge&service=vm-api'
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:8080/v1/feed?tenantId=vmforge&service=vm-api'
 
 # live stream (keep open in a second terminal; -N disables buffering)
-curl -N 'localhost:8080/v1/feed/stream?tenantId=vmforge'
+curl -N -H 'X-Client-Id: vmforge-tools' 'localhost:8080/v1/feed/stream?tenantId=vmforge'
 
 # retire (the stream terminal shows the retired event)
-curl -s -X POST localhost:8080/v1/communications/<id>/retire \
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications/<id>/retire \
   -H 'Content-Type: application/json' -d '{"actor":"admin","note":"resolved"}'
 
 # admin: everything retired, across tenants, with audit history
-curl -s 'localhost:8080/v1/admin/communications?status=RETIRED'
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:8080/v1/admin/communications?status=RETIRED'
 
 # health: what the monitors currently think, and force a probe
-curl -s 'localhost:8080/v1/health/monitors?tenantId=vmforge'
-curl -s -X POST localhost:8080/v1/health/monitors/<monitorId>/probe
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:8080/v1/health/monitors?tenantId=vmforge'
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/health/monitors/<monitorId>/probe
 ```
 
 ## Known v1 constraints (deliberate)
 
-- **No auth**: endpoints are open; tenant/publisher are request fields. Admin routes are
-  path-segregated so a gateway/filter can protect `/v1/admin/**` wholesale when identity lands.
+- **Identification, not auth**: every `/v1` call must name its caller in `X-Client-Id` (repository
+  name), which is logged but never verified; tenant/publisher are still request fields. Admin routes
+  are path-segregated so a gateway/filter can protect `/v1/admin/**` wholesale when identity lands.
 - **In-process event bus**: SSE fan-out is single-node. Scaling out means swapping the
   `CommunicationEventsPort` adapter for Mongo change streams or a broker — no domain changes.
 - **No `Last-Event-ID` replay**: reconnecting SSE clients get a fresh snapshot instead.

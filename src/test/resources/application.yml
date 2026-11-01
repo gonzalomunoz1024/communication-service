@@ -10,6 +10,9 @@ spring:
       auto-index-creation: true
 
 communication:
+  client-id:
+    # HTTP tests send X-Client-Id; ClientIdWebFilterTest covers the rejections
+    required: true
   sweep:
     interval-ms: 60000
   feed:

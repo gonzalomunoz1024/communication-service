@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
 import com.atlas.communication.common.domain.CommunicationStatus;
+import com.atlas.communication.config.ClientIdWebFilter;
 
 import reactor.test.StepVerifier;
 
@@ -28,6 +30,13 @@ class CommunicationServiceE2EIT {
 
     @Autowired
     private WebTestClient client;
+
+    @BeforeEach
+    void identifyAsTestClient() {
+        client = client.mutate()
+                .defaultHeader(ClientIdWebFilter.HEADER, "communication-service-tests")
+                .build();
+    }
 
     private Communication publishOutage(String externalRef) {
         return client.post().uri("/v1/communications")
