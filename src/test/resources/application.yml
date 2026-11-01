@@ -16,3 +16,15 @@ communication:
     default-page-size: 20
     max-page-size: 100
     upcoming-window: P7D
+  health:
+    # tests drive probes explicitly; keep the scheduler out of the way
+    sweep-interval-ms: 3600000
+    defaults:
+      publisher: health-monitor
+      interval-seconds: 30
+      timeout-ms: 5000
+      failure-threshold: 2
+      recovery-threshold: 2
+      down-severity: MAJOR
+      degraded-severity: MINOR
+      audience: CUSTOMERS

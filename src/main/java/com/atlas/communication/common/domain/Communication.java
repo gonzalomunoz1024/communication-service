@@ -78,13 +78,19 @@ public record Communication(
 
     /** Transitions the stored status, enforcing the state machine; appends audit. */
     public Communication withStatus(CommunicationStatus next, String actor, Instant now) {
+        return withStatus(next, actor, null, now);
+    }
+
+    /** As {@link #withStatus(CommunicationStatus, String, Instant)}, recording a note in the audit entry. */
+    public Communication withStatus(CommunicationStatus next, String actor, String note, Instant now) {
         if (!canTransitionTo(next)) {
             throw new IllegalArgumentException(
                     "illegal transition " + status + " -> " + next + " for communication " + id);
         }
+        String action = status + " -> " + next + (note == null || note.isBlank() ? "" : ": " + note);
         return new Communication(id, tenantId, publisher, type, severity, title, body,
                 affectedServices, audience, next, startsAt, endsAt, expiresAt, externalRef,
-                createdAt, now, version, appended(now, actor, status + " -> " + next));
+                createdAt, now, version, appended(now, actor, action));
     }
 
     public boolean canTransitionTo(CommunicationStatus next) {
