@@ -14,7 +14,8 @@ import com.mongodb.MongoClientSettings;
 class MongoClientConfigTest {
 
     private final MongoClientSettingsBuilderCustomizer customizer = new MongoClientConfig().mongoTimeouts(
-            new MongoTimeoutProperties(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15)));
+            new MongoTimeoutProperties(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15),
+                    Duration.ofSeconds(1)));
 
     @Test
     void appliesTheConfiguredTimeoutsToTheClient() {

@@ -30,6 +30,13 @@ management:
         readiness:
           include: readinessState,mongo
 
+logging:
+  level:
+    # the driver's cluster monitor logs each connectivity change at INFO with a stack trace, and an
+    # INFO line per operation waiting for a server while the database is unreachable; the
+    # service's own WARN lines (503 answers, skipped sweeps, readiness) say what is going on
+    org.mongodb.driver.cluster: WARN
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -50,6 +57,11 @@ communication:
     server-selection-timeout: PT5S
     connect-timeout: PT5S
     read-timeout: PT15S
+    # how long readiness waits for the database to answer a ping before reporting DOWN: no longer
+    # than a kubelet waits for a probe by default (1 s), so the probe gets the 503 instead of a
+    # timeout. Readiness logs one WARN line when the database stops answering, one INFO line when
+    # it answers again.
+    readiness-timeout: PT1S
   events:
     # shared event log (communication_events): every instance appends to it and tails it, so SSE
     # subscribers on any node see every event; a client reconnecting with Last-Event-ID gets what

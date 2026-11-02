@@ -13,6 +13,7 @@
     <Or>
       <Class name="com.atlas.communication.common.adapters.outbound.MongoCommunicationEventsAdapter"/>
       <Class name="com.atlas.communication.config.ClientIdWebFilter"/>
+      <Class name="com.atlas.communication.config.MongoReadinessIndicator"/>
       <Class name="com.atlas.communication.feed.application.FeedUseCase"/>
       <Class name="com.atlas.communication.health.adapters.outbound.WebClientHealthProbeAdapter"/>
       <Class name="com.atlas.communication.health.application.HealthSweepUseCase"/>

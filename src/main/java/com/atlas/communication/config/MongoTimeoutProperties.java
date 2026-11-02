@@ -10,11 +10,13 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * the driver's own defaults (30 s to find a server, no socket timeouts) every request and the
  * readiness probe hang for half a minute while Mongo is unreachable; with these a call gives up
  * within seconds and answers 503 "database unavailable". They override the same options given
- * on the connection URI.
+ * on the connection URI. Readiness waits {@code readinessTimeout} for the database to answer a
+ * ping before it reports DOWN.
  */
 @ConfigurationProperties(prefix = "communication.mongo")
 public record MongoTimeoutProperties(
         @DefaultValue("PT5S") Duration serverSelectionTimeout,
         @DefaultValue("PT5S") Duration connectTimeout,
-        @DefaultValue("PT15S") Duration readTimeout) {
+        @DefaultValue("PT15S") Duration readTimeout,
+        @DefaultValue("PT1S") Duration readinessTimeout) {
 }
