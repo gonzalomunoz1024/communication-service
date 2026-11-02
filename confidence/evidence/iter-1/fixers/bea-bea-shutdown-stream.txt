@@ -1,0 +1,10 @@
+:connected
+
+id:0
+event:snapshot
+data:{"seq":0,"type":"SNAPSHOT","at":"2026-11-02T00:43:21.011549041Z","communication":{"id":"5d98a101-2a15-4618-b8bb-0d3991068d6d","tenantId":"bea","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"shutdown check","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T00:43:20.780Z","createdAt":"2026-11-02T00:43:20.780Z","updatedAt":"2026-11-02T00:43:20.780Z","version":0,"history":[{"at":"2026-11-02T00:43:20.780Z","actor":"sre","action":"created (ACTIVE)"}]}}
+
+id:1
+event:created
+data:{"seq":1,"type":"CREATED","at":"2026-11-02T00:43:20.928Z","communication":{"id":"5d98a101-2a15-4618-b8bb-0d3991068d6d","tenantId":"bea","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"shutdown check","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T00:43:20.780Z","createdAt":"2026-11-02T00:43:20.780Z","updatedAt":"2026-11-02T00:43:20.780Z","version":0,"history":[{"at":"2026-11-02T00:43:20.780Z","actor":"sre","action":"created (ACTIVE)"}]}}
+

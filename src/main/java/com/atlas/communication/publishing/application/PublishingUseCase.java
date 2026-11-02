@@ -31,7 +31,9 @@ import reactor.core.publisher.Mono;
  * they could see, so DRAFTs are silent — CREATED fires on first non-draft save (create or
  * publish), UPDATED on content changes to visible items, RETIRED on retire; the sweeper owns
  * ACTIVATED/EXPIRED. A ticket is optional on every communication; one given goes through
- * {@link TicketPolicy#normalise} on the way in.
+ * {@link TicketPolicy#normalise} on the way in. Every communication this returns carries its
+ * effective status ({@link Communication#asSeenAt}), the one the feed and the guards use; the
+ * commands change and save the stored aggregate.
  */
 @Service
 @RequiredArgsConstructor
@@ -64,11 +66,18 @@ public class PublishingUseCase implements PublishingInboundPort {
                 cmd.affectedServices(), cmd.audience(), cmd.draft(),
                 cmd.startsAt(), cmd.endsAt(), cmd.expiresAt(), externalRef, ticket, now);
         return repository.save(communication)
-                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.CREATED, saved));
+                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.CREATED, saved))
+                .map(saved -> saved.asSeenAt(now));
     }
 
+    /** Computed on read, never written: past {@code expiresAt} it is EXPIRED before the sweeper has run. */
     @Override
     public Mono<Communication> get(String id) {
+        return load(id).map(c -> c.asSeenAt(clock.instant()));
+    }
+
+    /** The stored aggregate, for the commands that change it. */
+    private Mono<Communication> load(String id) {
         return repository.findById(id).switchIfEmpty(notFound(id));
     }
 
@@ -76,22 +85,27 @@ public class PublishingUseCase implements PublishingInboundPort {
     public Mono<Page<Communication>> list(String tenantId, Set<CommunicationStatus> statuses,
             CommunicationType type, int page, int size) {
         return Mono.defer(() -> {
+            Instant now = clock.instant();
             CommunicationQuery query = CommunicationQuery.listing(tenantId, statuses, type,
                     Page.validPage(page), Page.validSize(size));
             return repository.query(query).collectList()
                     .zipWith(repository.count(query))
-                    .map(t -> Page.of(t.getT1(), query.page(), query.size(), t.getT2()));
+                    .map(t -> Page.of(t.getT1(), query.page(), query.size(), t.getT2())
+                            .map(c -> c.asSeenAt(now)));
         });
     }
 
     @Override
     public Mono<Communication> update(String id, UpdateCommunicationCommand cmd) {
         Instant now = clock.instant();
-        return get(id)
+        return load(id)
                 .flatMap(current -> {
-                    if (current.status().terminal()) {
+                    // the effective status, not the stored one: an item past expiresAt is
+                    // EXPIRED for every reader even before the sweeper has caught up
+                    CommunicationStatus status = current.effectiveStatus(now);
+                    if (status.terminal()) {
                         return Mono.error(conflict("communication " + id + " is "
-                                + current.status() + " and can no longer be updated"));
+                                + status + " and can no longer be updated"));
                     }
                     if (!current.version().equals(cmd.expectedVersion())) {
                         return Mono.error(conflict("expectedVersion " + cmd.expectedVersion()
@@ -104,13 +118,14 @@ public class PublishingUseCase implements PublishingInboundPort {
                             .withTicket(tickets.normalise(cmd.ticket()), actor, now);
                     return repository.save(updated);
                 })
-                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.UPDATED, saved));
+                .flatMap(saved -> announceUnlessDraft(CommunicationEventType.UPDATED, saved))
+                .map(saved -> saved.asSeenAt(now));
     }
 
     @Override
     public Mono<Communication> publish(String id) {
         Instant now = clock.instant();
-        return get(id)
+        return load(id)
                 .flatMap(current -> {
                     if (current.status() != CommunicationStatus.DRAFT) {
                         return Mono.error(conflict("only DRAFT communications can be published; "
@@ -120,15 +135,16 @@ public class PublishingUseCase implements PublishingInboundPort {
                             ? CommunicationStatus.SCHEDULED : CommunicationStatus.ACTIVE;
                     return repository.save(current.withStatus(target, current.publisher(), now));
                 })
-                .flatMap(saved -> announce(CommunicationEventType.CREATED, saved));
+                .flatMap(saved -> announce(CommunicationEventType.CREATED, saved))
+                .map(saved -> saved.asSeenAt(now));
     }
 
     @Override
     public Mono<Communication> retire(String id, RetireRequest request) {
         Instant now = clock.instant();
         RetireRequest req = request == null ? RetireRequest.EMPTY : request;
-        return get(id)
-                .flatMap(current -> switch (current.status()) {
+        return load(id)
+                .flatMap(current -> switch (current.effectiveStatus(now)) { // not the stored status
                     case RETIRED -> Mono.just(current); // idempotent no-op
                     case EXPIRED -> Mono.error(conflict(
                             "communication " + id + " already expired; retiring would rewrite history"));
@@ -136,7 +152,8 @@ public class PublishingUseCase implements PublishingInboundPort {
                             .save(current.withStatus(CommunicationStatus.RETIRED,
                                     actorOr(req.actor(), current), req.note(), now))
                             .flatMap(saved -> announce(CommunicationEventType.RETIRED, saved));
-                });
+                })
+                .map(c -> c.asSeenAt(now));
     }
 
     private static String actorOr(String actor, Communication fallback) {

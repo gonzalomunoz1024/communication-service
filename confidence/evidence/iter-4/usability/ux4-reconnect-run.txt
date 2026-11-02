@@ -1,0 +1,10 @@
+[seed] {"status":201}
+[open-dev] {"badgeTimeline":["0.4s Connecting","0.9s Live"],"cards":1}
+[open-prod] {"badgeTimeline":["0.1s Connecting","0.6s Live"],"cards":1}
+[open-prodEmpty] {"badgeTimeline":["0.1s Connecting","6.2s Live"],"cards":0}
+[killed] {"pids":[29992]}
+[down-timeline-30s] {"timelines":{"dev":["0.0s Live","0.5s Reconnecting","3.1s Reconnecting (1)","4.1s Reconnecting (2)","6.1s Reconnecting (3)","10.2s Reconnecting (4)","18.4s Reconnecting (5)","28.1s Reconnecting (6)"],"prod":["0.0s Live","0.5s Reconnecting","3.1s Reconnecting (1)","4.1s Reconnecting (2)","6.1s Reconnecting (3)","10.2s Reconnecting (4)","18.4s Reconnecting (5)","28.1s Reconnecting (6)"],"prodEmpty":["0.0s Live","0.5s Reconnecting","3.1s Reconnecting (1)","4.1s Reconnecting (2)","6.1s Reconnecting (3)","10.2s Reconnecting (4)","18.4s Reconnecting (5)","28.6s Reconnecting (6)"]},"cards":{"dev":1,"prod":1},"errorShown":0}
+[restarted] {"pid":22977,"readyAfterMs":8584}
+[published-after-ready] {"status":201,"msAfterReady":377}
+[recovery] {"res":{"dev":{"liveAfterReadyMs":9054,"newCardAfterReadyMs":9060},"prod":{"liveAfterReadyMs":9055,"newCardAfterReadyMs":9060},"prodEmpty":{"liveAfterReadyMs":14899,"newCardAfterReadyMs":null}},"timelines":{"dev":["28033ms Reconnecting","31054ms Reconnecting (1)","32065ms Reconnecting (2)","34066ms Reconnecting (3)","38068ms Reconnecting (4)","46081ms Reconnecting (5)","56085ms Reconnecting (6)","66091ms Reconnecting (7)","76228ms Live"],"prod":["18515ms Reconnecting","21537ms Reconnecting (1)","22549ms Reconnecting (2)","24565ms Reconnecting (3)","28565ms Reconnecting (4)","36570ms Reconnecting (5)","46582ms Reconnecting (6)","56587ms Reconnecting (7)","66703ms Live"],"prodEmpty":["9251ms Reconnecting","12272ms Reconnecting (1)","13285ms Reconnecting (2)","15308ms Reconnecting (3)","19310ms Reconnecting (4)","27321ms Reconnecting (5)","37328ms Reconnecting (6)","47335ms Reconnecting (7)
+exit 0

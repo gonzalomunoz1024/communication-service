@@ -1,0 +1,42 @@
++0.2s instance A up: true
++0.2s instance B up: true
++1.6s badge → Paused
++1.7s stream REQUEST #1 ?lastEventId=(none)
++1.7s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++1.8s badge → Connecting
++1.8s stream REQUEST FAILED net::ERR_ABORTED
++1.8s stream REQUEST #2 ?lastEventId=(none)
++1.8s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++1.9s stream RESPONSE 200
++1.9s SSE frame snapshot id=6 before the drop
++2.0s badge → Live
++3.1s SIGKILL instance A (pid 10351); last SSE id seen 6
++3.2s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++3.3s badge → Reconnecting
++4.4s through instance B: publish 'missed while down' → 201, retire 'before the drop' → 200
++6.2s stream REQUEST #3 ?lastEventId=(none)
++6.2s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=6
++6.2s stream RESPONSE 502
++6.3s badge → Reconnecting (1)
++7.2s stream REQUEST #4 ?lastEventId=6
++7.2s CDP wire: stream request ?lastEventId=6 Last-Event-ID header=(none)
++7.2s stream RESPONSE 502
++7.3s badge → Reconnecting (2)
++9.2s stream REQUEST #5 ?lastEventId=6
++9.2s CDP wire: stream request ?lastEventId=6 Last-Event-ID header=(none)
++9.2s stream RESPONSE 502
++9.3s badge → Reconnecting (3)
++11.9s restarting instance A
++13.2s stream REQUEST #6 ?lastEventId=6
++13.2s CDP wire: stream request ?lastEventId=6 Last-Event-ID header=(none)
++13.2s stream RESPONSE 502
++13.2s stream REQUEST FAILED net::ERR_ABORTED
++13.3s badge → Reconnecting (4)
++19.1s A up again: true
++21.2s stream REQUEST #7 ?lastEventId=6
++21.2s CDP wire: stream request ?lastEventId=6 Last-Event-ID header=(none)
++21.2s stream RESPONSE 200
++21.3s badge Live again: true
++21.3s badge → Live
++21.3s SSE frame created id=7 missed while down
++21.3s SSE frame retired id=8 before the drop

@@ -1,0 +1,25 @@
+G-4-11 (integration, orchestrator): the e2e contract smoke pinned the 409 body to exactly {error}; G-4-11 adds suggestedExternalRef beside it.
+
+Before: the first e2e run on the combined code (int4 at 5352449, code = 4eff8f4), stack built by ./stack.sh up with GO_IMAGE=local/go-toolset:1.27:
+  ✘  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body (302ms)
+  1) tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+      Object {
+        "error": Any<String>,
+    +   "suggestedExternalRef": "e2e-ref-mvz2yibj-2",
+      }
+
+      19 |       expect(again.status()).toBe(409)
+      20 |       // the wording is the service's to choose; the shape is the contract
+    > 21 |       expect(await again.json()).toEqual({ error: expect.any(String) })
+         |                                  ^
+      22 |     } finally {
+  1 failed
+  8 passed (2.1m)
+
+After: the assertion pins the new shape exactly, {error: <string>, suggestedExternalRef: "e2e-ref-<run>-2"}; see the three e2e runs recorded in confidence/iter-4/fixes.md.

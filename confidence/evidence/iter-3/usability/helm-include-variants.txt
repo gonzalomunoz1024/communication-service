@@ -1,0 +1,22 @@
+# include variants in the README's consuming chart (helm v3.16.3, kubeconform 1.29 schema)
+
+[        {{- include "cs-health-sidecar.container" . | nindent 8 }}]
+  helm template exit 0 
+  kubeconform: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  helm lint: 1 chart(s) linted, 0 chart(s) failed
+
+[        {{ include "cs-health-sidecar.container" . }}]
+  helm template exit 0 
+  kubeconform: Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+  helm lint: 1 chart(s) linted, 0 chart(s) failed
+
+[        {{- include "cs-health-sidecar.container" . }}]
+  helm template exit 1 Error: YAML parse error on my-app/templates/deployment.yaml: error converting YAML to JSON: yaml: line 15: mapping values are not allowed in this context
+  helm lint: Error: 1 chart(s) linted, 1 chart(s) failed
+
+[        {{ include "cs-health-sidecar.container" . | indent 8 }}]
+  helm template exit 1 Error: YAML parse error on my-app/templates/deployment.yaml: error converting YAML to JSON: yaml: line 16: mapping values are not allowed in this context
+  helm lint: Error: 1 chart(s) linted, 1 chart(s) failed
+
+[extraEnv as a map] Error: YAML parse error on my-app/templates/deployment.yaml: error converting YAML to JSON: yaml: line 47: did not find expected '-' indicator
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/usability3/sidecar-work/v8.yaml - Deployment my-app is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.29.0-standalone-strict/deployment-apps-v1.json#/properties/spec/additiona

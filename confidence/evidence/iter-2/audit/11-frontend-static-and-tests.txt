@@ -1,0 +1,50 @@
+# 11 - frontend static checks, tests, coverage and audit, re-run by the auditor in frontend/ at HEAD 33451c3 (code = be19645)
+# commands: npm run lint; npm run typecheck; npm run test:coverage; npm audit; npm audit --omit=dev
+
+START 2026-11-02T04:55:38Z
+--- npm run lint
+
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+
+lint exit 0
+--- npm run typecheck
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+typecheck exit 0
+--- npm run test:coverage
+coverage exit 0
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+All files          |   93.49 |    90.73 |   89.42 |   93.99 |                   
+ src/outages       |   94.01 |    88.88 |    88.4 |   94.86 |                   
+ src/ui            |   92.05 |    91.86 |   89.18 |   92.03 |                   
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+--- npm audit
+found 0 vulnerabilities
+audit exit 0
+--- npm audit --omit=dev
+found 0 vulnerabilities
+audit-omit exit 0
+--- overrides in package.json
+42:  "overrides": {
+43-    "minimatch": "^11.0.1"
+44-  }
+45-}
+--- git status frontend/ after
+END 2026-11-02T04:56:27Z
+
+## coverage table (v8 provider, from the same run)
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+All files          |   93.49 |    90.73 |   89.42 |   93.99 |                   
+ src/outages       |   94.01 |    88.88 |    88.4 |   94.86 |                   
+ src/ui            |   92.05 |    91.86 |   89.18 |   92.03 |                   
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+Statements   : 93.49% ( 719/769 )
+Branches     : 90.73% ( 783/863 )
+Functions    : 89.42% ( 203/227 )
+Lines        : 93.99% ( 595/633 )
+
+## verifier figures for comparison (static-checks.txt): 18 files 141/141; All files 93.49 / 90.73 / 89.42 / 93.99; src/ui 92.03 lines; npm audit 0 / 0

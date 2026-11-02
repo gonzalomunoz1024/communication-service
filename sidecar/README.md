@@ -27,17 +27,91 @@ Pick one. The team's own manifests do not change in the first two.
 
 | Path | What the team does |
 | --- | --- |
-| **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap with `CS_ENDPOINT`, `CS_TENANT`, `CS_CLUSTER` |
-| **Helm** ([deploy/helm/cs-health-sidecar](deploy/helm/cs-health-sidecar)) | adds the library chart as a dependency, `{{ include "cs-health-sidecar.container" . }}` under `containers`, and `csHealthSidecar.endpoint` / `.tenant` in values |
-| **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | pastes the container block |
+| **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap in the app's namespace with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER` ([example](deploy/kustomize/example)) |
+| **Helm** ([deploy/helm/cs-health-sidecar](deploy/helm/cs-health-sidecar)) | adds the library chart as a dependency, one `include` line under `containers` and `csHealthSidecar.endpoint` / `.tenant` in values (the three pieces below the table) |
+| **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | applies the `cs-health-sidecar` ConfigMap at the top of that file in the app's namespace, with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER`, and pastes the container block into its Deployment |
+
+With Helm the consuming chart gets these three pieces, the same as the comment in the chart's
+[`_container.tpl`](deploy/helm/cs-health-sidecar/templates/_container.tpl):
+
+```yaml
+# Chart.yaml
+dependencies:
+  - name: cs-health-sidecar
+    version: 1.0.0
+    repository: https://charts.example.com/platform   # where the platform team publishes the chart
+
+# templates/deployment.yaml, under spec.template.spec.containers
+      containers:
+        - name: my-app
+          image: registry.example.com/my-team/my-app:1.4.2
+        {{- include "cs-health-sidecar.container" . | nindent 8 }}
+
+# values.yaml
+csHealthSidecar:
+  endpoint: https://communication.apps.example.com
+  tenant: retail
+```
+
+`| nindent 8` starts the sidecar container on a new line and puts every line of it at column 8,
+where the other items of `containers` start in a Deployment laid out as above; if your template
+indents the list differently, use the column of its `-`. An `include` without it, on its own line,
+puts only the container's first line at that column: `helm template` and `helm lint` still pass,
+but the rest of the container becomes keys of the Deployment's `spec`, which `kubeconform -strict`
+rejects (`additionalProperties 'env', 'image', … not allowed`).
+
+Whichever path, the two values every team needs are `CS_ENDPOINT` (the communication service's
+Route, e.g. `https://communication.apps.example.com`) and `CS_TENANT`: the tenant id the service
+groups notices under, the same value the dependent systems pass as `/v1/feed?tenantId=`. Tenants
+are assigned by the communication-service owners when a team is onboarded; ask them for yours
+rather than inventing one, because a notice under an unknown tenant reaches nobody.
+
+The chart is a Helm *library* chart: `helm template` on it alone fails by design ("library
+charts are not installable"). Render it through the consuming chart (`helm template my-app ./my-app`
+after adding the dependency and the `include`), which is also where `helm lint` runs. `helm lint`
+does not notice an `include` at the wrong indentation;
+`helm template my-app ./my-app | kubeconform -strict` does.
 
 On OpenShift 4.16+ (Kubernetes 1.29+) prefer the native sidecar form (an init container with
 `restartPolicy: Always`): it starts before the app, stops after it, and never keeps a Job
-alive. Both Kustomize and Helm offer it (`add-native-sidecar.yaml`,
-`cs-health-sidecar.initContainer`).
+alive. Both Kustomize and Helm offer it: the
+[`deploy/kustomize/component-native`](deploy/kustomize/component-native) component (a
+strategic-merge patch, so init containers the app already has are kept) and, with Helm,
+`cs-health-sidecar.initContainer` in place of the `containers` line:
+
+```yaml
+# templates/deployment.yaml, under spec.template.spec.initContainers
+      initContainers:
+        {{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
+```
 
 A mutating admission webhook that injects the container on a single pod annotation is the
 planned next step; the container and its configuration stay the same.
+
+## Image
+
+`registry.example.com/platform/health-sidecar:1.0.0` in the snippets is a placeholder: there is no
+public image. The platform team builds it once from this directory (see [Build](#build)) and pushes
+it to the organisation's registry, and every team points the snippet at that image:
+
+```yaml
+# Kustomize: in the app's kustomization.yaml, next to components:
+images:
+  - name: registry.example.com/platform/health-sidecar
+    newName: registry.apps.example.com/platform/health-sidecar
+    newTag: "1.0.0"
+```
+
+```yaml
+# Helm: in the consuming chart's values.yaml
+csHealthSidecar:
+  image:
+    repository: registry.apps.example.com/platform/health-sidecar
+    tag: "1.0.0"
+```
+
+For plain YAML, edit the `image:` line of the pasted container block. Pin a tag; the snippets use
+`imagePullPolicy: IfNotPresent`.
 
 ## How it finds the app
 
@@ -67,16 +141,46 @@ management.endpoint.health.show-details: always
 
 - Every 15 s (`CS_INTERVAL`) it probes; a non-UP answer is probed once more after 2 s before it
   counts, so a GC pause or a restart in progress is not an outage.
-- It sends a report when the status (or the set of failing components) changes, and a
-  heartbeat every 30 s (`CS_HEARTBEAT`) otherwise. 1,000 pods are about 33 requests/s.
+- What is sent when:
+  - a change of the status, of the components that are not UP or of the message is sent at once;
+  - while the service counts the report as DOWN or DEGRADED, it is sent after every probe: a
+    status other than UP and UNKNOWN (DOWN, a degraded status), or UP with a failing component,
+    nested ones included (DOWN, `OUT_OF_SERVICE` or another word such as `WARN`), which the
+    service classifies as DEGRADED. Its `failureThreshold` of consecutive observations is then
+    reached one probe interval after the first failure, not one heartbeat later;
+  - an UP report whose components are all UP (or UNKNOWN), and an UNKNOWN report, are repeated
+    only as a heartbeat every 30 s (`CS_HEARTBEAT`). The service ignores UNKNOWN, so a pod that
+    never becomes UP costs no more requests than a healthy one.
+
+  1,000 healthy pods, or 1,000 that never become UP, are about 33 requests/s; 1,000 failing
+  ones about 67.
 - Until the app has answered UP once, and for at most 5 minutes (`CS_STARTUP_GRACE`), it
   reports UNKNOWN, which the service ignores: slow starts and rolling deploys never open notices.
-  A pinned target (`CS_PORT`) that never answers UP stays UNKNOWN after that, with a message
-  pointing at the configuration, because a wrong port is far more likely than an outage.
+  The same applies to a service that boots unhealthy (its endpoint answers but never UP): it is
+  invisible for the whole grace, then its real status flows. A pinned target (`CS_PORT`) that
+  never answers UP stays UNKNOWN after that, with a message pointing at the configuration,
+  because a wrong port is far more likely than an outage.
+- Once the app has been UP, an app that stops listening (crashed, crash-looping, killed by its
+  liveness probe) is DOWN, reported as `app is not listening (last target …)` from the probe
+  that finds its port gone and on every probe after it, until it listens again; it is then
+  rediscovered and reported UP. (A pinned `CS_PORT` is never dropped, so its report keeps the
+  probe's own error, e.g. `connection refused`.)
 - On SIGTERM it sends one last report with `instance.leaving: true`, so the pod drops out of
   the service's rollup at once instead of looking dead for the staleness window (90 s).
-- If the communication service is unreachable it keeps only the latest status and retries
-  with exponential backoff up to 60 s. The app never depends on the sidecar.
+- If a report does not get through (the service is unreachable, times out, or answers 5xx, 408,
+  409 or 429), the sidecar keeps only the latest status and tries again at the first probe after
+  a step of 1 s, then 2, 4, 8, 16 and 30 s, each step less up to 20 % at random. When the next
+  probe would come more than 30 s after the failed attempt, it probes and tries at the end of the
+  step instead, so attempts are never more than 30 s apart. The first report that gets through
+  starts the steps again at 1 s. The app never depends on the sidecar.
+- The 30 s cap and `CS_HEARTBEAT` decide how long the service can go without hearing from a pod
+  that is fine. When the service goes away, the pod's last accepted report is at most one
+  heartbeat old, rounded up to the next probe (30 to 36 s with the defaults); once the service is
+  back, the pod's next attempt comes within 30 s. The service calls a pod silent after 90 s
+  without a report (`instance-stale-after-seconds`), and a service whose pods are all silent is
+  DOWN, so keep `CS_HEARTBEAT` + 30 s well below that window: with the defaults an outage of the
+  service shorter than 24 s cannot make a healthy pod look silent, and after a longer one every
+  pod is heard from again within 30 s of the service's return.
 
 The report body is Actuator's vocabulary plus the instance:
 
@@ -90,32 +194,123 @@ The report body is Actuator's vocabulary plus the instance:
 }
 ```
 
+The service reads the status words, overall and per component, the same way the sidecar does;
+the one list of them is in the service's README under
+[Health monitoring (automated publishing)](../README.md#health-monitoring-automated-publishing).
+
 `X-Client-Id` carries `CS_CLIENT_ID` (defaults to the service name).
 
 ## Configuration
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `CS_ENDPOINT` | required | communication service base URL |
-| `CS_TENANT` | required | tenant the service belongs to |
-| `CS_SERVICE` | `app.kubernetes.io/name` label (set by the snippets), else derived from the pod name | service name in reports |
+| `CS_ENDPOINT` | required | communication service base URL (the Route), `http://` or `https://` |
+| `CS_TENANT` | required | tenant id the notices are published under: the value dependent systems use on `/v1/feed?tenantId=`, assigned by the communication-service owners |
+| `CS_SERVICE` | `app.kubernetes.io/name` label (set by the snippets), else derived from the pod name | service name in reports; one monitor per (tenant, service) |
 | `CS_CLIENT_ID` | `CS_SERVICE` | `X-Client-Id` header (the repository name) |
-| `CS_CLUSTER` | empty | cluster name in the instance |
+| `CS_PUBLISHER` | `health-sidecar` | publisher name the auto-registered monitor and its notices carry |
+| `CS_CLUSTER` | empty | cluster name in the instance (optional) |
 | `CS_PROBE` | `auto` | `auto`, `actuator`, `http` or `tcp` |
 | `CS_PORT`, `CS_PATH`, `CS_SCHEME` | discovered | pin the target; `CS_PORT` is required for a non-auto mode |
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
 | `CS_IGNORE_PORTS` | `15000-15099` | ports discovery skips, e.g. `15000-15099,9090` |
-| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes |
-| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `5s` | per probe / per report |
+| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component, or UNKNOWN (a DOWN or degraded report is sent every probe). A failed send is retried at most 30 s apart; keep `CS_HEARTBEAT` + 30 s well below the service's 90 s staleness window. See [What it reports and when](#what-it-reports-and-when) |
+| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included; what a report gets while the service's own database is down is described below the table |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
-| `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |
+| `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts; `0` turns it off |
 | `CS_LISTEN` | `:9465` | the sidecar's own `/healthz` and `/status` |
+| `CS_LOG_LEVEL` | `info` | lowest level logged: `debug`, `info`, `warn` or `error`; `debug` adds a `reported` line for every report sent, heartbeats and repeats included (see [Debugging](#debugging-my-service-does-not-show-up)) |
 | `CS_CA_FILE` | empty | extra PEM CA bundle for the endpoint (an internal CA); the image carries the UBI bundle |
-| `CS_INSECURE_SKIP_VERIFY` | `false` | skip TLS verification to the endpoint (local experiments only) |
+| `CS_INSECURE_SKIP_VERIFY` | `false` | skip TLS verification to the endpoint (local experiments only): `true` or `false`, also `1`/`0`, `yes`/`no`, `on`/`off` in any case |
+| `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | unset | proxy for the reports, chosen as Go's `net/http` does (`HTTPS_PROXY` for an `https://` endpoint, `HTTP_PROXY` for `http://`, the lower-case names too; hosts listed in `NO_PROXY` are reached directly); the probes to the app never use a proxy. A cluster-wide proxy injected into the pod's environment carries the reports: add the endpoint's host to `NO_PROXY` when it must not |
 | `POD_NAME`, `POD_NAMESPACE`, `NODE_NAME`, `CS_VERSION`, `CS_INSTANCE_ID` | Downward API | instance identity |
 
-`GET :9465/status` shows the discovered target, the last probe result, the last report sent and
-the last send error, which is the first place to look when a service does not show up.
+While the communication service cannot reach its own database, what a report gets depends on how
+the database fails. One that refuses connections (stopped, nothing listening) makes the service
+answer `503 {"error":"database unavailable"}` after its 5 s `server-selection-timeout`, inside the
+report timeout, so `sendError` names that cause. One that hangs (a frozen process, a network black
+hole) holds the service's answer for its 15 s `read-timeout` plus a retried read, about 20 s, so a
+report sent then ends at the report timeout with `context deadline exceeded` in `sendError` and is
+retried with the backoff like any failed send; once the service's driver has given up on that
+database, later reports get the 503 after 5 s again. Either way the app is unaffected and the
+reports get through once the database is back.
+
+A value the sidecar cannot use (a required variable missing, an unknown mode, scheme or log
+level, a duration, port or boolean it cannot read, a timeout or `CS_HEARTBEAT` of 0 or less, a
+negative `CS_RETRY_DELAY` or `CS_STARTUP_GRACE`) stops it at start with exit code 2 and one
+ERROR line, `invalid configuration`, that names every such variable at once; a `CS_CA_FILE` it
+cannot read stops it the same way, as `cannot build report client`.
+
+`GET :9465/status` shows the discovered target, the last report composed, whether or not it was
+sent (one inside the heartbeat window is not), when the service last accepted or rejected a
+report, and the last send error, which is the first place to look when a service does not show up.
+
+## Debugging: "my service does not show up"
+
+The image has no shell or curl, so read the sidecar from outside the pod:
+
+```bash
+oc logs <pod> -c health-sidecar                 # JSON lines: target found, reported (each change), report failed, report delivered again
+oc port-forward <pod> 9465:9465 &
+curl -s localhost:9465/status | jq .
+```
+
+A `reported` line is logged at INFO when the status, the failing components or the message
+change (UP → DOWN, DOWN → UP, a new cause), so at the default level a dead app shows as one DOWN
+line and then its recovery. The sends in between (heartbeats, and the sends repeated after every
+probe while the report is DOWN or degraded) are logged at DEBUG: set `CS_LOG_LEVEL=debug` to see
+every send. With Kustomize or the plain YAML add it to the `cs-health-sidecar` ConfigMap. With
+Helm add it to `csHealthSidecar.extraEnv`, a list of entries shaped like a container's `env` (a map
+such as `CS_LOG_LEVEL: debug` there fails `helm template`):
+
+```yaml
+# values.yaml of the consuming chart, next to endpoint and tenant
+csHealthSidecar:
+  extraEnv:
+    - name: CS_LOG_LEVEL
+      value: debug
+```
+
+The container reads it when it starts, so restart the pods (`oc rollout restart deployment/<name>`).
+
+When sends fail (`report failed; will retry` at WARN, the next step in `in`) or are rejected
+(`report rejected` at ERROR), the first report the service accepts again is logged at INFO as
+`report delivered again`, whatever its status, with the `status`, the number of `failedAttempts`
+and how long they lasted (`failingFor`), so the log shows when an outage of the service is over.
+
+`/status` answers with:
+
+| Field | Meaning |
+| --- | --- |
+| `version`, `service`, `tenant`, `instance` | what this sidecar is: its build version and the service, tenant and pod name it reports under; the first check when reports land under the wrong name |
+| `target` | where the app is probed; absent while discovery is still running |
+| `lastTarget` | the last target probed; kept while `target` is absent because the app stopped listening |
+| `upSeen` | whether the app has answered UP since the sidecar started (before that, reports are UNKNOWN) |
+| `lastReport` | the last report composed (status, components, message, instance) |
+| `lastSendAt`, `reportsSent` | when the service last accepted or rejected (400, 401 …) a report, and how many reports it accepted; `lastSendAt` is absent until the first such answer |
+| `sendError` | why the last send failed (`connection refused`, TLS, 401, 400 …); absent while sends succeed |
+
+These names are pinned by `TestStatusJSONMatchesTheDocumentedContract` in `internal/agent`.
+
+On the service side, with the same tenant:
+
+```bash
+curl -s -H 'X-Client-Id: <your repo>' "$CS_ENDPOINT/v1/health/monitors?tenantId=<tenant>"   # the monitor, streaks, open notice
+curl -s -H 'X-Client-Id: <your repo>' "$CS_ENDPOINT/v1/health/monitors/<monitorId>/instances" # every pod that reported
+```
+
+The usual causes, in order:
+
+1. `sendError` is set: wrong `CS_ENDPOINT`, a Route that needs an internal CA (`CS_CA_FILE`), an
+   egress policy, or a proxy taken from the environment (`proxyconnect …` in `sendError`; see
+   `NO_PROXY` in the configuration table); the app is unaffected, the sidecar retries with backoff.
+2. Reports arrive but under another tenant: `CS_TENANT` differs from the one the consumers read.
+3. `upSeen` is false: the app has not answered UP yet; during `CS_STARTUP_GRACE` the service
+   ignores the UNKNOWN reports (see the previous section). If `target` is empty after the grace,
+   nothing in the pod answered any health path: set `CS_PORT` (and `CS_PATH`).
+4. The sidecar never started (no logs, the pod in `CreateContainerConfigError`): the
+   `cs-health-sidecar` ConfigMap is missing from the app's namespace (Kustomize and plain YAML);
+   `oc describe pod <pod>` names it.
 
 ## Build
 
@@ -123,11 +318,40 @@ the last send error, which is the first place to look when a service does not sh
 cd sidecar
 go test ./...
 go build -ldflags="-s -w -X main.version=1.0.0" -o health-sidecar ./cmd/health-sidecar
-podman build -t registry.example.com/platform/health-sidecar:1.0.0 --build-arg VERSION=1.0.0 .
+podman build -t registry.example.com/platform/health-sidecar:1.0.0 \
+  --build-arg VERSION=1.0.0 --build-arg REVISION=$(git rev-parse HEAD) .
 ```
 
-No dependencies outside the Go standard library. To try it on a laptop against a local
-communication service and a local app on port 8080:
+`VERSION` becomes the binary's version (the `sidecar` field of every report, the `User-Agent`,
+`/status`) and the image's `org.opencontainers.image.version` label; `REVISION` becomes
+`org.opencontainers.image.revision`, so a registry UI or a scanner can tell builds apart.
+
+No dependencies outside the Go standard library. The module needs Go 1.27.3 or later (`go 1.27.3`
+in `go.mod`): older releases carry four HIGH vulnerabilities in standard-library packages the
+sidecar uses (CVE-2026-111943 in `crypto/x509`, CVE-2026-78667 and CVE-2026-78669 in `net/http`,
+CVE-2026-97031 in `crypto/tls`). The image builds with `GOTOOLCHAIN=local`, so a builder with an
+older Go stops the build (`go.mod requires go >= 1.27.3`) instead of producing a vulnerable binary;
+`go test ./...` on a laptop with an older Go downloads Go 1.27.3 through the module proxy.
+
+The default builder is the upstream `golang:1.27` image (`docker.io/library/golang:1.27`). Red Hat had
+not published `ubi9/go-toolset:1.27` when this was written: the first CI run, on 2026-11-02, got "not
+found" for it. Only the static binary and the CA bundle leave the build stage; the image itself is UBI
+micro. Once Red Hat ships Go 1.27.3 or later,
+`--build-arg GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.27` builds with it unchanged: the
+build stage takes the CA bundle from Debian's path or UBI's, whichever the builder has.
+
+The image runs on `registry.access.redhat.com/ubi9/ubi-micro:9.8`, UBI micro on the newest RHEL 9
+minor. Red Hat stops rebuilding a minor's tag once the next minor ships, so the tag has to move with
+the releases: `9.5`, the default until 2026-11-02, failed CI's image scan with eight HIGH findings in
+`libacl`, `libcap` and `pcre2` that 9.8 fixes. When RHEL 9.9 ships, change the tag here and in the
+`Dockerfile`, or pass `--build-arg BASE_IMAGE=…` to try it first.
+
+The tests under `deploy/` render the Kustomize snippets with `kustomize`, render the Helm `include`
+lines this README prints, pasted into a consuming chart, with `helm`, and validate every form with
+`kubeconform`. Without these tools on `PATH` they skip on a laptop; when `CI` is set (as GitHub
+Actions does) a missing tool fails the test naming it, so the CI image must install all three.
+
+To try it on a laptop against a local communication service and a local app on port 8080:
 
 ```bash
 CS_ENDPOINT=http://localhost:8081 CS_TENANT=retail CS_SERVICE=demo CS_PORT=8080 ./health-sidecar

@@ -1,5 +1,5 @@
 # Appends the sidecar container. On OpenShift 4.16+ you may prefer the native sidecar form
-# (an init container with restartPolicy: Always), see add-native-sidecar.yaml.
+# (an init container with restartPolicy: Always): use the ../component-native component instead.
 - op: add
   path: /spec/template/spec/containers/-
   value:

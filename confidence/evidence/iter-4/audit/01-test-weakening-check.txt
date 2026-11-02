@@ -1,0 +1,154 @@
+# test-weakening check (auditor, iteration 4) 2026-11-02T12:02:02Z, HEAD 42b38e8
+
+### 1. commits in 6c15715..1cd3f13
+total: 39; subject 'Fix G-4-': 35
+  non-fix commit 48d5e1d 'Summarise iteration 3: audited scores, what changed, what kept them un': files outside confidence/: 0
+  non-fix commit 52fa6b8 'Record the iteration-3 audit and its evidence': files outside confidence/: 0
+  non-fix commit 87714a9 'Map the iteration-3 audit's proposed gaps onto the iteration-4 plan': files outside confidence/: 0
+  non-fix commit 5352449 'Record the iteration-4 fixers' before and after evidence': files outside confidence/: 0
+  later commit 42b38e8 'Record the iteration-4 verifier reports and their evidence': files outside confidence/: 0
+  later commit d10369b 'Count iteration 4's commits right: 35 fixes, 39 in all over 6c15715': files outside confidence/: 0
+  later commit aa37365 'Describe the iteration-4 verification stack': files outside confidence/: 0
+  later commit ec4cfcb 'Record iteration 4's fixes: gap, commit, guarding test, gates on the c': files outside confidence/: 0
+
+### 2. test paths 6c15715..1cd3f13
+$ git diff --shortstat 6c15715 1cd3f13 -- <test paths>
+ 48 files changed, 1966 insertions(+), 138 deletions(-)
+deleted or renamed test files (D/R): 0
+removed non-blank lines by area:
+  src/test: 92
+  frontend/src/test: 7
+  sidecar: 26
+  e2e/tests: 12
+skip/disable/focus markers ADDED (+ lines):
+67:+    // two retries). Nothing it opens meanwhile can deliver the feed, so all along it keeps the database
+298:+  it('retries a stream the service refuses before any byte (its 503 while the database is away) with the same growing delays', () => {
+524:+		t.Skip("helm not on PATH")
+markers REMOVED (- lines):
+
+### 2. test paths 191a0c5..1cd3f13
+$ git diff --shortstat 191a0c5 1cd3f13 -- <test paths>
+ 75 files changed, 9656 insertions(+), 73 deletions(-)
+deleted or renamed test files (D/R): 0
+removed non-blank lines by area:
+  src/test: 68
+  frontend/src/test: 1
+  sidecar: 3
+  e2e/tests: 0
+skip/disable/focus markers ADDED (+ lines):
+57:+  await page.getByLabel('Details').fill('Card payments fail for about a third of requests; retries succeed.')
+574:+    // two retries). Nothing it opens meanwhile can deliver the feed, so all along it keeps the database
+2797:+  /** the browser lost the connection and retries by itself */
+2994:+  it('retries a stream the service refuses before any byte (its 503 while the database is away) with the same growing delays', () => {
+3832:+		t.Skip("kustomize not on PATH")
+4392:+		t.Skip("helm not on PATH")
+4441:+		t.Skip("helm not on PATH")
+5322:+	h.agent.Tick(ctx) // 30 s: the heartbeat retries it and it is accepted
+markers REMOVED (- lines):
+
+### 3. timeout / threshold / retry lines changed in test code and test config (6c15715..1cd3f13)
+-| `tests/07-f92-database-down.spec.ts` | F-92, F-57 | with a page on the feed, `stack.sh stop-mongo`: `GET /v1/feed` answers 503 `{"error":"database unavailable"}` within 8 s (the
++| `tests/07-f92-database-down.spec.ts` | F-92, F-57 | with a page on the feed, `stack.sh stop-mongo`: `GET /v1/feed` answers 503 `{"error":"database unavailable"}` within 8 s (the
++07's, which is from one run since it waits for the late page's retries (about 20 s more):
+-| 07 | about 25 s | the 503 waits for the 5 s database timeout, and so does the late page's own list request (its error state shows 10.5 to 11 s into the outage); the backend is r
++| 07 | about 45 s | the 503 waits for the 5 s database timeout, and so does the late page's own list request (its error state shows 10.5 to 11 s into the outage); the late page's 
+-  The service opens a notice after `failureThreshold` observations and the sidecar re-sends an
++  The service opens a notice after `failureThreshold` observations in a row and retires it after
++  `recoveryThreshold`, two each here. The sidecar probes every interval (plus up to a fifth of it at
++    // two retries). Nothing it opens meanwhile can deliver the feed, so all along it keeps the database
++    await expect.poll(() => lateStreams, { message: "the late page's stream requests during the outage", timeout: 45_000 }).toBeGreaterThanOrEqual(3)
++    await expect(late.getByText('Live', { exact: true })).toBeVisible({ timeout: 15_000 })
++    await waitFor(() => expect(f.client.feed).toHaveBeenCalledTimes(2))
++  it('retries a stream the service refuses before any byte (its 503 while the database is away) with the same growing delays', () => {
++    await waitFor(() => expect(result.current.error).toMatch(/cannot reach its database/))
++		// G-4-22: a zero timeout meant none at all, so a service or app that never answers froze the loop
++		{"CS_REPORT_TIMEOUT", "0s", "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"},
++		{"CS_PROBE_TIMEOUT", "-1s", "CS_PROBE_TIMEOUT must be more than 0 (got -1s)"},
+-// G-3-15: a report waits longer than the service's own database timeout (5 s,
+-// communication.mongo.server-selection-timeout in its application.yml): while the service
+-// instead of "context deadline exceeded". An explicit CS_REPORT_TIMEOUT still wins.
+-func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
++// the service answer 503 "database unavailable" after its server-selection-timeout (5 s), inside
++// the 10 s report timeout, so /status.sendError names that cause. One that hangs holds the call
++// for the service's read-timeout (15 s) and a retried read, about 20 s, past the report timeout,
++// only database timeout and so encoded the README's wrong claim). An explicit CS_REPORT_TIMEOUT
++func TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts(t *testing.T) {
+-	const serviceDatabaseTimeout = 5 * time.Second
+-	if cfg.ReportTimeout != 10*time.Second || cfg.ReportTimeout <= serviceDatabaseTimeout {
+-		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s: longer than the service's %v database timeout", cfg.ReportTimeout, serviceDatabaseTimeout)
++	selection := serviceTimeout(t, string(service), "server-selection-timeout")
++	read := serviceTimeout(t, string(service), "read-timeout")
++	if cfg.ReportTimeout != 10*time.Second {
++		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s", cfg.ReportTimeout)
++	if cfg.ReportTimeout <= selection {
++		t.Errorf("the %v report timeout must outlast the service's %v server-selection-timeout, or a refused database shows as a timeout instead of its 503", cfg.ReportTimeout, selectio
++	if cfg.ReportTimeout >= read {
++		t.Errorf("the README says a report to a service whose database hangs (%v read-timeout plus a retried read) ends as a timeout; with a %v report timeout it does not", read, cfg.Re
++		fmt.Sprintf("%d s `server-selection-timeout`", int(selection.Seconds())), "database unavailable",
++		fmt.Sprintf("%d s `read-timeout`", int(read.Seconds())), "context deadline exceeded",
++// serviceTimeout reads one of the communication service's database timeouts from its
++func serviceTimeout(t *testing.T, yml, key string) time.Duration {
++// G-4-22 (GAP-sidecar3-1): a timeout or heartbeat of 0 or less, or a negative retry delay or
++// CS_REPORT_TIMEOUT or CS_PROBE_TIMEOUT used to mean no timeout at all: a service or app that
++		{"CS_PROBE_TIMEOUT", "0s", "CS_PROBE_TIMEOUT must be more than 0 (got 0s)"},
++		{"CS_PROBE_TIMEOUT", "-1s", "CS_PROBE_TIMEOUT must be more than 0 (got -1s)"},
++		{"CS_REPORT_TIMEOUT", "0s", "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"},
++		{"CS_REPORT_TIMEOUT", "-5s", "CS_REPORT_TIMEOUT must be more than 0 (got -5s)"},
++		{"CS_PROBE_TIMEOUT", "500ms", func(c Config) time.Duration { return c.ProbeTimeout }, 500 * time.Millisecond},
++		{"CS_REPORT_TIMEOUT", "1s", func(c Config) time.Duration { return c.ReportTimeout }, time.Second},
+-    # timeout. Readiness logs one WARN line when the database stops answering, one INFO line when
+-    readiness-timeout: PT1S
++    # enough that the whole answer reaches a kubelet within its default probe timeout (1 s), so
++    # the probe gets the 503 instead of a timeout (with 1 s here the 503 took 1.01 s). Readiness
++    readiness-timeout: PT0.8S
++                            .block(Duration.ofSeconds(10));
++            Mono<Long> givesUp = Mono.delay(Duration.ofMillis(300)).then(Mono.error(failure));
++            time.advanceTimeBy(Duration.ofMillis(600)); // six polls: fine, three failing, fine twice
++            time.advanceTimeBy(Duration.ofMillis(200));
++    /** A kubelet's default probe timeout (timeoutSeconds: 1): an answer that takes longer is a timeout, not a 503. */
++    private static final Duration KUBELET_PROBE_TIMEOUT = Duration.ofSeconds(1);
+
+### 4. JaCoCo / coverage thresholds (build.gradle.kts) 6c15715..1cd3f13
+(empty = unchanged)
+
+### 5. playwright retries and workers at 1cd3f13
+14:  workers: 1,
+15:  retries: 0,
+16:  timeout: 120_000,
+17:  expect: { timeout: 10_000 },
+30:    timeout: 60_000,
+
+### 6. fixes.md 'Existing tests touched' (the justification list)
+## Existing tests touched (each named in the commit that touched it)
+- Backend, Spring Boot 4 (G-4-1, no assertion changed): Boot 4 moved classes, so `MongoCommunicationEventsAdapterIT`,
+  `MongoHealthInstanceRepositoryAdapterIT` and `MongoHealthMonitorRepositoryAdapterIT` (`@DataMongoTest`), `MongoClientConfigTest`,
+  `MongoReadinessIndicatorTest` (`Health`, `Status`) and `ClientIdWebFilterTest` (Jackson 3's `ObjectMapper`) change imports only;
+  `@AutoConfigureWebTestClient` on the five `@SpringBootTest` classes (`CommunicationServiceE2EIT`, `HealthMonitoringE2EIT`,
+  `OperationsEndpointsIT`, `OpenApiContractIT`, `ForcedProbeWhileTheSchedulerProbesIT`), because Boot 4 adds a `WebTestClient`
+  only with it; `MongoOutageReadinessTest` uses Boot 4's class names and `spring.mongodb.uri` (Boot 4 ignores the old key, so the
+  test would have probed localhost:27017); Jackson 3 types and constructors in `GlobalExceptionHandlerMessagesTest` and
+  `ClientIdWebFilterEdgeCasesTest`; `asText()` → `asString()` in `OpenApiContractIT` (every removed assertion line reappears with
+  the same expectation); Spring 7 renamed `PayloadTooLargeException` and `HttpStatus.PAYLOAD_TOO_LARGE` to
+  `ContentTooLargeException` and `CONTENT_TOO_LARGE` (still 413), so the four 413 assertions use the new names.
+- Backend, behaviour: `HealthMonitorUseCaseTest` (3 tests) stubbed `observation.probe`, which the use case no longer calls
+  (G-4-4); they stub `probeTarget` + `observe`, keep the same expectations and also check that the target is probed once.
+  `OperationsEndpointsIT.aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError` pinned G-3-1's "200, then the
+  stream ends", which G-4-10 replaces on purpose: renamed `…Is503BeforeAnyByteWithOneWarning`, same three failure forms and both
+  URIs, now expecting a JSON 503 and one WARN; its old assertions moved unchanged to the new
+  `aStreamWhoseDatabaseGoesAwayAfterItOpenedEndsWithOneWarningAndNoError`. `RestControllerFeedAdapterTest` stubs `head()` in a
+  `@BeforeEach` (G-4-10). `MongoCommunicationEventsAdapterTest` loses a comment that a new test made untrue (G-4-9).
+  `OpenApiContractIT` gains assertions (G-4-11, G-4-12). `FakeActuatorController` gains a 3 s path (G-4-4).
+- Frontend (G-4-17): two `stream.test.ts` tests advance `STREAM_SETTLE_MS` after `open()` (they treated a bare open as a working
+  stream, the rule the gap removes); `OutageFeed.test.tsx` "says the service cannot reach its database for its own 503" asserted
+  *Live* next to the database error, which was the defect (UX-42 residual); it now asserts *Service degraded* and no *Live*.
+- Sidecar: `TestGoModAndDockerfileAgreeOnTheGoLine` keeps its rule (go.mod names the patch floor, the image tag the minor line)
+  and also checks `GOTOOLCHAIN=local` and the README (G-4-2); `TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout` became
+  `TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts`, keeps its assertions and reads the service's timeouts from
+  `application.yml` (G-4-23); `TestRunRejectsAnUnusableValueWithExit2` gains two rows (G-4-22); `renderConsumingChart` takes
+  optional values files (G-4-26); `TestStatusWordsAreTrimmedLikeTheService` keeps its five rows and gains five (G-4-16).
+- E2E: spec 07 extended, no assertion changed or loosened (G-4-30), with `markDocument()` split out of `openFeed()` in
+  `helpers.ts`; spec 03 a comment (G-4-29); spec 01's F-09 now pins `{error, suggestedExternalRef}` instead of `{error}` (G-4-11,
+  stronger: the old body fails it).
+No test was deleted, skipped or given a wider tolerance.
+
+## Deliberate behaviour changes (product-visible)

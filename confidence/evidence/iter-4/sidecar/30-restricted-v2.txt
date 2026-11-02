@@ -1,0 +1,37 @@
+### image: User=1001 Entrypoint=["/usr/local/bin/health-sidecar"] Exposed={"9465/tcp":{}}
+### --user image default
+  running=true healthz=200 status={"last":"UP","reportsSent":1,"sendError":null}
+  Uid: 1001 1001 1001 1001|Gid: 0 0 0 0|Groups: 0 |VmRSS: 8296 kB|Threads: 8|CapInh: 0000000000000000|CapPrm: 0000000000000000|CapEff: 0000000000000000|CapBnd: 0000000000000000|CapAmb: 0000000000000000|NoNewPrivs: 1|Seccomp: 2
+  rootfs: overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daem; fds:  1 /dev/null, 1 /sys/fs/cgroup/cpu/cpu.cfs_period_us, 1 /sys/fs/cgroup/cpu/cpu.cfs_quota_us, 1 anon_inode:[eventfd], 1 anon_inode:[eventpoll], 2 pipe:[N], 2 socket:[N]
+### --user 4242:0
+  running=true healthz=200 status={"last":"UP","reportsSent":1,"sendError":null}
+  Uid: 4242 4242 4242 4242|Gid: 0 0 0 0|Groups: 0 |VmRSS: 8524 kB|Threads: 8|CapInh: 0000000000000000|CapPrm: 0000000000000000|CapEff: 0000000000000000|CapBnd: 0000000000000000|CapAmb: 0000000000000000|NoNewPrivs: 1|Seccomp: 2
+  rootfs: overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daem; fds:  1 /dev/null, 1 /sys/fs/cgroup/cpu/cpu.cfs_period_us, 1 /sys/fs/cgroup/cpu/cpu.cfs_quota_us, 1 anon_inode:[eventfd], 1 anon_inode:[eventpoll], 2 pipe:[N], 2 socket:[N]
+### --user 65534:65534
+  running=true healthz=200 status={"last":"UP","reportsSent":1,"sendError":null}
+  Uid: 65534 65534 65534 65534|Gid: 65534 65534 65534 65534|Groups: 65534 |VmRSS: 8292 kB|Threads: 8|CapInh: 0000000000000000|CapPrm: 0000000000000000|CapEff: 0000000000000000|CapBnd: 0000000000000000|CapAmb: 0000000000000000|NoNewPrivs: 1|Seccomp: 2
+  rootfs: overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daem; fds:  1 /dev/null, 1 /sys/fs/cgroup/cpu/cpu.cfs_period_us, 1 /sys/fs/cgroup/cpu/cpu.cfs_quota_us, 1 anon_inode:[eventfd], 1 anon_inode:[eventpoll], 2 pipe:[N], 2 socket:[N]
+### --user 1000660000:0
+  running=true healthz=200 status={"last":"UP","reportsSent":1,"sendError":null}
+  Uid: 1000660000 1000660000 1000660000 1000660000|Gid: 0 0 0 0|Groups: 0 |VmRSS: 8464 kB|Threads: 8|CapInh: 0000000000000000|CapPrm: 0000000000000000|CapEff: 0000000000000000|CapBnd: 0000000000000000|CapAmb: 0000000000000000|NoNewPrivs: 1|Seccomp: 2
+  rootfs: overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daem; fds:  1 /dev/null, 1 /sys/fs/cgroup/cpu/cpu.cfs_period_us, 1 /sys/fs/cgroup/cpu/cpu.cfs_quota_us, 1 anon_inode:[eventfd], 1 anon_inode:[eventpoll], 2 pipe:[N], 2 socket:[N]
+### --user 1000700123:1000700123
+  running=true healthz=200 status={"last":"UP","reportsSent":1,"sendError":null}
+  Uid: 1000700123 1000700123 1000700123 1000700123|Gid: 1000700123 1000700123 1000700123 1000700123|Groups: 1000700123 |VmRSS: 8276 kB|Threads: 8|CapInh: 0000000000000000|CapPrm: 0000000000000000|CapEff: 0000000000000000|CapBnd: 0000000000000000|CapAmb: 0000000000000000|NoNewPrivs: 1|Seccomp: 2
+  rootfs: overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daem; fds:  1 /dev/null, 1 /sys/fs/cgroup/cpu/cpu.cfs_period_us, 1 /sys/fs/cgroup/cpu/cpu.cfs_quota_us, 1 anon_inode:[eventfd], 1 anon_inode:[eventpoll], 2 pipe:[N], 2 socket:[N]
+### service view: 5 of 5 monitors UP (1 of 1 pod UP)
+### strace -f of every thread of the 1000660000:0 sidecar for 8 s (file, write, network calls)
+  calls:  2 --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=1, si_uid=1000660000} ---, 3 connect, 3 socket, 5 write
+  file-path calls (open/stat/mkdir/unlink...): 0
+  errors EACCES/EPERM/EROFS: 0
+  write targets:  2 8, 3 9 (fd -> 8=anon_inode:[eventfd] 9= )
+### no shell in the image
+OCI runtime exec failed: exec failed: unable to start container process: exec: "sh": executable file not found in $PATH
+  docker exec exit 127
+docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: "/bin/sh": stat /bin/sh: no such file or directory
+  docker run --entrypoint /bin/sh exit 127
+### --network none: serves /healthz in its own namespace, reports fail
+  /healthz via nsenter: ok
+ (HTTP 200)
+  /status sendError: post http://172.17.0.1:19300/v1/health/reports: Post "http://172.17.0.1:19300/v1/health/reports": dial tcp 172.17.0.1:19300: connect: network is unreachable
+end 10:45:29.805

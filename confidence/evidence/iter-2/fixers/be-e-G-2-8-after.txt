@@ -1,0 +1,4 @@
+# G-2-8 after: same command with FeedUseCase stamping the head read before the query; exit 0
+
+15:BUILD SUCCESSFUL in 12s
+JUnit XML: FeedUseCaseTest tests=11 failures=0; MongoCommunicationEventsAdapterTest tests=10 failures=0

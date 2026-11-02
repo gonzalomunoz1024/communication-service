@@ -1,0 +1,15 @@
+{"time":"2026-11-02T02:00:04.011381877Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter1","service":"app2","tenant":"e2e1-pod2","instance":"app2-5d4c7b6a9-zzzzz","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T02:00:04.044232021Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-02T02:00:12.911716655Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T02:00:12.932416429Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T02:00:15.961141633Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T02:00:15.984150208Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+{"time":"2026-11-02T02:00:24.299488107Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T02:00:24.328320576Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T02:00:33.553886621Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter1","service":"app2","tenant":"e2e1-pod2","instance":"app2-5d4c7b6a9-zzzzz","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T02:00:33.556599002Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T02:00:33.581265844Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T02:00:43.129468899Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T02:00:43.150064646Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+{"time":"2026-11-02T02:00:45.550929554Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8081/actuator/health","status":"UP"}
+{"time":"2026-11-02T02:00:45.57100476Z","level":"INFO","msg":"reported","status":"UP","message":""}

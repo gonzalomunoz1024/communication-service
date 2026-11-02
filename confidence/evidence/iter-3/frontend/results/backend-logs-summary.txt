@@ -1,0 +1,77 @@
+# private backends (iteration-3 jar): ERROR / WARN line counts, then backend C's WARN lines (Mongo outages of v7, v7d, v7e), cut at 190 chars
+backend :19200  lines=240  ERROR=0  WARN=6  stack-trace lines=0
+backend :19201  lines=28  ERROR=0  WARN=2  stack-trace lines=0
+backend :19202  lines=160  ERROR=0  WARN=82  stack-trace lines=0
+
+## backend C (:19202) WARN lines by logger
+   25  .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.D
+   16  c.a.c.config.GlobalExceptionHandler : GET /v1/feed -> 503, database unavailable: Timed
+   13  c.a.c.p.application.StatusSweepUseCase : status sweep skipped: database unavailable: Time
+   12  c.a.c.h.application.HealthSweepUseCase : health sweep skipped: database unavailable: Time
+   12  c.a.c.f.a.i.RestControllerFeedAdapter : feed stream closed: database unavailable: Timed 
+    1  o.s.core.events.SpringDocAppInitializer : SpringDoc /v3/api-docs endpoint is enabled by de
+    1  o.s.core.events.SpringDocAppInitializer : SpringDoc /swagger-ui.html endpoint is enabled b
+    1  c.a.c.config.GlobalExceptionHandler : POST /v1/communications/{id}/retire -> 503, data
+    1  c.a.c.config.GlobalExceptionHandler : POST /v1/communications -> 503, database unavail
+
+## backend C WARN/INFO readiness and stream lines (first 60)
+2026-11-02T06:50:44.063 WARN o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-do
+2026-11-02T06:50:44.067 WARN o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.sw
+2026-11-02T07:06:37.679 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:06:37.736 WARN c.a.c.config.GlobalExceptionHandler      : POST /v1/communications/96858a4b-2d99-41f3-b9ec-67a6c7c966d8/retire -> 503, database unavailable: Timed out while wait
+2026-11-02T07:06:37.803 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:06:42.681 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:06:42.805 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:06:42.864 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:06:47.683 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:06:47.808 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:06:47.955 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:06:52.685 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:06:52.810 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:06:57.687 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:06:57.811 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:02.689 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:02.813 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:07.692 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:07.816 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:09.553 WARN c.a.c.config.GlobalExceptionHandler      : POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that matches WritableServer
+2026-11-02T07:07:12.694 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:12.818 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:14.626 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:07:14.648 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:07:17.695 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:17.820 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:19.640 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:07:22.662 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:07:22.698 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:22.824 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:24.656 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:07:27.700 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:27.826 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:30.682 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:07:30.704 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:07:32.702 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:32.828 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:37.704 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:07:37.830 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:07:38.702 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:07:38.718 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:09:18.086 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:09:18.138 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:09:18.143 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:09:18.177 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:09:23.147 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:09:23.179 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:09:23.190 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:09:26.159 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:09:28.149 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:09:28.181 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:09:28.204 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:09:33.157 WARN c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:09:33.190 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:09:34.188 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:09:34.232 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec
+2026-11-02T07:09:38.159 WARN c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSele
+2026-11-02T07:09:38.191 WARN .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a serve
+2026-11-02T07:09:42.213 WARN c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelect
+2026-11-02T07:09:42.252 WARN c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelec

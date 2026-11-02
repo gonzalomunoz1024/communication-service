@@ -1,0 +1,52 @@
+# G-2-4 after: same tests and the same reproduction against the jar built from this worktree (commit 5ffc0bc (built as a1e8724 before the commit was amended for README wording only; code identical)). 503 {"error":"database unavailable"} within ~5 s, readiness DOWN in 5 s, one WARN per skipped sweep, 0 ERROR lines.
+
+## 1. Regression tests: ./gradlew test --tests '*GlobalExceptionHandlerTest' --tests '*HealthSweepUseCaseTest' --tests '*StatusSweepUseCaseTest' --tests '*MongoClientConfigTest' integrationTest --tests '*OperationsEndpointsIT'
+BUILD SUCCESSFUL in 35s
+JUnit XML: GlobalExceptionHandlerTest 2/2, MongoClientConfigTest 2/2, HealthSweepUseCaseTest 13/13, StatusSweepUseCaseTest 5/5, OperationsEndpointsIT 6/6 (0 failures, 0 skipped)
+
+## 2. Runtime reproduction: scratchpad/fixer-bee/g24-repro.sh with the fixed jar, then a start with Mongo unreachable
+# G-2-4 (after): jar=communication-service-bee-g24.jar, backend :18110, private mongod :18119, db fixbee_after; curl -w '%{http_code} after %{time_total}s'
+## Mongo up: readiness -> 200 after 7s
+POST /v1/communications -> 201 after 0.335657s
+GET /v1/feed -> 200 after 0.045096s
+## mongod stopped at 03:00:42
+## Mongo down: four calls in parallel (body first, cut at 300 chars, then the curl -w line)
+{"status":"DOWN"}
+readiness -> 503 after 5.017344s
+{"status":"UP"}
+liveness -> 200 after 0.004433s
+{"error":"database unavailable"}
+GET /v1/feed -> 503 after 5.045524s
+{"error":"database unavailable"}
+POST /v1/communications -> 503 after 5.034655s
+## letting the schedulers run for 50 s more
+## backend log since the stop (03:00:42): 0 ERROR line(s), 22 WARN line(s), 80 stack-frame line(s), 164 lines in all
+21:2026-11-02T03:00:41.490Z  WARN 15714 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc
+22:2026-11-02T03:00:41.492Z  WARN 15714 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'sprin
+84:2026-11-02T03:00:48.414Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for 
+86:2026-11-02T03:00:50.945Z  WARN 15714 --- [communication-service] [8162a6cb241263a] o.s.b.a.d.m.MongoReactiveHealthIndicator : Mongo health check failed
+129:2026-11-02T03:00:50.962Z  WARN 15714 --- [communication-service] [8162a6cb241263a] c.a.c.config.GlobalExceptionHandler      : POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that matches Writab
+131:2026-11-02T03:00:50.982Z  WARN 15714 --- [communication-service] [8162a6cb241263a] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceSer
+133:2026-11-02T03:00:51.487Z  WARN 15714 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+134:2026-11-02T03:00:53.417Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+137:2026-11-02T03:00:58.421Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+139:2026-11-02T03:01:01.490Z  WARN 15714 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+140:2026-11-02T03:01:03.426Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+143:2026-11-02T03:01:08.430Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+145:2026-11-02T03:01:11.492Z  WARN 15714 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+147:2026-11-02T03:01:13.437Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+149:2026-11-02T03:01:16.509Z  WARN 15714 --- [communication-service] [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+151:2026-11-02T03:01:18.440Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+153:2026-11-02T03:01:21.513Z  WARN 15714 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+154:2026-11-02T03:01:23.444Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+157:2026-11-02T03:01:28.446Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+159:2026-11-02T03:01:31.517Z  WARN 15714 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+160:2026-11-02T03:01:33.450Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+163:2026-11-02T03:01:38.453Z  WARN 15714 --- [communication-service] [8162a6cb241263a] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for
+## mongod started again at 03:01:41
+## Mongo back: readiness -> 200 after 1s
+GET /v1/feed -> 200 after 0.030061s
+## done 03:01:46
+## startup with Mongo unreachable (after): exit code 1 after 17 s; last cause: Caused by: com.mongodb.MongoTimeoutException: Timed out while waiting for a server that matches WritableServerSelector
+
+## 3. Note: the remaining WARN+stack-trace lines in the log are Spring Boot's own MongoReactiveHealthIndicator ("Mongo health check failed", one per readiness probe); not changed here.

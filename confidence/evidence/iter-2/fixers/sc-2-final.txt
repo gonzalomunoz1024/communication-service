@@ -1,0 +1,46 @@
+# SC-2 final gate: worktree agent-ae687e524fca7976b at 6d1f7c3 (3b18b1d + three commits), 2026-11-02 ~03:04 UTC
+
+## commits (cherry-pick candidates, in order)
+e4dbeba8270ab438cab1d38c00a3e16b5082d2a8 Fix G-2-14: build with Go 1.25 and label the image with version and revision
+e558b80677a205a21e595f39d29c7ff0ff71a1c1 Fix G-2-15: fail the manifest tests in CI without the tools, pin the /status contract, test main's wiring
+6d1f7c3c7997954cb29dc61af6acc62670ce4476 Fix G-2-16: send every probe while the app is not UP, log transitions at INFO, one "not listening" message
+(git diff --stat 3b18b1d..6d1f7c3: only files under sidecar/)
+
+## go vet ./... && CI=true go test ./...   (PATH includes <scratchpad>/tools: kustomize v5.5.0, kubeconform v0.6.7;
+## host go1.24.7 with GOTOOLCHAIN=auto, so go.mod's "go 1.25" selects go1.25.0 from the module proxy)
+$ cd sidecar && CI=true go vet ./...
+vet exit=0
+$ CI=true go test -count=1 ./...
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	0.044s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	2.647s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.717s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.011s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.004s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.431s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.029s
+test exit=0
+(deploy 2.6 s = kustomize + kubeconform really ran; the same command without the tools on PATH exits 1 naming them, see sc-2-G-2-15-after.txt)
+$ gofmt -l .            -> no files
+$ go test -count=1 -race ./internal/agent/ ./cmd/health-sidecar/   -> ok, ok
+
+## docker build of health-sidecar:fix-sc2 from the committed tree (UBI registry blocked here, two build args substituted)
+$ docker build -t health-sidecar:fix-sc2 --build-arg GO_IMAGE=local/go-toolset:1.25 \
+    --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:latest \
+    --build-arg VERSION=1.0.0-fixsc2 --build-arg REVISION=6d1f7c3c7997954cb29dc61af6acc62670ce4476 sidecar/
+#5 [build 1/6] FROM docker.io/local/go-toolset:1.25     (golang:1.25 via mirror.gcr.io + the UBI CA bundle path; go1.25.14)
+#6 [stage-1 1/3] FROM gcr.io/distroless/static-debian12:latest
+#12 [build 6/6] RUN go build -ldflags="-s -w -X main.version=1.0.0-fixsc2" -o /tmp/health-sidecar ./cmd/health-sidecar
+build exit=0
+$ docker inspect --format '{{json .Config.Labels}}' health-sidecar:fix-sc2
+{"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.revision":"6d1f7c3c7997954cb29dc61af6acc62670ce4476","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar","org.opencontainers.image.version":"1.0.0-fixsc2"}
+$ docker inspect --format 'User={{.Config.User}} Size={{.Size}} Entrypoint={{.Config.Entrypoint}} Exposed={{.Config.ExposedPorts}}' health-sidecar:fix-sc2
+User=1001 Size=16319366 Entrypoint=[/usr/local/bin/health-sidecar] Exposed=map[9465/tcp:{}]
+$ go version <binary copied out of the image>
+go1.25.14
+
+## not done here
+- registry.access.redhat.com is blocked: ubi9/go-toolset:1.25 and ubi-micro were not pulled; the default Dockerfile args
+  were not exercised, only the stand-in builder with the same Go minor.
+- The shared stack (mongo7, :8080, :3000, app, sidecar, health-sidecar:ci, fakeapp:ci) was not touched; the live check in
+  sc-2-G-2-16-after.txt used a private backend on :18130 (db fixsc2_live) and containers sc2-pod/sc2-app/sc2-sidecar,
+  removed afterwards.

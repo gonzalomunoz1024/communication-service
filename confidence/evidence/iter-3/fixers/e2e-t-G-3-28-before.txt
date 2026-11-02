@@ -1,0 +1,22 @@
+## 2026-11-02T05:28:47Z G-3-28 before, at 709c4d8: e2e/ has no lint gate
+$ npm run lint
+npm error Missing script: "lint"
+npm error
+npm error Did you mean this?
+npm error   npm link # Symlink a package folder
+npm error
+npm error To see a list of scripts, run:
+exit=1
+$ grep -n lint package.json ../.github/workflows/e2e.yml
+exit=1 (no match)
+ls: cannot access 'eslint.config.*': No such file or directory
+
+## the gate this commit adds (eslint.config.mjs, npm run lint = eslint . --max-warnings 0), run against the specs as they were
+v9.39.5
+> communication-service-e2e@0.1.0 lint
+> eslint . --max-warnings 0
+/home/claude/wt-e2e-t/e2e/tests/04-f92-backend-restart.spec.ts
+  22:3  warning  Avoid having conditionals in tests  playwright/no-conditional-in-test
+✖ 1 problem (0 errors, 1 warning)
+ESLint found too many warnings (maximum: 0).
+exit=1

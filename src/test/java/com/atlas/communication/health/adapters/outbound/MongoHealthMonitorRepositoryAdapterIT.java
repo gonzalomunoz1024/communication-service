@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.boot.data.mongodb.test.autoconfigure.DataMongoTest;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
 import org.springframework.web.server.ResponseStatusException;
@@ -41,7 +41,7 @@ class MongoHealthMonitorRepositoryAdapterIT {
     void setUp() {
         adapter = new MongoHealthMonitorRepositoryAdapter(repository);
         // the entity's @CompoundIndex is created on first use in the app; make it explicit here
-        template.indexOps(HealthMonitorDocument.class).ensureIndex(new CompoundIndexDefinition(
+        template.indexOps(HealthMonitorDocument.class).createIndex(new CompoundIndexDefinition(
                 new org.bson.Document("tenantId", 1).append("service", 1))
                 .named("monitor_tenant_service_idx").unique()).block();
         repository.deleteAll().block();

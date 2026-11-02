@@ -1,0 +1,63 @@
+# e2e/ static checks (iteration 3), 2026-11-02T07:05:52Z, head e3968c4
+
+$ cd e2e && npm ci
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 113 packages, and audited 114 packages in 3s
+
+40 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+real	0m3.234s
+user	0m1.527s
+sys	0m0.970s
+
+$ npm run lint
+
+> communication-service-e2e@0.1.0 lint
+> eslint . --max-warnings 0
+
+lint exit=0
+
+$ npm run typecheck
+
+> communication-service-e2e@0.1.0 typecheck
+> tsc --noEmit
+
+typecheck exit=0
+
+$ npm audit
+found 0 vulnerabilities
+audit exit=0
+
+$ npx eslint --max-warnings 0 --stdin --stdin-filename tests/zz-lint-probe.spec.ts < lint-probe (a spec with test.only, waitForTimeout, an unawaited page.goto, a conditional expect, test.skip; linted from stdin, no file written)
+    | import { test, expect } from '@playwright/test'
+    | test.only('probe', async ({ page }) => {
+    |   await page.waitForTimeout(1000)
+    |   page.goto('/')
+    |   if (Date.now() > 0) { expect(1).toBe(1) }
+    | })
+    | test.skip('skipped', async () => {})
+
+/home/claude/communication-service/e2e/tests/zz-lint-probe.spec.ts
+  2:1   warning  Expected blank line before this statement   playwright/consistent-spacing-between-blocks
+  2:6   error    Unexpected focused test                     playwright/no-focused-test
+  3:9   warning  Unexpected use of page.waitForTimeout()     playwright/no-wait-for-timeout
+  5:3   warning  Avoid having conditionals in tests          playwright/no-conditional-in-test
+  5:25  warning  Avoid calling `expect` conditionally        playwright/no-conditional-expect
+  7:1   warning  Expected blank line before this statement   playwright/consistent-spacing-between-blocks
+  7:1   warning  Test has no assertions                      playwright/expect-expect
+  7:6   warning  Unexpected use of the `.skip()` annotation  playwright/no-skipped-test
+
+✖ 8 problems (1 error, 7 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+eslint-probe exit=1
+
+$ cd e2e/fakeapp && go vet ./... && go test -count=1 ./...
+ok  	fakeapp	0.016s
+fakeapp go vet+test exit=0
+
+installed: @playwright/test 1.63.0, eslint v9.39.5

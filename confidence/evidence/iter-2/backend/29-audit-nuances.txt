@@ -1,0 +1,58 @@
+# Audit §6 nuances re-checked (shared :8080)
+
+Checks: 11/11 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| N-1 | audit §6.1 stored vs effective (observation) | PASS | after expiresAt, before the 30 s sweep: GET by id status=ACTIVE (stored), permalink status=EXPIRED (effective), retire -> 409 {'error': 'communication 1d5bcc00-6ccc-4fb7-96a6-f36575001c5b already expired; retiring would rewrite history'}, feed items=0 |
+| N-2 | audit §6.2 push-only has no url key (observation) | PASS | keys=['createdAt', 'id', 'policy', 'service', 'state', 'tenantId', 'updatedAt', 'version']; probe -> 409 {'error': 'monitor 5fa8210d-6d6b-40dc-8b78-925ef23eaf71 is push-only (no url) and cannot be probed'} |
+| N-3 | audit §6.3 /actuator index (observation) | PASS | /actuator without client id -> 200; links=['health', 'health-path', 'self'] |
+| N-3-env | F-30 nothing else exposed | PASS | /actuator/env -> 404 |
+| N-3-beans | F-30 nothing else exposed | PASS | /actuator/beans -> 404 |
+| N-3-mappi | F-30 nothing else exposed | PASS | /actuator/mappings -> 404 |
+| N-3-logge | F-30 nothing else exposed | PASS | /actuator/loggers -> 404 |
+| N-3-metri | F-30 nothing else exposed | PASS | /actuator/metrics -> 404 |
+| N-3-info | F-30 nothing else exposed | PASS | /actuator/info -> 404 |
+| N-3-threa | F-30 nothing else exposed | PASS | /actuator/threaddump -> 404 |
+| N-3-heapd | F-30 nothing else exposed | PASS | /actuator/heapdump -> 404 |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:8080/v1/communications body={"tenantId": "vb2-nu-408b9e", "publisher": "vb2-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "short", "affectedServices": ["svc"], "expiresAt": "2026-11-02T04:09:13.012334Z"} -> 201 {"id":"1d5bcc00-6ccc-4fb7-96a6-f36575001c5b","tenantId":"vb2-nu-408b9e","publisher":"vb2-sre","type":"OUTAGE","severity":"MAJOR","title":"short","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:09:11.028502894Z","expiresAt":"2026-11-02T04:09:13.012334Z","createdAt":"2026-11-02T04:09:11.028502894Z","updatedAt":"2026-11-02T04:09:11.028502894Z","version":0
+GET http://localhost:8080/v1/communications/1d5bcc00-6ccc-4fb7-96a6-f36575001c5b body= -> 200 {"id":"1d5bcc00-6ccc-4fb7-96a6-f36575001c5b","tenantId":"vb2-nu-408b9e","publisher":"vb2-sre","type":"OUTAGE","severity":"MAJOR","title":"short","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:09:11.028Z","expiresAt":"2026-11-02T04:09:13.012Z","createdAt":"2026-11-02T04:09:11.028Z","updatedAt":"2026-11-02T04:09:11.028Z","version":0,"history":[{"at":"20
+GET http://localhost:8080/v1/feed/1d5bcc00-6ccc-4fb7-96a6-f36575001c5b body= -> 200 {"id":"1d5bcc00-6ccc-4fb7-96a6-f36575001c5b","tenantId":"vb2-nu-408b9e","publisher":"vb2-sre","type":"OUTAGE","severity":"MAJOR","title":"short","affectedServices":["svc"],"audience":"CUSTOMERS","status":"EXPIRED","startsAt":"2026-11-02T04:09:11.028Z","expiresAt":"2026-11-02T04:09:13.012Z","updatedAt":"2026-11-02T04:09:11.028Z"}
+POST http://localhost:8080/v1/communications/1d5bcc00-6ccc-4fb7-96a6-f36575001c5b/retire body={"actor": "vb2-admin"} -> 409 {"error":"communication 1d5bcc00-6ccc-4fb7-96a6-f36575001c5b already expired; retiring would rewrite history"}
+GET http://localhost:8080/v1/feed?tenantId=vb2-nu-408b9e body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+  [PASS] N-1 (audit §6.1 stored vs effective (observation)): after expiresAt, before the 30 s sweep: GET by id status=ACTIVE (stored), permalink status=EXPIRED (effective), retire -> 409 {'error': 'communication 1d5bcc00-6ccc-4fb7-96a6-f36575001c5b already expired; retiring would rewrite history'}, feed items=0
+POST http://localhost:8080/v1/health/reports body={"tenantId": "vb2-nu-408b9e", "service": "push-only", "status": "UP"} -> 202 {"id":"5fa8210d-6d6b-40dc-8b78-925ef23eaf71","tenantId":"vb2-nu-408b9e","service":"push-only","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02T04:09:13.871162721Z","lastSummary":
+GET http://localhost:8080/v1/health/monitors/5fa8210d-6d6b-40dc-8b78-925ef23eaf71 body= -> 200 {"id":"5fa8210d-6d6b-40dc-8b78-925ef23eaf71","tenantId":"vb2-nu-408b9e","service":"push-only","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02T04:09:13.871Z","lastSummary":"UP","
+POST http://localhost:8080/v1/health/monitors/5fa8210d-6d6b-40dc-8b78-925ef23eaf71/probe body= -> 409 {"error":"monitor 5fa8210d-6d6b-40dc-8b78-925ef23eaf71 is push-only (no url) and cannot be probed"}
+  [PASS] N-2 (audit §6.2 push-only has no url key (observation)): keys=['createdAt', 'id', 'policy', 'service', 'state', 'tenantId', 'updatedAt', 'version']; probe -> 409 {'error': 'monitor 5fa8210d-6d6b-40dc-8b78-925ef23eaf71 is push-only (no url) and cannot be probed'}
+GET http://localhost:8080/actuator body= -> 200 {"_links":{"self":{"href":"http://localhost:8080/actuator","templated":false},"health":{"href":"http://localhost:8080/actuator/health","templated":false},"health-path":{"href":"http://localhost:8080/actuator/health/{*path}","templated":true}}}
+  [PASS] N-3 (audit §6.3 /actuator index (observation)): /actuator without client id -> 200; links=['health', 'health-path', 'self']
+GET http://localhost:8080/actuator/env body= -> 404 {"error":"no such endpoint: GET /actuator/env (the API is documented at /swagger-ui.html)"}
+  /actuator/env -> 404
+  [PASS] N-3-env (F-30 nothing else exposed): /actuator/env -> 404
+GET http://localhost:8080/actuator/beans body= -> 404 {"error":"no such endpoint: GET /actuator/beans (the API is documented at /swagger-ui.html)"}
+  /actuator/beans -> 404
+  [PASS] N-3-beans (F-30 nothing else exposed): /actuator/beans -> 404
+GET http://localhost:8080/actuator/mappings body= -> 404 {"error":"no such endpoint: GET /actuator/mappings (the API is documented at /swagger-ui.html)"}
+  /actuator/mappings -> 404
+  [PASS] N-3-mappi (F-30 nothing else exposed): /actuator/mappings -> 404
+GET http://localhost:8080/actuator/loggers body= -> 404 {"error":"no such endpoint: GET /actuator/loggers (the API is documented at /swagger-ui.html)"}
+  /actuator/loggers -> 404
+  [PASS] N-3-logge (F-30 nothing else exposed): /actuator/loggers -> 404
+GET http://localhost:8080/actuator/metrics body= -> 404 {"error":"no such endpoint: GET /actuator/metrics (the API is documented at /swagger-ui.html)"}
+  /actuator/metrics -> 404
+  [PASS] N-3-metri (F-30 nothing else exposed): /actuator/metrics -> 404
+GET http://localhost:8080/actuator/info body= -> 404 {"error":"no such endpoint: GET /actuator/info (the API is documented at /swagger-ui.html)"}
+  /actuator/info -> 404
+  [PASS] N-3-info (F-30 nothing else exposed): /actuator/info -> 404
+GET http://localhost:8080/actuator/threaddump body= -> 404 {"error":"no such endpoint: GET /actuator/threaddump (the API is documented at /swagger-ui.html)"}
+  /actuator/threaddump -> 404
+  [PASS] N-3-threa (F-30 nothing else exposed): /actuator/threaddump -> 404
+GET http://localhost:8080/actuator/heapdump body= -> 404 {"error":"no such endpoint: GET /actuator/heapdump (the API is documented at /swagger-ui.html)"}
+  /actuator/heapdump -> 404
+  [PASS] N-3-heapd (F-30 nothing else exposed): /actuator/heapdump -> 404
+```

@@ -1,0 +1,15 @@
+23:55:36.419 before kill: UI indicator = Live probe events = [{"t":"23:55:34.939","k":"open","rs":1},{"t":"23:55:34.940","k":"snapshot","rs":1,"id":"62"}]
+23:55:36.476 SIGTERM backend A pid 19569 
+23:55:36.750 backend A refuses connections since 23:55:36.750 | java process gone: 19569
+23:55:41.768 +5s after down: UI indicator = Live | probe readyState = 1 | probe events = [{"t":"23:55:34.939","k":"open","rs":1},{"t":"23:55:34.940","k":"snapshot","rs":1,"id":"62"}]
+23:55:51.783 +15s after down: UI indicator = Live | probe readyState = 1 | probe events = [{"t":"23:55:34.939","k":"open","rs":1},{"t":"23:55:34.940","k":"snapshot","rs":1,"id":"62"}]
+23:56:06.793 +30s after down: UI indicator = Live | probe readyState = 1 | probe events = [{"t":"23:55:34.939","k":"open","rs":1},{"t":"23:55:34.940","k":"snapshot","rs":1,"id":"62"}]
+23:56:06.801 curl via proxy: edServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:55:33.837Z","createdAt":"2026-11-01T23:55:33.837Z","updatedAt":"2026-11-01T23:55:33.837Z","version":0,"history":[{"at":"2026-11-01T23:55:33.837Z","actor":"curl","action":"created (ACTIVE)"}]}}  :keepalive  :keepalive 
+ 23:56:06.807 curl direct: Z","updatedAt":"2026-11-01T23:55:33.837Z","version":0,"history":[{"at":"2026-11-01T23:55:33.837Z","actor":"curl","action":"created (ACTIVE)"}]}}  :keepalive  :keepalive  EXIT=18 at 23:56:06.505001298
+23:56:11.537 backend A back at 23:56:11.537
+23:56:16.729 +5s after restart: UI indicator = Live | sees new item = false | probe readyState = 1 | probe events = [{"t":"23:55:34.939","k":"open","rs":1},{"t":"23:55:34.940","k":"snapshot","rs":1,"id":"62"}]
+23:56:31.757 +20s after restart: UI indicator = Live | sees new item = false | probe readyState = 1 | probe events = [{"t":"23:55:34.939","k":"open","rs":1},{"t":"23:55:34.940","k":"snapshot","rs":1,"id":"62"}]
+23:56:51.783 +40s after restart: UI indicator = Live | sees new item = false | probe readyState = 1 | probe events = [{"t":"23:55:34.939","k":"open","rs":1},{"t":"23:55:34.940","k":"snapshot","rs":1,"id":"62"}]
+23:56:51.792 curl via proxy: edServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:55:33.837Z","createdAt":"2026-11-01T23:55:33.837Z","updatedAt":"2026-11-01T23:55:33.837Z","version":0,"history":[{"at":"2026-11-01T23:55:33.837Z","actor":"curl","action":"created (ACTIVE)"}]}}  :keepalive  :keepalive 
+ 23:56:51.798 curl direct: TOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:55:33.837Z","createdAt":"2026-11-01T23:55:33.837Z","updatedAt":"2026-11-01T23:55:33.837Z","version":0,"history":[{"at":"2026-11-01T23:55:33.837Z","actor":"curl","action":"created (ACTIVE)"}]}}  :keepalive  :keepalive  EXIT=18 at 23:56:06.505001298
+23:56:51.803 stream requests in backend A log after restart (Last-Event-ID attempts): ERR  x "second seq expression" errors total

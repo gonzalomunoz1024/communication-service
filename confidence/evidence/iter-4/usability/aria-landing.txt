@@ -1,0 +1,35 @@
+- banner:
+  - heading "Outage Notifications" [level=1]
+  - text: Tenant
+  - textbox "Tenant":
+    - /placeholder: acme
+  - button "Switch to dark mode"
+- main:
+  - paragraph: Enter the tenant your consumers read; the service owners assign it.
+  - tablist "Sections":
+    - tab "Feed" [selected]
+    - tab "Publish"
+  - text: Service
+  - textbox "Service":
+    - /placeholder: Any service
+  - text: Type
+  - combobox "Type":
+    - option "All types"
+    - option "Outage" [selected]
+    - option "Incident"
+    - option "Maintenance"
+    - option "Change"
+    - option "Health"
+  - text: Minimum severity
+  - combobox "Minimum severity":
+    - option "Any severity" [selected]
+    - option "Info"
+    - option "Minor"
+    - option "Major"
+    - option "Critical"
+  - switch "Live updates" [checked]
+  - status: Waiting for a tenant
+  - button "Refresh"
+  - status
+  - paragraph: Choose a tenant
+  - paragraph: The feed is per tenant. Enter one at the top of the page.

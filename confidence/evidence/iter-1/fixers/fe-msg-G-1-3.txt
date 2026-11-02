@@ -1,0 +1,35 @@
+Fix G-1-3: reopen the live stream after the browser gives up
+
+EventSource retries a dropped socket on its own, but stops for good once a
+retry is answered with anything other than 200 (service restart, proxy 502).
+The feed then showed "Reconnecting" forever while nothing reconnected.
+
+- api.ts: when the browser has given up (readyState CLOSED) the client closes
+  the source and reopens it with exponential backoff (1 s, 2 s, ... 30 s),
+  passing ?lastEventId=<highest seq seen> so the service replays the gap; a
+  successful open resets the backoff; unsubscribe cancels a pending reopen.
+  New optional onRetry(attempt, delayMs) handler, exported reconnectDelay().
+- useOutageFeed.ts: rewritten around derived state (no setState in effects);
+  exposes reconnectAttempt, reloads the page once after a recovery and keeps
+  stream updates received meanwhile (feed-state reconcile()); refresh()
+  reopens the stream immediately while it is down.
+- OutageFeed.tsx: the badge shows "Reconnecting (n)".
+- vite.config.ts: the dev proxy destroys the browser response when the
+  upstream SSE socket closes, so the browser notices a backend restart
+  instead of hanging on a half-open socket (http-proxy never ends it).
+- README: documents the reconnect behaviour.
+
+A watchdog on the 15 s keepalive comments is not possible from the page:
+EventSource does not surface comment lines, so a silently dead socket can
+only be detected at the proxy/TCP layer, which the proxy change covers in
+development.
+
+Tests: src/test/stream.test.ts (fake EventSource + fake timers: CLOSED ->
+reopen with backoff and lastEventId, CONNECTING -> no reopen, unsubscribe
+cancels), src/test/useOutageFeed.test.tsx (reconnecting/attempt/live, reload
+after recovery, refresh reopens), src/test/OutageFeed.test.tsx (badge
+"Reconnecting (3)"), src/test/feed-state.test.ts (reconcile). Against the
+previous sources 8 of the new tests fail; with the fix 7 files / 38 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

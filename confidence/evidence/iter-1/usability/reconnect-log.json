@@ -1,0 +1,108 @@
+{
+ "steps": [
+  {
+   "step": "seed",
+   "status": 201
+  },
+  {
+   "step": "before-kill",
+   "badge": "Live",
+   "cards": 1,
+   "error": false
+  },
+  {
+   "step": "a-outage",
+   "killedPid": "6341",
+   "firstReconnectingAtSec": 1,
+   "badgeSequence": [
+    "0s:Live",
+    "1s:Reconnecting",
+    "3.1s:Reconnecting (1)",
+    "4.1s:Reconnecting (2)",
+    "6.1s:Reconnecting (3)",
+    "10.1s:Reconnecting (4)",
+    "18.2s:Reconnecting (5)"
+   ],
+   "minCards": 1,
+   "errorBlockShown": false,
+   "mainTail": [
+    "Major",
+    "Outage",
+    "Updated just now",
+    "Private stack outage",
+    "priv-api",
+    "Started just now",
+    "api",
+    "Resolve"
+   ]
+  },
+  {
+   "step": "a-recovery",
+   "restartedPid": 16396,
+   "readyAfterMs": 5703,
+   "publishedDuringStatus": 201,
+   "liveAfterReadySec": 3.4,
+   "newItemAfterReadySec": 3.4,
+   "badgeSequence": [
+    "0.4s:Reconnecting (5)",
+    "3.4s:Live"
+   ]
+  },
+  {
+   "step": "a-live-after-recovery",
+   "status": 201,
+   "appearedMs": 286,
+   "appeared": true,
+   "badge": "Live"
+  },
+  {
+   "step": "b-dark-reconnecting",
+   "badge": "Live",
+   "shot": false,
+   "afterSec": 15.2,
+   "mainTail": [
+    "Outage",
+    "Updated just now",
+    "After recovery push",
+    "Started just now",
+    "api",
+    "Resolve"
+   ]
+  },
+  {
+   "step": "b-recovery",
+   "readyAfterMs": 11,
+   "liveAfterReadySec": 0
+  },
+  {
+   "step": "c-opened-while-down",
+   "badge": "Reconnecting (3)",
+   "cards": 0,
+   "error": true,
+   "mainTail": [
+    "Critical",
+    "Reconnecting (3)",
+    "Refresh",
+    "Couldn't load the feed",
+    "The service is unreachable right now. Check that communication-service is running, then try again.",
+    "Try again"
+   ],
+   "buttons": [
+    "Feed",
+    "Publish",
+    "",
+    "Refresh",
+    "Try again"
+   ]
+  },
+  {
+   "step": "c-recovery",
+   "readyAfterMs": 843,
+   "recoveredWithoutClickSec": 3,
+   "sequence": [
+    "0s:Reconnecting (3)/0cards/err",
+    "3s:Live/3cards/ok"
+   ]
+  }
+ ]
+}

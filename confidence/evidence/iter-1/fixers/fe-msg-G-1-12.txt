@@ -1,0 +1,27 @@
+Fix G-1-12: move focus to the first invalid field after Publish
+
+Publishing an incomplete form rendered the errors next to their fields, far
+above the button, and left focus on the button, so on a long page nothing
+visibly happened (UX-1).
+
+- PublishOutageForm: validation faults are ordered as the fields appear;
+  the errors are flushed synchronously and focus (plus the viewport, centred)
+  moves to the first faulted field, for Severity to its selected segment, and
+  the Timing card opens first when the fault is in there. An error summary
+  ("3 fields need attention: Title (...), ...") with links that focus each
+  field renders above the Publish button, where the user is looking. Every
+  input now points at its hint/error line with aria-describedby and the
+  datetime inputs carry aria-invalid.
+- Field: `noteId` (defaults to `${htmlFor}-note`) gives the hint/error line
+  an id for aria-describedby.
+- Segmented: `id`, `describedBy` and `invalid` props.
+
+Tests (src/test/PublishOutageForm.test.tsx, jsdom + user-event): empty form ->
+Title focused, aria-invalid, accessible description, summary text, summary
+link focuses Publisher and the summary shrinks as fields are fixed; maintenance
+without an end -> Timing opens and Ends is focused; Info outage -> the Severity
+group is focused and marked invalid. Against the previous form all 3 fail; with
+the fix 10 files / 58 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

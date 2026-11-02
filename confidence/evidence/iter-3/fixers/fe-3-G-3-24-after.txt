@@ -1,0 +1,12 @@
+# G-3-24, after the fix: same command (App.tsx: tenantInput for the field, tenantId for the feed/form, committed 400 ms after the last keystroke, on Enter or on blur; the field's value is still saved to localStorage on every change)
+# cwd frontend/: npx vitest run --reporter=verbose src/test/App.test.tsx
+ ✓ src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type 834ms
+ ✓ src/test/App.test.tsx > App > the header tenant field > loads the feed and opens the stream once for a tenant typed, not once per keystroke 1443ms
+ ✓ src/test/App.test.tsx > App > the header tenant field > follows at once on Enter and when the field loses focus 725ms
+ ✓ src/test/App.test.tsx > App > the tenant the page opens on > is none on a first visit, with a prompt that goes once a tenant is typed and remembered 73ms
+ ✓ src/test/App.test.tsx > App > the tenant the page opens on > is the tenant used last in this browser 19ms
+ ✓ src/test/App.test.tsx > App > the tenant the page opens on > is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant 21ms
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+# e2e: helpers.ts openFeed() fills the field, then waits up to 15 s for the Live badge (unaffected by the 400 ms settle)
+# full suite before commit: npm run lint (exit 0), npm run typecheck (exit 0), npm test -> Test Files 18 passed (18), Tests 159 passed (159)

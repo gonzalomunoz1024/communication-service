@@ -1,0 +1,6 @@
+[contrast-light] {"violations":0,"incompleteNodes":[{"sel":"#_r_1_-body","reason":"elmPartiallyObscured","text":"text 15.46:1 placeholder 4.66:1"}]}
+[contrast-dark] {"violations":0,"incompleteNodes":[{"sel":"#_r_1_-body","reason":"elmPartiallyObscured","text":"text 15.63:1 placeholder 5.93:1"}]}
+[focus-desktop] {"forwardHidden":["button \"Switch to dark mode\" top=10 bottom=46 header=57","body \"Outage Notifications\" top=-687 bottom=800 header=57"],"forwardStops":14,"reverseHidden":[],"confirmAfterShiftTab":{"s":"select \"Type\" top=172 bottom=202 header=57","hidden":false,"partly":false,"questionHidden":null}}
+[focus-phone] {"forwardHidden":["button \"Switch to dark mode\" top=10 bottom=46 header=57","body \"Outage Notifications\" top=-1071 bottom=664 header=57"],"forwardStops":14,"reverseHidden":["select \"Minimum severity\" top=23 bottom=53 header=57"],"confirmAfterShiftTab":{"s":"select \"Type\" top=236 bottom=266 header=57","hidden":false,"partly":false,"questionHidden":null}}
+[readme-body-card] {"text":"Active Major Outage INC0012345 Updated 1m ago API degradation in eu-west We are investigating elevated errors. vm-api Started 1m ago vmforge-sre Resolve","asterisks":false}
+exit 0

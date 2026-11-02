@@ -2,6 +2,7 @@ package probe
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -116,12 +117,85 @@ func TestProbeUnreachableAndTCP(t *testing.T) {
 	}
 }
 
+// G-3-16: Failing names the components the communication service counts as failing (its
+// HealthReport.failing: DOWN or DEGRADED after its own flattening), nested ones included, so
+// the sidecar sends an UP report with one every probe, as the service classifies it DEGRADED.
+// Signature, which shares the walk, keeps every component that is not UP under its dotted path.
+func TestFailingCountsTheComponentsTheServiceCounts(t *testing.T) {
+	for _, tc := range []struct {
+		name, doc string
+		failing   bool
+		signature string
+	}{
+		{"none", `{}`, false, "UP|"},
+		{"all UP", `{"db":{"status":"UP"},"ping":{"status":"UP"}}`, false, "UP|"},
+		{"DOWN", `{"db":{"status":"DOWN"},"ping":{"status":"UP"}}`, true, "UP|db=DOWN"},
+		{"OUT_OF_SERVICE", `{"db":{"status":"OUT_OF_SERVICE"}}`, true, "UP|db=DOWN"},
+		{"an unrecognised word", `{"cache":{"status":"warn"}}`, true, "UP|cache=WARN"},
+		{"nested DOWN under an UP parent", `{"db":{"status":"UP","components":{"primary":{"status":"UP"},"replica":{"status":"DOWN"}}}}`, true, "UP|db.replica=DOWN"},
+		{"a parent is represented by its children", `{"db":{"status":"DOWN","components":{"primary":{"status":"UP"}}}}`, false, "UP|"},
+		{"UNKNOWN is not failing, but is part of the signature", `{"discovery":{"status":"UNKNOWN"}}`, false, "UP|discovery=UNKNOWN"},
+		{"no status, or not an object", `{"db":{},"note":"text"}`, false, "UP|"},
+	} {
+		var components map[string]any
+		if err := json.Unmarshal([]byte(tc.doc), &components); err != nil {
+			t.Fatal(err)
+		}
+		if got := Failing(components); got != tc.failing {
+			t.Errorf("%s: Failing(%s) = %v, want %v", tc.name, tc.doc, got, tc.failing)
+		}
+		if got := (Result{Status: UP, Components: components}).Signature(); got != tc.signature {
+			t.Errorf("%s: Signature = %q, want %q", tc.name, got, tc.signature)
+		}
+	}
+}
+
 func TestNormalize(t *testing.T) {
 	cases := map[string]string{"up": UP, "pass": UP, "ok": UP, "fail": DOWN, "out_of_service": DOWN,
 		"": UNKNOWN, "warn": "WARN", "Degraded": "DEGRADED"}
 	for in, want := range cases {
 		if got := Normalize(in); got != want {
 			t.Errorf("Normalize(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// G-4-16 (GAP-sidecar3-3): a status word is trimmed of exactly what the service's String.trim()
+// removes, every character up to U+0020, and of no other white space, so a padded word, overall
+// or as a component, reads the same on both sides. The service's HealthStatusTest runs the same
+// inputs. "pass\u00a0" used to read UP here (strings.TrimSpace removes U+00A0) while the service
+// counted it DEGRADED, and "pass\u0001" the other way round.
+func TestStatusWordsAreTrimmedLikeTheService(t *testing.T) {
+	for _, tc := range []struct {
+		name, word string
+		service    string // what the service reads: UP, UNKNOWN (nothing is left after trimming) or DEGRADED (a word it does not know)
+	}{
+		{"ASCII space", "pass ", UP},
+		{"tab", "\tpass", UP},
+		{"U+0001, a control character", "pass\u0001", UP},
+		{"U+00A0, no-break space", "pass\u00a0", "DEGRADED"},
+		{"U+2003, em space", "pass\u2003", "DEGRADED"},
+		{"an ASCII space alone", " ", UNKNOWN},
+		{"a tab alone", "\t", UNKNOWN},
+		{"U+0001 alone", "\u0001", UNKNOWN},
+		{"U+00A0 alone", "\u00a0", "DEGRADED"},
+		{"U+2003 alone", "\u2003", "DEGRADED"},
+	} {
+		got := Normalize(tc.word)
+		failing := Failing(map[string]any{"c": map[string]any{"status": tc.word}})
+		switch tc.service {
+		case UP:
+			if got != UP || failing {
+				t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want UP and not failing, as on the service", tc.name, tc.word, got, failing)
+			}
+		case UNKNOWN:
+			if got != UNKNOWN || failing {
+				t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want UNKNOWN and not failing, as on the service", tc.name, tc.word, got, failing)
+			}
+		default:
+			if got == UP || got == DOWN || got == UNKNOWN || !failing {
+				t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want an unknown word, failing, as the service's DEGRADED", tc.name, tc.word, got, failing)
+			}
 		}
 	}
 }

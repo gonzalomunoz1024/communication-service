@@ -1,0 +1,47 @@
+Sidecar base image: UBI micro 9.5 fails CI's image scan, 9.8 passes (2026-11-02, after the loop)
+
+What CI found
+  PR #9, workflow run 41451259590, job "Sidecar (vet, tests, manifests, govulncheck, image)", head d491551:
+  the step "Scan the image for fixable critical or high vulnerabilities" failed with
+  "health-sidecar:ci (redhat 9.5) ... Total: 8 (HIGH: 8, CRITICAL: 0)".
+
+Why 9.5 is stale: last update of each tag in Red Hat's Docker Hub copy of the image
+  $ curl -sS https://hub.docker.com/v2/repositories/redhat/ubi9-micro/tags/<tag>   (last_updated, digest)
+  9.5     2025-05-14T06:21:37.493519Z sha256:839f16991579b023d4452eadd0efa925e438f8b73063afe4f75bdc6cf7a09b12
+  9.6     2025-11-05T06:09:57.79159Z sha256:990002083442f6a93cd3249da32ecb7c3f6be778a1bec3a73a9c17fbc40edc15
+  9.7     2026-05-26T06:17:43.994305Z sha256:03b67880096c45fbad58a50a5710bd31c3bcfce44f75da95ee6177dc269a72ef
+  9.8     2026-10-13T18:27:59.643821Z sha256:5be877a2a280ae36eb9ab80ca4efb28bbf77c57abbba38137cdc37a03b8465e6
+  latest  2026-10-13T18:28:41.851856Z sha256:5be877a2a280ae36eb9ab80ca4efb28bbf77c57abbba38137cdc37a03b8465e6
+
+The bases scanned here (registry.access.redhat.com is blocked in the sandbox; mirror.gcr.io serves Docker Hub's copy)
+  9.5 mirror.gcr.io/redhat/ubi9-micro@sha256:839f16991579b023d4452eadd0efa925e438f8b73063afe4f75bdc6cf7a09b12 created 2025-04-30T08:49:51.851825384Z
+  9.8 mirror.gcr.io/redhat/ubi9-micro@sha256:5be877a2a280ae36eb9ab80ca4efb28bbf77c57abbba38137cdc37a03b8465e6 created 2026-10-13T12:44:22.396323737Z
+
+Trivy: mirror.gcr.io/aquasec/trivy:0.58.1 (CI pins ghcr.io/aquasecurity/trivy:0.58.1), vulnerability DB
+  UpdatedAt 2026-11-02T01:14:05.640637121Z
+
+Images: built from sidecar/ with the default builder (docker.io/library/golang:1.27, Go 1.27.3) and
+  --build-arg BASE_IMAGE=mirror.gcr.io/redhat/ubi9-micro:<tag>; the command is CI's, plus --skip-db-update:
+  trivy image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 <image>
+
+== sc-base95:check (base 9.5, Dockerfile at d491551)
+  OS redhat 9.5, findings: 8
+    HIGH libacl CVE-2026-54369 2.3.1-4.el9 fixed in 2.4.0-1.el9_8
+    HIGH libcap CVE-2026-4878 2.48-9.el9_2 fixed in 2.48-10.el9_8.1
+    HIGH pcre2 CVE-2026-103111 10.40-6.el9 fixed in 10.40-7.el9_8
+    HIGH pcre2 CVE-2026-86145 10.40-6.el9 fixed in 10.40-7.el9_8
+    HIGH pcre2 CVE-2026-89161 10.40-6.el9 fixed in 10.40-7.el9_8
+    HIGH pcre2-syntax CVE-2026-103111 10.40-6.el9 fixed in 10.40-7.el9_8
+    HIGH pcre2-syntax CVE-2026-86145 10.40-6.el9 fixed in 10.40-7.el9_8
+    HIGH pcre2-syntax CVE-2026-89161 10.40-6.el9 fixed in 10.40-7.el9_8
+  exit code: 1
+== sc-base98:check (base 9.8, Dockerfile at d491551)
+  OS redhat 9.8, findings: 0
+  exit code: 0
+== health-sidecar:ci-check (base 9.8, Dockerfile at 7eeff6e (this fix))
+  OS redhat 9.8, findings: 0
+  exit code: 0
+
+The 9.8 image starts as an arbitrary UID, read-only root filesystem, no capabilities (it stops at the missing configuration, as it should):
+  $ docker run --rm --read-only --user 1000770000:0 --cap-drop ALL sc-base98:check
+  {"time":"2026-11-02T13:24:15.211891742Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}

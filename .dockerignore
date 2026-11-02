@@ -1,0 +1,4 @@
+# Build context of the root Dockerfile: only the backend's boot jar goes in.
+*
+!build/libs/communication-service-*.jar
+build/libs/*-plain.jar

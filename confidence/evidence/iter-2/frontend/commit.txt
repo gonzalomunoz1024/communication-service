@@ -1,0 +1,35 @@
+Frontend Verifier, iteration 2 - repository state at verification time
+date: 2026-11-02T04:27:16Z
+git rev-parse HEAD: be196455ea919e0e58e0f950e69e26b72f70f5d2
+git rev-parse --abbrev-ref HEAD: confidence-loop/2026-11-01
+git log --oneline -8:
+be19645 Record the iteration-2 fixes, the fixers' before/after evidence and the rebuilt stack
+908598a Fix G-2-7, G-2-8: chain the consecutive stubbings so the G-2-1 -Werror gate accepts the new tests
+6fd1088 Fix G-2-9: say that externalRef is permanent, name its holder, document it
+a08dfaf Fix G-2-8: stamp snapshot frames with the log head, not the fan-out cursor
+d3ac7eb Fix G-2-7: apply an on-demand probe again when it loses the race with the scheduler
+dce5f89 Fix G-2-6: reopen a retired auto notice on the threshold-th failing observation
+851a1e4 Fix G-2-5: forget monitors silent for longer than stale-forget-after
+00433c3 Fix G-2-4: answer 503 within seconds while Mongo is unreachable
+
+git status --short (only untracked evidence folders expected; no tracked file modified):
+?? confidence/evidence/iter-2/backend/
+?? confidence/evidence/iter-2/e2e/
+?? confidence/evidence/iter-2/frontend/
+?? confidence/evidence/iter-2/sidecar/
+?? confidence/evidence/iter-2/usability/
+
+frontend/dist untouched (served by the E2E Verifier): Nov 2 03:39
+frontend test files vs 0e14838 (iteration-1 head), stat:
+ frontend/src/test/kit-layout.test.tsx        | 171 +++++++++++++++++++++++++++
+ frontend/src/test/stream.test.ts             |  49 +++++++-
+ 12 files changed, 897 insertions(+), 17 deletions(-)
+removed expect/it lines in frontend tests between 0e14838 and HEAD:
+  -  it('explains a 409 for a reused incident number', async () => {
+  -    expect(await screen.findByRole('alert')).toHaveTextContent(
+  -  it("puts the duplicate-externalRef 409 in the form's terms", () => {
+  -    expect(explainPublishError(e)).toBe(
+  -  it('doubles from one second and caps at thirty', () => {
+  -    expect([1, 2, 3, 4, 5, 6, 7, 20].map(reconnectDelay)).toEqual([1_000, 2_000, 4_000, 8_000, 16_000, 30_000, 30_000, RECONNECT_MAX_MS])
+  -    expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web')
+skip/only/todo in tests at HEAD: 0

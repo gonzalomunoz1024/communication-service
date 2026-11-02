@@ -1,0 +1,12 @@
+# GitHub Advisory Database scan of the CycloneDX SBOM (build/reports/cyclonedx/bom.json: 134 Maven components; 84 of them on runtimeClasspath per 04-gradle-dependencies-full.txt), 2026-11-02T01:49:39Z
+# query per component: gh api '/advisories?ecosystem=maven&affects=<group>:<artifact>@<version>' -> advisories whose vulnerable range contains that exact version
+ERROR ch.qos.logback:logback-classic@1.5.34: gh: This GitHub API path is not available: sessions are bound to their configured repositories. Use repository-scoped endpoints (repos/{owner}/{repo}/...). (HTT
+ERROR ch.qos.logback:logback-core@1.5.34: gh: This GitHub API path is not available: sessions are bound to their configured repositories. Use repository-scoped endpoints (repos/{owner}/{repo}/...). (HTT
+ERROR com.fasterxml:classmate@1.7.3: gh: This GitHub API path is not available: sessions are bound to their configured repositories. Use repository-scoped endpoints (repos/{owner}/{repo}/...). (HTT
+ERROR com.fasterxml.jackson:jackson-bom@2.21.4: gh: This GitHub API path is not available: sessions are bound to their configured repositories. Use repository-scoped endpoints (repos/{owner}/{repo}/...). (HTT
+ERROR com.fasterxml.jackson.core:jackson-annotations@2.21: gh: This GitHub API path is not available: sessions are bound to their configured repositories. Use repository-scoped endpoints (repos/{owner}/{repo}/...). (HTT
+too many errors, stopping
+
+# TOTAL: 0 of 134 components scanned, 0 advisories, 5 query errors
+# by severity (runtime): {}
+# by severity (build/test-only): {}

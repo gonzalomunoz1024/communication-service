@@ -1,0 +1,40 @@
+# backend A log during failure_flows run 3's Mongo outage (docker stop e2e3-mongo 07:15:52Z, docker start ~07:16:25Z); lines cut at 300 chars
+## readiness indicator lines (from 07:15:50Z to the end of the run):
+2026-11-02T07:15:54.760Z  WARN 6560 c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 1000 ms
+2026-11-02T07:16:27.633Z  INFO 6560 c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again
+## every new line during the outage (the script's capture: 0 ERROR, 0 stack-trace lines):
+2026-11-02T07:15:58.671Z  WARN 6560 .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {t
+2026-11-02T07:15:58.762Z  WARN 6560 c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost
+2026-11-02T07:15:58.768Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-failure-checks GET /v1/feed -> 503 (5011 ms)
+2026-11-02T07:15:59.060Z  WARN 6560 c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhos
+2026-11-02T07:16:01.118Z  WARN 6560 c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{addres
+2026-11-02T07:16:01.121Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 503 (5008 ms)
+2026-11-02T07:16:03.674Z  WARN 6560 .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {t
+2026-11-02T07:16:04.062Z  WARN 6560 c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhos
+2026-11-02T07:16:05.820Z  WARN 6560 c.a.c.config.GlobalExceptionHandler      : POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that matches WritableServerSelector. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:19527, type=UNKNOW
+2026-11-02T07:16:05.824Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-failure-checks POST /v1/communications -> 503 (5009 ms)
+2026-11-02T07:16:08.681Z  WARN 6560 .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {t
+2026-11-02T07:16:09.064Z  WARN 6560 c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhos
+2026-11-02T07:16:09.248Z  WARN 6560 c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{addres
+2026-11-02T07:16:09.251Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 503 (5007 ms)
+2026-11-02T07:16:13.686Z  WARN 6560 .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {t
+2026-11-02T07:16:14.066Z  WARN 6560 c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhos
+2026-11-02T07:16:16.863Z  WARN 6560 c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{addres
+2026-11-02T07:16:16.864Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-failure-checks POST /v1/health/reports -> 503 (5007 ms)
+2026-11-02T07:16:17.688Z  WARN 6560 c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{addres
+2026-11-02T07:16:17.691Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 503 (5009 ms)
+2026-11-02T07:16:18.688Z  WARN 6560 .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {t
+2026-11-02T07:16:19.068Z  WARN 6560 c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhos
+2026-11-02T07:16:22.061Z  WARN 6560 c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost
+2026-11-02T07:16:22.064Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed -> 503 (5006 ms)
+2026-11-02T07:16:22.065Z  WARN 6560 c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:
+2026-11-02T07:16:22.069Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed/stream -> 200 (5013 ms)
+2026-11-02T07:16:23.690Z  WARN 6560 .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {t
+2026-11-02T07:16:24.070Z  WARN 6560 c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhos
+## line counts by kind:
+      8 INFO c.a.c.config.ClientIdWebFilter client
+      7 WARN c.a.c.config.GlobalExceptionHandler 
+      6 WARN .c.c.a.o.MongoCommunicationEventsAdapter event log poll failed
+      3 WARN c.a.c.p.application.StatusSweepUseCase status sweep skipped
+      3 WARN c.a.c.h.application.HealthSweepUseCase health sweep skipped
+      1 WARN c.a.c.f.a.i.RestControllerFeedAdapter feed stream closed

@@ -1,0 +1,14 @@
+# Withdraw propagation (scripts/withdraw_propagation.js): two separate Chromium processes on the production bundle; browser 1 withdraws a scheduled maintenance, browser 2 must lose it live.
+# Note: browser 1 never used the Publish form, so the UI has no publisher name to send; the retire body carries only the note and the service records the notice's
+# publisher (ve4-api) as the actor, the F-06 default. The UI's actor-carrying path ('Resolve as ve4-oncall?', body {actor, note}) is in 20-ui-flows.txt. exit code = number of FAILs.
+
+## withdraw propagation run mvz585yw tenant ve4-wd-mvz585yw at 2026-11-02T10:55:57.752Z
+2026-11-02T10:55:57.823Z PASS F-01 seed: an ACTIVE outage and a SCHEDULED maintenance starting in 24 h :: ACTIVE / SCHEDULED
+2026-11-02T10:56:00.262Z PASS F-16 both browsers (two Chromium processes) list the scheduled maintenance under Upcoming with All types :: 
+2026-11-02T10:56:00.917Z PASS F-62 Withdraw in browser 1 -> POST retire 200 {actor: publisher, note} :: 200 {"note":"postponed by ve4"}
+2026-11-02T10:56:00.920Z PASS F-60 browser 2 loses the withdrawn maintenance live (retired frame), no reload, no list re-fetch, no stream reopen :: gone 166 ms after the 200 (249 ms after the click); browser-2 list GETs 2->2, streams 2->2
+2026-11-02T10:56:00.922Z PASS F-60 browser 2 keeps the active outage (only the withdrawn item left) :: 
+2026-11-02T10:56:00.932Z PASS F-06 API: the maintenance reads RETIRED, the history holds the note and the actor :: 200 RETIRED [{"at":"2026-11-02T10:55:57.811Z","actor":"ve4-api","action":"created (SCHEDULED)"},{"at":"2026-11-02T10:56:00.730Z","actor":"ve4-api","action":"SCHEDULED -> RETIRED: postponed by ve4"}]
+2026-11-02T10:56:00.932Z PASS F-90 no page errors in either browser :: 
+## summary: fails=0 at 2026-11-02T10:56:01.112Z
+exit=0

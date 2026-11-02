@@ -34,19 +34,33 @@
   --color-warning: var(--color-warning);
   --color-warning-tint: var(--color-warning-bg);
 
+  /* Text in a semantic hue: the *-text tokens are dark enough (light) or light enough
+     (dark) for WCAG AA on the surfaces and on the matching tint; the plain hue is for
+     fills, dots, rails and icons. */
+  --color-accent-fg: var(--color-neutral-text);
+  --color-healthy-fg: var(--color-healthy-text);
+  --color-critical-fg: var(--color-critical-text);
+  --color-warning-fg: var(--color-warning-text);
+
   /* Job states — mapped onto the hues above, never new ones */
   --color-state-queued: var(--color-neutral);
   --color-state-queued-tint: var(--color-neutral-bg);
+  --color-state-queued-fg: var(--color-neutral-text);
   --color-state-running: var(--color-neutral);
   --color-state-running-tint: var(--color-neutral-bg);
+  --color-state-running-fg: var(--color-neutral-text);
   --color-state-waiting: var(--color-warning);
   --color-state-waiting-tint: var(--color-warning-bg);
+  --color-state-waiting-fg: var(--color-warning-text);
   --color-state-succeeded: var(--color-healthy);
   --color-state-succeeded-tint: var(--color-healthy-bg);
+  --color-state-succeeded-fg: var(--color-healthy-text);
   --color-state-failed: var(--color-critical);
   --color-state-failed-tint: var(--color-critical-bg);
+  --color-state-failed-fg: var(--color-critical-text);
   --color-state-cancelled: var(--color-text-tertiary);
   --color-state-cancelled-tint: var(--color-surface-secondary);
+  --color-state-cancelled-fg: var(--color-text-secondary);
 
   /* Adaptive shadows */
   --shadow-sm: var(--shadow-sm);
@@ -102,6 +116,10 @@
 
 /* ============================================================================
    Atlas — Apple-inspired design system tokens.
+   Contrast: every text role reaches WCAG AA (4.5:1) on every surface, the
+   accent and critical fills carry white text at 4.5:1, and each semantic
+   *-text token reaches 4.5:1 on the surfaces and on its own tint;
+   src/test/contrast.test.ts computes the ratios from this file.
    ========================================================================== */
 :root {
   /* Surfaces */
@@ -109,20 +127,25 @@
   --color-surface-secondary: #f5f5f7;
   --color-surface-tertiary: #fbfbfd;
   --color-text-primary: #1d1d1f;
-  --color-text-secondary: #6e6e73;
-  --color-text-tertiary: #86868b;
+  --color-text-secondary: #58585d;
+  --color-text-tertiary: #6e6e73;
   --color-border: #d2d2d7;
   --color-border-light: #e8e8ed;
 
-  /* Semantic accents (Apple system colors) */
+  /* Semantic accents (Apple system colors; the two fills that carry white text are
+     the web variants, which white reaches 4.5:1 on) */
   --color-healthy: #34c759;
   --color-healthy-bg: rgba(52, 199, 89, 0.1);
-  --color-critical: #ff3b30;
+  --color-healthy-text: #15692c;
+  --color-critical: #d70015;
   --color-critical-bg: rgba(255, 59, 48, 0.1);
-  --color-neutral: #007aff;
+  --color-critical-text: #b42318;
+  --color-neutral: #0071e3;
   --color-neutral-bg: rgba(0, 122, 255, 0.1);
+  --color-neutral-text: #005bc0;
   --color-warning: #ff9500;
   --color-warning-bg: rgba(255, 149, 0, 0.1);
+  --color-warning-text: #955000;
 
   /* Canvas depth: the dot grid and the selection halo */
   --canvas-dot: rgba(60, 60, 67, 0.06);
@@ -156,19 +179,23 @@
   --color-surface-secondary: #1c1c1e;
   --color-surface-tertiary: #2c2c2e;
   --color-text-primary: #f5f5f7;
-  --color-text-secondary: #98989d;
-  --color-text-tertiary: #636366;
+  --color-text-secondary: #aeaeb2;
+  --color-text-tertiary: #98989d;
   --color-border: #38383a;
   --color-border-light: #2c2c2e;
 
   --color-healthy: #30d158;
   --color-healthy-bg: rgba(48, 209, 88, 0.15);
-  --color-critical: #ff453a;
+  --color-healthy-text: #30db5b;
+  --color-critical: #dc2626;
   --color-critical-bg: rgba(255, 69, 58, 0.15);
-  --color-neutral: #0a84ff;
+  --color-critical-text: #ff6961;
+  --color-neutral: #0a6fd6;
   --color-neutral-bg: rgba(10, 132, 255, 0.15);
+  --color-neutral-text: #409cff;
   --color-warning: #ff9f0a;
   --color-warning-bg: rgba(255, 159, 10, 0.15);
+  --color-warning-text: #ffb340;
 
   --canvas-dot: rgba(255, 255, 255, 0.045);
   --halo-accent: rgba(10, 132, 255, 0.16);

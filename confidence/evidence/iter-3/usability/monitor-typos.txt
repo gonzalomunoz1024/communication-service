@@ -1,0 +1,13 @@
+# monitor registration with misspelled policy fields (private backend A :19600, tenant ux3-api); 2026-11-02T07:22:55Z
+POST /v1/health/monitors {"tenantId":"ux3-api","service":"typo-1","url":"http://127.0.0.1:9/actuator/health","intervalSecond":3600,"failureTreshold":5}
+  -> 201 policy: {'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'minHealthyPercent': 50}
+  (deleted 204)
+POST /v1/health/monitors {"tenantId":"ux3-api","service":"crashy","staleAfterSecond":60}
+  -> 201 policy: {'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'minHealthyPercent': 50}
+  (deleted 204)
+POST /v1/health/monitors {"tenantId":"ux3-api","service":"crashy-ok","staleAfterSeconds":60}
+  -> 201 policy: {'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'staleAfterSeconds': 60, 'minHealthyPercent': 50}
+  (deleted 204)
+
+# the same mistake on the publishing endpoint (shared :8080) for comparison
+{"error":"unknown field 'sevrity'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"} HTTP 400

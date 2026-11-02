@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useId, useState, type KeyboardEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { Button, Icon, Input, StateTag, Tag, cx, longDate, relativeTime } from '../ui'
-import { SEVERITY_TONE, titleCase } from './display'
+import { SEVERITY_TONE, isAutomaticReference, titleCase } from './display'
+import { explainError } from './errors'
 import { TicketTag } from './TicketTag'
 import type { FeedItem } from './types'
 
@@ -8,6 +10,8 @@ export interface OutageCardProps {
   item: FeedItem
   /** shown as "Resolve"; omit to hide the action */
   onRetire?: (item: FeedItem, note: string) => Promise<void>
+  /** who the resolve is recorded as; named in the confirmation */
+  actor?: string
 }
 
 const SEVERITY_BAR: Record<FeedItem['severity'], string> = {
@@ -18,12 +22,31 @@ const SEVERITY_BAR: Record<FeedItem['severity'], string> = {
 }
 
 /** One feed item: severity rail, status, title, body, services and timing. */
-export function OutageCard({ item, onRetire }: OutageCardProps) {
+export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
+  const id = useId()
   const [confirming, setConfirming] = useState(false)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const active = item.status === 'ACTIVE'
+  // a notice that has not started is withdrawn rather than resolved; both retire it
+  const verb = active ? 'Resolve' : 'Withdraw'
+  const notePlaceholder = active ? 'Resolution note (optional)' : 'Reason (optional)'
+
+  // The confirmation takes the place of the button that opened it and gives it back: focus moves
+  // with it both ways (to the note, then to the button), or it falls to <body>. When a resolve
+  // succeeds the card leaves and the feed moves focus to the list.
+  const confirm = (open: boolean) => {
+    flushSync(() => setConfirming(open))
+    document.getElementById(`${id}-${open ? 'note' : 'action'}`)?.focus()
+  }
+  // Escape backs out of the confirmation as Cancel does, and like Cancel not while the call runs
+  const onConfirmationKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Escape' || busy) return
+    e.preventDefault()
+    e.stopPropagation()
+    confirm(false)
+  }
 
   const retire = async () => {
     if (!onRetire) return
@@ -32,8 +55,12 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
     try {
       await onRetire(item, note)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-      setBusy(false)
+      flushSync(() => {
+        setError(explainError(e))
+        setBusy(false)
+      })
+      // the button was disabled while the call ran, which drops focus: give it back so Enter tries again
+      document.getElementById(`${id}-confirm`)?.focus()
     }
   }
 
@@ -42,15 +69,23 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
       <span aria-hidden="true" className={cx('absolute inset-y-0 left-0 w-1', SEVERITY_BAR[item.severity])} />
       <div className="flex flex-col gap-3 py-4 pl-6 pr-5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <StateTag status={active ? 'failing' : 'queued'}>{active ? 'Active' : `Starts ${relativeTime(item.startsAt)}`}</StateTag>
+          <StateTag status={active ? 'failing' : 'queued'}>{active ? 'Active' : 'Scheduled'}</StateTag>
           <Tag tone={SEVERITY_TONE[item.severity]}>{titleCase(item.severity)}</Tag>
           <Tag outline>{titleCase(item.type)}</Tag>
           {item.audience !== 'CUSTOMERS' && <Tag outline>{titleCase(item.audience)}</Tag>}
           {item.ticket && <TicketTag ticket={item.ticket} />}
-          {item.externalRef && item.externalRef !== item.ticket?.number && (
-            <Tag mono outline>
-              {item.externalRef}
+          {isAutomaticReference(item.externalRef) ? (
+            // raised by health monitoring: its health:<monitor>:<n> key means nothing to a reader
+            <Tag outline icon="pulse" title="Raised by an automated health check">
+              Automatic
             </Tag>
+          ) : (
+            item.externalRef &&
+            item.externalRef !== item.ticket?.number && (
+              <Tag mono outline>
+                {item.externalRef}
+              </Tag>
+            )
           )}
           <span className="ml-auto text-caption text-tertiary" title={longDate(item.updatedAt)}>
             Updated {relativeTime(item.updatedAt)}
@@ -88,25 +123,37 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
             {item.publisher}
           </span>
           {onRetire && !confirming && (
-            <Button size="sm" variant="capsule" icon="check" className="ml-auto" onClick={() => setConfirming(true)}>
-              Resolve
+            <Button id={`${id}-action`} size="sm" variant="capsule" icon={active ? 'check' : 'close'} className="ml-auto" onClick={() => confirm(true)}>
+              {verb}
             </Button>
           )}
         </div>
 
         {confirming && (
-          <div className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
-            <p className="text-caption text-secondary">Resolving retires it: it leaves every consumer's feed and cannot be reopened.</p>
+          <div role="group" aria-labelledby={`${id}-question`} onKeyDown={onConfirmationKey} className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
+            <p id={`${id}-question`} className="text-caption text-secondary">
+              {active
+                ? `Resolve${actor ? ` as ${actor}` : ''}? It leaves tenant ${item.tenantId}'s feed at once and cannot be reopened.`
+                : `Withdraw${actor ? ` as ${actor}` : ''}? Withdrawing retires it before it starts: tenant ${item.tenantId}'s consumers never see it and it cannot be reopened.`}
+            </p>
             <div className="flex flex-wrap items-center gap-2">
-              <Input size="sm" className="min-w-48 flex-1" placeholder="Resolution note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-              <Button size="sm" variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>
+              <Input
+                id={`${id}-note`}
+                size="sm"
+                className="min-w-48 flex-1"
+                aria-label={notePlaceholder}
+                placeholder={notePlaceholder}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <Button size="sm" variant="ghost" onClick={() => confirm(false)} disabled={busy}>
                 Cancel
               </Button>
-              <Button size="sm" variant="primary" loading={busy} onClick={retire}>
-                Resolve
+              <Button id={`${id}-confirm`} size="sm" variant="primary" loading={busy} onClick={retire}>
+                {verb}
               </Button>
             </div>
-            {error && <p className="text-caption text-critical" role="alert">{error}</p>}
+            {error && <p className="text-caption text-critical-fg" role="alert">{error}</p>}
           </div>
         )}
       </div>

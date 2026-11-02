@@ -1,0 +1,83 @@
+G-3-29 BEFORE: the agent at 1e0e153 (retry steps 1 s doubling to 60 s, jitter added on top, retries
+only on probe ticks). CI=true, helm/kustomize/kubeconform on PATH.
+
+## 1. The fix commit's test, TestRetriesAreNeverFurtherApartThanTheBackoffCap, run 3 times against
+##    agent.go of 1e0e153 (git archive 1e0e153 sidecar + the new agent_test.go). Default 15 s interval,
+##    30 s heartbeat; the fake service refuses every report for 5 minutes, accepts for 2, refuses once more.
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app
+    agent_test.go:387: attempt 5 at +1m38.88s came 34.709s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 6 at +2m29.335s came 50.455s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 7 at +3m53.569s came 1m24.234s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 8 at +5m1.671s came 1m8.103s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:405: waits after a refused attempt: [15s 16.4s 17.6s 15.1s 34.7s 50.5s 1m24.2s 1m8.1s 15.9s]
+    agent_test.go:412: the first attempt after the service was back came 1.671s after it
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app
+    agent_test.go:387: attempt 5 at +1m39.762s came 33.916s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 6 at +2m29.304s came 49.542s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 7 at +3m52.333s came 1m23.029s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 8 at +5m15.255s came 1m22.922s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:405: waits after a refused attempt: [16.9s 16.4s 15.6s 16.9s 33.9s 49.5s 1m23s 1m22.9s 17.8s]
+    agent_test.go:412: the first attempt after the service was back came 15.255s after it
+--- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap (0.03s)
+    --- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app (0.01s)
+    --- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app (0.01s)
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app
+    agent_test.go:387: attempt 6 at +2m12.283s came 48.687s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 7 at +3m19.243s came 1m6.959s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 8 at +4m25.006s came 1m5.763s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 9 at +5m30.263s came 1m5.257s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:405: waits after a refused attempt: [17.6s 15.9s 17s 16.3s 16.8s 48.7s 1m7s 1m5.8s 1m5.3s 17.1s]
+    agent_test.go:410: the first attempt after the service was back came 30.263s after it, want at most 30s
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app
+    agent_test.go:387: attempt 5 at +1m37.88s came 33.781s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 6 at +2m26.841s came 48.961s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 7 at +3m29.356s came 1m2.516s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 8 at +4m36.833s came 1m7.476s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 9 at +5m44.247s came 1m7.414s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:405: waits after a refused attempt: [15.3s 17.9s 15.5s 15.4s 33.8s 49s 1m2.5s 1m7.5s 1m7.4s 17.7s]
+    agent_test.go:410: the first attempt after the service was back came 44.247s after it, want at most 30s
+--- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap (0.03s)
+    --- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app (0.01s)
+    --- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app (0.01s)
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app
+    agent_test.go:387: attempt 6 at +2m14.19s came 51.164s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 7 at +3m37.773s came 1m23.583s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 8 at +4m45.158s came 1m7.385s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 9 at +6m5.627s came 1m20.469s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:405: waits after a refused attempt: [17.1s 16.4s 16.1s 15.8s 17.6s 51.2s 1m23.6s 1m7.4s 1m20.5s 17.5s]
+    agent_test.go:410: the first attempt after the service was back came 1m5.627s after it, want at most 30s
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app
+    agent_test.go:387: attempt 5 at +1m39.404s came 33.285s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 6 at +2m27.879s came 48.475s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 7 at +3m49.305s came 1m21.426s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:387: attempt 8 at +5m8.079s came 1m18.774s after the refused one before it, want at most 30s (the backoff cap)
+    agent_test.go:405: waits after a refused attempt: [16.1s 16.8s 16.3s 16.9s 33.3s 48.5s 1m21.4s 1m18.8s 15.5s]
+    agent_test.go:412: the first attempt after the service was back came 8.079s after it
+--- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap (0.02s)
+    --- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app (0.01s)
+    --- FAIL: TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app (0.01s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.085s
+FAIL
+exit 1
+
+## 2. Live, real binaries: hs-g29-before (built at 1e0e153) against a stub that answers 503
+##    {"error":"database unavailable"} for 75 s, then 202. CS_INTERVAL=1s, default CS_HEARTBEAT=30s,
+##    UP app stub on 127.0.0.1:18236, stub on :18234, sidecar /status on :18232. Same run as the after file.
+== before (hs-g29-before, built at 1e0e153): 10 POSTs
+  +   1.03s 503 status=UP leaving=False
+  +   3.18s 503 status=UP leaving=False
+  +   5.46s 503 status=UP leaving=False
+  +   9.67s 503 status=UP leaving=False
+  +  18.62s 503 status=UP leaving=False
+  +  36.18s 503 status=UP leaving=False
+  +  69.04s 503 status=UP leaving=False
+  + 133.35s 202 status=UP leaving=False
+  + 163.52s 202 status=UP leaving=False
+  + 170.00s 202 status=UP leaving=True
+  waits after a 503 (s): [2.15, 2.28, 4.21, 8.95, 17.56, 32.86, 64.31]; longest 64.31
+  first POST after the stub accepts again at +75s: +133.35s, 58.35s later, answer 202
+sidecar log, "report failed; will retry" steps: 1s 2s 4s 8s 16s 32s 1m0s 

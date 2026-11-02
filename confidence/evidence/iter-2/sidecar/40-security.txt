@@ -1,0 +1,39 @@
+== 2026-11-02T04:15:29Z
+## go list -m all (module graph):
+github.com/gonzalomunoz1024/communication-service/sidecar
+exit=0
+## non-stdlib packages in the build: 0 (third-party) / golang.org/x: 0
+## govulncheck@latest (GOTOOLCHAIN=auto, go1.26.10 is cached locally):
+go: golang.org/x/vuln@v1.9.0 requires go >= 1.26.0; switching to go1.26.10
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1
+exit=1
+## govulncheck@v1.1.4:
+govulncheck: loading packages: 
+There are errors with the provided package patterns:
+
+/home/claude/communication-service/sidecar/internal/config/config.go:5:1: package requires newer Go version go1.25 (application built with go1.24)
+exit=141
+## vuln.go.dev reachability: HTTP 000 | proxy.golang.org: HTTP 200
+## CI workflow steps that cover this (file:line):
+72:    name: Sidecar (vet, tests, manifests, govulncheck, image)
+86:      - uses: imranismail/setup-kustomize@v2
+87:      - uses: azure/setup-helm@v4
+88:      - name: Install kubeconform
+90:          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+91:            | sudo tar -xz -C /usr/local/bin kubeconform
+92:          kubeconform -v
+94:      # CI=true makes deploy_test.go fail instead of skip when kustomize or kubeconform is missing
+95:      - run: CI=true go test ./...
+96:      - name: govulncheck
+97:        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+99:        run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
+## Go release line facts: binary built with go1.25.14; go.mod go line go 1.25; Dockerfile default builder go-toolset:1.25
+## image: no shell, no package manager, root fs files owned by root, binary not writable by the runtime UID:
+drwxr-xr-x 0/0               0 2026-07-17 08:50 var/lib/dpkg/status.d/
+-rw-r--r-- 0/0             720 2026-07-02 19:05 var/lib/dpkg/status.d/base-files
+-rw-r--r-- 0/0            1897 2026-07-02 19:05 var/lib/dpkg/status.d/base-files.md5sums
+-rwxr-xr-x 0/0         6815928 2026-11-02 04:00 usr/local/bin/health-sidecar
+## secrets in the repository's sidecar tree (grep for key material):
+  (matches above, if any, are reviewed in the report)
+## DONE

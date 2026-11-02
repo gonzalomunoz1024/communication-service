@@ -1,0 +1,70 @@
+# Frontend replays (auditor, iteration 4) on the idle machine; HEAD 42b38e8 (code = 1cd3f13); node v22.23.4
+
+## 1. F-66 / GAP-frontend4-2: npm test 3x idle, then the verifier's reproduction (scripts/test-repeat.sh copied as audit4/scripts/fe-test-repeat.sh; PIN=0 -> taskset -c 0)
+11:26:36 | idle-1 | exit 0 | 11.7s | load 0.16 0.35 1.38 -> 1.36 0.60 1.45 | Test Files 19 passed (19) | Tests 183 passed (183) | 
+11:26:47 | idle-2 | exit 0 | 10.8s | load 1.36 0.60 1.45 -> 1.52 0.67 1.46 | Test Files 19 passed (19) | Tests 183 passed (183) | 
+11:26:58 | idle-3 | exit 0 | 10.6s | load 1.52 0.67 1.46 -> 1.76 0.75 1.48 | Test Files 19 passed (19) | Tests 183 passed (183) | 
+11:27:37 | pinned-cpu0-8workers-1 | exit 1 | 34.3s | load 1.62 0.74 1.47 -> 4.98 1.71 1.77 | Test Files 1 failed | 18 passed (19) | Tests 2 failed | 181 passed (183) | src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type;src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs;
+11:28:17 | pinned-cpu0-8workers-testTimeout20000-1 | exit 0 | 32.7s | load 4.58 1.68 1.76 -> 7.02 2.68 2.10 | Test Files 19 passed (19) | Tests 183 passed (183) | 
+11:28:36 | idle-verbose-1 | exit 0 | 11.0s | load 6.46 2.64 2.08 -> 5.93 2.65 2.10 | Test Files 19 passed (19) | Tests 183 passed (183) | 
+per-run vitest Duration: idle-1 10.99 s, idle-2 10.13 s, idle-3 9.97 s, idle-verbose 10.30 s
+pinned run, the two failures:
+     × "View in feed" opens the feed of the tenant that was published to, filtered to that type 5138ms
+     × "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs 5216ms
+idle verbose run, the same tests: 
+ ✓ src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type 1079ms
+ ✓ src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs 563ms
+verifier: idle 3/3 exit 0 (cmd-15, 'C' 3 runs, load 2.3-3.8); under load 16-30, 2 of the 3 required runs failed (cmd-7 1 failed, cmd-8 3 failed, 63.9 s); pinned reproduction exit 1 at 5160/5107 ms (cmd-17); with --testTimeout=20000 exit 0 (cmd-18).
+=> idle: 3/3 pass (183/183). Pinned to one CPU with 8 workers: the same two App.test.tsx 'View in feed' tests time out at 5138/5216 ms (vitest's 5 s default); --testTimeout=20000: 183/183. The tests are correct and slow only under CPU starvation (1.08 s / 0.56 s idle).
+
+## 2. static: builds, coverage (scripts: audit4/fe/static.sh; outputs outside the repo)
+commit 42b38e882e8ad112e096e000cf0a36696eb8ab8b 2026-11-02T11:49:36Z node v22.23.4 npm 10.9.9
+03-build | exit 0 | 4.8s | npm run build -- --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit4/fe/dist --emptyOutDir
+07-coverage | exit 0 | 12.2s | npm run test:coverage -- --coverage.reportsDirectory=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit4/fe/coverage --coverage.reporter=text --coverage.reporter=json-summary
+11-default-tenant-build | exit 0 | 0.8s | env VITE_DEFAULT_TENANT=au4f-default npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit4/fe/dist-default-tenant --emptyOutDir
+12-xorigin-build | exit 0 | 1.3s | env VITE_API_BASE=http://127.0.0.1:19799 npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit4/fe/dist-xorigin --emptyOutDir
+13-badclientid-build | exit 0 | 0.9s | env VITE_CLIENT_ID=bad id! npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit4/fe/dist-badclientid --emptyOutDir
+git status --short (frontend/): []
+All files          |   96.73 |    92.78 |   94.26 |   97.74 |                   
+  OutageFeed.tsx   |   87.69 |       85 |   77.27 |    90.9 | ...16-124,134,204 
+  errors.ts        |     100 |    98.27 |     100 |     100 | 112               
+  useOutageFeed.ts |   97.26 |    96.15 |     100 |     100 | 84-96             
+  useTheme.ts      |     100 |       96 |     100 |     100 | 46                
+ Test Files  19 passed (19)
+      Tests  183 passed (183)
+verifier coverage.txt 'All files': All files | 96.73 | 92.78 | 94.26 | 97.74 | 
+G-3-26: useTheme.ts 100 % lines (96 % branches), 7 tests named in test-names.txt lines 71-77; the 503-with-body tests are in errors.test.ts:44/:181, OutageFeed.test.tsx:223, PublishOutageForm.test.tsx:109 (and stream.test.ts:228). => MATCH (exact)
+
+## 3. cmd-19 Trivy fs on a copy of package.json + package-lock.json (shared DB 2026-11-02 01:14Z, under flock)
+$ trivy fs --skip-db-update --skip-java-db-update --scanners vuln --include-dev-deps /work (copy of frontend package.json + package-lock.json; shared DB)
+INFO	[vuln] Vulnerability scanning is enabled
+INFO	[npm] To collect the license information of packages, "npm install" needs to be performed beforehand	dir="node_modules"
+INFO	Number of language-specific files	num=1
+INFO	[npm] Detecting vulnerabilities...
+exit=0
+packages 306 vulnerabilities 0
+fresh DB (07:17Z) as well: 0 (08-security-fresh-db.txt). => MATCH (exact: 306 packages, 0)
+
+## 4. cmd-21 test diff 6c15715..d10369b -- frontend/src/test/ and the marker grep
+git diff --numstat: 8 files +329 -7; removed lines are those test-diff.txt lists (7); grep -rnE '\.(skip|only|todo)\(|\bxit\(|\bxdescribe\(|\bfit\(|\bfdescribe\(' frontend/src/test/ -> exit 1 (no match). => MATCH (exact)
+
+## 5. browser checks: the verifier's scripts re-pointed (audit4/fe/remap.sed: 3200-3209->3750-3759, 19200/1/2->19750/1/2, 19290-3->19790-3, 19299->19759, :3000->:3709 (my vite -> :19799), :8080->:19799, vf4-->au4f-, vf4_->au4f_, containers au4-fe-*), private infra by the verifier's infra.sh
+11:51:13 v1 exit=0 pass=62 fail=0 EXIT 0 (11 s)
+11:51:39 v2 exit=0 pass=46 fail=0 EXIT 0 (26 s)
+11:52:21 v3 exit=0 pass=54 fail=0 EXIT 0 (42 s)
+11:52:28 v3b exit=0 pass=3 fail=0 EXIT 0 (7 s)
+11:53:01 g3 exit=0 pass=32 fail=0 EXIT 0 (33 s)
+11:53:05 probe-reload exit=0 pass=0 fail=0 EXIT 0 (4 s)
+11:53:13 v6 exit=0 pass=8 fail=0 EXIT 0 (8 s)
+11:53:34 v5 exit=0 pass=46 fail=0 EXIT 0 (21 s)
+11:53:34 DONE v1 v2 v3 v3b g3 probe-reload v6 v5
+11:54:27 g4-17-settle exit=0 pass=7 fail=0 EXIT 0 (53 s)
+11:54:43 g4-focus-409 exit=0 pass=21 fail=1 EXIT 0 (16 s)
+11:56:06 g4-db-outage exit=0 pass=27 fail=0 EXIT 0 (83 s)
+11:56:06 ALLDONE
+verifier (results/regression-summary.txt + run-logs): v1 62/0, v2 46/0, v3 54/0, v3b 3/0, g3 32/0, probe-reload 0/0, v6 8/0, v5 46/0, g4-17-settle 7/0, g4-focus-409 21/1, g4-db-outage 27/0
+check names and verdicts compared (ids, ports and run tokens folded): identical in all 11 scripts; the only textual differences are the random INC numbers in g3 (G-3-21), the typed tenant in g3 (G-3-24) and the port names in v6. The one FAIL (G-4-21, a reference with parentheses gets no suggestion) is the verifier's GAP-frontend4-1 / noted edge, reproduced.
+
+## 6. cmd-31 teardown and cmd-33 make-evidence.sh (not run)
+docker ps -a: no vf4-* container; the two vf4-mongo volumes the verifier removed (ce2bfbde..., 07e27327...) do not exist. Four other anonymous volumes (2 created 09:09:09Z, 2 created 10:44:59Z, no container) are not the frontend verifier's (its vf4-mongo was created 10:20:10Z) and are not named in any iteration-4 evidence; I left them alone.
+make-evidence.sh was NOT run (it rewrites the verifier's folder). Consistency instead: the 24 run-logs and 31 scripts in scratchpad frontend4/ are byte-identical to the evidence copies; results/*.txt identical except g4-17-settle-timeline.txt, which make-evidence.sh:101-105 rewrites compactly by design.

@@ -1,0 +1,25 @@
+# Every FAIL in the final runs of my scripts, classified (Frontend Verifier, iteration 4). Superseded run-1 FAILs are in
+# results-superseded/ and run-logs/*-superseded-run1.txt; why each one was a script error is written in the scripts' comments.
+
+## 1. v4-reconnect: "after the restart the badge returns to Live by itself within the 10 s cap (plus one attempt)"
+#  measured 13.9 s, bound 11 s. CLASS: script assumption made obsolete by the deliberate G-4-17 change, not a product failure.
+#  The bound dates from iteration 2, when the badge read Live on the stream's open event. Since G-4-17 (commit 27a9fec) a
+#  stream counts as working only after a frame or 6 s open (frontend/README.md:39-46, STREAM_SETTLE_MS in api.ts), and a
+#  resume with nothing missed carries no frame. Decomposition from results/v4-reconnect-timeline.txt:
+#    +59.0s stream REQUEST #11 ?lastEventId=245  -> 502   (backend A still starting)
+#    +61.3s A up again: true                              (t_up)
+#    +69.0s stream REQUEST #12 ?lastEventId=245  -> 200   7.7 s after t_up: inside the 10 s cap (previous attempt +59.0s)
+#    +75.1s badge -> Live                                 6.1 s after that 200: the settle time; no frame, nothing was missed
+#  13.9 s = 7.7 s (next attempt, <= cap 10 s) + 6.1 s (settle 6 s). Expected upper bound since G-4-17: 10 s + 6 s + slack.
+#  The next check of the same run passed: the attempt was a resume (?lastEventId=245) and delivered no snapshot / no replay.
+#  The same deliberate change was applied to v7's G-3-20 check BEFORE its run (badge at +5 s now 'Service degraded').
+
+## 2. v7-e2e-flows: "an id never issued (999999999) or long expired from the log (1) ... -> 200 with a fresh snapshot"
+#  CLASS: script assumption about the SHARED event log, not a product failure. The script assumed seq 1 had expired; it has not:
+#  results/shared-log-retention.txt: oldest seq 1 at 2026-11-01T23:27:04Z, TTL 86400 s (expires 2026-11-02T23:27Z), 2676 events.
+#  So ?lastEventId=1 is a valid resume point and the service correctly replays 'created' frames instead of a snapshot
+#  (evidence: {"unknown":["snapshot","created"],"expired":["created"],"header":["snapshot"]}).
+#  What the check meant to prove is proven elsewhere, on logs I may age:
+#    v7c (run-logs/v7c.txt): never-issued id 999999999 as ?lastEventId= and as Last-Event-ID -> 200, snapshot first. PASS.
+#    v7b (run-logs/v7b.txt, my backend C, db vf4_mongodown): after deleting seqs <= 4, ?lastEventId=3 and the header form ->
+#        snapshot frames only; boundary ?lastEventId=4 -> created#5 only; ?lastEventId=5 -> nothing; 999999999 -> snapshot.

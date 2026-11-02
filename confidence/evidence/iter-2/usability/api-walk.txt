@@ -1,0 +1,156 @@
+
+### E0 identification: no header, bad header
+no header -> {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"} 401
+bad id    -> {"error":"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"} 400
+
+### C1 cookbook example 1 VERBATIM (tenant vmforge, INC0012345) on this shared store
+C1-verbatim -> 409 0.012323s
+   {"error":"externalRef 'INC0012345' is already used by notice c937a0a5-957a-4aa4-b31a-768b9195537b in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2)."}
+
+### C1' the same example in a tenant that has never seen it (ux2-api)
+HTTP/1.1 201 Created
+Location: /v1/communications/1d1ceec4-bfb3-4753-9619-fea01ea56ce1
+{"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:05.700496303Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.700496303Z","updatedAt":"2026-11-02T04:07:05.700496303Z","version":0,"history":[{"at":"2026-11-02T04:07:05.700496303Z","
+id=1d1ceec4-bfb3-4753-9619-fea01ea56ce1 version=0
+
+### C1b the same request again (README: a safe retry, 409 naming the holder)
+C1b-retry -> 409 0.010390s
+   {"error":"externalRef 'INC0012345' is already used by notice 1d1ceec4-bfb3-4753-9619-fea01ea56ce1 in tenant ux2-api. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2)."}
+   (409 names the holder id 1d1ceec4-bfb3-4753-9619-fea01ea56ce1: yes)
+
+### C2 follow-up example (externalRef INC0012345-2)
+C2-followup -> 201 0.011244s
+   {"id":"16138e5e-9a65-4d51-bc95-89251b5e4d34","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:05.809007286Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.809007286Z","updatedAt":"2026-11-02T04:07:05.809007286Z","version":0,"history":[{"at":"2026-11-02T04:07:05.809007286Z","actor":"vmforge-sre","action":"created (ACTIVE)"}]}
+
+### C3 maintenance example
+C3-maintenance -> 201 0.012429s
+   {"id":"bc436c5e-c43a-4422-b6c0-a744a007afb4","tenantId":"ux2-api","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T04:07:05.867194933Z","updatedAt":"2026-11-02T04:07:05.867194933Z","version":0,"history":[{"at":"2026-11-02T04:07:05.867194933Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+
+### C4 feed, stream (3 s), resume
+C4-feed -> 200 0.007369s
+   {"items":[{"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"updatedAt":"2026-11-02T04:07:05.700Z"},{"id":"16138e5e-9a65-4d51-bc95-89251b5e4d34","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"
+   items: 2 total: 2 keys: ['hasNext', 'items', 'page', 'size', 'totalElements']
+stream (first 1200 bytes within 3 s):
+:connected
+
+id:1346
+event:snapshot
+data:{"seq":1346,"type":"SNAPSHOT","at":"2026-11-02T04:07:05.973536184Z","communication":{"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.700Z","updatedAt":"2026-11-02T04:07:05.700Z","version":0,"history":[{"at":"2026-11-02T04:07:05.700Z","actor":"vmforge-sre","action":"created (ACTIVE)"}]}}
+
+id:1346
+event:snapshot
+data:{"seq":1346,"type":"SNAPSHOT","at":"2026-11-02T04:07:05.973536184Z","communication":{"id":"16138e5e-9a65-4d51-bc95-89251b5e4d34","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:05.809Z","expiresAt":"2026-11-02T06:07:05Z","external
+resume from lastEventId=1345:
+id:1346
+event:created
+
+### C5 PUT with expectedVersion
+C5-put-v0 -> 200 0.084927s
+   {"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"Mitigation in progress.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.700Z","updatedAt":"2026-11-02T04:07:09.104095802Z","version":1,"history":[{"at":"2026-11-02T04:07:05.700Z","actor":"vmforge-sre","action":"created (ACTIVE)"},{"at":"2026-11-02T04:07:09.104095802Z","actor":"vmforge-sre","action":"updated"}]}
+C5-put-v0-again -> 409 0.012422s
+   {"error":"expectedVersion 0 does not match current version 1"}
+C5-put-omitted -> 400 0.010667s
+   {"error":"expectedVersion: must not be null"}
+C5-put-string -> 400 0.012241s
+   {"error":"expectedVersion: 'latest' is not a number"}
+
+### C6 retire, retire again, republish the same externalRef after retire
+C6-retire -> 200 0.013018s
+   {"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"Mitigation in progress.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.700Z","updatedAt":"2026-11-02T04:07:09.213598023Z","version":2,"history":[{"at":"2026-11-02T04:07:05.700Z","actor":"vmforge-sre","action":"created (ACTIVE)"},{"at":"2026-11-02T04:07:09.104Z","actor":"vmforge-sre","action":"updated"},{"at":"202
+C6-retire-again -> 200 0.012964s
+   {"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"Mitigation in progress.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.700Z","updatedAt":"2026-11-02T04:07:09.213Z","version":2,"history":[{"at":"2026-11-02T04:07:05.700Z","actor":"vmforge-sre","action":"created (ACTIVE)"},{"at":"2026-11-02T04:07:09.104Z","actor":"vmforge-sre","action":"updated"},{"at":"2026-11-0
+C6-republish-after-retire -> 409 0.022658s
+   {"error":"externalRef 'INC0012345' is already used by notice 1d1ceec4-bfb3-4753-9619-fea01ea56ce1 in tenant ux2-api. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2)."}
+
+### C7 admin, permalink, history, monitors
+C7-admin-retired -> 200 0.018075s
+   {"items":[{"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"Mitigation in progress.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.700Z","updatedAt":"2026-11-02T04:07:09.213Z","version":2,"history":[{"at":"2026-11-02T04:07:05.700Z","actor":"vmforge-sre","action":"created (ACTIVE)"},{"at":"2026-11-02T04:07:09.104Z","actor":"vmforge-sre","action":"updated"},{"at":
+   type: dict n: 1
+C7-get-one -> 200 0.010095s
+   {"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"Mitigation in progress.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T04:07:05.700Z","updatedAt":"2026-11-02T04:07:09.213Z","version":2,"history":[{"at":"2026-11-02T04:07:05.700Z","actor":"vmforge-sre","action":"created (ACTIVE)"},{"at":"2026-11-02T04:07:09.104Z","actor":"vmforge-sre","action":"updated"},{"at":"2026-11-0
+   status: RETIRED version: 2 history: ['created (ACTIVE)', 'updated', 'ACTIVE -> RETIRED: resolved']
+C7-permalink -> 200 0.006443s
+   {"id":"1d1ceec4-bfb3-4753-9619-fea01ea56ce1","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"Mitigation in progress.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T04:07:05.700Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"updatedAt":"2026-11-02T04:07:09.213Z"}
+C7-tenants -> 200 0.058752s
+   [{"tenantId":"audit-es-1tno","counts":{"ACTIVE":1},"total":1},{"tenantId":"audit-f01-ygjho","counts":{"ACTIVE":2},"total":2},{"tenantId":"audit-f11-ygjho","counts":{"ACTIVE":1},"total":1},{"tenantId":"audit-f15-de8e","counts":{"EXPIRED":1},"total":1},{"tenantId":"audit-f16-ygjho","counts":{"SCHEDULED":3},"total":3},{"tenantId":"audit-f17-ygjho","counts":{"DRAFT":1,"RETIRED":2},"total":3},{"tenantId":"audit-f35-ygjho","counts":{"RETIRED":1},"total":1},{"tenantId":"audit-f37-ygjho","counts":{"ACTIVE":5},"total":5},{"tenantId":"audit-many-1tno","counts":{"ACTIVE":103},"total":103},{"tenantId":"audit-ui-1tno","counts":{"EXPIRED":1,"RETIRED":1},"total":2},{"tenantId":"audit-up-1tno","counts":{"SC
+C7-monitors -> 200 0.008433s
+   []
+C7-probe-wrong-id -> 404 0.008000s
+   {"error":"monitor not-a-monitor not found"}
+
+### E error texts
+E1-enum-severity -> 400 0.004715s
+   {"error":"severity: 'HUGE' is not one of [INFO, MINOR, MAJOR, CRITICAL]"}
+E2-enum-type -> 400 0.004047s
+   {"error":"type: 'DOWNTIME' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"}
+E3-malformed-json -> 400 0.003221s
+   {"error":"malformed JSON at line 1, column 86: Unexpected character ('}' (code 125)): was expecting double-quote to start field name"}
+E4-past-expiresAt-no-startsAt -> 400 0.006003s
+   {"error":"expiresAt must be after startsAt"}
+E5-expiresAt-word -> 400 0.005568s
+   {"error":"expiresAt: 'tomorrow' is not an ISO-8601 UTC timestamp like 2026-11-01T12:00:00Z"}
+E6-unknown-field -> 201 0.014741s
+   {"id":"694d45dc-82b2-4971-ad6a-2d748ad539f9","tenantId":"ux2-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"t","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:09.632288980Z","createdAt":"2026-11-02T04:07:09.632288980Z","updatedAt":"2026-11-02T04:07:09.632288980Z","version":0,"history":[{"at":"2026-11-02T04:07:09.632288980Z","actor":"p","action":"created (ACTIVE)"}]}
+E7-services-null -> 400 0.005659s
+   {"error":"Failed to read HTTP message"}
+E8-missing-all -> 400 0.004605s
+   {"error":"publisher: must not be blank; severity: must not be null; tenantId: must not be blank; title: must not be blank; type: must not be null"}
+E9-severity-floor -> 400 0.006578s
+   {"error":"OUTAGE requires severity MINOR or higher"}
+E10-bad-ticket -> 400 0.004100s
+   {"error":"ticket.number 'INC12' is not a ServiceNow incident number (like INC0012345)"}
+E11-size-500 -> 200 0.006575s
+   {"items":[{"id":"694d45dc-82b2-4971-ad6a-2d748ad539f9","tenantId":"ux2-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"t","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:09.632Z","updatedAt":"2026-11-02T04:07:09.632Z"},{"id":"16138e5e-9a65-4d51-bc95-89251b5e4d34","tenantId":"ux2-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:05.809Z","expiresAt":"2026-11-02T06:07:05Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"updatedAt"
+   size: 100 page: 0
+E12-wrong-path -> 404 0.006116s
+   {"error":"no such endpoint: GET /v1/nothing (the API is documented at /swagger-ui.html)"}
+E13-text-plain -> {"error":"Content-Type 'text/plain' is not supported here; send application/json or application/*+json or application/x-ndjson"} 415
+E14-not-found -> 404 0.019076s
+   {"error":"communication doesnotexist not found"}
+E15-maintenance-no-end -> 400 0.006361s
+   {"error":"MAINTENANCE requires endsAt"}
+E16-draft -> 201 0.006229s
+   {"id":"7b603620-05fe-494f-8bac-011da84dcd2e","tenantId":"ux2-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"draft","affectedServices":[],"audience":"CUSTOMERS","status":"DRAFT","startsAt":"2026-11-02T04:07:09.858602397Z","createdAt":"2026-11-02T04:07:09.858602397Z","updatedAt":"2026-11-02T04:07:09.858602397Z","version":0,"history":[{"at":"2026-11-02T04:07:09.858602397Z","actor":"p","action":"created (DRAFT)"}]}
+   draft id=7b603620-05fe-494f-8bac-011da84dcd2e status=DRAFT
+E16b-publish-draft -> 200 0.011451s
+   {"id":"7b603620-05fe-494f-8bac-011da84dcd2e","tenantId":"ux2-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"draft","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:09.858Z","createdAt":"2026-11-02T04:07:09.858Z","updatedAt":"2026-11-02T04:07:09.935061656Z","version":1,"history":[{"at":"2026-11-02T04:07:09.858Z","actor":"p","action":"created (DRAFT)"},{"at":"2026-11-02T04:07:09.935061656Z","actor":"p","action":"DRAFT -> ACTIVE"}]}
+E16c-publish-again -> 409 0.005355s
+   {"error":"only DRAFT communications can be published; 7b603620-05fe-494f-8bac-011da84dcd2e is ACTIVE"}
+E17-put-retired -> 409 0.006810s
+   {"error":"communication 1d1ceec4-bfb3-4753-9619-fea01ea56ce1 is RETIRED and can no longer be updated"}
+E18-expire-then-retire -> 201 0.014478s
+   {"id":"6a5b90c6-7f75-4bfd-8b2c-105e8d697a01","tenantId":"ux2-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"short","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:07:09.995147452Z","expiresAt":"2026-11-02T04:07:11Z","createdAt":"2026-11-02T04:07:09.995147452Z","updatedAt":"2026-11-02T04:07:09.995147452Z","version":0,"history":[{"at":"2026-11-02T04:07:09.995147452Z","actor":"p","action":"created (ACTIVE)"}]}
+E18b-retire-expired -> 409 0.007201s
+   {"error":"communication 6a5b90c6-7f75-4bfd-8b2c-105e8d697a01 already expired; retiring would rewrite history"}
+
+### H health monitoring from the README
+HTTP/1.1 201 Created
+Location: /v1/health/monitors/7608642b-a74e-481a-a183-a3ee69097e1c
+{"id":"7608642b-a74e-481a-a183-a3ee69097e1c","tenantId":"ux2-api","service":"vm-api","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":120,"minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-02T04:07:13.097947836Z","updatedAt":"2026-11-02T04:07:13.097947836Z"
+H2-probe-push-only -> 409 0.007680s
+   {"error":"monitor 7608642b-a74e-481a-a183-a3ee69097e1c is push-only (no url) and cannot be probed"}
+H3-report -> 202 0.008391s
+   {"id":"7608642b-a74e-481a-a183-a3ee69097e1c","tenantId":"ux2-api","service":"vm-api","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":120,"minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-02T04:07:13.163637245Z","lastSummary":"DOWN (primary database unreachable): db DOWN","unhealthyStreak":1,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-02T04:07:13.097Z","updatedAt":"2026-11-02T04:07:13.163637245Z","version":1}
+H4-monitor -> 200 0.004182s
+   {"id":"7608642b-a74e-481a-a183-a3ee69097e1c","tenantId":"ux2-api","service":"vm-api","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":120,"minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-02T04:07:13.163Z","lastSummary":"DOWN (primary database unreachable): db DOWN","unhealthyStreak":1,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-02T04:07:13.097Z","updatedAt":"2026-11-02T04:07:13.163Z","version":1}
+H5-instances -> 200 0.007268s
+   []
+H6-register-dup -> 409 0.007288s
+   {"error":"a monitor already exists for service 'vm-api' in tenant 'ux2-api'"}
+H7-delete -> 204 0.019993s
+   
+
+### D README paths vs OpenAPI
+./api-walk.sh: command substitution: line 89: syntax error near unexpected token `?\s*'
+./api-walk.sh: command substitution: line 89: `(?:GET|POST|PUT|DELETE)?\s*(/v1/[A-Za-z0-9/{}_\-]+)', readme)) | set(re.findall(r'\|\s*'
+./api-walk.sh: line 89: bad substitution: no closing "`" in `?]+)', readme))
+norm=lambda p: re.sub(r'<[^>]+>|\{[^}]+\}','{id}',p).rstrip('/')
+api={norm(p) for p in paths}
+missing=sorted({p for p in found if '*' not in p and norm(p) not in api})
+print('README /v1 paths:',len(found),'| OpenAPI paths:',len(paths),'| README paths absent from OpenAPI:',missing or 'none')
+
+
+### cleanup: retire what is still active in ux2-api
+retire 16138e5e-9a65-4d51-bc95-89251b5e4d34 -> 200
+retire bc436c5e-c43a-4422-b6c0-a744a007afb4 -> 200
+retire 7b603620-05fe-494f-8bac-011da84dcd2e -> 200

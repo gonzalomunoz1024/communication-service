@@ -1,0 +1,25 @@
+G-4-10 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  OperationsEndpointsIT > aStreamOpenedWhileTheDatabaseIsUnreachableIs503BeforeAnyByteWithOneWarning()  (1.027 s)
+    org.opentest4j.AssertionFailedError: [socket /v1/feed/stream?tenantId=ops-outage] 
+    expected: 
+      "503 application/json {"error":"database unavailable"}"
+     but was: 
+      "200 text/event-stream;charset=UTF-8 :connected
+      
+      "
+FAILED  OperationsEndpointsIT > aStreamWhoseDatabaseGoesAwayAfterItOpenedEndsWithOneWarningAndNoError()  (10.041 s)
+    java.lang.IllegalStateException: Timeout on blocking read for 10000000000 NANOSECONDS
+FAILED  GlobalExceptionHandlerTest > the503IsJsonEvenForARequestThatAcceptsOnlyAnEventStream()  (0.14 s)
+    java.lang.AssertionError: Response header 'Content-Type' expected:<application/json> but was:<text/event-stream;charset=UTF-8>
+
+Live: iteration-3 jar on :18317 against a private mongo:7.0 (beh-mongo, 127.0.0.1:18310) after 'docker stop beh-mongo' (script outage_live.sh):
+iter3: GET /v1/feed/stream during the outage (curl -i, 20 s cap):
+HTTP/1.1 200 OK
+transfer-encoding: chunked
+Content-Type: text/event-stream;charset=UTF-8
+:connected
+[curl: HTTP 200 after 5.059660 s]
+backend log:
+WARN 20509 --- [communication-service] [6153767d8e1eea0] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPref
+INFO 20509 --- [communication-service] [or-http-epoll-4] c.a.c.config.ClientIdWebFilter           : client=fixbeh-outage GET /v1/feed/stream -> 200 (5057 ms)

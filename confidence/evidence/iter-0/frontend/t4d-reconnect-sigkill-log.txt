@@ -1,0 +1,28 @@
++0.0s started aux backend
++5.1s aux backend up: true
++5.7s indicator → Paused
++5.7s stream REQUEST last-event-id=(none)
++5.7s stream REQUEST FAILED net::ERR_ABORTED
++5.8s stream REQUEST last-event-id=(none)
++5.8s stream REQUEST FAILED net::ERR_ABORTED
++5.8s stream REQUEST last-event-id=(none)
++5.9s stream RESPONSE 200
++5.9s indicator → Live
++5.9s feed is Live; SIGKILL backend pid 22851
++6.0s backend is down (GET refused)
++18.0s after 12 s down; es log: ["00:06:40.539 es#4 open"]
++23.6s backend is back (GET 200)
++23.9s published after restart → 201
++54.2s card 'published after restart' shown after >30s; indicator=Live
++54.2s final es log: ["00:06:40.539 es#4 open"]
+FAIL [F-61] indicator shows 'Reconnecting' while the backend is down :: ["+5.7s indicator → Paused","+5.9s indicator → Live","+54.2s card 'published after restart' shown after >30s; indicator=Live"]
+FAIL [F-61] the browser retries the stream on its own and sends Last-Event-ID :: {"retries":0,"streamLines":["+5.7s stream REQUEST last-event-id=(none)","+5.7s stream REQUEST FAILED net::ERR_ABORTED","+5.8s stream REQUEST last-event-id=(none)","+5.8s stream REQUEST FAILED net::ERR_ABORTED","+5.8s stream REQUEST last-event-id=(none)","+5.9s stream RESPONSE 200"]}
+FAIL [F-20] resumed stream requests (Last-Event-ID) are answered 200, never 500 :: ["+5.9s stream RESPONSE 200"]
+FAIL [F-61] after the restart the new item appears without a manual refresh and the indicator is Live again :: {"shownAt":null,"indicator":"Live","eventSourceClosedForGood":false}
+PASS [F-61] diagnostic: toggling Live updates off/on (fresh EventSource without Last-Event-ID) restores the stream :: {"healed":true,"nowShown":true}
+
+== t4d-reconnect-sigkill: 5 checks, 4 failed
+   FAILED [F-61] indicator shows 'Reconnecting' while the backend is down
+   FAILED [F-61] the browser retries the stream on its own and sends Last-Event-ID
+   FAILED [F-20] resumed stream requests (Last-Event-ID) are answered 200, never 500
+   FAILED [F-61] after the restart the new item appears without a manual refresh and the indicator is Live again

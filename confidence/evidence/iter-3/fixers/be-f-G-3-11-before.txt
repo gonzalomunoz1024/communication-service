@@ -1,0 +1,30 @@
+# G-3-11 before the fix (worktree at the G-3-9 commit + the new test only; that commit was 6419cea then, amended to 37a1eca
+# afterwards for a SpotBugs null-check refactor in handleBind and a README sentence, no behaviour change)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*RestControllerFeedAdapterTest' --continue
+# test: RestControllerFeedAdapterTest.withBothAQueryIdAndALastEventIdHeaderTheStreamResumesAfterTheLaterOne
+#       three reconnects (query, header): (80, 85), (85, 80), (80, not-one-of-ours); captures the resume id passed to the use case
+
+RestControllerFeedAdapterTest > withBothAQueryIdAndALastEventIdHeaderTheStreamResumesAfterTheLaterOne() FAILED
+    org.opentest4j.AssertionFailedError: 
+    Expecting actual:
+      [80L, 85L, 80L]
+    to contain exactly (and in same order):
+      [85L, 85L, 80L]
+    but some elements were not found:
+      [85L]
+    and others were not expected:
+      [80L]
+        at app//com.atlas.communication.feed.adapters.inbound.RestControllerFeedAdapterTest.withBothAQueryIdAndALastEventIdHeaderTheStreamResumesAfterTheLaterOne(RestControllerFeedAdapterTest.java:106)
+3 tests completed, 1 failed
+BUILD FAILED in 17s
+exit=1
+-> the query id always won: query 80 with a fresher header 85 resumed after 80
+
+## HTTP (scratchpad http-g311.sh): private mongod :18201, backend :18200, jar built at 6419cea (see above); three notices published (events 1-3),
+## then reconnects with both ids; the id: lines each stream sent within 3 s
+every event in the log (resume from 0): ids 1 2 3 
+GET /v1/feed/stream?tenantId=fixbef-g311&lastEventId=1  + Last-Event-ID: 2 -> id:2 id:3 
+GET /v1/feed/stream?tenantId=fixbef-g311&lastEventId=2 + Last-Event-ID: 1  -> id:3 
+GET /v1/feed/stream?tenantId=fixbef-g311                  + Last-Event-ID: 2 -> id:3 
+GET /v1/feed/stream?tenantId=fixbef-g311&lastEventId=2 (no header)        -> id:3 
+-> with ?lastEventId=1 and Last-Event-ID: 2 the client gets frame 2 again although its header says it has it

@@ -1,0 +1,21 @@
+Fix G-1-11: filter stream frames by the feed's visibility rule
+
+feed-state.ts kept every SCHEDULED frame, while GET /v1/feed lists only what is
+live plus scheduled MAINTENANCE starting within communication.feed.upcoming-window
+(P7D). A scheduled outage therefore appeared under "Upcoming" as long as the
+stream delivered it and vanished on the next reload.
+
+- feed-state.ts: inFeed() mirrors CommunicationQuery.visibleAt (ACTIVE, or
+  SCHEDULED MAINTENANCE with startsAt <= now + UPCOMING_WINDOW_MS); applyEvent()
+  upserts only items that pass it and drops an item an update moves out.
+  UPCOMING_WINDOW_MS is documented as the counterpart of the service setting.
+- README: states the rule once for both paths.
+
+Tests (src/test/feed-state.test.ts): maintenance 3 days out is listed, 10 days
+out is not; scheduled outage/incident/change are not listed until they start and
+an update that pushes a live item into the future removes it; inFeed at the
+window boundary. Against the previous reducer 3 of the new tests fail; with the
+fix 9 files / 55 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

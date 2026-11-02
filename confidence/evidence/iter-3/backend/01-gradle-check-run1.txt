@@ -1,0 +1,33 @@
+# 01 - ./gradlew --max-workers=2 --no-daemon check --rerun-tasks (code e3968c4 = 4a0e84e), run 1 of 3
+
+pgrep -f GradleWrapperMain before the run: none (checked); the build/libs jar is untouched (sha256 before/after):
+b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f communication-service-0.0.1-SNAPSHOT.jar
+b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f communication-service-0.0.1-SNAPSHOT.jar
+
+Task lines, gate output and result (full log 275 lines, trimmed to the relevant parts):
+start 2026-11-02T06:47:57Z
+> Task :cyclonedxDirectBom
+> Task :cyclonedxBom
+> Task :compileJava
+> Task :processResources
+> Task :classes
+> Task :compileTestJava
+> Task :processTestResources
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+> Task :jacocoTestCoverageVerification
+> Task :jacocoTestReport
+> Task :spotbugsTest SKIPPED
+> Task :verifySbomScope
+SBOM scope: 87 components, none of them a build or test tool
+> Task :spotbugsMain
+> Task :check
+BUILD SUCCESSFUL in 2m 41s
+12 actionable tasks: 12 executed
+exit=0 elapsed=162s end 2026-11-02T06:50:39Z
+
+javac warnings (-Werror is set at build.gradle.kts:54): 0 ; the only 'warning:' lines are the JVM's CDS notice:
+      2 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+check depends on (gradle -q tasks graph, from build.gradle.kts): test, integrationTest, jacocoTestReport, jacocoTestCoverageVerification, spotbugsMain, cyclonedxBom, verifySbomScope - all 12 tasks executed above.

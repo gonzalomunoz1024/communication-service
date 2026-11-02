@@ -1,0 +1,33 @@
+# private stack bring-up
+## 2026-11-02T04:06:24.477Z private stack up (head be19645)
+e2e2-mongo started
+2026-11-02T04:06:26.945Z mongo answers ping
+backend A pid 22926
+backend B pid 22937
+2026-11-02T04:06:38.539Z backend A readiness ready after 12 s
+2026-11-02T04:06:38.810Z backend B readiness ready after 0 s
+2026-11-02T04:06:39.848Z vite preview (frontend/dist) -> A ready after 1 s
+## 2026-11-02T04:06:39.850Z building health-sidecar:e2e2 from sidecar/Dockerfile (GO_IMAGE/BASE_IMAGE substituted: UBI registry blocked)
+sidecar image build exit=0 (114c2201d4af, labels e2e2/be19645)
+e2e2-netns started
+e2e2-app started (fakeapp:e2e)
+e2e2-sidecar started (health-sidecar:e2e2, uid 1000660000, read-only, cap-drop ALL, no-new-privileges)
+e2e2-stub started (pull-probe target)
+2026-11-02T04:06:57.902Z fake app in the pod ready after 0 s
+2026-11-02T04:06:58.934Z sidecar reported ready after 1 s
+2026-11-02T04:06:58.985Z backend A sees monitor ve2/ve2-app UP ready after 0 s
+## 2026-11-02T04:06:58.988Z private stack up: A :19501 B :19502 UI :19530 pod app :19540 status :19541 stub :19551 mongo :19527
+e2e2-stub	fakeapp:e2e	Up 1 second	127.0.0.1:19551->8080/tcp
+e2e2-sidecar	health-sidecar:e2e2	Up 1 second	
+e2e2-app	fakeapp:e2e	Up 1 second	
+e2e2-netns	golang:1.24	Up 2 seconds	127.0.0.1:19540->8080/tcp, 127.0.0.1:19541->9465/tcp
+e2e2-mongo	mongo:7.0	Up 34 seconds	127.0.0.1:19527->27017/tcp
+exit=0
+
+# health-sidecar:e2e2 image build (tail)
+#15 exporting config sha256:b0fcf84a963780d9b99aa04c1d8833cbc23bcf044275187b80c7bb142e05bada done
+#15 exporting attestation manifest sha256:4bbbdf264e72fc64a30eed4829ebaa41098c2f0b1ba35e28be2d4afb3c77c9b9 done
+#15 exporting manifest list sha256:114c2201d4afcb148108d22a2aa7682f7d56f961d423cb04d83c81019f9f6c6c done
+#15 naming to docker.io/library/health-sidecar:e2e2 done
+#15 unpacking to docker.io/library/health-sidecar:e2e2 0.1s done
+#15 DONE 0.7s

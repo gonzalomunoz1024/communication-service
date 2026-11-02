@@ -1,0 +1,57 @@
++8.24s (dev) empty tenant: badges ["Waiting for a tenant","Connecting","Live"]; stream 200s 1; Live 6005 ms after the last 200; frames 0
++10.00s (dev) one notice: seed 201; badges ["Waiting for a tenant","Connecting","Live"]; first frame snapshot 46 ms, Live 79 ms after the 200
++17.30s (prod) empty tenant: badges ["Waiting for a tenant","Connecting","Live"]; stream 200s 1; Live 5995 ms after the last 200; frames 0
++18.12s (prod) one notice: seed 201; badges ["Waiting for a tenant","Connecting","Live"]; first frame created 42 ms, Live 54 ms after the 200
++20.51s /__drop → 1 stream(s) cut
++23.55s /__drop → 1 stream(s) cut
++27.57s /__drop → 1 stream(s) cut
++33.59s /__drop → 1 stream(s) cut
++54.52s (drop) badges ["Waiting for a tenant@18.3","Connecting@18.5","Reconnecting (1)@20.5","Reconnecting (2)@23.5","Reconnecting (3)@27.6","Reconnecting (4)@33.6","Live@47.6"]
++54.52s (drop) 5 stream requests; reopen gaps after each cut (ms) [1004,2002,4004,8002]; list GETs before Live 1, after 1
+# the run data below: one compact JSON element per line (re-emitted from the pretty-printed JSON the script wrote)
+## empty-dev.badges
+{"t": -415, "text": "Waiting for a tenant"}
+{"t": -156, "text": "Connecting"}
+{"t": 6005, "text": "Live"}
+## empty-dev.net
+{"t": -152, "ev": "req", "kind": "GET"}
+{"t": -141, "ev": "req", "kind": "stream"}
+{"t": 0, "ev": "res", "kind": "stream", "status": 200}
+{"t": 68, "ev": "res", "kind": "GET", "status": 200}
+## empty-prod.badges
+{"t": -205, "text": "Waiting for a tenant"}
+{"t": -92, "text": "Connecting"}
+{"t": 5995, "text": "Live"}
+## empty-prod.net
+{"t": -90, "ev": "req", "kind": "GET"}
+{"t": -38, "ev": "req", "kind": "stream"}
+{"t": 0, "ev": "res", "kind": "stream", "status": 200}
+{"t": 75, "ev": "res", "kind": "GET", "status": 200}
+## drop.badges
+{"text": "Waiting for a tenant", "t": 18330}
+{"text": "Connecting", "t": 18468}
+{"text": "Reconnecting (1)", "t": 20519}
+{"text": "Reconnecting (2)", "t": 23548}
+{"text": "Reconnecting (3)", "t": 27569}
+{"text": "Reconnecting (4)", "t": 33588}
+{"text": "Live", "t": 47602}
+## drop.drops
+{"t": 20513, "dropped": "1"}
+{"t": 23546, "dropped": "1"}
+{"t": 27566, "dropped": "1"}
+{"t": 33586, "dropped": "1"}
+## drop.net
+{"ev": "req", "kind": "GET", "t": 18469}
+{"ev": "req", "kind": "stream", "t": 18499}
+{"ev": "res", "kind": "GET", "status": 200, "t": 18499}
+{"ev": "res", "kind": "stream", "status": 200, "t": 18506}
+{"ev": "req", "kind": "stream", "t": 21517}
+{"ev": "res", "kind": "stream", "status": 200, "t": 21542}
+{"ev": "req", "kind": "stream", "t": 25548}
+{"ev": "res", "kind": "stream", "status": 200, "t": 25562}
+{"ev": "req", "kind": "stream", "t": 31570}
+{"ev": "res", "kind": "stream", "status": 200, "t": 31583}
+{"ev": "req", "kind": "stream", "t": 41588}
+{"ev": "res", "kind": "stream", "status": 200, "t": 41600}
+{"ev": "req", "kind": "GET", "t": 47605}
+{"ev": "res", "kind": "GET", "status": 200, "t": 47643}

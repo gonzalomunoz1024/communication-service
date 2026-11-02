@@ -1,0 +1,56 @@
+# G-2-15 before: worktree at e4dbeba (G-2-14 applied) plus the three new tests; deploy_test.go, main.go and the README untouched
+
+## (1) deploy tests with CI=true and kustomize/kubeconform NOT on PATH: they skip and the package passes
+$ cd sidecar && CI=true go test -count=1 -v ./deploy/
+    deploy_test.go:177: kustomize not on PATH
+--- SKIP: TestNativeComponentKeepsExistingInitContainers (0.00s)
+    deploy_test.go:203: kustomize not on PATH
+--- SKIP: TestClassicComponentAppendsTheContainer (0.00s)
+    deploy_test.go:218: kustomize not on PATH
+--- SKIP: TestBothComponentsShareTheContainerContract (0.00s)
+    deploy_test.go:267: kubeconform not on PATH; schema validation skipped
+--- PASS: TestManualSnippetSharesTheContainerContract (0.00s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.003s
+exit=0        <- the G-1-18 guard never ran, and nothing said so
+
+## (2) the same with the tools on PATH (kustomize v5.5.0, kubeconform v0.6.7): pass
+$ PATH=<scratchpad>/tools:$PATH go test -count=1 -v ./deploy/
+    deploy_test.go:198: kubeconform 1.29.0: Summary: 3 resources found parsing stdin - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestNativeComponentKeepsExistingInitContainers (0.71s)
+    deploy_test.go:212: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+    deploy_test.go:213: kubeconform 1.29.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestClassicComponentAppendsTheContainer (0.81s)
+--- PASS: TestBothComponentsShareTheContainerContract (0.14s)
+    deploy_test.go:267: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestManualSnippetSharesTheContainerContract (0.39s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	2.058s
+exit=0
+
+## (3) cmd/health-sidecar: the new tests cannot build against the old main (everything lived in func main)
+$ go test -count=1 -v ./cmd/health-sidecar/
+# github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar [github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar.test]
+cmd/health-sidecar/main_test.go:67:10: undefined: run
+cmd/health-sidecar/main_test.go:91:10: undefined: run
+cmd/health-sidecar/main_test.go:157:11: undefined: run
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar [build failed]
+FAIL
+exit=1
+
+## (4) the /status contract test against the README table as it was (the JSON carried four keys the table did not document)
+$ go test -count=1 -v -run TestStatusJSONMatchesTheDocumentedContract ./internal/agent/
+=== RUN   TestStatusJSONMatchesTheDocumentedContract
+    agent_test.go:490: /status key "version" is not in the README's /status table
+    agent_test.go:490: /status key "service" is not in the README's /status table
+    agent_test.go:490: /status key "instance" is not in the README's /status table
+    agent_test.go:490: /status key "tenant" is not in the README's /status table
+--- FAIL: TestStatusJSONMatchesTheDocumentedContract (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.009s
+exit=1
+(the value checks of the test already held: target/lastTarget/upSeen/lastReport/lastSendAt/reportsSent/sendError are serialised under those names)

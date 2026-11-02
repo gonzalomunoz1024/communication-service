@@ -1,0 +1,11 @@
+# 05: the private backends started by scripts/05-backend.sh from scratchpad/communication-service-iter4.jar
+# A :19300 -> mongodb://localhost:27017/vs4_main (shared Mongo, own database); B :19302 -> vs4-mongo (mongo:7.0, host :19301), database vs4_db
+FAST="--communication.health.sweep-interval-ms=1000 --communication.health.stale-grace-after-start-ms=0 --communication.health.stale-pause-min-silent=1000 --communication.sweep.interval-ms=2000"
+--- backend :19300
+Started CommunicationServiceApplication in 66.431 seconds (process running for 70.983)
+:: Spring Boot ::                (v4.0.9)
+readiness now (11:01:26): {"status":"UP"} http=200
+--- backend :19302
+Started CommunicationServiceApplication in 61.095 seconds (process running for 69.558)
+:: Spring Boot ::                (v4.0.9)
+readiness now (11:01:26): {"status":"UP"} http=200

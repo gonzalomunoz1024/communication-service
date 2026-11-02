@@ -1,0 +1,9 @@
+{"step": "ensure-A", "at": "2026-11-02T07:17:02.687Z", "state": "was up"}
+{"step": "seed", "at": "2026-11-02T07:17:02.710Z", "status": 201}
+{"step": "before", "at": "2026-11-02T07:17:05.858Z", "cards": 1, "badge": "Live"}
+{"step": "killed", "at": "2026-11-02T07:17:05.865Z", "pids": [29242]}
+{"step": "outage-timeline", "at": "2026-11-02T07:17:34.266Z", "timeline": [{"t": 0, "badge": "Live"}, {"t": 0.5, "badge": "Reconnecting"}, {"t": 3.6, "badge": "Reconnecting (1)"}, {"t": 4.6, "badge": "Reconnecting (2)"}, {"t": 6.1, "badge": "Reconnecting (3)"}, {"t": 10.1, "badge": "Reconnecting (4)"}, {"t": 18.2, "badge": "Reconnecting (5)"}], "cards": 1, "errorState": 0}
+{"step": "restarted", "at": "2026-11-02T07:17:45.509Z", "readyAfterMs": 11146}
+{"step": "published-after-ready", "at": "2026-11-02T07:17:45.881Z", "status": 201, "msAfterReady": 372}
+{"step": "recovery", "at": "2026-11-02T07:17:54.400Z", "liveAfterReadyMs": 8574, "newCardAfterReadyMs": 8881, "badge": "Live", "cards": 2, "reconnectAttemptsSeen": 6}
+{"step": "announcements", "at": "2026-11-02T07:17:54.496Z", "ann": [{"t": 2671, "role": "status", "text": "Reconnecting"}, {"t": 5705, "role": "status", "text": "Reconnecting (1)"}, {"t": 6710, "role": "status", "text": "Reconnecting (2)"}, {"t": 8720, "role": "status", "text": "Reconnecting (3)"}, {"t": 12722, "role": "status", "text": "Reconnecting (4)"}, {"t": 20726, "role": "status", "text": "Reconnecting (5)"}, {"t": 30735, "role": "status", "text": "Reconnecting (6)"}, {"t": 40750, "role": "status", "text": "Reconnecting (7)"}, {"t": 50818, "role": "status", "text": "Live"}]}

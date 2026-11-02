@@ -1,0 +1,80 @@
+[00:37:53] STEP 1: ports 9001 (404 everywhere), 9002 (/healthz), 9003 (/actuator/health), backend stub 9100 (ignored via CS_IGNORE_PORTS); start sidecar
+[00:37:58] status after start (expect target http://127.0.0.1:9003/actuator/health):
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"http://127.0.0.1:9003/actuator/health","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T00:37:56.296Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:37:54.129860746Z","reportsSent":1}
+
+[00:37:58] STEP 2: stop 9003 -> expect rediscovery to 9002 /healthz (http mode)
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"http://127.0.0.1:9002/healthz","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","observedAt":"2026-11-02T00:38:05.718Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:38:01.553888032Z","reportsSent":3}
+
+[00:38:07] STEP 3: stop 9002 -> expect fallback to 9001 '/' (404 counts as UP on root)
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"http://127.0.0.1:9001/","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","observedAt":"2026-11-02T00:38:15.733Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:38:10.983024289Z","reportsSent":5}
+
+[00:38:17] STEP 4: stop 9001, start a raw TCP listener on 9004 -> expect tcp://127.0.0.1:9004
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"tcp://127.0.0.1:9004","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","observedAt":"2026-11-02T00:38:25.401Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:38:21.185883335Z","reportsSent":7}
+
+[00:38:26] STEP 5: send policy: backend answers 500 -> backoff; then 400 -> rejected; then 409 -> retried; then 202
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"tcp://127.0.0.1:9004","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","observedAt":"2026-11-02T00:38:34.206Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:38:21.185883335Z","sendError":"post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {\"stub\":\"answered 500\"}","reportsSent":7}
+
+[00:38:35] now 400
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"tcp://127.0.0.1:9004","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","observedAt":"2026-11-02T00:38:43.007Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:38:38.374341534Z","sendError":"report rejected: HTTP 400 {\"stub\":\"answered 400\"}","reportsSent":7}
+
+[00:38:44] now 409
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"tcp://127.0.0.1:9004","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","observedAt":"2026-11-02T00:38:53.604Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:38:38.374341534Z","sendError":"post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {\"stub\":\"answered 409\"}","reportsSent":7}
+
+[00:38:53] now 202
+{"version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","target":"tcp://127.0.0.1:9004","upSeen":true,"lastReport":{"tenantId":"sc-ladder","service":"ladder-app","status":"UP","observedAt":"2026-11-02T00:39:02.552Z","publisher":"health-sidecar","instance":{"id":"ladder-app-6d4f8b7c9-abcde","namespace":"sc-ns","node":"node-a","cluster":"sandbox","version":"2.3.4","sidecar":"1.0.0-verify"}},"lastSendAt":"2026-11-02T00:39:02.552680503Z","reportsSent":9}
+
+[00:39:02] STEP 6: heartbeat cadence with nothing changing (CS_HEARTBEAT=6s): count requests over 20s
+requests before=16 after=19 (expect ~3 in 20s)
+[00:39:23] STEP 7: docker stop sidecar (SIGTERM) -> expect a final request with instance.leaving=true
+stop took 0.12s; exit code: 0
+[00:39:23] SIDECAR LOG:
+{"time":"2026-11-02T00:37:54.127377697Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-verify","service":"ladder-app","tenant":"sc-ladder","instance":"ladder-app-6d4f8b7c9-abcde","endpoint":"http://127.0.0.1:9100","probe":"auto"}
+{"time":"2026-11-02T00:37:54.137996138Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:9003/actuator/health","status":"UP"}
+{"time":"2026-11-02T00:37:54.1389282Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T00:37:59.532235514Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9003/actuator/health"}
+{"time":"2026-11-02T00:37:59.532793429Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:9003/actuator/health: connection refused"}
+{"time":"2026-11-02T00:38:01.561358436Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:9002/healthz","status":"UP"}
+{"time":"2026-11-02T00:38:01.561664599Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T00:38:08.773927574Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9002/healthz"}
+{"time":"2026-11-02T00:38:08.805963567Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:9002/healthz: connection refused"}
+{"time":"2026-11-02T00:38:10.996046535Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:9001/","status":"UP"}
+{"time":"2026-11-02T00:38:10.996412389Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T00:38:19.032625765Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9001/"}
+{"time":"2026-11-02T00:38:19.033449434Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:9001/: connection refused"}
+{"time":"2026-11-02T00:38:21.194224328Z","level":"INFO","msg":"health target found","target":"tcp://127.0.0.1:9004","status":"UP"}
+{"time":"2026-11-02T00:38:21.194768636Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T00:38:27.522345701Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {\"stub\":\"answered 500\"}","in":"1s"}
+{"time":"2026-11-02T00:38:29.563719123Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {\"stub\":\"answered 500\"}","in":"2s"}
+{"time":"2026-11-02T00:38:31.937145515Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {\"stub\":\"answered 500\"}","in":"4s"}
+{"time":"2026-11-02T00:38:38.375607695Z","level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"stub\":\"answered 400\"}"}
+{"time":"2026-11-02T00:38:45.040495732Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {\"stub\":\"answered 409\"}","in":"1s"}
+{"time":"2026-11-02T00:38:47.336112837Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {\"stub\":\"answered 409\"}","in":"2s"}
+{"time":"2026-11-02T00:38:51.57511974Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {\"stub\":\"answered 409\"}","in":"4s"}
+{"time":"2026-11-02T00:39:23.101143332Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T00:39:23.101312178Z","level":"INFO","msg":"health sidecar stopped"}
+[00:39:23] RECORDED REQUESTS (backend stub):
+total 20
+00:37:54.138 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:37:59.532 POST /v1/health/reports status= DOWN msg= GET http://127.0.0.1:9003/actuator/health: connection refuse leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:01.561 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:08.798 POST /v1/health/reports status= DOWN msg= GET http://127.0.0.1:9002/healthz: connection refused leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:10.996 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:19.033 POST /v1/health/reports status= DOWN msg= GET http://127.0.0.1:9001/: connection refused leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:21.194 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:27.522 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:29.563 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:31.936 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:38.375 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:45.040 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:47.335 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:51.574 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:38:55.848 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:39:02.553 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:39:09.026 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:39:15.710 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:39:22.458 POST /v1/health/reports status= UP msg=  leaving= None | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+00:39:23.100 POST /v1/health/reports status= UP msg= instance shutting down leaving= True | hdr X-Client-Id= ladder-repo UA= health-sidecar/1.0.0-verify CT= application/json Accept= application/json
+FIRST BODY: {"tenantId": "sc-ladder", "service": "ladder-app", "status": "UP", "components": {"db": {"details": {"database": "PostgreSQL"}, "status": "UP"}, "ping": {"status": "UP"}}, "observedAt": "2026-11-02T00:37:54.129Z", "publisher": "health-sidecar", "instance": {"id": "ladder-app-6d4f8b7c9-abcde", "namespace": "sc-ns", "node": "node-a", "cluster": "sandbox", "version": "2.3.4", "sidecar": "1.0.0-verify"}}
+LAST BODY: {"tenantId": "sc-ladder", "service": "ladder-app", "status": "UP", "message": "instance shutting down", "observedAt": "2026-11-02T00:39:23.099Z", "publisher": "health-sidecar", "instance": {"id": "ladder-app-6d4f8b7c9-abcde", "namespace": "sc-ns", "node": "node-a", "cluster": "sandbox", "version": "2.3.4", "sidecar": "1.0.0-verify", "leaving": true}}
+[00:39:23] DONE
+LADDER_RC=0

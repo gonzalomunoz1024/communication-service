@@ -5,6 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -13,10 +16,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.ObjectMapper;
 
+@ExtendWith(OutputCaptureExtension.class)
 class ClientIdWebFilterTest {
 
     private static final ParameterizedTypeReference<Map<String, String>> ERROR =
@@ -39,6 +42,11 @@ class ClientIdWebFilterTest {
         @GetMapping("/v3/api-docs")
         Mono<String> docs() {
             return Mono.just("docs");
+        }
+
+        @GetMapping("/actuator/health/readiness")
+        Mono<String> readiness() {
+            return Mono.just("{\"status\":\"UP\"}");
         }
     }
 
@@ -94,6 +102,21 @@ class ClientIdWebFilterTest {
                 .expectBody(String.class).isEqualTo("docs");
         client(true).options().uri("/v1/echo").exchange()
                 .expectStatus().isOk();
+    }
+
+    @Test
+    void logsEveryIdentifiedRequestWithItsOutcome(CapturedOutput output) {
+        client(true).post().uri("/v1/echo").header(ClientIdWebFilter.HEADER, "vmforge-tools").exchange()
+                .expectStatus().isOk();
+        assertThat(output.getOut()).containsPattern("client=vmforge-tools POST /v1/echo -> 200 \\(\\d+ ms\\)");
+    }
+
+    @Test
+    void letsProbesReachTheHealthEndpointWithoutAnId() {
+        // kubelet probes cannot send X-Client-Id; /actuator/** is outside the identified surface
+        client(true).get().uri("/actuator/health/readiness").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"status\":\"UP\"}");
     }
 
     @Test

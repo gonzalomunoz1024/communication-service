@@ -1,5 +1,6 @@
 package com.atlas.communication.admin.application;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Set;
 
@@ -24,7 +25,8 @@ import reactor.core.publisher.Mono;
 
 /**
  * Admin oversight. Retire delegates to the publishing rules (same state machine and events);
- * search and purge are admin-only capabilities.
+ * search and purge are admin-only capabilities. Search answers with each communication's
+ * effective status, like the publisher's own reads.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,17 +34,20 @@ public class AdminUseCase implements AdminInboundPort {
 
     private final CommunicationRepositoryPort repository;
     private final PublishingUseCase publishing;
+    private final Clock clock;
 
     @Override
     public Mono<Page<Communication>> search(String tenantId, Set<CommunicationStatus> statuses,
             CommunicationType type, String publisher, Instant createdFrom, Instant createdTo,
             int page, int size) {
         return Mono.defer(() -> {
+            Instant now = clock.instant();
             CommunicationQuery query = CommunicationQuery.admin(tenantId, statuses, type,
                     publisher, createdFrom, createdTo, Page.validPage(page), Page.validSize(size));
             return repository.query(query).collectList()
                     .zipWith(repository.count(query))
-                    .map(t -> Page.of(t.getT1(), query.page(), query.size(), t.getT2()));
+                    .map(t -> Page.of(t.getT1(), query.page(), query.size(), t.getT2())
+                            .map(c -> c.asSeenAt(now)));
         });
     }
 

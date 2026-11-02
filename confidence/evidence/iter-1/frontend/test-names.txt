@@ -1,0 +1,80 @@
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > shows the connection state, including the reopen attempt 160ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > moves focus to the first invalid field and lists every problem next to the button 744ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list 500ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > says when the service has more than the first page 65ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an empty feed in terms of what the feed lists 53ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line 134ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > opens the timing card and focuses the end time a maintenance window lacks 551ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > focuses the severity group when an outage is filed as Info 484ms
+ ✓ src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type 1762ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service is unreachable instead of quoting a proxy status 452ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > quotes the service's reason for a rejection 399ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > names the Type and Severity groups by their visible labels and keeps headings in order 64ms
+ ✓ src/test/kit-colours.test.tsx > kit colour recipes > tinted capsules use the readable text hue 73ms
+ ✓ src/test/kit-colours.test.tsx > kit colour recipes > field errors are 12 px in the readable critical hue 281ms
+ ✓ src/test/kit-colours.test.tsx > kit colour recipes > the warning outline button keeps its text readable 34ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > moves focus to the outcome once published 468ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains a 409 for a reused incident number 697ms
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > loads the page, then follows the stream state 81ms
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > reloads the list once the stream is back after being down 62ms
+ ✓ src/test/api.test.ts > feedQuery > drops empty filters 3ms
+ ✓ src/test/api.test.ts > createCommunicationClient > posts JSON, says who is calling and returns the body 44ms
+ ✓ src/test/api.test.ts > createCommunicationClient > sends a custom client id on every call 3ms
+ ✓ src/test/api.test.ts > createCommunicationClient > surfaces the service error text 3ms
+ ✓ src/test/api.test.ts > createCommunicationClient > stream > identifies itself in the query because EventSource cannot set headers 1ms
+ ✓ src/test/errors.test.ts > explainError > says the service is unreachable for a failed connection or a proxy error 2ms
+ ✓ src/test/errors.test.ts > explainError > passes the service's own words through for a rejection 0ms
+ ✓ src/test/errors.test.ts > explainPublishError > puts the duplicate-externalRef 409 in the form's terms 0ms
+ ✓ src/test/errors.test.ts > explainPublishError > leaves every other error to explainError 1ms
+ ✓ src/test/errors.test.ts > client with the service down > turns a failed connection into an ApiError with status 0 1ms
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > refresh reopens the stream right away while it is down, and only then 64ms
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > retires a card at its expiry and starts a scheduled one on time, without a frame 540ms
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > reports when the service has more than the first page 60ms
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > applies frames, surfaces load errors and clears everything for a blank tenant 108ms
+ ✓ src/test/feed-state.test.ts > effectiveStatus > derives time-based states instead of trusting the stored one 2ms
+ ✓ src/test/feed-state.test.ts > applyEvent > inserts, then updates by id 2ms
+ ✓ src/test/feed-state.test.ts > applyEvent > ignores an update older than what is shown 0ms
+ ✓ src/test/feed-state.test.ts > applyEvent > removes retired and expired items 1ms
+ ✓ src/test/feed-state.test.ts > applyEvent > does not add a draft 0ms
+ ✓ src/test/feed-state.test.ts > applyEvent > lists scheduled maintenance inside the upcoming window, like GET /v1/feed 0ms
+ ✓ src/test/feed-state.test.ts > applyEvent > does not list a scheduled outage, incident or change until it starts 0ms
+ ✓ src/test/feed-state.test.ts > applyEvent > keeps the ticket when projecting 0ms
+ ✓ src/test/feed-state.test.ts > applyEvent > drops history when projecting 1ms
+ ✓ src/test/feed-state.test.ts > inFeed > matches the service rule at the window boundary 0ms
+ ✓ src/test/feed-state.test.ts > reconcile > takes the page and keeps items the stream touched after the request started 0ms
+ ✓ src/test/feed-state.test.ts > reconcile > never carries another tenant over 0ms
+ ✓ src/test/feed-state.test.ts > revise and nextChange > moves statuses across start and expiry boundaries and drops what left the feed 1ms
+ ✓ src/test/feed-state.test.ts > sortFeed > orders active before scheduled, then by severity, then latest start 0ms
+ ✓ src/test/contrast.test.ts > light theme contrast > every text role reads on every surface (4.5:1) 3ms
+ ✓ src/test/contrast.test.ts > light theme contrast > white text reads on the accent and critical fills (primary/danger buttons, badges) 1ms
+ ✓ src/test/contrast.test.ts > light theme contrast > each semantic text token reads on its tint and on the plain surfaces (4.5:1) 1ms
+ ✓ src/test/contrast.test.ts > light theme contrast > the accent and critical hues work as 3:1 graphics (focus ring, dots, icons) on the main surfaces 1ms
+ ✓ src/test/contrast.test.ts > light theme contrast > keeps the secondary/tertiary hierarchy 1ms
+ ✓ src/test/contrast.test.ts > dark theme contrast > every text role reads on every surface (4.5:1) 1ms
+ ✓ src/test/contrast.test.ts > dark theme contrast > white text reads on the accent and critical fills (primary/danger buttons, badges) 0ms
+ ✓ src/test/contrast.test.ts > dark theme contrast > each semantic text token reads on its tint and on the plain surfaces (4.5:1) 1ms
+ ✓ src/test/contrast.test.ts > dark theme contrast > the accent and critical hues work as 3:1 graphics (focus ring, dots, icons) on the main surfaces 1ms
+ ✓ src/test/contrast.test.ts > dark theme contrast > keeps the secondary/tertiary hierarchy 0ms
+ ✓ src/test/contrast.test.ts > semantic text utilities > maps a *-fg utility onto the *-text token of every hue and job state 1ms
+ ✓ src/test/validation.test.ts > validate > accepts a minimal outage 3ms
+ ✓ src/test/validation.test.ts > validate > requires tenant, publisher and title 1ms
+ ✓ src/test/validation.test.ts > validate > enforces the severity floor for outages and incidents only 0ms
+ ✓ src/test/validation.test.ts > validate > requires an end for maintenance and orders the times 1ms
+ ✓ src/test/validation.test.ts > validate > takes an optional ServiceNow incident and checks its shape 0ms
+ ✓ src/test/validation.test.ts > validate > caps the title at 200 characters and the service list at 20 0ms
+ ✓ src/test/validation.test.ts > parseServices > splits on commas and newlines, trims, dedupes 0ms
+ ✓ src/test/validation.test.ts > toRequest > leaves optional fields out and sends instants 1ms
+ ✓ src/test/validation.test.ts > toRequest > sends draft only when set 1ms
+ ✓ src/test/validation.test.ts > toRequest > sends the incident upper-cased as a ServiceNow ticket, or no ticket at all 0ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation 496ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > offers Withdraw instead of Resolve for a notice that has not started 70ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > hides the action when the page cannot resolve 9ms
+ ✓ src/test/stream.test.ts > reconnectDelay > doubles from one second and caps at thirty 2ms
+ ✓ src/test/stream.test.ts > stream liveness > reports open and the browser-side reconnects without reopening anything itself 5ms
+ ✓ src/test/stream.test.ts > stream liveness > reopens with backoff and the last sequence number once the browser has given up 3ms
+ ✓ src/test/stream.test.ts > stream liveness > keeps resuming while a resumed connection does open 1ms
+ ✓ src/test/stream.test.ts > stream liveness > starts from a fresh snapshot when no frame was ever received 1ms
+ ✓ src/test/stream.test.ts > stream liveness > stops reopening once unsubscribed 1ms
+ ✓ src/test/stream.test.ts > stream liveness > delivers parsed frames and skips malformed ones 1ms
+ Test Files  12 passed (12)
+      Tests  78 passed (78)

@@ -1,0 +1,106 @@
+# Frontend static checks at d10369b (code = 1cd3f13) (scripts/run-static.sh; full outputs in the scratch folder, relevant lines here)
+commit d10369b21d65e9500bbfae7de53013ce5f7b78cc 2026-11-02T10:19:33Z node v22.23.4 npm 10.9.9
+01-lint-run1 | exit 0 | 4.7s | npm run lint
+02-typecheck-run1 | exit 0 | 6.1s | npm run typecheck
+03-build-run1 | exit 0 | 9.3s | npm run build -- --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist --emptyOutDir
+04-test-run1 | exit 0 | 22.9s | npm test -- --reporter=verbose
+05-test-run2 | exit 1 | 63.5s | npm test
+06-test-run3 | exit 1 | 63.9s | npm test
+07-coverage | exit 1 | 38.1s | npm run test:coverage -- --coverage.reportsDirectory=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/coverage --coverage.reporter=text --coverage.reporter=html --coverage.reporter=json
+08-audit | exit 0 | 0.8s | npm audit
+09-audit-omit-dev | exit 0 | 1.2s | npm audit --omit=dev
+10-audit-json | exit 0 | 1.4s | npm audit --json
+11-default-tenant-build | exit 0 | 2.1s | env VITE_DEFAULT_TENANT=vf4-default npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-default-tenant --emptyOutDir
+12-xorigin-build | exit 0 | 1.6s | env VITE_API_BASE=http://127.0.0.1:8080 npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-xorigin --emptyOutDir
+13-badclientid-build | exit 0 | 1.4s | env VITE_CLIENT_ID=bad id! npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-badclientid --emptyOutDir
+14-lint-run2 | exit 0 | 9.6s | npm run lint
+15-lint-run3 | exit 0 | 13.8s | npm run lint
+16-typecheck-run2 | exit 0 | 11.3s | npm run typecheck
+17-typecheck-run3 | exit 0 | 13.2s | npm run typecheck
+18-build-run2 | exit 0 | 21.0s | npm run build -- --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-run2 --emptyOutDir
+19-build-run3 | exit 0 | 28.6s | npm run build -- --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-run3 --emptyOutDir
+git status --short (frontend/): []
+DONE 2026-11-02T10:24:50Z
+
+## 01-lint-run1
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+## 14-lint-run2
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+## 15-lint-run3
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+## 02-typecheck-run1
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+## 16-typecheck-run2
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+## 17-typecheck-run3
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+## 03-build-run1
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist/assets/index-Df4wR-sk.js   271.54 kB │ gzip: 84.82 kB
+✓ built in 928ms
+## 18-build-run2
+dist-run2/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-run2/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-run2/assets/index-Df4wR-sk.js   271.54 kB │ gzip: 84.82 kB
+✓ built in 911ms
+## 19-build-run3
+dist-run3/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-run3/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-run3/assets/index-Df4wR-sk.js   271.54 kB │ gzip: 84.82 kB
+✓ built in 1.53s
+## 11-default-tenant-build
+dist-default-tenant/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-default-tenant/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-default-tenant/assets/index-DesK1a36.js   271.54 kB │ gzip: 84.82 kB
+✓ built in 685ms
+## 12-xorigin-build
+dist-xorigin/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-xorigin/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-xorigin/assets/index-Drd5XVYG.js   271.56 kB │ gzip: 84.84 kB
+✓ built in 754ms
+## 13-badclientid-build
+dist-badclientid/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-badclientid/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-badclientid/assets/index-WLQpCHTj.js   271.54 kB │ gzip: 84.83 kB
+✓ built in 419ms
+## bundles byte-identical across the three builds
+6957980854814f42 dist/assets/index-DErufLds.css
+47bfbd8f1a39c715 dist/assets/index-Df4wR-sk.js
+6957980854814f42 dist-run2/assets/index-DErufLds.css
+47bfbd8f1a39c715 dist-run2/assets/index-Df4wR-sk.js
+6957980854814f42 dist-run3/assets/index-DErufLds.css
+47bfbd8f1a39c715 dist-run3/assets/index-Df4wR-sk.js
+## 08-audit / 09-audit-omit-dev
+found 0 vulnerabilities
+found 0 vulnerabilities
+## 10-audit-json (metadata)
+{"vulnerabilities": {"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, "total": 0}, "dependencies": {"prod": 4, "dev": 304, "optional": 50, "peer": 0, "peerOptional": 0, "total": 307}}
+## 20/21 Trivy 0.58.1 fs on a copy of package.json + package-lock.json (--skip-db-update --skip-java-db-update --scanners vuln --include-dev-deps; database of 2026-11-02 01:14Z; under flock of orch-trivy/.lock)
+INFO	[vuln] Vulnerability scanning is enabled
+INFO	[npm] To collect the license information of packages, "npm install" needs to be performed beforehand	dir="node_modules"
+INFO	Number of language-specific files	num=1
+INFO	[npm] Detecting vulnerabilities...
+json: package-lock.json npm packages 306 vulnerabilities 0
+## minimatch override still in place (G-2-13)
+42:  "overrides": {
+43-    "minimatch": "^11.0.1"
+44-  }
+45-}
+@atlas/communication-frontend@0.1.0 /home/claude/communication-service/frontend
++-- eslint@9.39.5
+| +-- @eslint/config-array@0.21.2
+| | `-- minimatch@11.0.3 deduped
+| +-- @eslint/eslintrc@3.3.7
+| | `-- minimatch@11.0.3 deduped
+| `-- minimatch@11.0.3 overridden
+`-- typescript-eslint@8.72.1
+  `-- @typescript-eslint/typescript-estree@8.72.1
+    `-- minimatch@11.0.3 deduped
+

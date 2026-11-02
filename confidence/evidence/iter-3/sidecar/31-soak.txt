@@ -1,0 +1,53 @@
+start 06:56:04.012 CLK_TCK=100 limits: 50m CPU, 32Mi memory
+t=0s A rss=7664kB hwm=7664kB threads=9 fds=7 cpu(30s)=-
+t=0s B rss=7448kB hwm=7448kB threads=7 fds=7 cpu(30s)=-
+t=30s A rss=7748kB hwm=7748kB threads=9 fds=7 cpu(30s)=0.000%
+t=30s B rss=8424kB hwm=8424kB threads=9 fds=7 cpu(30s)=0.100%
+t=60s A rss=7804kB hwm=7804kB threads=9 fds=7 cpu(30s)=0.033%
+t=60s B rss=9160kB hwm=9160kB threads=9 fds=7 cpu(30s)=0.133%
+t=90s A rss=7856kB hwm=7856kB threads=9 fds=7 cpu(30s)=0.000%
+t=90s B rss=9816kB hwm=9816kB threads=9 fds=7 cpu(30s)=0.100%
+t=120s A rss=7876kB hwm=7876kB threads=9 fds=7 cpu(30s)=0.033%
+t=120s B rss=10488kB hwm=10488kB threads=9 fds=7 cpu(30s)=0.133%
+t=150s A rss=7908kB hwm=7908kB threads=9 fds=7 cpu(30s)=0.000%
+t=150s B rss=11512kB hwm=11512kB threads=9 fds=7 cpu(30s)=0.167%
+t=180s A rss=7956kB hwm=7956kB threads=9 fds=7 cpu(30s)=0.000%
+t=180s B rss=11996kB hwm=11996kB threads=9 fds=7 cpu(30s)=0.133%
+t=210s A rss=8052kB hwm=8052kB threads=9 fds=7 cpu(30s)=0.000%
+t=210s B rss=12192kB hwm=12192kB threads=9 fds=7 cpu(30s)=0.100%
+t=240s A rss=8116kB hwm=8116kB threads=9 fds=7 cpu(30s)=0.000%
+t=240s B rss=12228kB hwm=12228kB threads=9 fds=7 cpu(30s)=0.133%
+t=270s A rss=8148kB hwm=8148kB threads=9 fds=7 cpu(30s)=0.033%
+t=270s B rss=11776kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=300s A rss=8176kB hwm=8176kB threads=9 fds=7 cpu(30s)=0.033%
+t=300s B rss=12020kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=330s A rss=8192kB hwm=8192kB threads=9 fds=7 cpu(30s)=0.000%
+t=330s B rss=12032kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=360s A rss=8252kB hwm=8252kB threads=9 fds=7 cpu(30s)=0.000%
+t=360s B rss=12060kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=390s A rss=8276kB hwm=8276kB threads=9 fds=7 cpu(30s)=0.000%
+t=390s B rss=11776kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=420s A rss=8296kB hwm=8296kB threads=9 fds=7 cpu(30s)=0.000%
+t=420s B rss=11780kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=450s A rss=8360kB hwm=8360kB threads=9 fds=7 cpu(30s)=0.033%
+t=450s B rss=11780kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.100%
+t=480s A rss=8392kB hwm=8392kB threads=9 fds=7 cpu(30s)=0.000%
+t=480s B rss=11816kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=510s A rss=8432kB hwm=8432kB threads=9 fds=7 cpu(30s)=0.000%
+t=510s B rss=12148kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=540s A rss=8472kB hwm=8472kB threads=9 fds=7 cpu(30s)=0.000%
+t=540s B rss=12192kB hwm=12232kB threads=10 fds=7 cpu(30s)=0.133%
+t=570s A rss=8524kB hwm=8524kB threads=9 fds=7 cpu(30s)=0.033%
+t=570s B rss=12360kB hwm=12360kB threads=10 fds=7 cpu(30s)=0.100%
+t=600s A rss=8564kB hwm=8564kB threads=9 fds=7 cpu(30s)=0.000%
+t=600s B rss=12372kB hwm=12372kB threads=10 fds=7 cpu(30s)=0.133%
+== A logs: 3 lines, levels:       3 INFO 
+== B logs: 3 lines, levels:       3 INFO 
+== backend view
+  soak-default id=b320ce5e url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=19 notice=None
+  soak-fast id=9c6cb09c url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=273 notice=None
+instances of soak-default:
+  soak-default-7f9c6d5b4-aaaaa status=UP left=False lastSeen=07:06:03.376 msg=None comps=null ns=vs3-ns node=worker-9 cluster=None version=None sidecar=1.0.0-vs3
+instances of soak-fast:
+  soak-fast-7f9c6d5b4-bbbbb status=UP left=False lastSeen=07:06:09.591 msg=None comps=null ns=vs3-ns node=worker-9 cluster=None version=None sidecar=1.0.0-vs3
+end 07:06:10.253

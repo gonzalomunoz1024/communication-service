@@ -1,0 +1,29 @@
+Fix G-1-15: announce outcomes, keep focus, name every control
+
+Accessibility gaps from the usability pass (UX-7, UX-14) and the frontend
+verifier (GAP-4): nothing was announced after Resolve, focus fell to <body>
+after publishing, the feed had no live region, the "Service" filter had no
+accessible name, the page had no h1 and the Type/Severity labels were not tied
+to their groups.
+
+- OutageFeed: a polite role=status line announces (and shows for 8 s)
+  "Resolved <title>. It has left every consumer's feed."; the list wrapper
+  takes focus when the resolved card disappears; Service/Type/Minimum severity
+  filters are labelled through htmlFor/id.
+- PublishOutageForm: the Type and Severity groups are named by their visible
+  labels (Field labelId + Segmented ariaLabelledBy); the three cards' titles
+  are h2; the confirmation heading is an h2 that receives focus when the
+  outcome replaces the form.
+- App: the title is an h1 (visually hidden on phones, where the header has no
+  room for it).
+- Kit: Field `labelId`, Segmented `ariaLabelledBy` (ariaLabel now optional),
+  Card `titleAs`.
+
+Tests: OutageFeed.test.tsx (filters resolve through getByLabelText, status
+text after a resolve, focus stays on the list), PublishOutageForm.test.tsx
+(radiogroups named Type/Severity, heading outline h2 only, focus on "Outage
+published"), App.test.tsx (h1). Against the previous sources 4 of the new
+assertions fail; with the fix 12 files / 68 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

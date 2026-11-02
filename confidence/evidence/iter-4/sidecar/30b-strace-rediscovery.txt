@@ -1,0 +1,9 @@
+  [10:46:57.043] app container stopped
+  [10:47:03.191] app container started
+  sidecar log during the window: 10:46:52.910 health target found;10:46:59.356 health target gone; will rediscover;10:47:03.417 health target found
+  paths opened/stat'ed by the sidecar in 14 s (strace %file,%desc on every thread):
+         3 openat "/proc/net/tcp"
+         3 openat "/proc/net/tcp6"
+  open flags used:  3 O_CLOEXEC, 3 O_RDONLY
+  errors EACCES/EPERM/EROFS: 0
+end 10:47:10.289

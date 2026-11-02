@@ -1,0 +1,4 @@
+# G-2-5 after: stale-forget-after (default PT24H) excludes monitors silent for longer from the valve and the sweep leaves them alone; ./gradlew test --tests '*HealthSweepUseCaseTest' --tests '*HealthMonitorUseCaseTest'
+
+22:BUILD SUCCESSFUL in 28s
+JUnit XML: HealthSweepUseCaseTest 16/16, HealthMonitorUseCaseTest 17/17 (0 failures, 0 skipped)

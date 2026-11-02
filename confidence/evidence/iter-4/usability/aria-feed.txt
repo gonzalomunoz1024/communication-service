@@ -1,0 +1,64 @@
+- banner:
+  - heading "Outage Notifications" [level=1]
+  - text: Tenant
+  - textbox "Tenant":
+    - /placeholder: acme
+    - text: ux4-sre
+  - button "Switch to dark mode"
+- main:
+  - tablist "Sections":
+    - tab "Feed 4" [selected]
+    - tab "Publish"
+  - text: Service
+  - textbox "Service":
+    - /placeholder: Any service
+  - text: Type
+  - combobox "Type":
+    - option "All types" [selected]
+    - option "Outage"
+    - option "Incident"
+    - option "Maintenance"
+    - option "Change"
+    - option "Health"
+  - text: Minimum severity
+  - combobox "Minimum severity":
+    - option "Any severity" [selected]
+    - option "Info"
+    - option "Minor"
+    - option "Major"
+    - option "Critical"
+  - switch "Live updates" [checked]
+  - status: Live
+  - button "Refresh"
+  - status
+  - heading "Active now 4" [level=2]
+  - article:
+    - text: Active Major Outage Updated just now
+    - heading "Feed check notice" [level=3]
+    - paragraph: Card payments fail for roughly 30% of requests. Retries succeed.
+    - text: payments-api checkout-web Started just now ux4-oncall
+    - button "Resolve"
+  - article:
+    - text: Active Major Outage INC4000001 INC4000001-3 Updated just now
+    - 'heading "Payments API: third notice" [level=3]'
+    - paragraph: Card payments fail for roughly 30% of requests. Retries succeed.
+    - text: payments-api checkout-web Started just now ux4-oncall
+    - button "Resolve"
+  - article:
+    - text: Active Major Outage INC4000001 INC4000001-2 Updated just now
+    - heading "Payments API returning 503s (second notice)" [level=3]
+    - paragraph: Card payments fail for roughly 30% of requests. Retries succeed.
+    - text: payments-api checkout-web Started just now ux4-oncall
+    - button "Resolve"
+  - article:
+    - text: Active Major Outage INC4000001 Updated just now
+    - heading "Payments API returning 503s" [level=3]
+    - paragraph: Card payments fail for roughly 30% of requests. Retries succeed.
+    - text: payments-api checkout-web Started just now ux4-oncall
+    - button "Resolve"
+  - heading "Upcoming 1" [level=2]
+  - article:
+    - text: Scheduled Major Maintenance Updated just now
+    - heading "Planned database upgrade" [level=3]
+    - text: Starts in 59m Expected end in 2h ux4-oncall
+    - button "Withdraw"

@@ -1,0 +1,10 @@
+# 26 - SIGTERM with two open SSE streams (private :19141 started by the script, db vb2_sigterm, default config), 2026-11-02T04:17:25Z
+
+started pid 11780 after 7s
+publish -> 201
+SIGTERM sent at t0
+stream 1: ended 0.007s after SIGTERM (eof, 2 event frames seen)
+stream 2: ended 0.007s after SIGTERM (eof, 2 event frames seen)
+process exit code 143 after 4.13s
+log: 2026-11-02T04:17:35.280Z  INFO 11780 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+log: 2026-11-02T04:17:35.282Z  INFO 11780 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete

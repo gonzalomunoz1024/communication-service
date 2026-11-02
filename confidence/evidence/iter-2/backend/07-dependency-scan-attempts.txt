@@ -1,0 +1,16 @@
+# 07 - dependency / security scan attempts, 2026-11-02T04:15:41Z
+
+The CI workflow scans the SBOM with anchore/scan-action (grype). Neither grype nor trivy nor syft is installed here, and every vulnerability database is behind the egress policy:
+  https://api.osv.dev/v1/query                                             HTTP 000000
+  https://api.deps.dev/v3/systems                                          HTTP 000000
+  https://ossindex.sonatype.org/api/v3/component-report                    HTTP 000000
+  https://toolbox-data.anchore.io/grype/databases/listing.json             HTTP 000000
+  https://vuln.go.dev/index/db.json                                        HTTP 000000
+  https://github.com/anchore/grype/releases/latest                         HTTP 403
+  https://api.github.com/advisories                                        HTTP 403
+  (000 = connection refused/blocked by the proxy; CONNECT 403 for github release downloads per environment.md)
+
+gh api /advisories (repository-bound token):
+{"message":"This GitHub API path is not available: sessions are bound to their configured repositories. Use repository-scoped endpoints (repos/{owner}/{repo}/...).","documentation_url":"https://docs.a
+
+Consequence: no scanner ran against build/reports/cyclonedx/bom.json in this sandbox; the SBOM (166 components, including build/test tooling, see 09) is produced by 'check' and is scanned only by the CI job, which cannot run here. The resolved runtime versions are listed in 09 (Spring Boot 3.5.16, Spring 6.2.19, Netty 4.1.135.Final, Reactor Netty 1.2.18, logback 1.5.34, Jackson 2.21.4, MongoDB driver 5.5.2, snakeyaml 2.4, swagger-ui 5.32.2) and are unchanged from the iteration-1 audit (ev-a/22) except springdoc 2.8.17; the residual risk is 'unscanned', not 'known open'.

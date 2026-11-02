@@ -1,0 +1,51 @@
+== F-67 configuration errors (binary extracted from health-sidecar:sc1, run on the host)
+--- env: nothing
+{"time":"2026-11-02T01:34:23.899819451Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit=2
+--- env: CS_ENDPOINT only
+{"time":"2026-11-02T01:34:23.908056075Z","level":"ERROR","msg":"invalid configuration","error":"CS_TENANT is required"}
+exit=2
+--- env: CS_ENDPOINT=ftp://x
+{"time":"2026-11-02T01:34:23.91554263Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+exit=2
+--- env: CS_INTERVAL=abc
+{"time":"2026-11-02T01:34:23.92365695Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"abc\""}
+exit=2
+--- env: CS_INTERVAL=500ms (<1s)
+{"time":"2026-11-02T01:34:23.931708935Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL must be at least 1s"}
+exit=2
+--- env: CS_PROBE=tcp without CS_PORT
+{"time":"2026-11-02T01:34:23.937158814Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT is required when CS_PROBE=tcp"}
+exit=2
+--- env: CS_PROBE=bogus
+{"time":"2026-11-02T01:34:23.945570257Z","level":"ERROR","msg":"invalid configuration","error":"CS_PROBE must be auto, actuator, http or tcp (got \"bogus\")\nCS_PORT is required when CS_PROBE=bogus"}
+exit=2
+--- env: CS_PORT=99999
+{"time":"2026-11-02T01:34:23.954584917Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT out of range: 99999"}
+exit=2
+--- env: CS_IGNORE_PORTS=abc
+{"time":"2026-11-02T01:34:23.961190462Z","level":"ERROR","msg":"invalid configuration","error":"CS_IGNORE_PORTS: bad port \"abc\""}
+exit=2
+--- env: CS_CA_FILE=/nonexistent
+{"time":"2026-11-02T01:34:23.981278716Z","level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: open /nonexistent: no such file or directory"}
+exit=2
+--- env: CS_CA_FILE=empty file
+{"time":"2026-11-02T01:34:23.996717162Z","level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: no certificates found in /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar1/empty.pem"}
+exit=2
+--- env: several errors at once
+{"time":"2026-11-02T01:34:24.000947711Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"abc\"\nCS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required\nCS_PROBE must be auto, actuator, http or tcp (got \"bogus\")\nCS_PORT is required when CS_PROBE=bogus"}
+exit=2
+--- valid config, CS_PORT pinned to a closed port, 4 s run then SIGTERM: expect start log, UNKNOWN, clean stop exit 0
+{"version":"1.0.0-sc1","service":"svc","tenant":"t","instance":"vm","target":"http://127.0.0.1:1/actuator/health","lastTarget":"http://127.0.0.1:1/actuator/health","upSeen":false,"lastReport":{"tenantId":"t","service":"svc","status":"UNKNOWN","message":"starting: waiting for the first healthy answer from http://127.0.0.1:1/actuator/health","observedAt":"2026-11-02T01:34:26.245Z","publisher":"healt
+{"time":"2026-11-02T01:34:27.043622251Z","level":"WARN","msg":"leaving report failed","error":"post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 127.0.0.1:1: connect: connection refused"}
+{"time":"2026-11-02T01:34:27.043726529Z","level":"INFO","msg":"health sidecar stopped"}
+--- DeriveService table (go test -run TestDeriveService -v)
+=== RUN   TestDeriveService
+--- PASS: TestDeriveService (0.00s)
+=== RUN   TestFromEnvDefaults
+--- PASS: TestFromEnvDefaults (0.00s)
+=== RUN   TestFromEnvOverridesAndValidation
+--- PASS: TestFromEnvOverridesAndValidation (0.00s)
+=== RUN   TestParsePortRanges
+--- PASS: TestParsePortRanges (0.00s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.004s

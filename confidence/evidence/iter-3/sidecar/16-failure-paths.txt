@@ -1,0 +1,22 @@
+start 07:25:08.325
+### PART A: a slow service (stub :19340), default CS_REPORT_TIMEOUT (10s); CS_INTERVAL=2s CS_HEARTBEAT=4s
+  [07:25:09.057] the service answers 202 after 7000 ms
+  [07:25:27.258] /status: {"last":"UP","obs":"07:25:18.473","tick":"07:25:18.473","n":2,"err":""}
+  [07:25:27.278] the service answers 202 after 12000 ms
+  [07:25:59.283] /status: {"last":"UP","obs":"07:25:51.765","tick":"07:25:18.473","n":2,"err":"post http://172.17.0.1:19340/v1/health/reports: Post \"http://172.17.0.1:19340/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)"}
+  [07:25:59.304] the service answers at once
+  [07:26:08.310] /status: {"last":"UP","obs":"07:26:08.215","tick":"07:26:08.215","n":4,"err":""}
+  attempts (sidecar log line; when the request arrived at the service; how long the attempt took):
+  07:25:16.255 reported                   arrived 07:25:09.254  took 7.00s  
+  07:25:25.479 reported                   arrived 07:25:18.475  took 7.00s  
+  07:25:37.510 report failed; will retry  arrived 07:25:27.503  took 10.01s  post http://172.17.0.1:19340/v1/health/reports: Post "http://172.17.0.1:19340/v1/health/reports": context dead
+  07:25:49.670 report failed; will retry  arrived 07:25:39.665  took 10.00s  post http://172.17.0.1:19340/v1/health/reports: Post "http://172.17.0.1:19340/v1/health/reports": context dead
+  07:26:01.768 report failed; will retry  arrived 07:25:51.766  took 10.00s  post http://172.17.0.1:19340/v1/health/reports: Post "http://172.17.0.1:19340/v1/health/reports": context dead
+  07:26:03.997 reported                   arrived 07:26:03.997  took 0.00s  
+  07:26:08.217 reported                   arrived 07:26:08.216  took 0.00s  
+### PART B: private backend B (:19302) on its own database container vs3-mongo (:19301); sidecar CS_INTERVAL=5s CS_HEARTBEAT=10s
+  [07:26:16.583] /status: {"last":"UP","obs":"07:26:15.337","tick":"07:26:09.574","n":1,"err":""}
+  [07:26:16.901] docker stop vs3-mongo returned
+  [07:26:16.923] {"last":"UP","obs":"07:26:15.337","tick":"07:26:09.574","n":1,"err":""}
+  [07:26:26.133] {"last":"UP","obs":"07:26:20.988","tick":"07:26:09.574","n":1,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+# NOTE: the first run of PART B stalled at a bare 'wait' (it also waited for the two stub servers); PART A above is complete. PARTS B, B2, C1, C2 were re-run by 16b-failure-paths.sh (16b-failure-paths.txt).

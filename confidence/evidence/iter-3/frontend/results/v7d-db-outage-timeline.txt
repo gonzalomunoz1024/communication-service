@@ -1,0 +1,4 @@
++0.9s docker stop vf3-mongo
++31.1s 30 s with the database down: 4 stream requests, 5 list GETs; badge ["Live","Reconnecting","Live","Reconnecting","Live","Reconnecting","Live","Reconnecting"]
++31.3s docker start vf3-mongo
++33.6s card back without a click 2311 ms after docker start; Live=true

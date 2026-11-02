@@ -1,0 +1,59 @@
+# G-2-4: Mongo unreachable (private :19110 on vb2-mongo)
+
+Checks: 12/13 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| G24-0 | baseline | PASS | GET feed -> 200 in 0.15s |
+| G24-0b | baseline | PASS | POST -> 201 in 0.55s |
+| G24-a | F-28/G-2-4 GET while Mongo is down | PASS | GET feed -> 503 '{"error":"database unavailable"}' after 5.02s |
+| G24-b | F-28/G-2-4 POST while Mongo is down | PASS | POST -> 503 '{"error":"database unavailable"}' after 5.02s (no driver cluster description) |
+| G24-c | F-30/G-2-4 readiness | PASS | readiness -> 503 '{"status":"DOWN"}' after 5.01s |
+| G24-d | F-30 liveness unaffected | PASS | liveness -> 200 after 0.01s |
+| G24-e | health API while down | PASS | GET monitors -> 503 '{"error":"database unavailable"}' after 5.03s |
+| G24-f | F-89/G-2-4 one WARN per skipped sweep, no stack trace | FAIL | 32s of outage: 3 health-sweep WARN, 3 status-sweep WARN, 3 503 access WARN, other WARN 7, ERROR 0, stack-trace lines 86; sample: '2026-11-02T04:09:17.446Z  WARN 12788 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable:  |
+| G24-g | F-30/G-2-4 readiness recovers | PASS | readiness 200 again 2.7s after docker start |
+| G24-h | API recovers | PASS | GET feed -> 200 in 0.02s; items=1 |
+| G24-i | API recovers (write) | PASS | POST -> 201 in 0.03s |
+| G24-j | F-18/F-92 stream opened before the outage survives it | PASS | stream frames: [('snapshot', 'before'), ('created', 'before'), ('created', 'after recovery')]; keepalive comments: 6 |
+| G24-k | F-30 startup with Mongo unreachable | PASS | exit code 1 after 13.3s; log: [' ERROR 32400 --- [communication-service] [e5ff5325c6b12b2] o.s.d.m.core.ReactiveMongoTemplate       : Unexpected exception during asynch', ' ERROR 32400 --- [communication-service] [e5ff5325c6b12b2] o.s.d.m.core.ReactiveMongoTemplate       : Unexpected exception durin |
+
+## Transcript (request -> status body, trimmed)
+
+```
+GET http://localhost:19110/v1/feed?tenantId=vb2-down-baef7d body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+  [PASS] G24-0 (baseline): GET feed -> 200 in 0.15s
+POST http://localhost:19110/v1/communications body={"tenantId": "vb2-down-baef7d", "publisher": "vb2-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "before", "affectedServices": ["svc"]} -> 201 {"id":"7c0b4741-591a-41e0-acbe-e4e3e2efe1ec","tenantId":"vb2-down-baef7d","publisher":"vb2-sre","type":"OUTAGE","severity":"MAJOR","title":"before","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:09:10.961311418Z","createdAt":"2026-11-02T04:09:10.961311418Z","updatedAt":"2026-11-02T04:09:10.961311418Z","version":0,"history":[{"at":"2026-11-02T04:09:10.
+  [PASS] G24-0b (baseline): POST -> 201 in 0.55s
+docker stop vb2-mongo took 0.3s
+GET http://localhost:19110/v1/feed?tenantId=vb2-down-baef7d body= -> 503 {"error":"database unavailable"}
+  [PASS] G24-a (F-28/G-2-4 GET while Mongo is down): GET feed -> 503 '{"error":"database unavailable"}' after 5.02s
+POST http://localhost:19110/v1/communications body={"tenantId": "vb2-down-baef7d", "publisher": "vb2-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "during", "affectedServices": ["svc"]} -> 503 {"error":"database unavailable"}
+  [PASS] G24-b (F-28/G-2-4 POST while Mongo is down): POST -> 503 '{"error":"database unavailable"}' after 5.02s (no driver cluster description)
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+  [PASS] G24-c (F-30/G-2-4 readiness): readiness -> 503 '{"status":"DOWN"}' after 5.01s
+GET http://localhost:19110/actuator/health/liveness body= -> 200 {"status":"UP"}
+  [PASS] G24-d (F-30 liveness unaffected): liveness -> 200 after 0.01s
+GET http://localhost:19110/v1/health/monitors?tenantId=vb2-down-baef7d body= -> 503 {"error":"database unavailable"}
+  [PASS] G24-e (health API while down): GET monitors -> 503 '{"error":"database unavailable"}' after 5.03s
+  [FAIL] G24-f (F-89/G-2-4 one WARN per skipped sweep, no stack trace): 32s of outage: 3 health-sweep WARN, 3 status-sweep WARN, 3 503 access WARN, other WARN 7, ERROR 0, stack-trace lines 86; sample: '2026-11-02T04:09:17.446Z  WARN 12788 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a '
+  other WARN lines: ["2026-11-02T04:09:17.345Z  WARN 12788 --- [communication-service] [f434f97f29137db] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureEx", "2026-11-02T04:09:22.347Z  WARN 12788 --- [communication-service] [f434f97f29137db] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureEx", "2026-11-02T04:09:27.350Z  WARN 12788 --- [communication-service] [f434f97f29137db] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureEx", "2026-11-02T04:09:27.536Z  WARN 12788 --- [communication-service] [
+GET http://localhost:19110/actuator/health/readiness body= -> 200 {"status":"UP"}
+  [PASS] G24-g (F-30/G-2-4 readiness recovers): readiness 200 again 2.7s after docker start
+GET http://localhost:19110/v1/feed?tenantId=vb2-down-baef7d body= -> 200 {"items":[{"id":"7c0b4741-591a-41e0-acbe-e4e3e2efe1ec","tenantId":"vb2-down-baef7d","publisher":"vb2-sre","type":"OUTAGE","severity":"MAJOR","title":"before","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:09:10.961Z","updatedAt":"2026-11-02T04:09:10.961Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+  [PASS] G24-h (API recovers): GET feed -> 200 in 0.02s; items=1
+POST http://localhost:19110/v1/communications body={"tenantId": "vb2-down-baef7d", "publisher": "vb2-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "after recovery", "affectedServices": ["svc"]} -> 201 {"id":"f816d058-a42f-4ecd-adf3-450146dfd262","tenantId":"vb2-down-baef7d","publisher":"vb2-sre","type":"OUTAGE","severity":"MAJOR","title":"after recovery","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:09:46.929762727Z","createdAt":"2026-11-02T04:09:46.929762727Z","updatedAt":"2026-11-02T04:09:46.929762727Z","version":0,"history":[{"at":"2026-11-02T0
+  [PASS] G24-i (API recovers (write)): POST -> 201 in 0.03s
+SSE http://localhost:19110/v1/feed/stream?tenantId=vb2-down-baef7d hdr=None -> 200, 3 frames, 6 comments
+  [PASS] G24-j (F-18/F-92 stream opened before the outage survives it): stream frames: [('snapshot', 'before'), ('created', 'before'), ('created', 'after recovery')]; keepalive comments: 6
+  WARN lines during the test (first 12): ["  WARN 12788 --- [communication-service] [f434f97f29137db] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureEx", "  WARN 12788 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a ", "  WARN 12788 --- [communication-service] [f434f97f29137db] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a s", "  WARN 12788 --- [communication-service] [f434f97f29137db] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll 
+  [PASS] G24-k (F-30 startup with Mongo unreachable): exit code 1 after 13.3s; log: [' ERROR 32400 --- [communication-service] [e5ff5325c6b12b2] o.s.d.m.core.ReactiveMongoTemplate       : Unexpected exception during asynch', ' ERROR 32400 --- [communication-service] [e5ff5325c6b12b2] o.s.d.m.core.ReactiveMongoTemplate       : Unexpected exception during asynch', ' ERROR 32400 --- [communication-service] [e5ff5325c6b12b2] o.s.d.m.core.ReactiveMongoTemplate       : Unexpected exception during asynch']
+```
+
+## Addendum (verifier, 2026-11-02T04:19:19Z): G24-f classified
+The two schedulers behave as G-2-4 specifies: during the 32 s outage HealthSweepUseCase and StatusSweepUseCase each logged one WARN line per skipped run ('health sweep skipped: database unavailable: …' x3, 'status sweep skipped: …' x3; a run blocks for the 5 s server-selection timeout, hence 3 per ~17 s rather than one per second) with no stack trace, and the process logged 0 ERROR lines (iteration 1: ERROR + stack trace per sweep). The 86 stack-trace lines in the window come from:
+  - org.mongodb.driver.cluster INFO 'Exception in monitor thread while connecting to server 127.0.0.1:27110' (4 blocks: two when the port closed, two when it reopened) - the driver's own logger;
+  - o.s.b.a.d.m.MongoReactiveHealthIndicator WARN 'Mongo health check failed' with a stack trace, once per readiness request made during the outage (Spring Boot Actuator's indicator; a kubelet probing every 10 s would log one per probe);
+  - MongoCommunicationEventsAdapter WARN 'event log poll failed: …' once per failed poll (every ~5 s, message only, no stack).
+Level counts in the window 04:09:12-04:09:50: 30 INFO, 16 WARN, 0 ERROR. The access log records each refused call as 'GET /v1/feed -> 503, database unavailable: <driver message>' (the driver's cluster description stays in the log, never in the body: G24-a/b).
+Verdict: G-2-4 closed; the remaining noise is framework logging (driver INFO stacks at the transitions, indicator WARN+stack per readiness probe), listed as a minor observation.

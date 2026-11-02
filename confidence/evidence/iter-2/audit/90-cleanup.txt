@@ -1,0 +1,65 @@
+# 90 - auditor clean-up, started 2026-11-02T05:55:05Z
+## processes (by PID; the shared :3000 vite 1849/1850, the shared :8080 backend 2562 and every fixer process are left alone)
+  pid 4983 exists: bash /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540
+  pid 4984 exists: npm run preview --host 127.0.0.1 --port 19730 --strictPort                         
+  kill 31699 (server.port=19701): sent
+  kill 4820 (server.port=19702): sent
+  kill 4998 (vite preview --host): sent
+  kill 4999 (vite preview --host): sent
+  kill 6146 (vite --host): sent
+  kill 6147 (vite --host): sent
+  kill 6148 (vite --host): sent
+  kill 6149 (rp.js 19732): sent
+  kill 6150 (rp.js 19733): sent
+  kill 6151 (rp.js 19734): sent
+/bin/bash: line 10: /proc/6201/cmdline: No such file or directory
+  kill 6201: not running
+  kill 6202 (vite --host): sent
+/bin/bash: line 10: /proc/6209/cmdline: No such file or directory
+  kill 6209: not running
+  kill 6210 (vite --host): sent
+/bin/bash: line 10: /proc/6216/cmdline: No such file or directory
+  kill 6216: not running
+  kill 6217 (vite --host): sent
+  pid 4984: gone with its child
+## containers (docker rm -f)
+  removed au2-sidecar
+  removed au2-app
+  removed au2-stub
+  removed au2-netns
+  removed au2-mongo
+  removed au2-mongo3
+  au2* containers left: none
+## image
+  removed health-sidecar:au2
+  au2-go124-probe: never created (its build failed, ev-a/55)
+  (the dangling image 2d004a85af04 that au2-app/au2-stub ran is the previous fakeapp:e2e build of the E2E stack, not the auditor's: left alone)
+## databases in mongo7 (the auditor's au2* databases; the private Mongo containers above held the others)
+  before: au2_cfg au2_cookbook au2_e au2_gaps au2_pair au2_pods au2_shared au2_sidecar
+  drop au2_cfg -> {"ok":1,"dropped":"au2_cfg"}
+  drop au2_cookbook -> {"ok":1,"dropped":"au2_cookbook"}
+  drop au2_e -> {"ok":1,"dropped":"au2_e"}
+  drop au2_gaps -> {"ok":1,"dropped":"au2_gaps"}
+  drop au2_pair -> {"ok":1,"dropped":"au2_pair"}
+  drop au2_pods -> {"ok":1,"dropped":"au2_pods"}
+  drop au2_shared -> {"ok":1,"dropped":"au2_shared"}
+  drop au2_sidecar -> {"ok":1,"dropped":"au2_sidecar"}
+  after: none
+## verification 2026-11-02T05:55:39Z
+  listening sockets on 19700-19799: 0
+  auditor JVMs/vite/rp left: 0
+  shared backend :8080 readiness: 200
+  shared frontend :3000: 200
+  shared containers: sidecar=Up 2 hours app=Up 2 hours mongo7=Up 7 hours 
+  git HEAD 33451c3; git status --short:
+    ?? confidence/evidence/iter-2/audit/
+    ?? confidence/evidence/iter-3/
+  nothing committed, checked out, stashed or pushed by the auditor
+## final check after writing confidence/iter-2/audit.md (2026-11-02T06:02:57Z)
+  listening sockets on 19700-19799: 0
+  au2* containers: 0
+  shared backend :8080 readiness: 200; shared frontend :3000: 200
+  git HEAD 33451c3; git status --short:
+    ?? confidence/evidence/iter-2/audit/
+    ?? confidence/evidence/iter-3/
+    ?? confidence/iter-2/audit.md

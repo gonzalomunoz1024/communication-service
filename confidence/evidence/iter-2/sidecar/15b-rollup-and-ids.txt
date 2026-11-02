@@ -1,0 +1,31 @@
+[04:19:10.819] (a) two pods UP:
+  monitor {"id":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","service":"roll-app"} state: {"lastStatus":"UP","lastSummary":"UP (2 of 2 pods UP)"}
+  instances: 2
+    {"monitorId":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","instanceId":"roll-app-7f9c6d5b4-pod1","status":"UP","components":[],"namespace":"vs2-ns","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:19:05.209Z"}
+    {"monitorId":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","instanceId":"roll-app-7f9c6d5b4-pod2","status":"UP","components":[],"namespace":"vs2-ns","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:19:05.817Z"}
+  pod2 app -> DOWN: {"db":"DOWN","status":"DOWN"}
+  12 s later:
+  monitor {"id":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","service":"roll-app"} state: {"lastStatus":"UP","lastSummary":"UP (1 of 2 pods UP (DOWN: roll-app-7f9c6d5b4-pod2))"}
+  instances: 2
+    {"monitorId":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","instanceId":"roll-app-7f9c6d5b4-pod1","status":"UP","components":[],"namespace":"vs2-ns","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:19:16.632Z"}
+    {"monitorId":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","instanceId":"roll-app-7f9c6d5b4-pod2","status":"DOWN","components":[{"name":"db","status":"DOWN","detail":"database=PostgreSQL"}],"message":"health document reports DOWN","namespace":"vs2-ns","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:19:22.518Z"}
+  feed items: 0
+  pod1 app -> DOWN too: {"db":"DOWN","status":"DOWN"}
+  12 s later (0 of 2 UP):
+  monitor {"id":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","service":"roll-app"} state: {"lastStatus":"DOWN","lastSummary":"DOWN (0 of 2 pods UP (DOWN: roll-app-7f9c6d5b4-pod1, roll-app-7f9c6d5b4-pod2)): db DOWN"}
+  feed items: 1
+    {"id":"42753432-d434-4f2c-bbb5-08db2517a983","type":"OUTAGE","status":"ACTIVE","severity":"MAJOR","title":"roll-app is down","startsAt":"2026-11-02T04:19:25.550Z","publisher":"health-sidecar"}
+  both UP again
+  monitor {"id":"b85bcf55-5c6d-4239-8667-52c69e9c9b05","service":"roll-app"} state: {"lastStatus":"UP","lastSummary":"UP (2 of 2 pods UP)"}
+  feed items: 0
+[04:19:50.012] (b) F-27/F-92: CS_CLIENT_ID='bad id!' -> the service answers 400 -> logged as 'report rejected' (permanent), retried only at the heartbeat
+  status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=0 sendErr='report rejected: HTTP 400 {"error":"X-Client-Id must be 1-100 characte'
+{"time":"2026-11-02T04:19:50.864204002Z","level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"error\":\"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'\"}"}
+  monitors under vs2-cid: 0 (expect 0: nothing accepted)
+[04:19:56.198] (c) finding: CS_INSECURE_SKIP_VERIFY=maybe is not rejected (every other variable is validated); the sidecar starts with verification ON
+  state=running exit=0 first log line: {"time":"2026-11-02T04:19:56.64907317Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-vs2","service":"cid-app","tenant":"vs2-cid","instance":"cid-app-1","endpoint":"https://127.0.0.1
+  CS_INSECURE_SKIP_VERIFY=TRUE  -> state=running exit=0
+  CS_INSECURE_SKIP_VERIFY=yes   -> state=running exit=0
+  CS_INSECURE_SKIP_VERIFY=1     -> state=running exit=0
+  CS_INSECURE_SKIP_VERIFY=on    -> state=running exit=0
+[04:20:07.346] DONE

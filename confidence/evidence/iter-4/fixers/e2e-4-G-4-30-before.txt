@@ -1,0 +1,112 @@
+G-4-30 before: the extended e2e/tests/07-f92-database-down.spec.ts on the iteration-3 code (worktree /home/claude/wt4-e2e at 6c15715 + the uncommitted spec).
+Jar: build/libs copy of the main checkout's iteration-3 jar (sha256 b63ffd4e..., = scratchpad communication-service-iter3.jar); frontend/dist: copy of the main checkout's iteration-3 bundle.
+Stack: fresh, 2026-11-02 08:15Z: GO_IMAGE=local/go-toolset:1.27 BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up; npx playwright test (whole suite); ./stack.sh logs; ./stack.sh down
+
+$ ./stack.sh up
+08:15:07 stack: building the images (sidecar version 6c15715, revision 6c15715715a091fb99586a9d3ab3a501d527239b)
+08:15:46 stack: the backend is ready (8 s)
+08:15:47 stack: the fake app answers UP (0 s)
+08:15:48 stack: the sidecar has reported (1 s)
+08:15:48 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+08:15:48 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+up exit=0
+
+$ npx playwright test
+Running 9 tests using 1 worker
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (97ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body (557ms)
+  ✓  3 tests/01-api-contract.spec.ts:27:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (107ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (5.1s)
+F-91: the OUTAGE card appeared 6.0 s after the app went DOWN
+F-91: the card left 6.4 s after the app came back
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (14.5s)
+F-92: the badge showed Reconnecting 0.4 s into the restart
+F-92: a reopen carried lastEventId=7
+F-92: the backend was ready again 18.6 s after the restart began
+F-92: the page showed it 1.2 s after the backend was back
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (21.9s)
+F-76: the sidecar had stopped 0.5 s after SIGTERM
+  ✓  7 tests/05-f76-sidecar-sigterm.spec.ts:7:5 › F-76 F-48 F-91 SIGTERM to the sidecar → a leaving report and exit 0 → the pod is marked left and no notice opens → started again, the pod reports again (1.5s)
+F-39: HEALTH notice 10.0 s after the app turned DEGRADED
+F-41: OUTAGE in place of the HEALTH notice 10.1 s after the app went DOWN
+F-39: OUTAGE retired 10.0 s after the app came back
+  ✓  8 tests/06-f39-pull-monitor.spec.ts:37:5 › F-31 F-37 F-39 F-40 F-41 a pull monitor probes the fake app every 5 s: DEGRADED twice → HEALTH notice, DOWN twice → OUTAGE in its place, UP twice → retired (31.3s)
+F-92: GET /v1/feed answered 503 in 5.1 s with the database stopped
+F-57: the late page showed the error state 11.2 s into the outage
+F-92: the late page while the database was down (3 stream requests, 3 list loads): +0.1 s (no badge), +0.3 s Connecting, +0.4 s Live, +5.4 s Reconnecting, +5.5 s Reconnecting | Couldn't load the feed (database unavailable), +8.4 s Live, +13.4 s Reconnecting, +13.5 s Reconnecting | Couldn't load the feed (database unavailable), +16.4 s Live
+F-92: the backend was ready again 31.6 s after the database stopped
+F-92: the late page showed the feed 0.3 s after the backend was ready, then: +21.5 s Reconnecting, +21.5 s Reconnecting | Couldn't load the feed (database unavailable), +24.5 s Live
+F-92: the open page showed a new notice 1.4 s after the backend was ready
+  ✘  9 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves (37.9s)
+  1) tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves 
+    Error: the late page's badge said Live before the database was back: +0.1 s (no badge), +0.3 s Connecting, +0.4 s Live, +5.4 s Reconnecting, +5.5 s Reconnecting | Couldn't load the feed (database unavailable), +8.4 s Live, +13.4 s Reconnecting, +13.5 s Reconnecting | Couldn't load the feed (database unavailable), +16.4 s Live
+    expect(received).toEqual(expected) // deep equality
+    - Expected  -  1
+    + Received  + 17
+    - Array []
+    + Array [
+    +   Object {
+    +     "at": 1793607443716,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793607451743,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793607459771,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    + ]
+      105 |     const outageTimeline = timeline(duringOutage, lateOpened)
+      106 |     console.log(`F-92: the late page while the database was down (${lateStreams} stream requests, ${lateLoads} list loads): ${outageTimeline}`)
+    > 107 |     expect.soft(duringOutage.filter((v) => v.badge?.startsWith('Live')), `the late page's badge said Live before the database was back: ${outageTimeline}`).toEqual([])
+          |                                                                                                                                                             ^
+      108 |     const failed = duringOutage.findIndex((v) => v.error !== null)
+      109 |     expect.soft(duringOutage.slice(failed).filter((v) => v.error !== 'database unavailable'), `the late page lost the database message before the database was back: ${outageTimeline}`).toEqual([])
+      110 |
+        at /home/claude/wt4-e2e/e2e/tests/07-f92-database-down.spec.ts:107:157
+    Error: the late page lost the database message before the database was back: +0.1 s (no badge), +0.3 s Connecting, +0.4 s Live, +5.4 s Reconnecting, +5.5 s Reconnecting | Couldn't load the feed (database unavailable), +8.4 s Live, +13.4 s Reconnecting, +13.5 s Reconnecting | Couldn't load the feed (database unavailable), +16.4 s Live
+    expect(received).toEqual(expected) // deep equality
+    - Expected  -  1
+    + Received  + 17
+    - Array []
+    + Array [
+    +   Object {
+    +     "at": 1793607451743,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793607456754,
+    +     "badge": "Reconnecting",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793607459771,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    + ]
+      107 |     expect.soft(duringOutage.filter((v) => v.badge?.startsWith('Live')), `the late page's badge said Live before the database was back: ${outageTimeline}`).toEqual([])
+      108 |     const failed = duringOutage.findIndex((v) => v.error !== null)
+    > 109 |     expect.soft(duringOutage.slice(failed).filter((v) => v.error !== 'database unavailable'), `the late page lost the database message before the database was back: ${outageTimeline}`).toEqual([])
+          |                                                                                                                                                                                          ^
+      110 |
+      111 |     // the database comes back; nobody restarts the service or clicks anything
+      112 |     await stack('start-mongo')
+        at /home/claude/wt4-e2e/e2e/tests/07-f92-database-down.spec.ts:109:186
+    (screenshots, error context and trace under test-results/; trimmed)
+  1 failed
+    tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves 
+  8 passed (1.9m)
+playwright exit=1
+
+== what failed: only the two new outage assertions (expect.soft), lines 107 and 109; every other assertion of spec 07 passed,
+   the recovery ones included (the test went on after the soft failures). The record shows GAP-frontend3-1: the late page's
+   badge says Live at +0.4, +8.4 and +16.4 s while the database is down (its stream answers 200 and ends 5 s later; Chromium
+   retries ~3 s after), and each reopen reloads the list, which takes the database message off screen from +8.4 s to +13.5 s.

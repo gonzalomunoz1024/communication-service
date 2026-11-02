@@ -1,0 +1,47 @@
+### first_byte 2026-11-02T01:46:02.948233Z
+F-18 PASS empty tenant: status+headers+first byte within 1 s via A direct, X-Client-Id header :: http=200 content-type=text/event-stream;charset=UTF-8 time_starttransfer=0.0030s (curl rc=28: 28 = our own 3 s cut)
+F-18 PASS empty tenant: status+headers+first byte within 1 s via A direct, ?clientId= :: http=200 content-type=text/event-stream;charset=UTF-8 time_starttransfer=0.0027s (curl rc=28: 28 = our own 3 s cut)
+F-18 PASS empty tenant: status+headers+first byte within 1 s via B direct, header :: http=200 content-type=text/event-stream;charset=UTF-8 time_starttransfer=0.0057s (curl rc=28: 28 = our own 3 s cut)
+F-18 PASS empty tenant: status+headers+first byte within 1 s via Vite dev proxy :3501, ?clientId= (what the browser does) :: http=200 content-type=text/event-stream;charset=UTF-8 time_starttransfer=0.0050s (curl rc=28: 28 = our own 3 s cut)
+F-18 PASS the first bytes of the stream are the ':connected' comment :: ':connected\n\n'
+F-18 PASS non-empty tenant: ':connected' then the snapshot frame with id :: ':connected\n\nid:49\nevent:snapshot\ndata:{"seq":49,"type":"SNAPSHOT","at":"2026-11-02T01:46:16.516104353Z","communication":{"id":"5f93210f-8301'
+### probes 2026-11-02T01:46:18.026489Z
+F-92 PASS A GET /actuator/health without X-Client-Id -> 200 {status: UP} (G-1-8) :: 200 {'status': 'UP', 'groups': ['liveness', 'readiness']}
+F-92 PASS A GET /actuator/health/liveness without X-Client-Id -> 200 {status: UP} (G-1-8) :: 200 {'status': 'UP'}
+F-92 PASS A GET /actuator/health/readiness without X-Client-Id -> 200 {status: UP} (G-1-8) :: 200 {'status': 'UP'}
+F-92 PASS B GET /actuator/health without X-Client-Id -> 200 {status: UP} (G-1-8) :: 200 {'status': 'UP', 'groups': ['liveness', 'readiness']}
+F-92 PASS B GET /actuator/health/liveness without X-Client-Id -> 200 {status: UP} (G-1-8) :: 200 {'status': 'UP'}
+F-92 PASS B GET /actuator/health/readiness without X-Client-Id -> 200 {status: UP} (G-1-8) :: 200 {'status': 'UP'}
+F-92 PASS health details stay hidden on the unauthenticated endpoint (no components) :: {'status': 'UP', 'groups': ['liveness', 'readiness']}
+F-92 PASS readiness also answers with a client id :: 200
+F-92 PASS GET /actuator/env -> 404 (only health is exposed) :: 404
+F-92 PASS GET /actuator/beans -> 404 (only health is exposed) :: 404
+F-92 PASS GET /actuator/metrics -> 404 (only health is exposed) :: 404
+F-92 PASS GET /actuator/loggers -> 404 (only health is exposed) :: 404
+F-92 PASS GET /actuator/threaddump -> 404 (only health is exposed) :: 404
+F-92 PASS /actuator index lists health only :: 200 ['health', 'health-path', 'self']
+### reopen 2026-11-02T01:46:18.089603Z
+F-91 PASS two DOWN reports open an OUTAGE (failureThreshold 2) :: 202 open=34f9fdb7-a210-4657-b037-15cc7826e579 summary=DOWN
+F-06 PASS an operator retires the auto notice by hand -> 200 RETIRED :: 200 RETIRED
+F-91 PASS the next DOWN observation notices the retirement: the monitor forgets the notice and counts again (G-1-5) :: 202 open=None summary=DOWN
+F-91 PASS continued failure opens a fresh OUTAGE (new id) once the threshold is crossed again :: new=80bb78e7-bb16-44cd-9b1b-00103a3e442a after 2 more DOWN report(s); first=34f9fdb7-a210-4657-b037-15cc7826e579
+F-91 PASS the feed shows exactly the fresh notice, not the retired one :: feed ids=['80bb78e7-bb16-44cd-9b1b-00103a3e442a']
+F-91 PASS two UP reports retire the fresh notice with 'recovered' :: status=RETIRED last=ACTIVE -> RETIRED: recovered: UP
+F-89 PASS backend A logged that the notice was closed externally and it is counting again :: lthObservationUseCase       : notice 34f9fdb7-a210-4657-b037-15cc7826e579 for monitor 80c2c542-92cc-4201-bb4f-6f80a01bd32d was closed externally; counting again
+### expiry_409 2026-11-02T01:46:18.394542Z
+F-06 PASS retire 0.15 s after expiresAt -> 409 even before the sweeper stored EXPIRED (G-1-20) :: stored status when asked=ACTIVE (before the 2 s sweep) retire=409 {'error': 'communication bdc7db0c-4afd-436d-a508-6e123564bca0 already expired; retiring would rewrite history'}
+F-12 PASS update after expiresAt -> 409 :: 409 {'error': 'communication bdc7db0c-4afd-436d-a508-6e123564bca0 is EXPIRED and can no longer be updated'}
+### error_bodies 2026-11-02T01:46:19.567107Z
+F-07 PASS 404 names the missing id :: 404 {'error': 'communication does-not-exist not found'}
+F-07 PASS permalink 404 names the id :: 404 {'error': 'communication does-not-exist not found'}
+F-07 PASS 405 names the verb / the allowed methods :: 405 {'error': 'DELETE is not allowed on /v1/feed; allowed: GET'}
+F-07 PASS 415 names the expected media type :: 415 {'error': "Content-Type 'text/plain' is not supported here; send application/json or application/*+json or application/x-ndjson"}
+F-07 PASS unknown enum value -> 400 naming the field and the allowed values :: 400 {'error': "severity: 'BOGUS' is not one of [INFO, MINOR, MAJOR, CRITICAL]"}
+F-07 PASS malformed JSON -> 400 with a readable error :: 400 {'error': "malformed JSON at line 1, column 2: Unexpected character ('n' (code 110)): was expecting double-quote to start field name"}
+### access_log 2026-11-02T01:46:19.585300Z
+F-89 FAIL every identified request is logged at INFO with client id, verb, path, status and duration (G-1-22) :: no line
+F-89 PASS a rejected (unidentified) request is logged too :: rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)
+
+SUMMARY: 37 checks, 36 pass, 1 fail
+  FAIL F-89 every identified request is logged at INFO with client id, verb, path, status and duration (G-1-22) :: no line
+EXIT=1

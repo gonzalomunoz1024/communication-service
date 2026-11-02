@@ -1,0 +1,78 @@
+# 01 - ./gradlew --max-workers=2 --no-daemon check --rerun-tasks (run 1 of 3), HEAD be19645
+
+## trimmed log (task lines, warnings, result)
+1:Mon Nov  2 03:53:52 UTC 2026
+2:HEAD=be19645
+6:> Task :cyclonedxDirectBom
+7:> Task :cyclonedxBom
+8:> Task :compileJava
+9:> Task :processResources
+10:> Task :classes
+11:> Task :compileTestJava
+12:> Task :processTestResources
+13:> Task :testClasses
+15:> Task :test
+20:> Task :integrationTest
+185:> Task :jacocoTestCoverageVerification
+186:> Task :jacocoTestReport
+187:> Task :spotbugsTest SKIPPED
+189:> Task :spotbugsMain
+192:> Task :check
+194:BUILD SUCCESSFUL in 1m 29s
+195:11 actionable tasks: 11 executed
+196:EXIT=0
+197:Mon Nov  2 03:55:22 UTC 2026
+
+javac warning lines (any 'warning:' from the compiler): 0
+JVM 'Sharing is only supported' notices (not compiler warnings): 2
+lines 24-184 of the log are the integrationTest stdout (Spring banners); the full log is in the scratchpad: /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/backend2/gradle-check-1.txt
+
+## JUnit XML counts (build/test-results, copied to /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/backend2/run1)
+test: classes=22 tests=208 failures=0 errors=0 skipped=0 sum_time=12.6s
+  AdminUseCaseTest                              tests=  5 failures=0 errors=0 skipped=0 time=3.3s
+  MongoCommunicationEventsAdapterTest           tests= 10 failures=0 errors=0 skipped=0 time=1.4s
+  CommunicationTest                             tests= 18 failures=0 errors=0 skipped=0 time=0.1s
+  ClientIdWebFilterTest                         tests=  8 failures=0 errors=0 skipped=0 time=3.1s
+  GlobalExceptionHandlerTest                    tests=  4 failures=0 errors=0 skipped=0 time=0.3s
+  MongoClientConfigTest                         tests=  2 failures=0 errors=0 skipped=0 time=0.1s
+  RestControllerFeedAdapterTest                 tests=  2 failures=0 errors=0 skipped=0 time=0.4s
+  FeedUseCaseTest                               tests= 11 failures=0 errors=0 skipped=0 time=0.3s
+  RestControllerHealthAdapterTest               tests=  7 failures=0 errors=0 skipped=0 time=0.5s
+  HealthMonitorDocumentMappingTest              tests=  2 failures=0 errors=0 skipped=0 time=0.3s
+  WebClientHealthProbeAdapterTest               tests=  5 failures=0 errors=0 skipped=0 time=1.3s
+  HealthMonitorUseCaseTest                      tests= 19 failures=0 errors=0 skipped=0 time=0.3s
+  HealthObservationUseCaseTest                  tests= 14 failures=0 errors=0 skipped=0 time=0.1s
+  HealthSweepUseCaseTest                        tests= 16 failures=0 errors=0 skipped=0 time=0.1s
+  HealthMonitorTest                             tests= 14 failures=0 errors=0 skipped=0 time=0.0s
+  HealthNoticeTest                              tests=  3 failures=0 errors=0 skipped=0 time=0.0s
+  HealthReportTest                              tests=  9 failures=0 errors=0 skipped=0 time=0.0s
+  HealthRollupTest                              tests= 12 failures=0 errors=0 skipped=0 time=0.1s
+  RestControllerPublishingAdapterTest           tests= 13 failures=0 errors=0 skipped=0 time=0.6s
+  PublishingUseCaseTest                         tests= 22 failures=0 errors=0 skipped=0 time=0.2s
+  StatusSweepUseCaseTest                        tests=  5 failures=0 errors=0 skipped=0 time=0.1s
+  TicketPolicyTest                              tests=  7 failures=0 errors=0 skipped=0 time=0.0s
+integrationTest: classes=8 tests=42 failures=0 errors=0 skipped=0 sum_time=12.3s
+  CommunicationServiceE2EIT                     tests=  6 failures=0 errors=0 skipped=0 time=5.7s
+  OpenApiContractIT                             tests=  3 failures=0 errors=0 skipped=0 time=0.2s
+  OperationsEndpointsIT                         tests=  6 failures=0 errors=0 skipped=0 time=0.3s
+  MongoCommunicationEventsAdapterIT             tests=  3 failures=0 errors=0 skipped=0 time=0.8s
+  MongoCommunicationRepositoryAdapterIT         tests=  9 failures=0 errors=0 skipped=0 time=0.5s
+  HealthMonitoringE2EIT                         tests=  6 failures=0 errors=0 skipped=0 time=4.7s
+  MongoHealthInstanceRepositoryAdapterIT        tests=  3 failures=0 errors=0 skipped=0 time=0.1s
+  MongoHealthMonitorRepositoryAdapterIT         tests=  6 failures=0 errors=0 skipped=0 time=0.2s
+
+## build gates in this run
+SpotBugs (build/reports/spotbugs/main.xml): see 08-spotbugs-gate.txt
+JaCoCo (build/reports/jacoco/test/jacocoTestReport.xml, config/** and *Application* excluded):
+  INSTRUCTION  covered= 7792 missed=  425 ratio=0.9483
+  BRANCH       covered=  586 missed=  126 ratio=0.8230
+  LINE         covered= 1176 missed=   55 ratio=0.9553
+  COMPLEXITY   covered=  629 missed=  132 ratio=0.8265
+  METHOD       covered=  383 missed=   17 ratio=0.9575
+  CLASS        covered=   63 missed=    0 ratio=1.0000
+threshold in build.gradle.kts: LINE COVEREDRATIO >= 0.92 (jacocoTestCoverageVerification passed)
+
+## wall clock
+Mon Nov  2 03:53:52 UTC 2026
+Mon Nov  2 03:55:22 UTC 2026
+BUILD SUCCESSFUL in 1m 29s

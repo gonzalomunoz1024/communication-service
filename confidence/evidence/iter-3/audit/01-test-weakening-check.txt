@@ -1,0 +1,229 @@
+# 01 - Test-weakening check (iteration 3), auditor, 2026-11-02T08:02:14Z
+
+## A. Ranges
+Iteration-3 fix commits 23c297d..4a0e84e: 37 commits, every subject starting 'Fix G-3-' (23c297d itself, 'Add four iteration-3 gaps from the iteration-2 audit and the fixers' notes', touches only confidence/).
+Base for the iteration-3 diff: be19645 (the code the iteration-2 audit covered). Commits be19645..23c297d^ and 4a0e84e..HEAD touch only confidence/:
+  2fe56a2: 0 non-confidence paths of 41
+  33451c3: 0 non-confidence paths of 1
+  3806e7c: 0 non-confidence paths of 272
+  6079180: 0 non-confidence paths of 71
+  e3968c4: 0 non-confidence paths of 1
+  6fa95c5: 0 non-confidence paths of 353
+Whole-branch base: 191a0c5 (origin/main, the original main). NOTE: the local branch 'main' points at 19159f5 ('wip'), an ancestor 20 commits behind 191a0c5,
+so the contract's literal 'git diff main' would include the whole project history; 191a0c5 is used, as the brief says.
+
+## B. Size of the test diff (test paths: src/test/** frontend/src/test/** frontend/src/**/*.test.ts frontend/src/**/*.test.tsx e2e/tests/** e2e/fakeapp/**/*_test.go sidecar/**/*_test.go e2e/playwright.config.ts frontend/vite.config.ts frontend/vitest.config.ts)
+be19645..4a0e84e: 38 files, +3062 -91
+191a0c5..4a0e84e: 69 files, +7838 -62
+Deleted or renamed test files (--diff-filter=DR): be19645..4a0e84e: []; 191a0c5..4a0e84e: []
+
+## C. Files touched in be19645..4a0e84e (NEW = absent at be19645)
+  EXISTING +1 -1 e2e/playwright.config.ts  [ac7026a ]
+  EXISTING +102 -1 src/test/java/com/atlas/communication/OperationsEndpointsIT.java  [98e3fdc ]
+  EXISTING +124 -0 src/test/java/com/atlas/communication/publishing/adapters/inbound/RestControllerPublishingAdapterTest.java  [55ed84c 2ebdaf2 083721a ]
+  EXISTING +127 -0 sidecar/cmd/health-sidecar/main_test.go  [ef5d3ad 34f1cd1 ]
+  EXISTING +135 -11 e2e/tests/04-f92-backend-restart.spec.ts  [f09d2f0 7112b71 ]
+  EXISTING +19 -1 src/test/java/com/atlas/communication/admin/application/AdminUseCaseTest.java  [7e265be ]
+  EXISTING +2 -1 src/test/java/com/atlas/communication/config/MongoClientConfigTest.java  [07e6e4d ]
+  EXISTING +20 -0 src/test/java/com/atlas/communication/health/domain/HealthMonitorTest.java  [507e918 ]
+  EXISTING +23 -0 src/test/java/com/atlas/communication/health/adapters/inbound/RestControllerHealthAdapterTest.java  [2ebdaf2 ]
+  EXISTING +3 -4 src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java  [56d6cc8 ]
+  EXISTING +31 -9 src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java  [56d6cc8 ]
+  EXISTING +32 -1 src/test/java/com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapterTest.java  [229dd04 ]
+  EXISTING +34 -0 sidecar/internal/probe/probe_test.go  [92e63d0 ]
+  EXISTING +342 -30 sidecar/internal/agent/agent_test.go  [58f80ff 1415134 8723f78 92e63d0 375ccea ]
+  EXISTING +40 -4 src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java  [56d6cc8 ]
+  EXISTING +44 -1 frontend/src/test/App.test.tsx  [d685898 ]
+  EXISTING +44 -1 src/test/java/com/atlas/communication/common/domain/CommunicationTest.java  [72a14cd 55ed84c ]
+  EXISTING +54 -3 frontend/src/test/PublishOutageForm.test.tsx  [05bec99 ad8f6d2 ]
+  EXISTING +6 -5 sidecar/deploy/deploy_test.go  [1415134 ]
+  EXISTING +62 -0 e2e/tests/helpers.ts  [ac7026a ]
+  EXISTING +66 -9 src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java  [56d6cc8 507e918 ]
+  EXISTING +74 -0 src/test/java/com/atlas/communication/publishing/application/PublishingUseCaseTest.java  [7e265be ]
+  EXISTING +76 -1 frontend/src/test/OutageCard.test.tsx  [85bf46e 9cde57e ]
+  EXISTING +8 -3 src/test/java/com/atlas/communication/LogCapture.java  [98e3fdc ]
+  EXISTING +82 -0 src/test/java/com/atlas/communication/CommunicationServiceE2EIT.java  [55ed84c 2ebdaf2 7e265be ]
+  EXISTING +88 -0 sidecar/internal/config/config_test.go  [ef5d3ad d7b0a1b 34f1cd1 ]
+  EXISTING +90 -3 frontend/src/test/errors.test.ts  [54fead9 05bec99 ad8f6d2 ]
+  EXISTING +95 -2 frontend/src/test/OutageFeed.test.tsx  [85edf1d 9cde57e ad8f6d2 ]
+  NEW +101 -0 src/test/java/com/atlas/communication/config/ClientIdWebFilterEdgeCasesTest.java  [f141b2d ]
+  NEW +102 -0 e2e/tests/06-f39-pull-monitor.spec.ts  [ac7026a ]
+  NEW +134 -0 src/test/java/com/atlas/communication/config/MongoReadinessIndicatorTest.java  [f141b2d 07e6e4d ]
+  NEW +141 -0 src/test/java/com/atlas/communication/config/MongoOutageReadinessTest.java  [07e6e4d ]
+  NEW +158 -0 frontend/src/test/useTheme.test.tsx  [54fead9 ]
+  NEW +185 -0 sidecar/deploy/helm_test.go  [1415134 ]
+  NEW +252 -0 src/test/java/com/atlas/communication/config/GlobalExceptionHandlerMessagesTest.java  [f141b2d ]
+  NEW +29 -0 e2e/tests/05-f76-sidecar-sigterm.spec.ts  [ac7026a ]
+  NEW +66 -0 src/test/java/com/atlas/communication/health/domain/HealthStatusTest.java  [85dcd7f ]
+  NEW +70 -0 e2e/tests/07-f92-database-down.spec.ts  [ac7026a ]
+
+## D. Suite sizes
+  191a0c5: java @Test 190 | vitest it/test calls 23 | go top-level Test* 25 | playwright test() 0
+  be19645: java @Test 250 | vitest it/test calls 136 | go top-level Test* 42 | playwright test() 6
+  4a0e84e: java @Test 297 | vitest it/test calls 164 | go top-level Test* 53 | playwright test() 9
+  Executed here (auditor's ./gradlew test --rerun integrationTest --rerun, 07:58-07:59Z): 251 unit + 46 integration = 297, 0 failures, 0 errors, 0 skipped (JUnit XML; see 20-gradle-test-integrationTest-rerun.txt).
+
+## E. Skip/focus/xfail markers and timeouts ADDED on the branch (191a0c5..4a0e84e, test paths and e2e/)
+  +- **Playwright** `workers: 1`, `retries: 0` (a flaky end-to-end test is a finding, not noise),
+  +      retries: 30
+  +  retries: 0,
+  +		t.Skip("kustomize not on PATH")
+  +		t.Skip("helm not on PATH")
+  Reading: retries: 0 is the Playwright config (G-2-17); retries: 30 is e2e/docker-compose.yml's Mongo healthcheck (G-2-17, unchanged in iteration 3);
+  t.Skip("kustomize not on PATH") is iteration 1's laptop path; t.Skip("helm not on PATH") (helm_test.go:37, 1415134) goes through requireTool, which
+  t.Fatalf's when CI is set (deploy_test.go:26-27). No @Disabled/@Ignore/assume/.skip/.only/xit/todo/fixme anywhere.
+  Timeouts: e2e/playwright.config.ts changed by one comment line only (ac7026a); timeout 120_000, expect 10_000, retries 0, workers 1 unchanged.
+  Spec 04 timeouts at be19645: 10_000, 90_000, 30_000, 90_000 -> at 4a0e84e: 10_000, 90_000, 30_000, 30_000 (one tightened, f09d2f0; none raised).
+
+## F. Every removed line in test files, iteration 3, by commit
+### 05bec99 Fix G-3-21: explain the duplicate-reference 409 in the form's terms
+  b/frontend/src/test/PublishOutageForm.test.tsx: -import { render, screen, waitFor } from '@testing-library/react'
+  b/frontend/src/test/PublishOutageForm.test.tsx: -  it("shows the service's own words when its 409 already explains the permanent key and names the notice", async () => {
+  b/frontend/src/test/PublishOutageForm.test.tsx: -    expect(alert).toHaveTextContent(`The service rejected this. ${explained}`)
+  b/frontend/src/test/errors.test.ts: -import { UNREACHABLE_MESSAGE, explainError, explainPublishError, isRejection, isUnreachable } from '../outages/errors'
+  b/frontend/src/test/errors.test.ts: -  it("shows the service's own explanation of a duplicate reference when it sends one", () => {
+  b/frontend/src/test/errors.test.ts: -    expect(explainPublishError(new ApiError(409, explained))).toBe(explained)
+### 9cde57e Fix G-3-22: move focus into the Resolve/Withdraw confirmation and back
+  b/frontend/src/test/OutageCard.test.tsx: -import { render, screen } from '@testing-library/react'
+### 85edf1d Fix G-3-23: announce the connection badge, wait for a tenant, 24 px row
+  b/frontend/src/test/OutageFeed.test.tsx: -    const status = screen.getByRole('status')
+  b/frontend/src/test/OutageFeed.test.tsx: -    expect(screen.getByRole('status')).toHaveTextContent('Resolved “Notice a”. It has left every consumer\'s feed.')
+### d685898 Fix G-3-24: load the feed once per tenant typed in the header
+  b/frontend/src/test/App.test.tsx: -  constructor(readonly url: string) {}
+### 375ccea Fix G-3-19: drive the every-probe/heartbeat test through Run on the harness clock
+  b/sidecar/internal/agent/agent_test.go: -// keeps the change-or-heartbeat cadence. Real time through Run: interval 50 ms, heartbeat 10 s,
+  b/sidecar/internal/agent/agent_test.go: -// 300 ms of running.
+  b/sidecar/internal/agent/agent_test.go: -		min, max     int
+  b/sidecar/internal/agent/agent_test.go: -		{"DOWN app: one report per probe", "DOWN", 3, 20},
+  b/sidecar/internal/agent/agent_test.go: -		{"UP app: the first report, then nothing before the heartbeat", "UP", 1, 1},
+  b/sidecar/internal/agent/agent_test.go: -			cfg.Interval, cfg.Heartbeat, cfg.StartupGrace = 50*time.Millisecond, 10*time.Second, 0
+  b/sidecar/internal/agent/agent_test.go: -			h.agent.Now = time.Now // Run's timers are real, so the heartbeat clock must be too
+  b/sidecar/internal/agent/agent_test.go: -			ctx, cancel := context.WithCancel(context.Background())
+  b/sidecar/internal/agent/agent_test.go: -			done := make(chan struct{})
+  b/sidecar/internal/agent/agent_test.go: -			go func() {
+  b/sidecar/internal/agent/agent_test.go: -				h.agent.Run(ctx)
+  b/sidecar/internal/agent/agent_test.go: -				close(done)
+  b/sidecar/internal/agent/agent_test.go: -			}()
+  b/sidecar/internal/agent/agent_test.go: -			time.Sleep(300 * time.Millisecond)
+  b/sidecar/internal/agent/agent_test.go: -			cancel()
+  b/sidecar/internal/agent/agent_test.go: -			select {
+  b/sidecar/internal/agent/agent_test.go: -			case <-done:
+  b/sidecar/internal/agent/agent_test.go: -			case <-time.After(5 * time.Second):
+  b/sidecar/internal/agent/agent_test.go: -				t.Fatal("Run did not return after cancellation")
+  b/sidecar/internal/agent/agent_test.go: -			}
+  b/sidecar/internal/agent/agent_test.go: -			var sent []report.Report
+  b/sidecar/internal/agent/agent_test.go: -			for _, r := range h.sender.all() {
+  b/sidecar/internal/agent/agent_test.go: -				if r.Instance == nil || !r.Instance.Leaving {
+  b/sidecar/internal/agent/agent_test.go: -					sent = append(sent, r)
+  b/sidecar/internal/agent/agent_test.go: -				}
+  b/sidecar/internal/agent/agent_test.go: -			}
+  b/sidecar/internal/agent/agent_test.go: -			if len(sent) < tc.min || len(sent) > tc.max {
+  b/sidecar/internal/agent/agent_test.go: -				t.Fatalf("%d reports in 300 ms at a 50 ms interval, want between %d and %d", len(sent), tc.min, tc.max)
+  b/sidecar/internal/agent/agent_test.go: -			}
+  b/sidecar/internal/agent/agent_test.go: -			for i, r := range sent {
+### 92e63d0 Fix G-3-16: send every probe while the service would not count the report as UP, components included
+  b/sidecar/internal/agent/agent_test.go: -	srv    *httptest.Server
+  b/sidecar/internal/agent/agent_test.go: -	port   int
+  b/sidecar/internal/agent/agent_test.go: -		status := app.status
+### 1415134 Fix G-3-10: print the Helm include lines with | nindent 8; /status shows the last report composed
+  b/sidecar/deploy/deploy_test.go: -// Package deploy holds tests for the Kustomize snippets under deploy/kustomize and for the image
+  b/sidecar/deploy/deploy_test.go: -// build files. The manifest tests need the kustomize binary and use kubeconform for schema
+  b/sidecar/deploy/deploy_test.go: -// validation. On a laptop a missing tool skips the check, so `go test ./...` stays green on a
+  b/sidecar/deploy/deploy_test.go: -// plain checkout; when CI is set (GitHub Actions sets CI=true) a missing tool fails the test
+  b/sidecar/deploy/deploy_test.go: -// naming it, so a CI image without the tools cannot pass these checks vacuously.
+### 98e3fdc Fix G-3-1: end a feed stream with one WARN when its first query finds the database unreachable
+  b/src/test/java/com/atlas/communication/LogCapture.java: -    private LogCapture(Class<?> type) {
+  b/src/test/java/com/atlas/communication/LogCapture.java: -        logger = (Logger) LoggerFactory.getLogger(type);
+  b/src/test/java/com/atlas/communication/LogCapture.java: -        return new LogCapture(type);
+  b/src/test/java/com/atlas/communication/OperationsEndpointsIT.java: - * indicator, and that indicator is the real reactive one answering from the running database.
+### 7e265be Fix G-3-3: answer with the effective status on the publisher and admin endpoints
+  b/src/test/java/com/atlas/communication/admin/application/AdminUseCaseTest.java: -        useCase = new AdminUseCase(repository, publishing);
+### 229dd04 Fix G-3-11: resume a stream after the larger of ?lastEventId= and Last-Event-ID
+  b/src/test/java/com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapterTest.java: -/** HTTP shape of the SSE stream around its lifetime: it ends when the event source ends. */
+### 507e918 Fix G-3-2: claim the probe slot before the sweep probes a due monitor
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        verify(observation).probe(due, NOW);
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        verify(observation).probe(alsoDue, NOW);
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        verify(observation, never()).probe(eq(recent), any());
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        verify(observation, never()).probe(eq(pushOnly), any());
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        when(observation.probe(broken, NOW)).thenReturn(Mono.error(new IllegalStateException("conflict")));
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        when(observation.probe(fine, NOW)).thenReturn(Mono.just(fine));
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        when(observation.probe(eq(due), any())).thenReturn(Mono.just(due)); // probes are not affected
+### 56d6cc8 Fix G-3-25: compose automated notices in plain words and sign them with one name
+  b/src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java: -                        .contains("- db: DOWN - error=Connection refused")
+  b/src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java: -                        .contains("reported by the service")
+  b/src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java: -                        .contains("cache cluster unreachable")
+  b/src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java: -                        .contains("- redis: DOWN"));
+  b/src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java: -        assertThat(cmd.getValue().body()).contains("- db: DOWN");
+  b/src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java: -        assertThat(request.getValue().actor()).isEqualTo(HealthObservationUseCase.ACTOR);
+  b/src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java: -        assertThat(cmd.getValue().actor()).isEqualTo(HealthObservationUseCase.ACTOR);
+  b/src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java: -        assertThat(cmd.getValue().body()).contains("- redis: DOWN");
+  b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java: -        assertThat(report.getValue().message()).contains(NOW.minusSeconds(120).toString());
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .contains("**DOWN** at " + NOW)
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .contains("probe of http://vm-api/actuator/health")
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .contains("HTTP 503")
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .contains("- db: DOWN - error=refused")
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -        assertThat(notice.body()).contains("reported by the service").contains("cache cluster unreachable");
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .contains("no health report received since " + NOW)
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .contains("- c24: DOWN")
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .doesNotContain("- c25: DOWN")
+  b/src/test/java/com/atlas/communication/health/domain/HealthNoticeTest.java: -                .contains("... and 15 more");
+### 07e6e4d Fix G-3-6: one readiness line per Mongo outage, no indicator or driver stack traces
+  b/src/test/java/com/atlas/communication/config/MongoClientConfigTest.java: -            new MongoTimeoutProperties(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15)));
+### 72a14cd Fix G-3-32: name both values and the defaulted start when endsAt is not after startsAt
+  b/src/test/java/com/atlas/communication/common/domain/CommunicationTest.java: -                .hasMessageContaining("endsAt must be after startsAt");
+### 7112b71 Fix G-3-28: lint the e2e suite with ESLint and gate the workflow on it
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -  const restartError = await restart
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -  if (restartError) throw restartError
+### f09d2f0 Fix G-3-12: prove the F-92 resume is a lastEventId replay, not the page's list reload
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -import { expect, test } from '@playwright/test'
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -import { RUN, TENANT, card, expectNotReloaded, openFeed, outage, publish, retire, stack } from './helpers'
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -test('F-92 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and shows what was published meanwhile', async ({ page, request }) => {
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -  console.log(`F-92: a reopen carried lastEventId=${new URL(resumed.url()).searchParams.get('lastEventId')}`)
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -  // the backend is back: another system publishes while the page is still on its own reopen schedule
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -  const after = await publish(request, outage(`F-92 published after the restart ${RUN}`))
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -    await expect(card(page, after.title)).toBeVisible({ timeout: 90_000 })
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -    await retire(request, before.id, 'e2e cleanup')
+  b/e2e/tests/04-f92-backend-restart.spec.ts: -    await retire(request, after.id, 'e2e cleanup')
+### ac7026a Fix G-3-27: cover database down, sidecar SIGTERM and a pull monitor in the e2e suite
+  b/e2e/playwright.config.ts: -  // one stack, one browser at a time: the files run in name order and F-92 restarts the backend
+
+## G. Verdict per removed line (section F), against fixes.md "Existing tests touched" and the commit messages
+Backend (34 removed lines; the backend verifier's ev/06 also counts 34):
+  - HealthSweepUseCaseTest, 507e918 (G-3-2), 8 lines: verify(probe(due)) -> verify(probe(due.withProbeClaimed(NOW))) (the monitor as claimed);
+    never(probe(eq(recent/pushOnly))) -> never(probe(withId(..))) (a broader matcher under never(): stricter); expectNext(1L) kept inside a
+    LogCapture block that adds a WARN assertion; plus a new two-instance test. Named in fixes.md and in 507e918's message. EQUAL OR STRONGER.
+  - HealthNoticeTest (9), HealthObservationUseCaseTest (4), HealthMonitoringE2EIT (4), HealthSweepUseCaseTest (1), 56d6cc8 (G-3-25): body
+    substrings of the removed format ("**DOWN** at <Instant>", "- db: DOWN - error=...") -> startsWith/exact lines of the new format; the
+    truncation pair (c24 shown, c25 not, "... and 15 more") kept; actor ACTOR -> the monitor's publisher (the two-names defect itself).
+    Named in fixes.md and in 56d6cc8's message, assertion by assertion. EQUAL OR STRONGER (a deliberate behaviour change).
+  - CommunicationTest, 72a14cd (G-3-32): hasMessageContaining("endsAt must be after startsAt") -> the exact message with values. STRONGER. Named.
+  - AdminUseCaseTest.setUp (7e265be), MongoClientConfigTest (07e6e4d): a constructor gains an argument. NO ASSERTION. Named.
+  - LogCapture (98e3fdc, 3 lines): constructor -> logger-name factory. NO ASSERTION. Named.
+  - OperationsEndpointsIT (98e3fdc), RestControllerFeedAdapterTest (229dd04): one Javadoc line each. NO ASSERTION. Not named (comments only).
+Frontend (10 removed lines; the frontend verifier's test-diff.txt counts 10):
+  - errors.test.ts, PublishOutageForm.test.tsx, 05bec99 (G-3-21): a verbatim-409 test each (title + assertion) -> the form's explanation and
+    the service's text inside the details element; two import lines rewritten. Named in fixes.md (deliberate G-3-21 change). JUSTIFIED.
+  - OutageFeed.test.tsx, 85edf1d (G-3-23): two getByRole('status') reads -> a helper that reads the named region, same expected text. Named.
+  - App.test.tsx, d685898 (G-3-24): the EventSource stub's constructor now records URLs. Named. NO ASSERTION.
+  - OutageCard.test.tsx, 9cde57e: one import line rewritten with more names. NO ASSERTION. Not named.
+Sidecar (35 removed lines; the sidecar verifier's 41-test-diff.txt counts 35):
+  - agent_test.go, 375ccea (G-3-19): TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat's 300 ms wall-clock body with a 3..20 window -> Run on
+    the harness clock with exact per-tick counts; the per-report status loop is kept (agent_test.go:832-834 now). Named. STRONGER.
+  - agent_test.go, 92e63d0 (G-3-16): harness fields srv/port and 'status := app.status' -> the same plus a 'doc' override for whole-document
+    answers (refactor; the commit message names the new tests). NO ASSERTION. Not named in fixes.md.
+  - deploy_test.go, 1415134: the package comment rewritten to mention helm. NO ASSERTION. Not named.
+E2E (12 removed lines incl. config):
+  - 04-f92-backend-restart.spec.ts, f09d2f0 (G-3-12) and 7112b71 (G-3-28): imports/title rewritten; the card wait 90_000 -> 30_000 (tighter);
+    'if (restartError) throw restartError' -> 'expect(await restart).toBeNull()'; the cleanup retires kept (now in finally). Named. STRONGER.
+  - playwright.config.ts, ac7026a: one comment line. NO CONFIG CHANGE. Not named (comment only).
+
+## H. Finding
+No test file was deleted or renamed; no skip, focus, xfail or todo marker was added; no timeout was raised; every removed assertion is
+replaced by an equal or stronger one or encodes a documented, deliberate behaviour change (G-3-2, G-3-12, G-3-19, G-3-21, G-3-25, G-3-32),
+named in fixes.md and in the commit that made it. fixes.md does not name six touched pre-existing files whose removed lines are comments,
+imports or harness refactors only (OperationsEndpointsIT, RestControllerFeedAdapterTest, OutageCard.test.tsx, the 92e63d0 harness fields of
+agent_test.go, deploy_test.go, playwright.config.ts); none changes an assertion. The hard gate "a test skipped/deleted/loosened without
+justification" is NOT tripped for any service.
+Side note (coverage, not weakening): no existing test was changed to admit the G-2-7 regression (GAP-backend3-1). HealthMonitorUseCaseTest,
+which holds the probe-now tests, is untouched since be19645; its tests mock the conflict and never model the sweep's new claim save.

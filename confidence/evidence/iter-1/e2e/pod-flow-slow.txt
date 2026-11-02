@@ -1,0 +1,12 @@
+01:57:21.708 === slow probe target, wire contract capture, instance id limits
+01:57:21.770 F-92 PASS pull monitor registered with timeoutMs=500 against a 3 s stub :: status=201
+01:57:22.326 F-92 PASS slow target: probe counts as DOWN with a timeout message :: 200 lastStatus=DOWN "DOWN (probe failed: no response within 500ms)"
+01:57:22.335 F-92 PASS OUTAGE notice for the slow service (failureThreshold 1) :: "slow-svc is down" body="Automated health check reported **DOWN** at 2026-11-02T01:57:21.778758731Z (probe of http://127.0.0.1:19620/slow). |  | probe failed: no response within 500ms |"
+01:57:23.073 F-75 PASS wire: headers Content-Type/Accept application/json, X-Client-Id = CS_CLIENT_ID, User-Agent health-sidecar/<version> :: {"ct":"application/json","accept":"application/json","cid":"wire-repo","ua":"health-sidecar/ci-iter1"}
+01:57:23.073 F-75 PASS wire: body {tenantId, service, status, components, observedAt, publisher, instance{id,namespace,node,cluster,version,sidecar}} :: {"tenantId":"e2e1-wire","service":"wire-svc","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T01:57:22.569Z","publisher":"health-sidecar","instance":{"id":"wire-7f9c6d5b4-abcde","namespace":"wire-ns","node":"worker-1","cluster":"ocp-east","version":"3.1.4","sidecar":"ci-iter1"}}
+01:57:23.095 F-75 PASS the captured body is accepted verbatim by the backend (202) :: status=202 {"lastStatus":"UP","lastReportAt":"2026-11-02T01:57:23.079052415Z","lastSummary":"UP (1 of 1 pod UP)","unhealthyStreak":
+01:57:23.246 F-75 PASS instance.id 253 chars accepted, 254 rejected with 400 :: 202 / 400 {"error":"instance.id: size must be between 0 and 253"}
+01:57:28.329 F-70 PASS app says WARN -> sidecar passes WARN through -> backend classifies DEGRADED :: sidecar lastReport=WARN backend="DEGRADED (0 of 1 pod UP (DEGRADED: e2e1-app-6d4f8b7c9-ab12c))"
+
+SUMMARY: 8 checks, 8 pass, 0 fail
+EXIT=0

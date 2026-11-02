@@ -1,0 +1,52 @@
+G-3-12 after: spec 04 (commit 4d769fe) in three runs of the whole suite on the real backend.
+Stack: fresh per run (GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up,
+./stack.sh down after); backend jar = the iteration-2 jar (md5 fb2fcf3aa540c8c3b12f11cabc207453); frontend/dist =
+this worktree's frontend with errors.ts from FE-3's a791cb0 (G-3-20), built in a scratch copy
+(/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2et-fe-g320).
+Commit under test: 13a012e (the tested files are identical at 7ee45f4, which only reworded e2e/README.md).
+
+== run 1: $ npx playwright test   (spec 04's lines and the summary)
+F-92: the badge showed Reconnecting 0.4 s into the restart
+F-92: a reopen carried lastEventId=11
+F-92: the backend was ready again 19.5 s after the restart began
+F-92: the page showed it 2.0 s after the backend was back
+F-92: replayed as created#12 on the stream resumed after 11; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › … (22.3s)
+  9 passed (1.7m)
+
+== run 2: $ npx playwright test   (spec 04's lines and the summary)
+F-92: the badge showed Reconnecting 0.3 s into the restart
+F-92: a reopen carried lastEventId=7
+F-92: the backend was ready again 19.0 s after the restart began
+F-92: the page showed it 3.1 s after the backend was back
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › … (23.3s)
+  9 passed (1.7m)
+
+== run 3: $ npx playwright test   (spec 04's lines and the summary)
+F-92: the badge showed Reconnecting 0.4 s into the restart
+F-92: a reopen carried lastEventId=7
+F-92: the backend was ready again 23.3 s after the restart began
+F-92: the page showed it 2.0 s after the backend was back
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › … (26.5s)
+  9 passed (1.8m)
+
+Decisive: in each run the notice published while the page was held away came as one created frame
+numbered after the lastEventId the page resumed with (created#12 after 11, created#8 after 7, twice),
+with 1 list reload, after the test's own stream had seen it fanned out.
+The same spec fails against the replay-disabled backend: e2e-t-G-3-12-before.txt, sections 2.1 and 2.2.
+
+== extra, one run: the same suite (worktree at 7ee45f4) against FE-3's final frontend (ea31d5d, G-3-20 to G-3-26),
+built in a scratch copy (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2et-fe-final), served the same way; fresh stack, down after
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › … (55ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › … (238ms)
+  ✓  3 tests/01-api-contract.spec.ts:27:7 › … (34ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › … (3.7s)
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › … (11.6s)
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › … (17.0s)
+  ✓  7 tests/05-f76-sidecar-sigterm.spec.ts:7:5 › … (1.5s)
+  ✓  8 tests/06-f39-pull-monitor.spec.ts:37:5 › … (32.2s)
+  ✓  9 tests/07-f92-database-down.spec.ts:6:5 › … (25.4s)
+  9 passed (1.6m)

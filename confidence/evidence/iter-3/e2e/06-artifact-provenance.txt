@@ -1,0 +1,13 @@
+# artefacts under test (read only)
+$ sha256sum build/libs/*.jar scratchpad/communication-service-iter3.jar
+b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f  build/libs/communication-service-0.0.1-SNAPSHOT.jar
+b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f  scratchpad/communication-service-iter3.jar
+$ ls -l --time-style=+%FT%T frontend/dist/index.html frontend/dist/assets/*
+2026-11-02T06:42:24 270347 frontend/dist/assets/index-Bmkt-yYZ.js
+2026-11-02T06:42:24 31185 frontend/dist/assets/index-DErufLds.css
+2026-11-02T06:42:24 1257 frontend/dist/index.html
+$ git log -1 --format="%h %cI %s" 4a0e84e; git log -1 --format="%h %cI %s" -- frontend/src
+4a0e84e 2026-11-02T06:26:19+00:00 Fix G-3-29: state the staleness-window relation on the service side too
+54fead9 2026-11-02T06:05:48+00:00 Fix G-3-26: cover useTheme (system, explicit, toggle, storage failure)
+$ git diff --stat 4a0e84e e3968c4 -- src frontend sidecar e2e
+(empty = no code change between 4a0e84e and e3968c4)

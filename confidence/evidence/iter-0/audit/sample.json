@@ -1,0 +1,1877 @@
+{
+ "seed": 0,
+ "claims": {
+  "backend": [
+   [
+    "command",
+    "cmd-1",
+    "`./gradlew --max-workers=2 --no-daemon clean compileJava compileTestJava`"
+   ],
+   [
+    "command",
+    "cmd-2",
+    "`./gradlew --max-workers=2 --no-daemon test` \u00d73"
+   ],
+   [
+    "command",
+    "cmd-3",
+    "`./gradlew --max-workers=2 --no-daemon integrationTest` \u00d73 (seeded mongod 7.0.45, tests unchanged)"
+   ],
+   [
+    "command",
+    "cmd-4",
+    "`./gradlew --max-workers=2 --no-daemon dependencies --configuration runtimeClasspath`"
+   ],
+   [
+    "command",
+    "cmd-5",
+    "`./gradlew --max-workers=2 --no-daemon bootJar`"
+   ],
+   [
+    "command",
+    "cmd-6",
+    "JUnit XML inventory (every test case name and result; grep for `@Disabled/@Ignore/assume*/@EnabledIf`)"
+   ],
+   [
+    "command",
+    "cmd-7",
+    "Knowledge-based dependency/CVE review (OSV: `curl https://api.osv.dev/v1/query` \u2192 CONNECT 403)"
+   ],
+   [
+    "command",
+    "cmd-8",
+    "`docker exec mongo7 mongosh --quiet communication --eval 'printjson(db.<coll>.getIndexes())'` for the 4 collections + co"
+   ],
+   [
+    "command",
+    "cmd-9",
+    "`python3 -I runner.py check_a_publishing_feed_admin.py` (112 checks, shared backend :8080, tenants `be-a-*`, `be-feed-*`"
+   ],
+   [
+    "command",
+    "cmd-10",
+    "`python3 -I runner.py check_a2_tenants.py` (tenant summary re-check with the real field name `counts`)"
+   ],
+   [
+    "command",
+    "cmd-11",
+    "`python3 -I runner.py check_b_health.py` (80 checks, :8080 + stub Actuator on :18555 with fixed and mutable health docum"
+   ],
+   [
+    "command",
+    "cmd-12",
+    "`python3 -I runner.py check_c_private.py` (private instances :18090/:18091 from the prebuilt jar, db `be-verify`, sweep "
+   ],
+   [
+    "command",
+    "cmd-13",
+    "`python3 -I runner.py check_c2_private.py` first attempt (db `be-verify` shared with another verifier)"
+   ],
+   [
+    "command",
+    "cmd-14",
+    "`python3 -I runner.py check_c2_private.py` (private instance :28090, own db `be-verify-bv2`)"
+   ],
+   [
+    "command",
+    "cmd-15",
+    "`python3 -I runner.py check_c3_pods.py` (private instance :28091, fresh db `be-verify-bv3`)"
+   ],
+   [
+    "command",
+    "cmd-16",
+    "Log review of the private instances and the shared backend (`grep` for notice/sweep/staleness/rejection lines, level cou"
+   ],
+   [
+    "command",
+    "cmd-17",
+    "300 KB and 20 KB request bodies against `POST /v1/communications`"
+   ],
+   [
+    "feature",
+    "F-01",
+    "F-01 | PASS"
+   ],
+   [
+    "feature",
+    "F-02",
+    "F-02 | PASS"
+   ],
+   [
+    "feature",
+    "F-03",
+    "F-03 | PASS"
+   ],
+   [
+    "feature",
+    "F-04",
+    "F-04 | PASS"
+   ],
+   [
+    "feature",
+    "F-05",
+    "F-05 | PASS"
+   ],
+   [
+    "feature",
+    "F-06",
+    "F-06 | PASS (note)"
+   ],
+   [
+    "feature",
+    "F-07",
+    "F-07 | PASS"
+   ],
+   [
+    "feature",
+    "F-08",
+    "F-08 | PASS"
+   ],
+   [
+    "feature",
+    "F-09",
+    "F-09 | PASS"
+   ],
+   [
+    "feature",
+    "F-10",
+    "F-10 | PASS"
+   ],
+   [
+    "feature",
+    "F-11",
+    "F-11 | PASS"
+   ],
+   [
+    "feature",
+    "F-12",
+    "F-12 | PASS"
+   ],
+   [
+    "feature",
+    "F-13",
+    "F-13 | PASS (note)"
+   ],
+   [
+    "feature",
+    "F-14",
+    "F-14 | PASS"
+   ],
+   [
+    "feature",
+    "F-15",
+    "F-15 | PASS"
+   ],
+   [
+    "feature",
+    "F-16",
+    "F-16 | PASS"
+   ],
+   [
+    "feature",
+    "F-17",
+    "F-17 | PASS"
+   ],
+   [
+    "feature",
+    "F-18",
+    "F-18 | PASS (note)"
+   ],
+   [
+    "feature",
+    "F-19",
+    "F-19 | PASS"
+   ],
+   [
+    "feature",
+    "F-20",
+    "**F-20** | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-21",
+    "F-21 | PASS"
+   ],
+   [
+    "feature",
+    "F-22",
+    "F-22 | PASS"
+   ],
+   [
+    "feature",
+    "F-23",
+    "F-23 | PASS"
+   ],
+   [
+    "feature",
+    "F-24",
+    "F-24 | PASS"
+   ],
+   [
+    "feature",
+    "F-25",
+    "F-25 | PASS"
+   ],
+   [
+    "feature",
+    "F-26",
+    "F-26 | PASS"
+   ],
+   [
+    "feature",
+    "F-27",
+    "F-27 | PASS"
+   ],
+   [
+    "feature",
+    "F-28",
+    "F-28 | PASS (note)"
+   ],
+   [
+    "feature",
+    "F-29",
+    "F-29 | PASS"
+   ],
+   [
+    "feature",
+    "F-30",
+    "F-30 | N/A \u2192 gap"
+   ],
+   [
+    "feature",
+    "F-31",
+    "F-31 | PASS"
+   ],
+   [
+    "feature",
+    "F-32",
+    "F-32 | PASS"
+   ],
+   [
+    "feature",
+    "F-33",
+    "F-33 | PASS"
+   ],
+   [
+    "feature",
+    "F-34",
+    "F-34 | PASS"
+   ],
+   [
+    "feature",
+    "F-35",
+    "F-35 | PASS"
+   ],
+   [
+    "feature",
+    "F-36",
+    "F-36 | PASS"
+   ],
+   [
+    "feature",
+    "F-37",
+    "F-37 | PASS"
+   ],
+   [
+    "feature",
+    "F-38",
+    "F-38 | PASS (note)"
+   ],
+   [
+    "feature",
+    "F-39",
+    "F-39 | PASS"
+   ],
+   [
+    "feature",
+    "F-40",
+    "F-40 | PASS"
+   ],
+   [
+    "feature",
+    "F-41",
+    "**F-41** | **FAIL (partial)**"
+   ],
+   [
+    "feature",
+    "F-42",
+    "F-42 | PASS"
+   ],
+   [
+    "feature",
+    "F-43",
+    "F-43 | PASS"
+   ],
+   [
+    "feature",
+    "F-44",
+    "F-44 | PASS"
+   ],
+   [
+    "feature",
+    "F-45",
+    "F-45 | PASS"
+   ],
+   [
+    "feature",
+    "F-46",
+    "F-46 | PASS"
+   ],
+   [
+    "feature",
+    "F-47",
+    "F-47 | PASS"
+   ],
+   [
+    "feature",
+    "F-48",
+    "F-48 | PASS"
+   ],
+   [
+    "feature",
+    "F-49",
+    "F-49 | PASS"
+   ],
+   [
+    "feature",
+    "F-50",
+    "F-50 | PASS (note)"
+   ],
+   [
+    "feature",
+    "F-51",
+    "F-51 | PASS"
+   ],
+   [
+    "feature",
+    "F-56",
+    "F-56 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-57",
+    "F-57 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-58",
+    "F-58 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-60",
+    "F-60 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-61",
+    "**F-61 (BE side)** | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-62",
+    "F-62 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-64",
+    "F-64 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-70",
+    "F-70 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-72",
+    "F-72 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-74",
+    "F-74 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-75",
+    "F-75 | PASS"
+   ],
+   [
+    "feature",
+    "F-76",
+    "F-76 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-88",
+    "F-88 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-89",
+    "F-89 (BE side) | PASS (note)"
+   ],
+   [
+    "gap",
+    "GAP-backend-1",
+    "GAP-backend-1 | **blocker** | F-20, F-61, F-21 (cross-node resume)"
+   ],
+   [
+    "gap",
+    "GAP-backend-2",
+    "GAP-backend-2 | major | F-41"
+   ],
+   [
+    "gap",
+    "GAP-backend-3",
+    "GAP-backend-3 | major | F-30 (rubric: health endpoints, probes)"
+   ],
+   [
+    "gap",
+    "GAP-backend-4",
+    "GAP-backend-4 | major | builds & static checks"
+   ],
+   [
+    "gap",
+    "GAP-backend-5",
+    "GAP-backend-5 | minor | F-06, F-13"
+   ],
+   [
+    "gap",
+    "GAP-backend-6",
+    "GAP-backend-6 | minor | F-50"
+   ],
+   [
+    "gap",
+    "GAP-backend-7",
+    "GAP-backend-7 | minor | F-27, F-89"
+   ],
+   [
+    "gap",
+    "GAP-backend-8",
+    "GAP-backend-8 | minor | config"
+   ],
+   [
+    "gap",
+    "GAP-backend-9",
+    "GAP-backend-9 | minor | F-28"
+   ],
+   [
+    "gap",
+    "GAP-backend-10",
+    "GAP-backend-10 | minor (doc) | F-38, F-36"
+   ]
+  ],
+  "frontend": [
+   [
+    "command",
+    "cmd-1",
+    "`npm run typecheck` \u00d73"
+   ],
+   [
+    "command",
+    "cmd-2",
+    "`npm run build` \u00d73 (tsc -b + vite build; dist 1.25 kB html / 30.08 kB css / 260.49 kB js)"
+   ],
+   [
+    "command",
+    "cmd-3",
+    "`npm test` (vitest run) \u00d73 \u2014 3 files, 23 tests"
+   ],
+   [
+    "command",
+    "cmd-4",
+    "`npm audit --omit=dev`; `npm audit`"
+   ],
+   [
+    "command",
+    "cmd-5",
+    "`npx eslint` with `eslint.config.used.mjs` on a copy of `src/` (repo has no lint script)"
+   ],
+   [
+    "command",
+    "cmd-6",
+    "`node scripts/t1-shell-theme-form.js` (F-52/53/54/55)"
+   ],
+   [
+    "command",
+    "cmd-7",
+    "`node scripts/t2-publish-errors.js` (F-56/01/09/02/57/07/59)"
+   ],
+   [
+    "command",
+    "cmd-8",
+    "`node scripts/t3-feed.js` run 1 and run 2 (F-58/14/16/63/09/59/60/15/62/06, Q10, Q11)"
+   ],
+   [
+    "command",
+    "cmd-9",
+    "`node scripts/t5-a11y.js` (F-65: axe on feed / publish / publish-with-errors \u00d7 light / dark + keyboard + roles)"
+   ],
+   [
+    "command",
+    "cmd-10",
+    "`VITE_API_BASE=http://127.0.0.1:8080 npx vite build --outDir dist-xorigin` + `python3 -m http.server 3027` + `node scrip"
+   ],
+   [
+    "command",
+    "cmd-11",
+    "curl probes: X-Client-Id, stream frames, `Last-Event-ID` / `?lastEventId=`, ticket (F-27/18/20/09)"
+   ],
+   [
+    "command",
+    "cmd-12",
+    "`node scripts/probe-live-latency.js` (time to 'Live' on empty vs non-empty tenant)"
+   ],
+   [
+    "command",
+    "cmd-13",
+    "`backend-sigterm-with-open-sse-scenario.sh` (own backend :18093, SIGTERM with an open stream)"
+   ],
+   [
+    "command",
+    "cmd-14",
+    "`node scripts/t4-reconnect.js`, `t4b-reconnect-timeline.js` (SIGTERM through the Vite proxy :3011)"
+   ],
+   [
+    "command",
+    "cmd-15",
+    "`node scripts/t4d-reconnect-sigkill.js` (SIGKILL through the Vite proxy :3011)"
+   ],
+   [
+    "command",
+    "cmd-16",
+    "`node scripts/t4e-eventsource-gives-up.js` (stream served by Playwright routes)"
+   ],
+   [
+    "command",
+    "cmd-17",
+    "`node scripts/t4f-offline-reconnect.js` (`context.setOffline` as the drop)"
+   ],
+   [
+    "command",
+    "cmd-18",
+    "`npx vite build --outDir dist-sameorigin` + `HOLD=1 node scripts/rp.js 3041 18093 dist-sameorigin` + `node scripts/t4g-r"
+   ],
+   [
+    "command",
+    "cmd-19",
+    "`python3 scripts/aggregate.py` (per-feature tally of every result file)"
+   ],
+   [
+    "feature",
+    "F-01",
+    "F-01 | PASS"
+   ],
+   [
+    "feature",
+    "F-02",
+    "F-02 | PASS"
+   ],
+   [
+    "feature",
+    "F-06",
+    "F-06 | **FAIL (one clause)**"
+   ],
+   [
+    "feature",
+    "F-07",
+    "F-07 | PASS"
+   ],
+   [
+    "feature",
+    "F-09",
+    "F-09 | PASS"
+   ],
+   [
+    "feature",
+    "F-14",
+    "F-14 | PASS"
+   ],
+   [
+    "feature",
+    "F-15",
+    "F-15 | PASS"
+   ],
+   [
+    "feature",
+    "F-16",
+    "F-16 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-18",
+    "F-18 | PASS"
+   ],
+   [
+    "feature",
+    "F-20",
+    "F-20 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-27",
+    "F-27 | PASS"
+   ],
+   [
+    "feature",
+    "F-52",
+    "F-52 | PASS"
+   ],
+   [
+    "feature",
+    "F-53",
+    "F-53 | PASS"
+   ],
+   [
+    "feature",
+    "F-54",
+    "F-54 | PASS"
+   ],
+   [
+    "feature",
+    "F-55",
+    "F-55 | PASS"
+   ],
+   [
+    "feature",
+    "F-56",
+    "F-56 | PASS"
+   ],
+   [
+    "feature",
+    "F-57",
+    "F-57 | PASS"
+   ],
+   [
+    "feature",
+    "F-58",
+    "F-58 | PASS"
+   ],
+   [
+    "feature",
+    "F-59",
+    "F-59 | PASS"
+   ],
+   [
+    "feature",
+    "F-60",
+    "F-60 | PASS"
+   ],
+   [
+    "feature",
+    "F-61",
+    "F-61 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-62",
+    "F-62 | PASS"
+   ],
+   [
+    "feature",
+    "F-63",
+    "F-63 | PASS"
+   ],
+   [
+    "feature",
+    "F-64",
+    "F-64 | PASS"
+   ],
+   [
+    "feature",
+    "F-65",
+    "F-65 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-66",
+    "F-66 | PASS"
+   ],
+   [
+    "gap",
+    "GAP-frontend-1",
+    "GAP-frontend-1 | **High** | F-61, F-20, F-60"
+   ],
+   [
+    "gap",
+    "GAP-frontend-2",
+    "GAP-frontend-2 | Medium | F-16, F-58"
+   ],
+   [
+    "gap",
+    "GAP-frontend-3",
+    "GAP-frontend-3 | Medium | F-65"
+   ],
+   [
+    "gap",
+    "GAP-frontend-4",
+    "GAP-frontend-4 | Low | F-65"
+   ],
+   [
+    "gap",
+    "GAP-frontend-5",
+    "GAP-frontend-5 | Medium (dev only) | F-61, F-64"
+   ],
+   [
+    "gap",
+    "GAP-frontend-6",
+    "GAP-frontend-6 | Low | F-18, F-60, F-59"
+   ],
+   [
+    "gap",
+    "GAP-frontend-7",
+    "GAP-frontend-7 | Low | F-58, F-14 (Q10)"
+   ],
+   [
+    "gap",
+    "GAP-frontend-8",
+    "GAP-frontend-8 | Low | F-06, F-15"
+   ],
+   [
+    "gap",
+    "GAP-frontend-9",
+    "GAP-frontend-9 | Low | F-66"
+   ],
+   [
+    "gap",
+    "GAP-frontend-10",
+    "GAP-frontend-10 | Medium | all FE rows"
+   ]
+  ],
+  "sidecar": [
+   [
+    "command",
+    "cmd-1",
+    "`cd sidecar && go vet ./... && gofmt -l . && go build ./...`"
+   ],
+   [
+    "command",
+    "cmd-2",
+    "`go test -count=1 ./...` (run 1), `go test -count=1 -race ./...` (run 2), `go test -count=1 ./...` (run 3), `go test -co"
+   ],
+   [
+    "command",
+    "cmd-3",
+    "`go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...`"
+   ],
+   [
+    "command",
+    "cmd-4",
+    "`docker build -t health-sidecar:verify --build-arg GO_IMAGE=local/go-toolset:1.24 --build-arg BASE_IMAGE=gcr.io/distrole"
+   ],
+   [
+    "command",
+    "cmd-5",
+    "host binary with 13 invalid environments + 5 `POD_NAME` derivations (`ev/04`)"
+   ],
+   [
+    "command",
+    "cmd-6",
+    "`ev/scripts/ladder.sh` \u2014 pod with 404-only / `/healthz` / Actuator / TCP listeners + recording backend stub; stop them o"
+   ],
+   [
+    "command",
+    "cmd-7",
+    "`ev/scripts/main-scenario.sh` \u2014 real backend: sidecar started before the app, app joins, 503, recovery, app killed/resta"
+   ],
+   [
+    "command",
+    "cmd-8",
+    "`ev/scripts/tls.sh` + correction \u2014 HTTPS backend stub with private CA; no CA / `CS_CA_FILE` / `CS_INSECURE_SKIP_VERIFY`;"
+   ],
+   [
+    "command",
+    "cmd-9",
+    "`ev/scripts/variants.sh` + WARN re-test \u2014 flap damping with/without retry delay, pinned targets, ignore-ports, grace mes"
+   ],
+   [
+    "command",
+    "cmd-10",
+    "`--user 4242:0`, `1000700123:0`, `65534:65534` with `--read-only --cap-drop ALL --security-opt no-new-privileges`, no tm"
+   ],
+   [
+    "command",
+    "cmd-11",
+    "HTTPS-only app port (self-signed), pinned `CS_SCHEME=https`, default `X-Client-Id`, `go list -m all`, `go version -m` on"
+   ],
+   [
+    "command",
+    "cmd-12",
+    "`kustomize build` \u00d74 (classic example, native example, native vs existing initContainer, classic vs Deployment-with-init"
+   ],
+   [
+    "command",
+    "cmd-13",
+    "curl against the shared backend: report auto-registration, 400s, 401/400 client id, vocabulary \u00d77, nested components, in"
+   ],
+   [
+    "command",
+    "cmd-14",
+    "`ev/scripts/silence.sh` / `silence2.sh` \u2014 private backend instance (`java -jar \u2026 --server.port=\u2026 --spring.data.mongodb.u"
+   ],
+   [
+    "feature",
+    "F-27",
+    "F-27 (SC part) | PASS"
+   ],
+   [
+    "feature",
+    "F-36",
+    "F-36 (SC part) | PASS"
+   ],
+   [
+    "feature",
+    "F-38",
+    "F-38 | PASS"
+   ],
+   [
+    "feature",
+    "F-46",
+    "F-46 | PASS"
+   ],
+   [
+    "feature",
+    "F-48",
+    "F-48 | PASS"
+   ],
+   [
+    "feature",
+    "F-50",
+    "F-50 | PASS (with GAP-sidecar-4)"
+   ],
+   [
+    "feature",
+    "F-67",
+    "F-67 | PASS"
+   ],
+   [
+    "feature",
+    "F-68",
+    "F-68 | PASS"
+   ],
+   [
+    "feature",
+    "F-69",
+    "F-69 | PASS"
+   ],
+   [
+    "feature",
+    "F-70",
+    "F-70 | PASS"
+   ],
+   [
+    "feature",
+    "F-71",
+    "F-71 | PASS"
+   ],
+   [
+    "feature",
+    "F-72",
+    "F-72 | PASS"
+   ],
+   [
+    "feature",
+    "F-73",
+    "F-73 | PASS"
+   ],
+   [
+    "feature",
+    "F-74",
+    "F-74 | PASS"
+   ],
+   [
+    "feature",
+    "F-75",
+    "F-75 | PASS"
+   ],
+   [
+    "feature",
+    "F-76",
+    "F-76 | PASS"
+   ],
+   [
+    "feature",
+    "F-77",
+    "F-77 | PASS"
+   ],
+   [
+    "feature",
+    "F-78",
+    "F-78 | PASS"
+   ],
+   [
+    "feature",
+    "F-79",
+    "F-79 | PASS"
+   ],
+   [
+    "feature",
+    "F-80",
+    "F-80 | PARTIAL"
+   ],
+   [
+    "feature",
+    "F-81",
+    "F-81 | PASS (hard gate OK)"
+   ],
+   [
+    "feature",
+    "F-82",
+    "F-82 | PARTIAL"
+   ],
+   [
+    "feature",
+    "F-83",
+    "F-83 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-84",
+    "F-84 | PASS"
+   ],
+   [
+    "feature",
+    "F-85",
+    "F-85 | PASS"
+   ],
+   [
+    "feature",
+    "F-86",
+    "F-86 | PARTIAL"
+   ],
+   [
+    "feature",
+    "F-87",
+    "F-87 | PASS"
+   ],
+   [
+    "feature",
+    "F-88",
+    "F-88 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-89",
+    "F-89 | PASS"
+   ],
+   [
+    "gap",
+    "GAP-sidecar-1",
+    "GAP-sidecar-1 | **blocker** for the sidecar's purpose (scored as the F-88 failure) | F-88, F-72, F-77"
+   ],
+   [
+    "gap",
+    "GAP-sidecar-2",
+    "GAP-sidecar-2 | major | F-83"
+   ],
+   [
+    "gap",
+    "GAP-sidecar-3",
+    "GAP-sidecar-3 | minor | F-67"
+   ],
+   [
+    "gap",
+    "GAP-sidecar-4",
+    "GAP-sidecar-4 | major (backend-owned, cross-listed for the Backend Verifier) | F-50"
+   ],
+   [
+    "gap",
+    "GAP-sidecar-5",
+    "GAP-sidecar-5 | minor | F-85, F-86"
+   ],
+   [
+    "gap",
+    "GAP-sidecar-6",
+    "GAP-sidecar-6 | minor | F-69/F-72 (observation, not a defect of the ladder)"
+   ]
+  ],
+  "e2e": [
+   [
+    "command",
+    "cmd-1",
+    "`java -jar \u2026jar --server.port=18081 \u2026`, same on 18082; `COMM_BACKEND=http://127.0.0.1:18081 npm run dev -- --port 3001 -"
+   ],
+   [
+    "command",
+    "cmd-2",
+    "`python3 -I http_checks.py` (105 HTTP/SSE contract checks against A and B)"
+   ],
+   [
+    "command",
+    "cmd-3",
+    "follow-up python (F-48 re-test with the valve untripped, F-50 load at 20 parallel / 20 req/s / 5 req/s / ~33 req/s rando"
+   ],
+   [
+    "command",
+    "cmd-4",
+    "`curl -sN -o /dev/null -w '%{http_code} %{time_starttransfer}'` on `/v1/feed/stream` for an empty tenant (header and `?c"
+   ],
+   [
+    "command",
+    "cmd-5",
+    "`node ui_flows.js` (Playwright, 36 checks: publish with ticket, second-context live watcher, resolve, filters, Live swit"
+   ],
+   [
+    "command",
+    "cmd-6",
+    "`node pod_flows.js p91` (19 checks: sidecar flow through app, sidecar, backend and UI)"
+   ],
+   [
+    "command",
+    "cmd-7",
+    "`node pod_flows.js p92` (backend A killed and restarted while the UI and the sidecar were connected; publish through B m"
+   ],
+   [
+    "command",
+    "cmd-8",
+    "`node reconnect_probe.js` (in-page `EventSource` instrumentation + `curl -N` via the proxy and direct, across SIGTERM/re"
+   ],
+   [
+    "command",
+    "cmd-9",
+    "`node pod_flows.js silent ordering slow` (paused sidecar \u2192 stale; sidecar started before the app; app container stopped/"
+   ],
+   [
+    "command",
+    "cmd-10",
+    "`grep` of backend A's log for valve, notice and shutdown lines"
+   ],
+   [
+    "feature",
+    "F-01",
+    "F-01 | PASS"
+   ],
+   [
+    "feature",
+    "F-02",
+    "F-02 | PASS"
+   ],
+   [
+    "feature",
+    "F-06",
+    "F-06 | PASS"
+   ],
+   [
+    "feature",
+    "F-07",
+    "F-07 | PASS"
+   ],
+   [
+    "feature",
+    "F-09",
+    "F-09 | PASS"
+   ],
+   [
+    "feature",
+    "F-14",
+    "F-14 | PASS"
+   ],
+   [
+    "feature",
+    "F-15",
+    "F-15 | PASS"
+   ],
+   [
+    "feature",
+    "F-16",
+    "F-16 | PASS"
+   ],
+   [
+    "feature",
+    "F-18",
+    "F-18 | PASS"
+   ],
+   [
+    "feature",
+    "F-20",
+    "F-20 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-21",
+    "F-21 | PASS"
+   ],
+   [
+    "feature",
+    "F-27",
+    "F-27 | PASS"
+   ],
+   [
+    "feature",
+    "F-36",
+    "F-36 | PASS"
+   ],
+   [
+    "feature",
+    "F-38",
+    "F-38 | PASS"
+   ],
+   [
+    "feature",
+    "F-46",
+    "F-46 | PASS"
+   ],
+   [
+    "feature",
+    "F-48",
+    "F-48 | PASS*"
+   ],
+   [
+    "feature",
+    "F-50",
+    "F-50 | PASS*"
+   ],
+   [
+    "feature",
+    "F-56",
+    "F-56 | PASS"
+   ],
+   [
+    "feature",
+    "F-57",
+    "F-57 | PASS"
+   ],
+   [
+    "feature",
+    "F-58",
+    "F-58 | PASS"
+   ],
+   [
+    "feature",
+    "F-60",
+    "F-60 | PASS"
+   ],
+   [
+    "feature",
+    "F-61",
+    "F-61 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-62",
+    "F-62 | PASS"
+   ],
+   [
+    "feature",
+    "F-64",
+    "F-64 | PASS"
+   ],
+   [
+    "feature",
+    "F-70",
+    "F-70 | PASS"
+   ],
+   [
+    "feature",
+    "F-72",
+    "F-72 | PASS"
+   ],
+   [
+    "feature",
+    "F-74",
+    "F-74 | PASS"
+   ],
+   [
+    "feature",
+    "F-75",
+    "F-75 | PASS"
+   ],
+   [
+    "feature",
+    "F-76",
+    "F-76 | PASS"
+   ],
+   [
+    "feature",
+    "F-88",
+    "F-88 | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-89",
+    "F-89 | PASS"
+   ],
+   [
+    "feature",
+    "F-90",
+    "F-90 | PASS"
+   ],
+   [
+    "feature",
+    "F-91",
+    "F-91 | PASS"
+   ],
+   [
+    "feature",
+    "F-92",
+    "F-92 | **FAIL**"
+   ],
+   [
+    "gap",
+    "GAP-e2e-1",
+    "GAP-e2e-1 | **blocker** | F-20, F-61, F-92"
+   ],
+   [
+    "gap",
+    "GAP-e2e-2",
+    "GAP-e2e-2 | major | F-61, F-92, F-60"
+   ],
+   [
+    "gap",
+    "GAP-e2e-3",
+    "GAP-e2e-3 | major | F-88, F-72, F-91"
+   ],
+   [
+    "gap",
+    "GAP-e2e-4",
+    "GAP-e2e-4 | major | F-45, F-48"
+   ],
+   [
+    "gap",
+    "GAP-e2e-5",
+    "GAP-e2e-5 | major | F-18, F-60, F-61, F-27"
+   ],
+   [
+    "gap",
+    "GAP-e2e-6",
+    "GAP-e2e-6 | major | F-50, F-46, F-91"
+   ],
+   [
+    "gap",
+    "GAP-e2e-7",
+    "GAP-e2e-7 | minor | F-07, F-28"
+   ],
+   [
+    "gap",
+    "GAP-e2e-8",
+    "GAP-e2e-8 | minor (ops) | F-30, F-61"
+   ]
+  ],
+  "usability": [
+   [
+    "command",
+    "cmd-1",
+    "`node ux-ui.js` (Playwright walk, tenant `ux-sre`, first pass; crashed at the slow-feed step, all earlier steps logged)"
+   ],
+   [
+    "command",
+    "cmd-2",
+    "`UX_TENANT=ux-sre2 node ux-ui.js` (full walk: landing, tenant, publish form, validation, 409, maintenance, feed, live ev"
+   ],
+   [
+    "command",
+    "cmd-3",
+    "`./api-walk.sh` (README cookbook literally + 18 error paths + README-vs-OpenAPI path diff)"
+   ],
+   [
+    "command",
+    "cmd-4",
+    "`node swagger.js` (Swagger UI: call before Authorize, Authorize with `X-Client-Id`, call again)"
+   ],
+   [
+    "command",
+    "cmd-5",
+    "docker runs of `health-sidecar:ci` with no/partial/wrong configuration, wrong endpoint, the README laptop command, SIGTE"
+   ],
+   [
+    "command",
+    "cmd-6",
+    "`COMM_BACKEND=http://127.0.0.1:1 npm run dev -- --port 3020` + `node dead-backend.js` (UI with the service unreachable)"
+   ],
+   [
+    "command",
+    "cmd-7",
+    "`node drop-and-tenant.js` (browser offline/online; tenant typed in the form \u2260 header tenant)"
+   ],
+   [
+    "command",
+    "cmd-8",
+    "`node real-drop.js`, `node real-drop2.js`, `node real-drop3.js` (private backend :18090/:18091 + private dev server: SIG"
+   ],
+   [
+    "command",
+    "cmd-9",
+    "`node drop-502.js` (page opened while the service is down \u2192 proxy 502; service started afterwards)"
+   ],
+   [
+    "command",
+    "cmd-10",
+    "`npm install axe-core@4.10.3 @axe-core/playwright@4.10.2` in the scratch folder (not in `frontend/`)"
+   ],
+   [
+    "feature",
+    "F-52",
+    "F-52 app shell / tenant | PASS (friction UX-3, UX-13)"
+   ],
+   [
+    "feature",
+    "F-53",
+    "F-53 theme | PASS"
+   ],
+   [
+    "feature",
+    "F-54",
+    "F-54 publish form fields | PASS (UX-10)"
+   ],
+   [
+    "feature",
+    "F-55",
+    "F-55 client validation | PASS (UX-1)"
+   ],
+   [
+    "feature",
+    "F-56",
+    "F-56 publish submit / confirmation | PASS (UX-2, UX-3, UX-14)"
+   ],
+   [
+    "feature",
+    "F-57",
+    "F-57 server error surfacing | PASS (UX-4, UX-9)"
+   ],
+   [
+    "feature",
+    "F-58",
+    "F-58 feed + filters | PASS (UX-2)"
+   ],
+   [
+    "feature",
+    "F-59",
+    "F-59 feed states | PASS (UX-11)"
+   ],
+   [
+    "feature",
+    "F-60",
+    "F-60 live updates | PASS"
+   ],
+   [
+    "feature",
+    "F-61",
+    "F-61 reconnect behaviour | **FAIL from the user's seat** (UX-6)"
+   ],
+   [
+    "feature",
+    "F-62",
+    "F-62 resolve from the card | PASS (UX-7, UX-8)"
+   ],
+   [
+    "feature",
+    "F-63",
+    "F-63 card content | PASS (UX-10, UX-12)"
+   ],
+   [
+    "feature",
+    "F-65",
+    "F-65 accessibility basics | PARTIAL (UX-5, UX-14)"
+   ],
+   [
+    "feature",
+    "F-01/F-06/F-09/F-14/F-18",
+    "F-01/F-06/F-09/F-14/F-18 (API via README) | PASS (UX-21, UX-23\u201325)"
+   ],
+   [
+    "feature",
+    "F-20",
+    "F-20 resume (`Last-Event-ID` / `?lastEventId=`) | **FAIL** (UX-20)"
+   ],
+   [
+    "feature",
+    "F-27",
+    "F-27 client id | PASS"
+   ],
+   [
+    "feature",
+    "F-28",
+    "F-28 error contract | PASS (UX-22, UX-25)"
+   ],
+   [
+    "feature",
+    "F-29",
+    "F-29 OpenAPI / Swagger | PASS (UX-23)"
+   ],
+   [
+    "feature",
+    "F-31/33/34/36",
+    "F-31/33/34/36 monitors via README | PASS (UX-24)"
+   ],
+   [
+    "feature",
+    "F-67",
+    "F-67 sidecar config | PASS"
+   ],
+   [
+    "feature",
+    "F-74/F-75",
+    "F-74/F-75 report + backoff | PASS"
+   ],
+   [
+    "feature",
+    "F-76",
+    "F-76 SIGTERM leaving | PASS"
+   ],
+   [
+    "feature",
+    "F-78",
+    "F-78 `/healthz`, `/status` | PASS (UX-32)"
+   ],
+   [
+    "feature",
+    "F-82",
+    "F-82 kustomize component | PASS (UX-31)"
+   ],
+   [
+    "feature",
+    "F-84",
+    "F-84 helm library chart | PASS (UX-33)"
+   ],
+   [
+    "gap",
+    "UX-1",
+    "- **UX-1 | major | SRE | F-55 |** On a 1280\u00d7800 window the submit button sits below the fold (scrollY 475); after \"Publish outage\" on an empty form, \"Publisher "
+   ],
+   [
+    "gap",
+    "UX-2",
+    "- **UX-2 | major | SRE | F-56, F-58 |** After \"Maintenance scheduled \u2014 Goes live in 60m\", \"View in feed\" lands on a feed whose Type filter is `Outage`; the main"
+   ],
+   [
+    "gap",
+    "UX-3",
+    "- **UX-3 | major | SRE | F-52, F-56 |** The form's required Tenant field (in \"Who and where\") can be edited to another tenant; publishing succeeds (\"Live in the"
+   ],
+   [
+    "gap",
+    "UX-4",
+    "- **UX-4 | major | SRE | F-57 |** With the service unreachable the form says \"The service rejected this. 502 Bad Gateway\" and the feed \"Couldn't load the feed /"
+   ],
+   [
+    "gap",
+    "UX-5",
+    "- **UX-5 | major | SRE | F-65 |** Text contrast is below WCAG AA throughout, in both themes: hints, char counter, captions, \"Updated just now\", section headings"
+   ],
+   [
+    "gap",
+    "UX-6",
+    "- **UX-6 | major | SRE | F-61 |** The live indicator misleads in both directions, and the live feed can die for good. (a) With the service SIGKILLed behind the "
+   ],
+   [
+    "gap",
+    "UX-7",
+    "- **UX-7 | minor | SRE | F-62 |** Resolve: the inline confirmation is explicit (\"cannot be reopened\"), but after the second click the card just disappears; no \""
+   ],
+   [
+    "gap",
+    "UX-8",
+    "- **UX-8 | minor | SRE | F-62 |** \"Resolve\" is offered on an upcoming maintenance window (\"Starts In 60m \u2026 Resolve\"), where the action is really \"Cancel\"; and b"
+   ],
+   [
+    "gap",
+    "UX-9",
+    "- **UX-9 | minor | SRE | F-57, F-09 |** The duplicate-ticket rejection speaks API: \"duplicate externalRef 'INC6284622' for tenant 'ux-sre2'\". The user typed a *"
+   ],
+   [
+    "gap",
+    "UX-10",
+    "- **UX-10 | minor | SRE | F-54, F-63 |** The incident field's hint promises \"consumers get a link to it\" and `frontend/README.md:46` says the chip \"opens the in"
+   ],
+   [
+    "gap",
+    "UX-11",
+    "- **UX-11 | minor | SRE | F-59 |** Empty-state copy inserts the filter word mid-sentence: \"Nothing outage is active or upcoming for acme.\" (the first sentence a"
+   ],
+   [
+    "gap",
+    "UX-12",
+    "- **UX-12 | cosmetic | SRE | F-63 |** The state capsule is CSS-capitalised, so \"Starts in 60m\" renders \"Starts In 60m\"; relative times are terse (\"in 60m\", \"in "
+   ],
+   [
+    "gap",
+    "UX-13",
+    "- **UX-13 | minor | SRE | F-52 |** First visit pre-fills the tenant with the fictional `acme` in the header and therefore in the form, so an SRE who does not no"
+   ],
+   [
+    "gap",
+    "UX-14",
+    "- **UX-14 | minor | SRE | F-65 |** After a successful publish, focus is dropped on `<body>` and the confirmation card has no live region, so a screen-reader use"
+   ],
+   [
+    "gap",
+    "UX-15",
+    "- **UX-15 | cosmetic | SRE | F-54 |** Phone width (390 px) is clean (no horizontal overflow on either tab, filters wrap, title collapses to the icon); the only "
+   ],
+   [
+    "gap",
+    "UX-20",
+    "- **UX-20 | blocker | developer | F-20 |** The documented reconnect (\"resume after a disconnect\u2026 `lastEventId=1234`\", also the `Last-Event-ID` header) answers `"
+   ],
+   [
+    "gap",
+    "UX-21",
+    "- **UX-21 | major | developer | F-01, F-10 |** The first cookbook command fails as written: its `expiresAt` (`2026-10-14T18:00:00Z`) is already in the past and "
+   ],
+   [
+    "gap",
+    "UX-22",
+    "- **UX-22 | major | developer | F-28 |** A wrong enum value (`\"severity\":\"HUGE\"`) and malformed JSON both answer `{\"error\":\"Failed to read HTTP message\"}`: no f"
+   ],
+   [
+    "gap",
+    "UX-23",
+    "- **UX-23 | minor | developer | F-29 |** Swagger UI works after Authorize (200), but before it the 401 is shown as \"Undocumented\" because no operation declares "
+   ],
+   [
+    "gap",
+    "UX-24",
+    "- **UX-24 | minor | developer | F-05, F-34 |** Two placeholders the README never explains: `<monitorId>` in \"force a probe\" (it is the `id` in the registration "
+   ],
+   [
+    "gap",
+    "UX-25",
+    "- **UX-25 | minor | developer | F-28 |** Framework internals leak: an unknown `/v1/...` path answers `404 {\"error\":\"No static resource v1/nothing.\"}` and a non-"
+   ],
+   [
+    "gap",
+    "UX-30",
+    "- **UX-30 | major | engineer | F-67 |** Nothing says what to put in `CS_TENANT` beyond \"tenant the service belongs to\". Neither README defines who assigns tenan"
+   ],
+   [
+    "gap",
+    "UX-31",
+    "- **UX-31 | major | engineer | F-80, F-82 |** There is no image to pull: every snippet references `registry.example.com/platform/health-sidecar:1.0.0`, the READ"
+   ],
+   [
+    "gap",
+    "UX-32",
+    "- **UX-32 | minor | engineer | F-78, F-89 |** Debugging guidance stops at \"`GET :9465/status` \u2026 is the first place to look\": no example of how to reach it in a "
+   ],
+   [
+    "gap",
+    "UX-33",
+    "- **UX-33 | minor | engineer | F-67, F-84 |** `CS_PUBLISHER` exists (`config.go`) but is absent from the README table; `helm template` on the library chart alon"
+   ],
+   [
+    "gap",
+    "UX-34",
+    "- **UX-34 | cosmetic | engineer | F-82 |** The \"Attach it\" table does not say the `cs-health-sidecar` ConfigMap lives in the app's namespace (the component's co"
+   ]
+  ]
+ },
+ "sample": {
+  "backend": [
+   [
+    "command",
+    "cmd-6",
+    "JUnit XML inventory (every test case name and result; grep for `@Disabled/@Ignore/assume*/@EnabledIf`)"
+   ],
+   [
+    "command",
+    "cmd-13",
+    "`python3 -I runner.py check_c2_private.py` first attempt (db `be-verify` shared with another verifier)"
+   ],
+   [
+    "feature",
+    "F-01",
+    "F-01 | PASS"
+   ],
+   [
+    "feature",
+    "F-11",
+    "F-11 | PASS"
+   ],
+   [
+    "feature",
+    "F-16",
+    "F-16 | PASS"
+   ],
+   [
+    "feature",
+    "F-17",
+    "F-17 | PASS"
+   ],
+   [
+    "feature",
+    "F-20",
+    "**F-20** | **FAIL**"
+   ],
+   [
+    "feature",
+    "F-22",
+    "F-22 | PASS"
+   ],
+   [
+    "feature",
+    "F-29",
+    "F-29 | PASS"
+   ],
+   [
+    "feature",
+    "F-33",
+    "F-33 | PASS"
+   ],
+   [
+    "feature",
+    "F-35",
+    "F-35 | PASS"
+   ],
+   [
+    "feature",
+    "F-37",
+    "F-37 | PASS"
+   ],
+   [
+    "feature",
+    "F-45",
+    "F-45 | PASS"
+   ],
+   [
+    "feature",
+    "F-46",
+    "F-46 | PASS"
+   ],
+   [
+    "feature",
+    "F-48",
+    "F-48 | PASS"
+   ],
+   [
+    "feature",
+    "F-49",
+    "F-49 | PASS"
+   ],
+   [
+    "feature",
+    "F-64",
+    "F-64 (BE side) | PASS"
+   ],
+   [
+    "feature",
+    "F-76",
+    "F-76 (BE side) | PASS"
+   ]
+  ],
+  "frontend": [
+   [
+    "command",
+    "cmd-5",
+    "`npx eslint` with `eslint.config.used.mjs` on a copy of `src/` (repo has no lint script)"
+   ],
+   [
+    "command",
+    "cmd-7",
+    "`node scripts/t2-publish-errors.js` (F-56/01/09/02/57/07/59)"
+   ],
+   [
+    "command",
+    "cmd-10",
+    "`VITE_API_BASE=http://127.0.0.1:8080 npx vite build --outDir dist-xorigin` + `python3 -m http.server 3027` + `node scrip"
+   ],
+   [
+    "feature",
+    "F-01",
+    "F-01 | PASS"
+   ],
+   [
+    "feature",
+    "F-06",
+    "F-06 | **FAIL (one clause)**"
+   ],
+   [
+    "feature",
+    "F-56",
+    "F-56 | PASS"
+   ],
+   [
+    "feature",
+    "F-60",
+    "F-60 | PASS"
+   ],
+   [
+    "feature",
+    "F-65",
+    "F-65 | **FAIL**"
+   ],
+   [
+    "gap",
+    "GAP-frontend-1",
+    "GAP-frontend-1 | **High** | F-61, F-20, F-60"
+   ],
+   [
+    "gap",
+    "GAP-frontend-2",
+    "GAP-frontend-2 | Medium | F-16, F-58"
+   ],
+   [
+    "gap",
+    "GAP-frontend-7",
+    "GAP-frontend-7 | Low | F-58, F-14 (Q10)"
+   ]
+  ],
+  "sidecar": [
+   [
+    "command",
+    "cmd-7",
+    "`ev/scripts/main-scenario.sh` \u2014 real backend: sidecar started before the app, app joins, 503, recovery, app killed/resta"
+   ],
+   [
+    "command",
+    "cmd-14",
+    "`ev/scripts/silence.sh` / `silence2.sh` \u2014 private backend instance (`java -jar \u2026 --server.port=\u2026 --spring.data.mongodb.u"
+   ],
+   [
+    "feature",
+    "F-67",
+    "F-67 | PASS"
+   ],
+   [
+    "feature",
+    "F-69",
+    "F-69 | PASS"
+   ],
+   [
+    "feature",
+    "F-74",
+    "F-74 | PASS"
+   ],
+   [
+    "feature",
+    "F-77",
+    "F-77 | PASS"
+   ],
+   [
+    "feature",
+    "F-82",
+    "F-82 | PARTIAL"
+   ],
+   [
+    "feature",
+    "F-86",
+    "F-86 | PARTIAL"
+   ],
+   [
+    "feature",
+    "F-87",
+    "F-87 | PASS"
+   ],
+   [
+    "gap",
+    "GAP-sidecar-5",
+    "GAP-sidecar-5 | minor | F-85, F-86"
+   ]
+  ],
+  "e2e": [
+   [
+    "command",
+    "cmd-1",
+    "`java -jar \u2026jar --server.port=18081 \u2026`, same on 18082; `COMM_BACKEND=http://127.0.0.1:18081 npm run dev -- --port 3001 -"
+   ],
+   [
+    "command",
+    "cmd-4",
+    "`curl -sN -o /dev/null -w '%{http_code} %{time_starttransfer}'` on `/v1/feed/stream` for an empty tenant (header and `?c"
+   ],
+   [
+    "command",
+    "cmd-6",
+    "`node pod_flows.js p91` (19 checks: sidecar flow through app, sidecar, backend and UI)"
+   ],
+   [
+    "feature",
+    "F-15",
+    "F-15 | PASS"
+   ],
+   [
+    "feature",
+    "F-48",
+    "F-48 | PASS*"
+   ],
+   [
+    "feature",
+    "F-57",
+    "F-57 | PASS"
+   ],
+   [
+    "feature",
+    "F-60",
+    "F-60 | PASS"
+   ],
+   [
+    "feature",
+    "F-64",
+    "F-64 | PASS"
+   ],
+   [
+    "feature",
+    "F-72",
+    "F-72 | PASS"
+   ],
+   [
+    "feature",
+    "F-91",
+    "F-91 | PASS"
+   ]
+  ],
+  "usability": [
+   [
+    "command",
+    "cmd-1",
+    "`node ux-ui.js` (Playwright walk, tenant `ux-sre`, first pass; crashed at the slow-feed step, all earlier steps logged)"
+   ],
+   [
+    "command",
+    "cmd-5",
+    "docker runs of `health-sidecar:ci` with no/partial/wrong configuration, wrong endpoint, the README laptop command, SIGTE"
+   ],
+   [
+    "feature",
+    "F-57",
+    "F-57 server error surfacing | PASS (UX-4, UX-9)"
+   ],
+   [
+    "feature",
+    "F-62",
+    "F-62 resolve from the card | PASS (UX-7, UX-8)"
+   ],
+   [
+    "feature",
+    "F-63",
+    "F-63 card content | PASS (UX-10, UX-12)"
+   ],
+   [
+    "feature",
+    "F-76",
+    "F-76 SIGTERM leaving | PASS"
+   ],
+   [
+    "gap",
+    "UX-5",
+    "- **UX-5 | major | SRE | F-65 |** Text contrast is below WCAG AA throughout, in both themes: hints, char counter, captions, \"Updated just now\", section headings"
+   ],
+   [
+    "gap",
+    "UX-6",
+    "- **UX-6 | major | SRE | F-61 |** The live indicator misleads in both directions, and the live feed can die for good. (a) With the service SIGKILLed behind the "
+   ],
+   [
+    "gap",
+    "UX-11",
+    "- **UX-11 | minor | SRE | F-59 |** Empty-state copy inserts the filter word mid-sentence: \"Nothing outage is active or upcoming for acme.\" (the first sentence a"
+   ],
+   [
+    "gap",
+    "UX-12",
+    "- **UX-12 | cosmetic | SRE | F-63 |** The state capsule is CSS-capitalised, so \"Starts in 60m\" renders \"Starts In 60m\"; relative times are terse (\"in 60m\", \"in "
+   ],
+   [
+    "gap",
+    "UX-22",
+    "- **UX-22 | major | developer | F-28 |** A wrong enum value (`\"severity\":\"HUGE\"`) and malformed JSON both answer `{\"error\":\"Failed to read HTTP message\"}`: no f"
+   ],
+   [
+    "gap",
+    "UX-25",
+    "- **UX-25 | minor | developer | F-28 |** Framework internals leak: an unknown `/v1/...` path answers `404 {\"error\":\"No static resource v1/nothing.\"}` and a non-"
+   ]
+  ]
+ }
+}

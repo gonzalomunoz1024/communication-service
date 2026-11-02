@@ -1,0 +1,29 @@
+== G-3-14 before: no level setting; run() builds the JSON handler with nil options (main.go at 63e2722)
+36:	log := slog.New(slog.NewJSONHandler(stdout, nil))
+(no CS_LOG_LEVEL anywhere in config.go or README.md)
+-- the README's Debugging section promises DEBUG lines no setting can switch on:
+README.md:191: A `reported` line is logged at INFO when the status, the failing components or the message
+README.md:192: change (UP → DOWN, DOWN → UP, a new cause); the sends in between (heartbeats, and the sends
+README.md:193: repeated after every probe while the report is DOWN or degraded) are logged at DEBUG, below the
+README.md:194: default level, so a dead app shows as one DOWN line and then its recovery.
+
+-- go test ./cmd/health-sidecar -run 'TestRunLogsAtTheConfiguredLevel|TestRunRejectsAnUnusableValueWithExit2' -race -v
+    main_test.go:110: CS_LOG_LEVEL=loud: exit code 0, want 2
+--- FAIL: TestRunRejectsAnUnusableValueWithExit2 (2.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY (0.00s)
+    --- FAIL: TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL (2.00s)
+    main_test.go:313: CS_LOG_LEVEL=debug: DEBUG lines 0 (a DEBUG 'reported' line: false), want them: true
+    main_test.go:316: CS_LOG_LEVEL=warn: INFO lines 4, want them: false
+--- FAIL: TestRunLogsAtTheConfiguredLevel (0.00s)
+    --- PASS: TestRunLogsAtTheConfiguredLevel/info (1.05s)
+    --- FAIL: TestRunLogsAtTheConfiguredLevel/debug (1.13s)
+    --- FAIL: TestRunLogsAtTheConfiguredLevel/warn (1.13s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+FAIL
+
+-- go test ./internal/config -run TestLogLevelIsReadAndValidated (Config has no LogLevel yet)
+# github.com/gonzalomunoz1024/communication-service/sidecar/internal/config [github.com/gonzalomunoz1024/communication-service/sidecar/internal/config.test]
+internal/config/config_test.go:168:17: cfg.LogLevel undefined (type Config has no field or method LogLevel)
+internal/config/config_test.go:169:62: cfg.LogLevel undefined (type Config has no field or method LogLevel)
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config [build failed]

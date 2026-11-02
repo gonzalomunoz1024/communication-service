@@ -1,0 +1,20 @@
+# 09b - sidecar CI steps run locally (go vet, CI=true go test with kustomize/kubeconform/helm on PATH, govulncheck)
+Mon Nov  2 04:11:30 UTC 2026
+go: go version go1.25.0 linux/amd64; kustomize: (devel); kubeconform: development; helm: v3.16
+## go vet ./...
+EXIT=0
+## CI=true go test ./...
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	(cached)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	(cached)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	(cached)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	(cached)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	(cached)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	(cached)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	(cached)
+EXIT=0
+## govulncheck (go run golang.org/x/vuln/cmd/govulncheck@latest ./...)
+go: golang.org/x/vuln@v1.9.0 requires go >= 1.26.0; switching to go1.26.10
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1
+EXIT=1
+Mon Nov  2 04:11:37 UTC 2026

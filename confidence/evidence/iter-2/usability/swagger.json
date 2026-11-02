@@ -1,0 +1,16 @@
+{
+  "url": "http://localhost:8080/swagger-ui/index.html",
+  "title": "Swagger UI",
+  "ops": 20,
+  "authorizeButton": 1,
+  "lockOnOps": 20,
+  "postSummary": "Publish (or draft) a new communication",
+  "post409": "409 externalRef already used in this tenant. It is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value. The body names the notice that holds it. Media type application/json Example Value { \"error\": \"externalRef 'INC-1' is already used by notice 3f0c2a1e-7d4b-4a4e-9c2b-5e1f0a6d8b21 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for ",
+  "post401": "401 No X-Client-Id header (or ?clientId= on the stream) Media type application/json Example Value Schema { \"error\": \"m",
+  "externalRefInSchema": "externalRefExpand allstring ticketExpand allobject Responses Code Description Links 401 No X-Client-Id header (or ?clientId= on the stream) Media type application/json Example Value Schema { \"error\": \"missing X-Client-Id header: identify the calling system by its repository name\" } No links 409 externalRef already used in this tenant. It is a permanent idemp",
+  "expectedVersionInSchema": "expectedVersion Parameters Try it out Name Description id * string (path) Request body application/json Example Value Schema UpdateCommunicationCommandCollapse allobject severityExpand allstring titlestring[0, 200] characters bodystring[0, 16384] characters affectedServicesExpand allarray<string>[0, 20] items audienceExpand allstring startsAtstringdate-time ",
+  "put409": "409 expectedVersion is not the current version (someone saved in between: re-read, re-apply, send the new version), or the communication is EXPIRED/RETIRED and can no longer be updated Media type application/json Example Value { \"error\": \"expectedVersion 0 does not match current version 1\" } No l",
+  "tryBeforeAuthorize": "Responses Curl curl -X 'GET' \\ 'http://localhost:8080/v1/admin/tenants' \\ -H 'accept: */*' Request URL http://localhost:8080/v1/admin/tenants Server response Code Details 401 Error: Unauthorized Response body Download { \"error\": \"missing X-Client-Id header: id",
+  "authorizeDialog": "Available authorizations X-Client-Id (apiKey) Click Authorize and paste the repository name of the system you are calling from (e.g. vmforge-tools). Required on every /v1 request; identification only, nothing is verified. EventSource clients send ?clientId= instead. Name: X-Client-Id In: header Value: Authorize Close",
+  "tryAfterAuthorize": "Responses Curl curl -X 'GET' \\ 'http://localhost:8080/v1/admin/tenants' \\ -H 'accept: */*' \\ -H 'X-Client-Id: ux2-swagger' Request URL http://localhost:8080/v1/admin/tenants Server response Code Details 200 Response body Download [ { \"tenantId\": \"audit-es-1tno"
+}

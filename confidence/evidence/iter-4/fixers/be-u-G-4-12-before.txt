@@ -1,0 +1,94 @@
+# G-4-12 before: the OpenAPI document of the G-4-1 jar (commit 13b5086)
+
+## Regression test: the new OpenApiContractIT cases on that code
+./gradlew integrationTest --tests '*OpenApiContractIT'
+  OpenApiContractIT: tests=6 failures=3 errors=0
+    PASSED theSecuritySchemeTellsTheUserWhatToPaste()
+    FAILED everyRequestExampleIsAcceptedByItsRouteAsItIs()
+       java.lang.AssertionError: [post /v1/admin/communications/{id}/retire has a request example] 
+       Expecting actual not to be empty
+    PASSED theIdempotencyKeyAndTheVersionCheckExplainThemselves()
+    FAILED everyRouteDocumentsTheSuccessAnswerItGives()
+       org.opentest4j.AssertionFailedError: 
+       expected: {"delete /v1/admin/communications/{id}"="204", "delete /v1/health/monitors/{id}"="204", "get /v1/admin/communications"="200", "get /v1/admin/tenants"="200", "get /v1/communications"="200", "get /v1/communicatio
+        but was: {"delete /v1/admin/communications/{id}"="200", "delete /v1/health/monitors/{id}"="200", "get /test/actuator/health"="200", "get /v1/admin/communications"="200", "get /v1/admin/tenants"="200", "get /v1/communica
+    FAILED everyOperationDocumentsTheSharedErrorAnswersThatApplyToIt()
+       org.opentest4j.AssertionFailedError: [the {"error"} body] 
+       Expecting actual:
+         []
+       to contain exactly (and in same order):
+         ["error"]
+       but could not find the following elements:
+         ["error"]
+    PASSED everyOperationDocumentsTheMissingIdAnswerAndEverySurfaceIsListed()
+  (full map: 201/202/204 routes documented as 200, POST/PUT /v1/communications with no success answer)
+
+## What /v3/api-docs documents per /v1 route (docs.py; {…} = an inline schema without types)
+GET    /v1/admin/communications                   200[*/*:PageCommunication] 401[application/json:{…}]
+DELETE /v1/admin/communications/{id}              200[-] 401[application/json:{…}]
+POST   /v1/admin/communications/{id}/retire       200[*/*:Communication] 401[application/json:{…}]  body examples=0
+GET    /v1/admin/tenants                          200[*/*:array] 401[application/json:{…}]
+GET    /v1/communications                         200[*/*:PageCommunication] 401[application/json:{…}]
+POST   /v1/communications                         401[application/json:{…}] 409[application/json]  body examples=0
+GET    /v1/communications/{id}                    200[*/*:Communication] 401[application/json:{…}]
+PUT    /v1/communications/{id}                    401[application/json:{…}] 409[application/json]  body examples=0
+POST   /v1/communications/{id}/publish            200[*/*:Communication] 401[application/json:{…}]
+POST   /v1/communications/{id}/retire             200[*/*:Communication] 401[application/json:{…}]  body examples=0
+GET    /v1/feed                                   200[*/*:PageFeedItem] 401[application/json:{…}]
+GET    /v1/feed/stream                            200[text/event-stream:array] 401[application/json:{…}]
+GET    /v1/feed/{id}                              200[*/*:FeedItem] 401[application/json:{…}]
+GET    /v1/health/monitors                        200[*/*:array] 401[application/json:{…}]
+POST   /v1/health/monitors                        200[*/*:HealthMonitor] 401[application/json:{…}]  body examples=0
+DELETE /v1/health/monitors/{id}                   200[-] 401[application/json:{…}]
+GET    /v1/health/monitors/{id}                   200[*/*:HealthMonitor] 401[application/json:{…}]
+GET    /v1/health/monitors/{id}/instances         200[*/*:array] 401[application/json:{…}]
+POST   /v1/health/monitors/{id}/probe             200[*/*:HealthMonitor] 401[application/json:{…}]
+POST   /v1/health/reports                         200[*/*:HealthMonitor] 401[application/json:{…}]  body examples=0
+-> no 400, 404 or 503 anywhere; success bodies as */*; no request examples, so Swagger UI generates them
+   from the schemas, and those fail validation (UX-58: publish 4x, monitor downSeverity, report tenant "string")
+
+## What the routes really answer (statuses.py against the same jar, private Mongo)
+201  POST /v1/communications  Location: /v1/communications/44c805db-6584-45e5-8a95-3889eb3e19fc
+409  POST /v1/communications (same externalRef)  {"error": "externalRef 'INC-beu-status-41d453' is already used by notice 44c805db-6584-45e5-8a95-3889eb3e19fc 
+200  GET /v1/communications/{id}
+200  GET /v1/communications?tenantId=
+200  PUT /v1/communications/{id}
+409  PUT /v1/communications/{id} (stale version)  {"error": "expectedVersion 0 does not match current version 1"}
+409  POST /v1/communications/{id}/publish (not a draft)  {"error": "only DRAFT communications can be published; 44c805db-6584-45e5-8a95-3889eb3e19fc is ACTIVE"}
+200  POST /v1/communications/{id}/publish (a draft)
+200  POST /v1/communications/{id}/retire
+200  POST /v1/communications/{id}/retire (again)
+409  PUT /v1/communications/{id} (retired)  {"error": "communication 44c805db-6584-45e5-8a95-3889eb3e19fc is RETIRED and can no longer be updated"}
+201    (published an already-over window: 201 EXPIRED)
+409  POST /v1/communications/{id}/retire (EXPIRED)  {"error": "communication 25b3494b-afae-4950-9eef-fdd792f6945a already expired; retiring would rewrite history"
+409  POST /v1/admin/communications/{id}/retire (EXPIRED)  {"error": "communication 25b3494b-afae-4950-9eef-fdd792f6945a already expired; retiring would rewrite history"
+200  POST /v1/admin/communications/{id}/retire
+200  GET /v1/admin/communications
+200  GET /v1/admin/tenants
+204  DELETE /v1/admin/communications/{id}
+200  GET /v1/feed
+200  GET /v1/feed/{id}
+201  POST /v1/health/monitors  Location: /v1/health/monitors/b61a6af7-6a12-4da1-be53-e9d6ac54d9c5
+409  POST /v1/health/monitors (same service)  {"error": "a monitor already exists for service 'matrix-api' in tenant 'beu-status-41d453'"}
+200  GET /v1/health/monitors
+200  GET /v1/health/monitors/{id}
+200  GET /v1/health/monitors/{id}/instances
+200  POST /v1/health/monitors/{id}/probe
+202  POST /v1/health/reports
+409  POST /v1/health/monitors/{id}/probe (push-only)  {"error": "monitor 363a5241-c4a6-4f62-a1ef-6ce5970dc015 is push-only (no url) and cannot be probed"}
+204  DELETE /v1/health/monitors/{id}
+204  DELETE /v1/health/monitors/{id} (push-only)
+-- unknown id
+404  GET /v1/communications/{x}  {"error": "communication no-such-id not found"}
+404  PUT /v1/communications/{x}  {"error": "communication no-such-id not found"}
+404  POST /v1/communications/{x}/publish  {"error": "communication no-such-id not found"}
+404  POST /v1/communications/{x}/retire  {"error": "communication no-such-id not found"}
+404  POST /v1/admin/communications/{x}/retire  {"error": "communication no-such-id not found"}
+404  DELETE /v1/admin/communications/{x}  {"error": "communication no-such-id not found"}
+404  GET /v1/feed/{x}  {"error": "communication no-such-id not found"}
+404  GET /v1/health/monitors/{x}  {"error": "monitor no-such-id not found"}
+404  GET /v1/health/monitors/{x}/instances  {"error": "monitor no-such-id not found"}
+404  DELETE /v1/health/monitors/{x}  {"error": "monitor no-such-id not found"}
+404  POST /v1/health/monitors/{x}/probe  {"error": "monitor no-such-id not found"}
+-- malformed X-Client-Id (a route without parameters)
+400  GET /v1/admin/tenants  X-Client-Id: "bad id!"  {"error": "X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}

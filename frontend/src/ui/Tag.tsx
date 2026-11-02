@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react'
 import { cx } from './cx'
 import { Icon, type IconName } from './Icon'
+import { jobState, type JobState } from './job-state'
 
 export type Tone = 'neutral' | 'accent' | 'healthy' | 'warning' | 'critical'
 
 const TONE: Record<Tone, string> = {
   neutral: 'bg-surface-secondary text-secondary',
-  accent: 'bg-accent-tint text-accent',
-  healthy: 'bg-healthy-tint text-healthy',
-  warning: 'bg-warning-tint text-warning',
-  critical: 'bg-critical-tint text-critical',
+  accent: 'bg-accent-tint text-accent-fg',
+  healthy: 'bg-healthy-tint text-healthy-fg',
+  warning: 'bg-warning-tint text-warning-fg',
+  critical: 'bg-critical-tint text-critical-fg',
 }
 
 const DOT: Record<Tone, string> = {
@@ -58,16 +59,13 @@ export function Tag({ tone = 'neutral', children, icon, dot, pulse, mono, upperc
   )
 }
 
-/** The job states the platform tints; the API's richer statuses fold onto these. */
-export type JobState = 'queued' | 'running' | 'waiting' | 'succeeded' | 'failed' | 'cancelled'
-
 const STATE_CLASS: Record<JobState, string> = {
-  queued: 'bg-state-queued-tint text-state-queued',
-  running: 'bg-state-running-tint text-state-running',
-  waiting: 'bg-state-waiting-tint text-state-waiting',
-  succeeded: 'bg-state-succeeded-tint text-state-succeeded',
-  failed: 'bg-state-failed-tint text-state-failed',
-  cancelled: 'bg-state-cancelled-tint text-state-cancelled',
+  queued: 'bg-state-queued-tint text-state-queued-fg',
+  running: 'bg-state-running-tint text-state-running-fg',
+  waiting: 'bg-state-waiting-tint text-state-waiting-fg',
+  succeeded: 'bg-state-succeeded-tint text-state-succeeded-fg',
+  failed: 'bg-state-failed-tint text-state-failed-fg',
+  cancelled: 'bg-state-cancelled-tint text-state-cancelled-fg',
 }
 
 const STATE_DOT: Record<JobState, string> = {
@@ -79,28 +77,6 @@ const STATE_DOT: Record<JobState, string> = {
   cancelled: 'bg-state-cancelled',
 }
 
-/** Folds any status word onto one of the six tinted states. */
-export function jobState(status: string): JobState {
-  const s = status.toLowerCase()
-  if (s === 'queued' || s === 'pending') return 'queued'
-  if (s === 'running' || s === 'in-progress' || s === 'canary') return 'running'
-  if (s.includes('wait') || s.includes('attention') || s === 'paused' || s === 'degraded') return 'waiting'
-  if (s === 'succeeded' || s === 'passed' || s === 'promoted' || s === 'approved' || s === 'healthy' || s === 'merged' || s === 'ready' || s === 'published' || s === 'up') return 'succeeded'
-  if (s === 'failed' || s === 'rejected' || s === 'rolled-back' || s === 'failing' || s === 'error' || s === 'down') return 'failed'
-  if (s === 'cancelled' || s === 'canceled' || s === 'skipped' || s === 'expired' || s === 'closed' || s === 'retired' || s === 'compensated' || s === 'unknown') return 'cancelled'
-  return 'cancelled'
-}
-
-/** The Tag tone that matches a state. */
-export function stateTone(status: string): Tone {
-  const state = jobState(status)
-  if (state === 'queued' || state === 'running') return 'accent'
-  if (state === 'waiting') return 'warning'
-  if (state === 'succeeded') return 'healthy'
-  if (state === 'failed') return 'critical'
-  return 'neutral'
-}
-
 export interface StateTagProps {
   /** any API status word; folded with jobState() */
   status: string
@@ -110,20 +86,26 @@ export interface StateTagProps {
   className?: string
 }
 
-/** Status capsule with a leading dot; running pulses. */
+/** "in-progress" → "In progress": the status word as a sentence, when no display text is given. */
+function sentence(status: string): string {
+  const words = status.replace(/-/g, ' ').toLowerCase()
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/** Status capsule with a leading dot; running pulses. Text is shown as given (sentence case). */
 export function StateTag({ status, children, size = 'md', className }: StateTagProps) {
   const state = jobState(status)
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium capitalize',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium',
         size === 'sm' ? 'px-1.5 py-px text-caption2' : 'px-2 py-0.5 text-caption',
         STATE_CLASS[state],
         className,
       )}
     >
       <span className={cx('h-1.5 w-1.5 shrink-0 rounded-full', STATE_DOT[state], state === 'running' && 'animate-pulse-subtle')} />
-      {children ?? status.replace(/-/g, ' ')}
+      {children ?? sentence(status)}
     </span>
   )
 }

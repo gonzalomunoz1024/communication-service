@@ -1,0 +1,32 @@
+### what the README says per attach path (sidecar/README.md)
+30:| **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap in the app's namespace with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS
+32:| **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | pastes the container block |
+113:For plain YAML, edit the `image:` line of the pasted container block. Pin a tag; the snippets use
+250:every send. With Kustomize or the plain YAML add it to the `cs-health-sidecar` ConfigMap, with
+
+### the linked file: header comment, the ConfigMap, the container's envFrom (deploy/manual/deployment.yaml)
+1:# Fallback for teams that manage plain YAML: the same container pasted into the pod spec.
+2:# Everything above the "health-sidecar" container is the team's own Deployment.
+4:kind: ConfigMap
+6:  name: cs-health-sidecar
+13:kind: Deployment
+15:  name: payments-api
+38:          envFrom:
+39:            - configMapRef:
+40:                name: cs-health-sidecar
+
+### 'optional' anywhere in the manual or Kustomize manifests
+(none)
+
+### the debugging section names a missing ConfigMap / CreateContainerConfigError?
+(no)
+
+### team pastes the container block only: the Deployment document without the ConfigMap
+lines: 74
+Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+kubeconform exit 0
+(schema validation passes: nothing before the kubelet notices that cs-health-sidecar is missing; the kubelet's answer was not exercised here, no cluster)
+
+### since when (read-only git)
+$ git log --format='%h %s' -S'pastes the container block' -- sidecar/README.md
+f18057d Add the OpenShift health sidecar and its deploy snippets

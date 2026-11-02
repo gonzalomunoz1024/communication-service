@@ -1,0 +1,10 @@
+# ui_focus run 1 crashed on the verifier's own selector (two 'Tenant' textboxes on /#/publish); run 2 starts on /#/feed like the suite does
+## run 1
+FAIL RUN Error: locator.fill: Error: strict mode violation: getByRole('textbox', { name: 'Tenant', exact: true }) resolved to 2 elements:
+    1) <input value="" placeholder="acme" aria-label="Tenant" title="Enter the tenant your consumers read; the service owners assign it." class="no-focus-ring w-full rounded-md border border-stroke-li
+    2) <input value="" id="_r_0_-tenant" placeholder="acme" aria-describedby="_r_0_-tenant-note" class="no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary pla
+## run 2
+PASS F-56 after publishing, focus is on the confirmation heading; after "Publish another", focus is on the Title field (G-2-10) :: publish=201 afterPublish=h2# role= label= text=Outage published afterAnother=input#_r_1_-title role= label= text= titleId=_r_1_-title
+PASS F-56 "Publish another" keeps tenant and publisher :: 
+## summary: 2 pass, 0 fail
+exit=0

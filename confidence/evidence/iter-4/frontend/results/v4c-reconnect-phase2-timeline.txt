@@ -1,0 +1,47 @@
++0.1s instance A up: true
++0.1s instance B up: true
++0.7s badge → Waiting for a tenant
++0.8s badge → Connecting
++0.9s stream REQUEST #1 ?lastEventId=(none)
++0.9s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++0.9s stream RESPONSE 200
++0.9s SSE frame snapshot id=247 before the drop
++1.0s stream REQUEST FAILED net::ERR_ABORTED
++1.0s stream REQUEST #2 ?lastEventId=(none)
++1.0s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++1.1s stream RESPONSE 200
++1.1s SSE frame snapshot id=247 before the drop
++1.2s badge → Live
++2.1s SIGKILL instance A (pid 19954); last SSE id seen 247
++2.2s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++2.2s badge → Reconnecting
++3.8s through instance B: publish 'missed while down' → 201, retire 'before the drop' → 200
++5.2s stream REQUEST #3 ?lastEventId=(none)
++5.2s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=247
++5.2s stream RESPONSE 502
++5.2s badge → Reconnecting (1)
++6.2s stream REQUEST #4 ?lastEventId=247
++6.2s CDP wire: stream request ?lastEventId=247 Last-Event-ID header=(none)
++6.2s stream RESPONSE 502
++6.2s badge → Reconnecting (2)
++8.2s stream REQUEST #5 ?lastEventId=247
++8.2s CDP wire: stream request ?lastEventId=247 Last-Event-ID header=(none)
++8.2s stream RESPONSE 502
++8.2s badge → Reconnecting (3)
++12.2s stream REQUEST #6 ?lastEventId=247
++12.2s CDP wire: stream request ?lastEventId=247 Last-Event-ID header=(none)
++12.2s stream RESPONSE 502
++12.3s badge → Reconnecting (4)
++14.8s restarting instance A
++20.2s stream REQUEST #7 ?lastEventId=247
++20.2s CDP wire: stream request ?lastEventId=247 Last-Event-ID header=(none)
++20.2s stream RESPONSE 502
++20.3s badge → Reconnecting (5)
++23.7s A up again: true
++30.2s stream REQUEST #8 ?lastEventId=247
++30.2s CDP wire: stream request ?lastEventId=247 Last-Event-ID header=(none)
++30.3s stream RESPONSE 200
++30.3s SSE frame created id=248 missed while down
++30.3s badge → Live
++30.4s SSE frame retired id=249 before the drop
++30.4s badge Live again: true

@@ -1,0 +1,30 @@
+# sc-4 G-4-27 BEFORE: the plain-YAML row and the manual file's header leave out the cs-health-sidecar ConfigMap (commit c45cba4 + the new test)
+# date: 2026-11-02T08:25:35Z
+
+$ grep -n '^| \*\*' README.md
+30:| **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap in the app's namespace with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER` ([example](deploy/kustomize/example)) |
+31:| **Helm** ([deploy/helm/cs-health-sidecar](deploy/helm/cs-health-sidecar)) | adds the library chart as a dependency, one `include` line under `containers` and `csHealthSidecar.endpoint` / `.tenant` in values (the three pieces below the table) |
+32:| **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | pastes the container block |
+$ head -2 deploy/manual/deployment.yaml
+# Fallback for teams that manage plain YAML: the same container pasted into the pod spec.
+# Everything above the "health-sidecar" container is the team's own Deployment.
+
+$ go test -count=1 -run 'TestEachAttachPathNamesTheConfigMapItsContainerReads' -v ./deploy/
+=== RUN   TestEachAttachPathNamesTheConfigMapItsContainerReads
+    deploy_test.go:316: manual/deployment.yaml reads the ConfigMap cs-health-sidecar, so the README row starting "| **Plain YAML**" should name `cs-health-sidecar`
+    deploy_test.go:316: manual/deployment.yaml reads the ConfigMap cs-health-sidecar, so the README row starting "| **Plain YAML**" should name `CS_ENDPOINT`
+    deploy_test.go:316: manual/deployment.yaml reads the ConfigMap cs-health-sidecar, so the README row starting "| **Plain YAML**" should name `CS_TENANT`
+    deploy_test.go:330: the header comment of deploy/manual/deployment.yaml should say which ConfigMap the sidecar needs and with which keys; it lacks cs-health-sidecar:
+        # Fallback for teams that manage plain YAML: the same container pasted into the pod spec.
+        # Everything above the "health-sidecar" container is the team's own Deployment.
+    deploy_test.go:330: the header comment of deploy/manual/deployment.yaml should say which ConfigMap the sidecar needs and with which keys; it lacks CS_ENDPOINT:
+        # Fallback for teams that manage plain YAML: the same container pasted into the pod spec.
+        # Everything above the "health-sidecar" container is the team's own Deployment.
+    deploy_test.go:330: the header comment of deploy/manual/deployment.yaml should say which ConfigMap the sidecar needs and with which keys; it lacks CS_TENANT:
+        # Fallback for teams that manage plain YAML: the same container pasted into the pod spec.
+        # Everything above the "health-sidecar" container is the team's own Deployment.
+--- FAIL: TestEachAttachPathNamesTheConfigMapItsContainerReads (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.004s
+FAIL
+exit=1

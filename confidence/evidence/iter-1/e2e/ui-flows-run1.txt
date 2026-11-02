@@ -1,0 +1,43 @@
+F-60 PASS watcher: indicator reaches Live within 2 s on an empty tenant (G-1-4, ":connected") :: live=true 34 ms after the page settled
+F-59 PASS watcher: empty tenant shows the "All clear" empty state :: 
+F-52 PASS publish form picks up the header tenant :: form tenant=e2e1-ui-6c4a29
+F-56 PASS UI POST /v1/communications -> 201 with X-Client-Id communication-frontend :: status=201 x-client-id=communication-frontend id=dcaa505b-b09f-4f7f-a7de-b95cd7285b83
+F-09 PASS ticket typed lower-case is stored upper-cased and becomes externalRef :: {"system":"servicenow","number":"INC0012345"} ref=INC0012345
+F-56 PASS confirmation card: "Outage published", id tag, ticket chip, Publish another + View in feed :: done=true id=true chip=true
+F-56 PASS publisher remembered in localStorage comm-publisher :: e2e-oncall
+F-90 PASS second browser context sees the new card live without refresh :: after 371 ms
+F-09 PASS feed card shows the ticket chip (link only when the service knows the ServiceNow instance; unset here) :: chip visible=true isLink=false
+F-63 PASS card shows Active state, severity, services, publisher :: services=true active=true
+F-58 PASS "Active now" section with count 1 :: Active now1
+F-52 PASS Feed tab badge shows the active count :: Feed1
+F-90 PASS GET /v1/feed?service=checkout-web lists it for a consumer :: status=200 n=1
+F-56 PASS "View in feed" switches to the feed tab showing the item :: http://127.0.0.1:3501/#/feed
+F-62 PASS Resolve -> inline confirm, POST /retire 200 with the note (actor = publisher when known) :: status=200 body={"note":"fixed by e2e"}
+F-90 PASS card disappears in both contexts (local removal + retired event) :: watcher=true publisher-tab=true
+F-90 PASS permalink 200 RETIRED; history has the resolution note :: 200/RETIRED last={"at":"2026-11-02T01:45:54.166Z","actor":"e2e-oncall","action":"ACTIVE -> RETIRED: fixed by e2e"}
+F-62 PASS resolver identity: actor recorded :: actor=e2e-oncall
+F-62 PASS resolution announced in a role=status live region (G-1-15) :: status="Resolved “UI outage 6c4a29”. It has left every consumer's feed."
+F-60 PASS curl-published outage appears live :: id=f4601f37-a5e3-45a0-8177-4ba8a9381b7e
+F-60 PASS PUT title change arrives as updated frame and the card text changes :: put=200
+F-60 PASS Live switch off -> indicator Paused and no live updates :: paused=true hidden=true
+F-60 PASS Live switch on -> Live again and the missed item arrives via snapshot :: live=true shown=true
+F-60 PASS curl retire removes the card live :: 
+F-16 PASS All types: future MAINTENANCE listed under Upcoming with "Starts in …" :: hdr=Upcoming1 startsIn=true
+F-16 PASS a notice that has not started offers Withdraw instead of Resolve (G-1-16) :: withdraw=true resolveHidden=true
+F-58 PASS Minimum severity CRITICAL -> query carries severity=CRITICAL and only the critical card remains :: last feed GET: /v1/feed?tenantId=e2e1-ui-6c4a29&severity=CRITICAL&page=0&size=100
+F-58 PASS Service filter -> service=db in the query :: /v1/feed?tenantId=e2e1-ui-6c4a29&service=db&severity=CRITICAL&page=0&size=100
+F-59 PASS no match -> "All clear" empty state names tenant and service :: 
+F-64 PASS every feed GET carried X-Client-Id communication-frontend; stream uses ?clientId= :: feedGETs=6 streams=6
+F-55 FAIL empty submit: inline "Title is required" and nothing sent :: inline=false POSTs so far=1
+F-55 PASS focus moves to the first invalid field (aria-invalid, aria-describedby) and an error summary alert lists it (G-1-12) :: focus={"id":"_r_2_-title","tag":"INPUT","invalid":"true","describedBy":"_r_2_-title-note"} summary="Title is required"
+F-57 PASS reused reference -> 409 explained in a role=alert banner naming the incident and the tenant (G-1-16), form stays editable :: status=409 alert="The service rejected this. A notice with the reference INC0012345 already exists for tenant e2e1-ui-6c4a29 (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external refe"
+F-55 PASS bad ticket number rejected inline before sending :: 
+F-55 PASS Maintenance without Ends -> timing section opens with an inline error :: timingOpen=true err=true
+F-02 PASS Save as draft -> 201 DRAFT, "Draft saved" card without View in feed, invisible in the watcher feed :: status=201/DRAFT card=true noView=true hidden=true
+F-65 PASS no unexpected console / page errors in the publisher context (the deliberate 409 line excluded) :: unexpected= all=1
+F-65 PASS no unexpected console / page errors in the watcher context :: unexpected= all=0
+F-64 PASS no failed network requests (streams the page closed itself excluded) ::  (aborted streams: 6)
+
+SUMMARY: 39 checks, 38 pass, 1 fail
+  FAIL F-55 empty submit: inline "Title is required" and nothing sent :: inline=false POSTs so far=1
+EXIT=1

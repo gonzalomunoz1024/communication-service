@@ -1,0 +1,22 @@
+## 2026-11-02T06:58:33.014Z private stack up (head e3968c4, jar 32b20665b778)
+e2e3-mongo started
+2026-11-02T06:58:35.489Z mongo answers ping
+backend A pid 25947
+backend B pid 25955
+2026-11-02T06:58:46.020Z backend A readiness ready after 11 s
+2026-11-02T06:58:46.239Z backend B readiness ready after 0 s
+2026-11-02T06:58:47.278Z vite preview (frontend/dist) -> A ready after 1 s
+## 2026-11-02T06:58:47.280Z sidecar image health-sidecar:e2e3 (built beforehand from sidecar/Dockerfile, GO_IMAGE=local/go-toolset:1.25 BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot): sha256:de4e86eaf9c28543162d11165418c38bf4a02db6194d08d8b9c85231ae3deacb e2e3/e3968c4067e44ac0362f33418940ba8fe473dfae user=1001
+e2e3-netns started
+e2e3-app started (fakeapp:e2e)
+e2e3-sidecar started (health-sidecar:e2e3, uid 1000660000, read-only, cap-drop ALL, no-new-privileges)
+e2e3-stub started (pull-probe target)
+2026-11-02T06:58:48.363Z fake app in the pod ready after 0 s
+2026-11-02T06:58:49.414Z sidecar reported ready after 1 s
+2026-11-02T06:58:49.452Z backend A sees monitor ve3/ve3-app UP ready after 0 s
+## 2026-11-02T06:58:49.453Z private stack up: A :19501 B :19502 UI :19530 pod app :19540 status :19541 stub :19551 mongo :19527
+e2e3-stub	fakeapp:e2e	Up 1 second	127.0.0.1:19551->8080/tcp
+e2e3-sidecar	health-sidecar:e2e3	Up 1 second	
+e2e3-app	fakeapp:e2e	Up 1 second	
+e2e3-netns	golang:1.24	Up 2 seconds	127.0.0.1:19540->8080/tcp, 127.0.0.1:19541->9465/tcp
+e2e3-mongo	mongo:7.0	Up 16 seconds	127.0.0.1:19527->27017/tcp

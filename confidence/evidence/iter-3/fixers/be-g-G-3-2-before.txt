@@ -1,0 +1,25 @@
+# G-3-2 before: two instances sweeping the same due monitor (3806e7c sweep, new regression test only)
+# Command (worktree /home/claude/wt-be-g at 3806e7c + the test): ./gradlew --max-workers=2 --no-daemon test --tests 'com.atlas.communication.health.application.HealthSweepUseCaseTest'
+# Test: HealthSweepUseCaseTest.twoInstancesSweepingTheSameDueMonitorProbeItOnceAndTheLoserStaysQuiet
+#   both sweeps read the monitor at version v; the repository stub's first save succeeds, the second fails with the
+#   409 the Mongo adapter maps an optimistic-lock failure to. Today the sweep never claims: both instances probe.
+
+
+> Task :test
+
+HealthSweepUseCaseTest > twoInstancesSweepingTheSameDueMonitorProbeItOnceAndTheLoserStaysQuiet() FAILED
+    org.mockito.exceptions.verification.TooManyActualInvocations: 
+    observation.probe(<any>, <any>);
+    Wanted 1 time:
+    -> at com.atlas.communication.health.application.HealthObservationUseCase.probe(HealthObservationUseCase.java:53)
+    But was 2 times:
+    -> at com.atlas.communication.health.application.HealthSweepUseCase.evaluate(HealthSweepUseCase.java:161)
+    -> at com.atlas.communication.health.application.HealthSweepUseCase.evaluate(HealthSweepUseCase.java:161)
+        at app//com.atlas.communication.health.application.HealthObservationUseCase.probe(HealthObservationUseCase.java:53)
+        at app//com.atlas.communication.health.application.HealthSweepUseCaseTest.twoInstancesSweepingTheSameDueMonitorProbeItOnceAndTheLoserStaysQuiet(HealthSweepUseCaseTest.java:172)
+
+17 tests completed, 1 failed
+
+BUILD FAILED in 26s
+5 actionable tasks: 5 executed
+RC=1

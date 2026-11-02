@@ -1,0 +1,188 @@
+== vs2 pod lifecycle 2026-11-02T04:09:54Z | image health-sidecar:vs2 version=1.0.0-vs2 revision=be196455ea919e0e58e0f950e69e26b72f70f5d2 | fakeapp:ci | backend readiness={"status":"UP"}
+tenant vs2-pod before:
+  feed items: 0
+
+[04:09:59.516] STEP A (F-68/F-69/F-36/F-46/F-75): pod vs2-pod = netns holder + fakeapp:ci + sidecar (--user 1000660000:0 --read-only --cap-drop ALL --security-opt no-new-privileges); side pods vs2-nou (no app) and vs2-pin (CS_PORT=9999)
+  +1s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  +2s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  +3s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  +4s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  +5s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  +6s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  healthz=200 text/plain body=ok
+  raw /status keys: ['instance', 'lastReport', 'lastSendAt', 'lastTarget', 'reportsSent', 'service', 'target', 'tenant', 'upSeen', 'version']
+  raw /status: {"version":"1.0.0-vs2","service":"vs2-app","tenant":"vs2-pod","instance":"vs2-app-5d8c7b6f9-k2n4p","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"vs2-pod","service":"vs2-app","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T04:10:05.098Z","publisher":"health-sidecar","instance":{"id":"vs2-app-5d8c7b6f9-k2n4p","namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2"}},"lastSendAt":"2026-11-02T04:09:57.708694698Z","reportsSent":1}
+  backend:
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 1
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"UP","components":[],"namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:09:57.996Z"}
+  feed items: 0
+
+[04:10:06.065] STEP A2 (F-74 send policy, real backend): reportsSent over 30 s while UP (expect the one heartbeat at most)
+  reportsSent 1 -> 2 in 30 s while UP (+1)
+
+[04:10:36.133] STEP B0 (F-70/F-38/F-75): the app answers DOWN with db DOWN (POST /__set on the app's published port)
+  __set -> {"db":"DOWN","status":"DOWN"}
+  +1s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 sendErr=None feed=0
+  +3s status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=3 sendErr=None feed=0
+  +7s status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=4 sendErr=None feed=1
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 1
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"DOWN","components":[{"name":"db","status":"DOWN","detail":"database=PostgreSQL"}],"message":"health document reports DOWN","namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:10:43.459Z"}
+  feed items: 1
+    {"id":"f6eb98da-f5ef-419f-89da-ccac408e3160","type":"OUTAGE","status":"ACTIVE","severity":"MAJOR","title":"vs2-app is down","startsAt":"2026-11-02T04:10:43.475Z","publisher":"health-sidecar"}
+  notice id: f6eb98da-f5ef-419f-89da-ccac408e3160
+  notice body: {"id":"f6eb98da-f5ef-419f-89da-ccac408e3160","tenantId":"vs2-pod","publisher":"health-sidecar","type":"OUTAGE","severity":"MAJOR","title":"vs2-app is down","body":"Automated health check reported **DOWN** at 2026-11-02T04:10:43.459194994Z (rolled up from the service's pods).\n\n0 of 1 pod UP (DOWN: vs2-app-5d8c7b6f9-k2n4p)\n\nFailing components:\n- db: DOWN - database=PostgreSQL\n\nThis notice is managed automatically and is retired once the service reports healthy again.","affectedServices":["vs2-app"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:10:43.475Z","externalRef
+  reports while DOWN: counting reportsSent over 30 s (expect one per probe, ~4-5 s apart at 3s + jitter + 1s retry)
+  reportsSent 4 -> 11 in 30 s while DOWN (+7)
+  __set -> {"db":"UP","status":"UP"}
+  +1s status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=11 sendErr=None feed=1
+  +3s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=12 sendErr=None feed=1
+  +31s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=13 sendErr=None feed=0
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  notice f6eb98da-f5ef-419f-89da-ccac408e3160 now: 200 {"id":"f6eb98da-f5ef-419f-89da-ccac408e3160","tenantId":"vs2-pod","publisher":"health-sidecar","type":"OUTAGE","severity":"MAJOR","title":"vs2-app is down","body":"Automated health check reported **DOWN** at 2026-11-02T04:10:43.459194994Z (rolled up from the service's pods).\n\n0 of 1 pod UP (DOWN: 
+
+[04:11:48.363] STEP B (G-2-16/F-88): docker stop -t 1 vs2-app -> the app stops listening while the netns and the sidecar stay; poll /status every 0.5 s for the FIRST DOWN report
+  [04:11:48.544] app container exited exit=2
+  +0.6s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=13 sendErr=None feed=0
+  +3.6s status=DOWN target=None lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='app is not listening (last target http://127.0.0.1:8080/actuator/health)' comps=None sent=13 sendErr=None feed=0
+  +4.2s status=DOWN target=None lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='app is not listening (last target http://127.0.0.1:8080/actuator/health)' comps=None sent=14 sendErr=None feed=0
+  +8.3s status=DOWN target=None lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='app is not listening (last target http://127.0.0.1:8080/actuator/health)' comps=None sent=15 sendErr=None feed=1
+  [04:11:56.869] first DOWN in /status after 3.6 s, OUTAGE in the feed after 8.3 s
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 1
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"DOWN","components":[],"message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)","namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:11:56.430Z"}
+  feed items: 1
+    {"id":"e8b05bcd-eb0c-43ab-938f-3f7d66b56f19","type":"OUTAGE","status":"ACTIVE","severity":"MAJOR","title":"vs2-app is down","startsAt":"2026-11-02T04:11:56.443Z","publisher":"health-sidecar"}
+  sidecar log since the stop (every line, default level):
+{"time":"2026-11-02T04:11:52.084219608Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T04:11:52.132769995Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+  waiting 20 s more while the app is dead: new log lines at the default level (expect none: repeats are DEBUG)
+  reportsSent +4 in 20 s; log lines: 0
+
+[04:12:17.203] STEP C (F-77/F-88): docker start vs2-app -> expect UP, target back, notice retired after the second UP observation (heartbeat 30 s)
+  +1s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=20 sendErr=None feed=1
+  +29s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=21 sendErr=None feed=0
+  [04:12:48.560] UP after 1 s, feed empty after 29 s
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 1
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"UP","components":[],"namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:12:48.341Z"}
+  feed items: 0
+  notice e8b05bcd-eb0c-43ab-938f-3f7d66b56f19 now: 200 {"id":"e8b05bcd-eb0c-43ab-938f-3f7d66b56f19","tenantId":"vs2-pod","publisher":"health-sidecar","type":"OUTAGE","severity":"MAJOR","title":"vs2-app is down","body":"Automated health check reported **DOWN** at 2026-11-02T04:11:56.430692145Z (rolled up from the service's pods).\n\n0 of 1 pod UP (DOWN: 
+  sidecar log since the start:
+{"time":"2026-11-02T04:12:18.166864009Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:12:18.181925375Z","level":"INFO","msg":"reported","status":"UP","message":""}
+
+[04:12:48.777] STEP D (F-88): SIGKILL the sidecar, start the same container again -> same instance id, no notice
+  after SIGKILL: exited exit=137
+  +2s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  +4s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  +6s status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 1
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"UP","components":[],"namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:12:50.054Z"}
+  feed items: 0
+
+[04:12:56.270] STEP G (F-91 rollup): a second pod of the same service; then its app DOWN -> '1 of 2 pods UP' stays UP (min-healthy 50 %), no notice
+  pod2: status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 2
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"UP","components":[],"namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:12:50.054Z"}
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-zz9qq","status":"UP","components":[],"namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:12:56.962Z"}
+  pod2 app -> DOWN: {"db":"DOWN","status":"DOWN"}
+  +1s pod2 status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None | feed=0
+  +3s pod2 status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=2 sendErr=None | feed=0
+  +7s pod2 status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=3 sendErr=None | feed=0
+  +11s pod2 status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=4 sendErr=None | feed=0
+  +14s pod2 status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=5 sendErr=None | feed=0
+  +18s pod2 status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=6 sendErr=None | feed=0
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 2
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"UP","components":[],"namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:13:20.465Z"}
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-zz9qq","status":"DOWN","components":[{"name":"db","status":"DOWN","detail":"database=PostgreSQL"}],"message":"health document reports DOWN","namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:13:21.854Z"}
+  feed items: 0
+  pod2 app -> UP: {"db":"UP","status":"UP"}
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  SIGTERM pod2's sidecar (docker stop -t 30) -> leaving, back to 1 of 1
+  stop took 0.13 s exit=0
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 2
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"UP","components":[],"namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":false,"lastSeenAt":"2026-11-02T04:13:20.465Z"}
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-zz9qq","status":"UP","components":[],"message":"instance shutting down","namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":true,"lastSeenAt":"2026-11-02T04:13:32.372Z"}
+
+[04:13:35.943] STEP E (F-76/F-48): docker stop -t 30 vs2-sidecar (SIGTERM) -> leaving report, prompt exit
+  stop took 0.11 s, exit code 0
+  backend 1 s later:
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  instances: 2
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-k2n4p","status":"UP","components":[],"message":"instance shutting down","namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":true,"lastSeenAt":"2026-11-02T04:13:35.982Z"}
+    {"monitorId":"a243a467-3e16-4632-a206-2f6a88615ac8","instanceId":"vs2-app-5d8c7b6f9-zz9qq","status":"UP","components":[],"message":"instance shutting down","namespace":"vs2-ns","node":"node-a","cluster":"sandbox","version":"1.4.2","sidecar":"1.0.0-vs2","left":true,"lastSeenAt":"2026-11-02T04:13:32.372Z"}
+  feed items: 0
+  backend 6 s later:
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  sidecar log tail:
+{"time":"2026-11-02T04:12:50.065026366Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:13:35.99501355Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T04:13:35.995188263Z","level":"INFO","msg":"health sidecar stopped"}
+
+[04:13:42.315] STEP F (F-72): the two startup rules after a 20 s grace (side pods started with STEP A)
+  never-UP pod (no app): status=UNKNOWN target=None lastTarget=None upSeen=False msg='no health target found after 20s: no listening port answered; set CS_PORT and CS_PATH' comps=None sent=101 sendErr=None
+{"time":"2026-11-02T04:09:58.77233799Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-02T04:10:20.940957725Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found after 20s: no listening port answered; set CS_PORT and CS_PATH"}
+  pinned CS_PORT=9999 never answering: status=UNKNOWN target='http://127.0.0.1:9999/actuator/health' lastTarget='http://127.0.0.1:9999/actuator/health' upSeen=False msg='health target http://127.0.0.1:9999/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME' comps=None sent=69 sendErr=None
+{"time":"2026-11-02T04:10:00.575035894Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the first healthy answer from http://127.0.0.1:9999/actuator/health"}
+{"time":"2026-11-02T04:10:22.927159922Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"health target http://127.0.0.1:9999/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME"}
+  reports sent by the never-UP sidecar so far (UNKNOWN is sent every probe): 101
+  backend monitors for the tenant now:
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"}
+  feed items: 0
+
+[04:13:42.588] STEP H (F-89): sidecar log shape (both runs of vs2-sidecar)
+  lines: 14 non-JSON: 0 keys seen: ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'target', 'tenant', 'time', 'version']
+     6  INFO  reported
+     3  INFO  health target found
+     2  INFO  health sidecar starting
+     1  INFO  health sidecar stopped
+     1  INFO  health target gone; will rediscover
+     1  INFO  leaving report sent
+  INFO 'reported' lines (the transitions):
+{"time":"2026-11-02T04:09:58.381333Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:10:39.15527633Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T04:11:16.920451197Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:11:52.132769995Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+{"time":"2026-11-02T04:12:18.181925375Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:12:50.065026366Z","level":"INFO","msg":"reported","status":"UP","message":""}
+  first 3 lines:
+{"time":"2026-11-02T04:09:57.708168033Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-vs2","service":"vs2-app","tenant":"vs2-pod","instance":"vs2-app-5d8c7b6f9-k2n4p","endpoint":"http://172.17.0.1:19300","probe":"auto"}
+{"time":"2026-11-02T04:09:57.721993331Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:09:58.381333Z","level":"INFO","msg":"reported","status":"UP","message":""}
+  secret-looking strings in the log: 0
+
+[04:13:42.657] STEP S (F-48 silence): SIGKILL the two side-pod sidecars (no leaving report) at 2026-11-02T04:13:42Z; 15-backend-contract reads the tenant after the 90 s window
+[04:13:43.294] DONE, containers removed

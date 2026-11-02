@@ -1,0 +1,44 @@
+# Raw wire captures
+
+## the sidecar's requests as a recording stub backend saw them (pod_flows.js capture; out/capture-requests.jsonl)
+{"n":1,"at":"2026-11-02T10:47:22.867Z","mode":"ok","method":"POST","url":"/v1/health/reports","headers":{"host":"172.17.0.1:19560","user-agent":"health-sidecar/e2e4","content-length":"336","accept":"application/json","content-type":"application/json","x-client-id":"ve4-cap-repo","accept-encoding":"gzip"},"body":"{\"tenantId\":\"ve4cap\",\"service\":\"ve4-cap\",\"status\":\"UP\",\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"UP\"},\"ping\":{\"status\":\"UP\"}},\"observedAt\":\"2026-11-02T10:47:22.855Z\",\"publisher\":\"health-sidecar\",\"instance\":{\"id\":\"ve4-cap-0\",\"namespace\":\"cap-ns\",\"node\":\"node-c\",\"cluster\":\"cl\",\"version\":\"3.0.0\",\"sidecar\":\"e2e4\"}}"}
+{"n":2,"at":"2026-11-02T10:47:27.257Z","mode":"slow","method":"POST","url":"/v1/health/reports","headers":{"host":"172.17.0.1:19560","user-agent":"health-sidecar/e2e4","content-length":"336","accept":"application/json","content-type":"application/json","x-client-id":"ve4-cap-repo","accept-encoding":"gzip"},"body":"{\"tenantId\":\"ve4cap\",\"service\":\"ve4-cap\",\"status\":\"UP\",\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"UP\"},\"ping\":{\"status\":\"UP\"}},\"observedAt\":\"2026-11-02T10:47:27.255Z\",\"publisher\":\"health-sidecar\",\"instance\":{\"id\":\"ve4-cap-0\",\"namespace\":\"cap-ns\",\"node\":\"node-c\",\"cluster\":\"cl\",\"version\":\"3.0.0\",\"sidecar\":\"e2e4\"}}"}
+{"n":3,"at":"2026-11-02T10:47:30.479Z","mode":"ok","method":"POST","url":"/v1/health/reports","headers":{"host":"172.17.0.1:19560","user-agent":"health-sidecar/e2e4","content-length":"336","accept":"application/json","content-type":"application/json","x-client-id":"ve4-cap-repo","accept-encoding":"gzip"},"body":"{\"tenantId\":\"ve4cap\",\"service\":\"ve4-cap\",\"status\":\"UP\",\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"UP\"},\"ping\":{\"status\":\"UP\"}},\"observedAt\":\"2026-11-02T10:47:30.477Z\",\"publisher\":\"health-sidecar\",\"instance\":{\"id\":\"ve4-cap-0\",\"namespace\":\"cap-ns\",\"node\":\"node-c\",\"cluster\":\"cl\",\"version\":\"3.0.0\",\"sidecar\":\"e2e4\"}}"}
+{"n":4,"at":"2026-11-02T10:47:34.866Z","mode":"400","method":"POST","url":"/v1/health/reports","headers":{"host":"172.17.0.1:19560","user-agent":"health-sidecar/e2e4","content-length":"336","accept":"application/json","content-type":"application/json","x-client-id":"ve4-cap-repo","accept-encoding":"gzip"},"body":"{\"tenantId\":\"ve4cap\",\"service\":\"ve4-cap\",\"status\":\"UP\",\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"UP\"},\"ping\":{\"status\":\"UP\"}},\"observedAt\":\"2026-11-02T10:47:34.864Z\",\"publisher\":\"health-sidecar\",\"instance\":{\"id\":\"ve4-cap-0\",\"namespace\":\"cap-ns\",\"node\":\"node-c\",\"cluster\":\"cl\",\"version\":\"3.0.0\",\"sidecar\":\"e2e4\"}}"}
+{"n":5,"at":"2026-11-02T10:47:39.331Z","mode":"500","method":"POST","url":"/v1/health/reports","headers":{"host":"172.17.0.1:19560","user-agent":"health-sidecar/e2e4","content-length":"336","accept":"application/json","content-type":"application/json","x-client-id":"ve4-cap-repo","accept-encoding":"gzip"},"body":"{\"tenantId\":\"ve4cap\",\"service\":\"ve4-cap\",\"status\":\"UP\",\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"UP\"},\"ping\":{\"status\":\"UP\"}},\"observedAt\":\"2026-11-02T10:47:39.329Z\",\"publisher\":\"health-sidecar\",\"instance\":{\"id\":\"ve4-cap-0\",\"namespace\":\"cap-ns\",\"node\":\"node-c\",\"cluster\":\"cl\",\"version\":\"3.0.0\",\"sidecar\":\"e2e4\"}}"}
+{"n":6,"at":"2026-11-02T10:47:41.598Z","mode":"500","method":"POST","url":"/v1/health/reports","headers":{"host":"172.17.0.1:19560","user-agent":"health-sidecar/e2e4","content-length":"336","accept":"application/json","content-type":"application/json","x-client-id":"ve4-cap-repo","accept-encoding":"gzip"},"body":"{\"tenantId\":\"ve4cap\",\"service\":\"ve4-cap\",\"status\":\"UP\",\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"UP\"},\"ping\":{\"status\":\"UP\"}},\"observedAt\":\"2026-11-02T10:47:41.596Z\",\"publisher\":\"health-sidecar\",\"instance\":{\"id\":\"ve4-cap-0\",\"namespace\":\"cap-ns\",\"node\":\"node-c\",\"cluster\":\"cl\",\"version\":\"3.0.0\",\"sidecar\":\"e2e4\"}}"}
+{"n":7,"at":"2026-11-02T10:47:43.962Z","mode":"ok","method":"POST","url":"/v1/health/reports","headers":{"host":"172.17.0.1:19560","user-agent":"health-sidecar/e2e4","content-length":"336","accept":"application/json","content-type":"application/json","x-client-id":"ve4-cap-repo","accept-encoding":"gzip"},"body":"{\"tenantId\":\"ve4cap\",\"service\":\"ve4-cap\",\"status\":\"UP\",\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"UP\"},\"ping\":{\"status\":\"UP\"}},\"observedAt\":\"2026-11-02T10:47:43.953Z\",\"publisher\":\"health-sidecar\",\"instance\":{\"id\":\"ve4-cap-0\",\"namespace\":\"cap-ns\",\"node\":\"node-c\",\"cluster\":\"cl\",\"version\":\"3.0.0\",\"sidecar\":\"e2e4\"}}"}
+
+## kill scenario, CDP capture of the page's /v1/feed/stream requests and the SSE frames received on them (failure_flows.js kill; out/f61-cdp-capture.json, one object per line)
+tKill 1793616684810 tReady 1793616721403 (ms since epoch); times below are seconds after the kill
+-- requests 7
+{"id": "22500.10", "t": 3.05, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend"}
+{"id": "22500.11", "t": 4.06, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93", "failed": "net::ERR_ABORTED"}
+{"id": "22500.12", "t": 6.06, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.13", "t": 10.07, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.14", "t": 18.07, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.15", "t": 28.08, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.16", "t": 38.09, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+-- responses 8
+{"id": "22500.9", "t": -0.42, "status": 200, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend"}
+{"id": "22500.10", "t": 3.06, "status": 502, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend"}
+{"id": "22500.11", "t": 4.06, "status": 502, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.12", "t": 6.07, "status": 502, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.13", "t": 10.07, "status": 502, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.14", "t": 18.08, "status": 502, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.15", "t": 28.09, "status": 502, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+{"id": "22500.16", "t": 38.12, "status": 200, "url": "http://127.0.0.1:19530/v1/feed/stream?tenantId=ve4-kill-mvz525go&clientId=communication-frontend&lastEventId=93"}
+-- extra 8
+{"id": "22500.10", "t": 3.05, "lastEventId": "93"}
+{"id": "22500.11", "t": 4.06, "lastEventId": null}
+{"id": "22500.12", "t": 6.06, "lastEventId": null}
+{"id": "22500.13", "t": 10.07, "lastEventId": null}
+{"id": "22500.14", "t": 18.07, "lastEventId": null}
+{"id": "22500.15", "t": 28.08, "lastEventId": null}
+{"id": "22500.16", "t": 38.09, "lastEventId": null}
+{"id": "22500.17", "t": 38.21, "lastEventId": null}
+-- messages 2
+{"id": "22500.9", "t": -0.12, "eventName": "created", "eventId": "93", "data": "{\"seq\":93,\"type\":\"CREATED\",\"at\":\"2026-11-02T10:51:24.428Z\",\"communication\":{\"id\":\"46c39312-48cc-4a85-ab00-d81b3028db54\","}
+{"id": "22500.16", "t": 38.2, "eventName": "created", "eventId": "94", "data": "{\"seq\":94,\"type\":\"CREATED\",\"at\":\"2026-11-02T10:51:26.701Z\",\"communication\":{\"id\":\"392fe0e7-a851-4983-9f7d-1904f14d78a6\","}
+-- feedGets 1
+{"t": 38.21, "url": "http://127.0.0.1:19530/v1/feed?tenantId=ve4-kill-mvz525go&page=0&size=100"}

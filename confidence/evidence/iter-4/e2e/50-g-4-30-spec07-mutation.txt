@@ -1,0 +1,110 @@
+# G-4-30: does spec 07 (unchanged) catch the iteration-3 behaviour it was extended for? (scripts/mut-run.sh)
+# Harness: a copy of e2e/ under scratchpad/e2e4/mut/h with tests/ byte-identical to the repository's (checked by cmp before each run), node_modules symlinked,
+# compose images renamed e2e4-mut-*; h/frontend points at the variant's frontend and the variant's jar is copied into h/build/libs. Only spec 07 runs. Mutation images removed afterwards.
+# Variant iter3 = jar and frontend of 6c15715 (iteration 3). Variant iter4 = the repository's build/libs jar and frontend/dist (control).
+
+## iteration-3 frontend build (git archive 6c15715 frontend, npm run build in the scratch copy)
+== 2026-11-02T10:32:01Z iteration-3 frontend (git archive 6c15715 frontend; node_modules = the repo's, no dependency change since)
+computing gzip size...
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist/assets/index-Bmkt-yYZ.js   270.34 kB │ gzip: 84.40 kB
+
+✓ built in 596ms
+exit=0
+
+## spec 07 on the iteration-3 code: must FAIL
+== 2026-11-02T10:33:01Z variant iter3: jar sha256 b63ffd4ebfae68c9, frontend /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2e4/mut/iter3/frontend, dist index-Bmkt-yYZ.js
+tests/ byte-identical to the repository's
+10:33:42 stack: the sidecar has reported (2 s)
+10:33:42 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+10:33:42 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+Running 1 test using 1 worker
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+F-57: the late page showed the error state 11.0 s into the outage
+F-92: the late page while the database was down (3 stream requests, 3 list loads): +0.1 s (no badge), +0.3 s Connecting, +0.4 s Live, +5.4 s Reconnecting, +5.4 s Reconnecting | Couldn't load the feed (database unavailable), +8.5 s Live, +13.5 s Reconnecting, +13.5 s Reconnecting | Couldn't load the feed (database unavailable), +16.5 s Live
+F-92: the backend was ready again 27.2 s after the database stopped
+F-92: the late page showed the feed 0.0 s after the backend was ready, then: 
+F-92: the open page showed a new notice 0.3 s after the backend was ready
+  ✘  1 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves (31.9s)
+  1) tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves 
+    Error: the late page's badge said Live before the database was back: +0.1 s (no badge), +0.3 s Connecting, +0.4 s Live, +5.4 s Reconnecting, +5.4 s Reconnecting | Couldn't load the feed (database unavailable), +8.5 s Live, +13.5 s Reconnecting, +13.5 s Reconnecting | Couldn't load the feed (database unavailable), +16.5 s Live
+    expect(received).toEqual(expected) // deep equality
+    - Expected  -  1
+    + Received  + 17
+    - Array []
+    + Array [
+    +   Object {
+    +     "at": 1793615634722,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793615642790,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793615650816,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    + ]
+      105 |     const outageTimeline = timeline(duringOutage, lateOpened)
+      106 |     console.log(`F-92: the late page while the database was down (${lateStreams} stream requests, ${lateLoads} list loads): ${outageTimeline}`)
+    > 107 |     expect.soft(duringOutage.filter((v) => v.badge?.startsWith('Live')), `the late page's badge said Live before the database was back: ${outageTimeline}`).toEqual([])
+          |                                                                                                                                                             ^
+      108 |     const failed = duringOutage.findIndex((v) => v.error !== null)
+      109 |     expect.soft(duringOutage.slice(failed).filter((v) => v.error !== 'database unavailable'), `the late page lost the database message before the database was back: ${outageTimeline}`).toEqual([])
+      110 |
+    Error: the late page lost the database message before the database was back: +0.1 s (no badge), +0.3 s Connecting, +0.4 s Live, +5.4 s Reconnecting, +5.4 s Reconnecting | Couldn't load the feed (database unavailable), +8.5 s Live, +13.5 s Reconnecting, +13.5 s Reconnecting | Couldn't load the feed (database unavailable), +16.5 s Live
+    expect(received).toEqual(expected) // deep equality
+    - Expected  -  1
+    + Received  + 17
+    - Array []
+    + Array [
+    +   Object {
+    +     "at": 1793615642790,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793615647796,
+    +     "badge": "Reconnecting",
+    +     "error": null,
+    +   },
+    +   Object {
+    +     "at": 1793615650816,
+    +     "badge": "Live",
+    +     "error": null,
+    +   },
+    + ]
+      107 |     expect.soft(duringOutage.filter((v) => v.badge?.startsWith('Live')), `the late page's badge said Live before the database was back: ${outageTimeline}`).toEqual([])
+      108 |     const failed = duringOutage.findIndex((v) => v.error !== null)
+    > 109 |     expect.soft(duringOutage.slice(failed).filter((v) => v.error !== 'database unavailable'), `the late page lost the database message before the database was back: ${outageTimeline}`).toEqual([])
+          |                                                                                                                                                                                          ^
+      110 |
+      111 |     // the database comes back; nobody restarts the service or clicks anything
+      112 |     await stack('start-mongo')
+  1 failed
+    tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves 
+playwright exit=1
+stack down; 0 e2e-* containers left
+
+## spec 07 on the iteration-4 code (control): must PASS
+== 2026-11-02T10:34:31Z variant iter4: jar sha256 64e07ece32b4d9f6, frontend /home/claude/communication-service/frontend, dist index-Df4wR-sk.js
+tests/ byte-identical to the repository's
+10:35:09 stack: the sidecar has reported (1 s)
+10:35:10 stack: the backend sees the pod UP (monitor e2e/fakeapp) (1 s)
+10:35:10 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+Running 1 test using 1 worker
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+F-57: the late page showed the error state 11.0 s into the outage
+F-92: the late page while the database was down (3 stream requests, 1 list loads): +0.0 s (no badge), +0.1 s Connecting, +5.2 s Reconnecting (1) | Couldn't load the feed (database unavailable), +11.2 s Reconnecting (2) | Couldn't load the feed (database unavailable)
+F-92: the backend was ready again 23.9 s after the database stopped
+F-92: the late page showed the feed 4.0 s after the backend was ready, then: +18.3 s Reconnecting (3) | Couldn't load the feed (database unavailable), +22.4 s Service degraded | Couldn't load the feed (database unavailable), +22.5 s Live
+F-92: the open page showed a new notice 5.0 s after the backend was ready
+  ✓  1 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves (37.8s)
+  1 passed (39.6s)
+playwright exit=0
+stack down; 0 e2e-* containers left

@@ -1,0 +1,77 @@
+# 53 - E2E failure flows: scripts/failure_flows.js kill mongo (run 1) and kill (run 2), A :19701 killed with kill -9 and restarted by start-backend.sh;
+#   au2-mongo stopped/started under A and B. Machine load average 6-10 on 4 cores during these runs (fixers' builds in /home/claude/wt-*), so A needed
+#   16.1 s / 11.5 s to become ready again (verifier: 6.8 s / 5.7 s).
+# verifier: run 1 21 pass / 5 FAIL (3 kill FAILs = its own model, 2 mongo FAILs = GAP-backend2-6 log hygiene and GAP-e2e2-6 attribution);
+#           run 2 (rewritten kill) 15 pass / 1 FAIL (F-61 header=undefined of the browser's native retry; CDP capture in its 32b/32c shows the header)
+
+=================== run 1: kill mongo
+## kill: SIGKILL backend A under a streaming page (2026-11-02T05:28:28.709Z)
+2026-11-02T05:28:29.211Z PASS F-60 a notice published over HTTP arrives live over the stream (created frame with its seq = the page's last event id) :: 198 ms, seq 373
+2026-11-02T05:28:29.385Z PASS F-61 SIGKILL: the proxy ends the browser's stream and the badge says Reconnecting within a second :: Reconnecting after 71 ms; A alive=true
+2026-11-02T05:28:29.711Z PASS F-57 backend down: 'Couldn't load the feed' + 'The service is unreachable right now…' + Try again (not a bare 502) :: Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again
+2026-11-02T05:28:29.803Z PASS F-92 the second node keeps serving while A is dead (publish via B -> 201) :: id=84ee88db-b47c-4e1b-be89-94812d5acb89
+2026-11-02T05:29:09.299Z FAIL F-61 G-2-11: after the browser's own retry (Last-Event-ID header), every client reopen carries ?lastEventId=<last seq> :: native retry at +3.1s header=undefined status=502; own attempts=6 lastEventIds=373,373,373,373,373,373
+2026-11-02T05:29:09.299Z PASS F-61 G-2-11: the client's delays are 1, 2, 4, 8 then capped at 10 s :: gaps(s)=1.0,2.0,4.0,8.0,10.0,10.0 statuses=502,502,502,502,502,502
+2026-11-02T05:29:09.382Z PASS F-74 sidecar during the outage: 'report failed; will retry' with growing backoff, /status.sendError set, app unaffected :: fails=1s,2s,4s,8s,16s sendError="post http://172.17.0.1:19701/v1/health/reports: Post "http://172.17.0.1:19701/v1"
+2026-11-02T05:29:25.503Z PASS F-92 backend A restarted and ready :: ready after 16103 ms
+2026-11-02T05:29:27.692Z PASS F-61 the page heals by itself within the 10 s cap after the service is back and shows the notice published meanwhile, no reload :: Live 1950 ms after readiness; card 226 ms later; the card from before is still there
+2026-11-02T05:29:27.763Z PASS F-20 wire: the successful reopen carried ?lastEventId=<seq before the kill>; the server replayed the created frame of the notice published via B exactly once, no snapshot :: reopen=tenantId=ve2-kill-mvytj0fp&clientId=communication-frontend&lastEventId=373; frames on the resumed stream=created#374; GET /v1/feed after recovery=1 (the hook also reloads once after a reconnect: useOutageFeed.
+2026-11-02T05:29:27.766Z PASS F-61 the replayed notice is shown exactly once (upsert by id) :: cards=1
+2026-11-02T05:30:00.995Z FAIL F-74 sidecar recovery: next report accepted, sendError cleared, no notice opened by the outage :: accepted 33211 ms after readiness; monitor UP
+2026-11-02T05:30:30.998Z FAIL RUN scenario kill crashed :: locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Try again' })[22m
+
+    at Object.kill (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/e2e/scripts/failure_flows.js:117:58)
+    at async main (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/e2e/scripts/failure_flows.js:196:34)
+## mongo: stop the database under A and B (2026-11-02T05:30:30.999Z)
+2026-11-02T05:30:42.925Z PASS F-92 G-2-4: GET /v1/feed -> 503 {"error":"database unavailable"} within ~5 s (was 500 after 30 s) :: 503 {"error":"database unavailable"} in 5024 ms
+2026-11-02T05:30:47.943Z PASS F-92 POST -> 503 database unavailable, no driver cluster description in the body :: 503 {"error":"database unavailable"} in 5017 ms
+2026-11-02T05:30:52.961Z PASS F-92 readiness DOWN (503) while Mongo is unreachable, liveness still UP :: readiness 503 {"status":"DOWN"} in 5010 ms; liveness 200
+2026-11-02T05:30:58.008Z PASS F-92 node B answers the same 503 :: 503 in 5047 ms
+2026-11-02T05:31:03.034Z PASS F-92 health report during the outage -> 503 (the sidecar treats it as retryable) :: 503 {"error":"database unavailable"}
+2026-11-02T05:31:08.249Z PASS F-57 UI reload during the outage: 'Couldn't load the feed' with the unreachable wording (a 503 is treated as the service not being there) + Try again :: badge=Live; Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again
+2026-11-02T05:31:28.310Z PASS F-92 stream behaviour during the outage recorded (reopen attempts and their statuses) :: badge now=Live; stream requests since the stop=0 statuses= failed=
+2026-11-02T05:31:28.311Z FAIL F-92 G-2-4 log hygiene: sweeps log one WARN per skipped run without a stack trace; calls log a WARN -> 503; no ERROR storm :: new lines=168 'sweep skipped' WARN=11 '-> 503' WARN=5 ERROR=0 stack-trace lines=74
+2026-11-02T05:31:28.352Z FAIL F-74 sidecar: the 503 is retried with backoff ('report failed; will retry'), nothing permanent :: fails=5 first="post http://172.17.0.1:19701/v1/health/reports: Post "http://172.17.0.1:19701/v1/health/reports": co" in=1s,2s,4s,8s,16s
+2026-11-02T05:31:30.899Z PASS F-92 Mongo back -> API 200 and readiness UP again without a backend restart :: feed 200 after 2161 ms, readiness UP after 14 ms
+2026-11-02T05:31:31.422Z PASS F-92 UI recovers: 'Try again' lists the feed, the badge is Live, a notice published via B arrives live, no page reload :: listed 3 ms, Live 13 ms, live card 410 ms
+2026-11-02T05:31:31.499Z PASS F-74 sidecar reports accepted again, no notice from the database outage :: sendError cleared after 2 ms; monitor UP summary=UP (1 of 1 pod UP)
+2026-11-02T05:31:31.659Z PASS F-92 no uncaught page errors during the failure flows :: 
+## summary: 21 pass, 5 fail at 2026-11-02T05:31:31.729Z
+
+=================== run 2: kill
+## kill: SIGKILL backend A under a streaming page (2026-11-02T05:33:42.737Z)
+2026-11-02T05:33:43.314Z PASS F-60 a notice published over HTTP arrives live over the stream (created frame with its seq = the page's last event id) :: 321 ms, seq 383
+2026-11-02T05:33:43.432Z PASS F-61 SIGKILL: the proxy ends the browser's stream and the badge says Reconnecting within a second :: Reconnecting after 63 ms; A alive=true
+2026-11-02T05:33:43.688Z PASS F-57 backend down: 'Couldn't load the feed' + 'The service is unreachable right now…' + Try again (not a bare 502) :: Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again
+2026-11-02T05:33:43.780Z PASS F-92 the second node keeps serving while A is dead (publish via B -> 201) :: id=38eff041-4b93-4484-84ea-fb52d40951d2
+2026-11-02T05:34:23.362Z FAIL F-61 G-2-11: after the browser's own retry (Last-Event-ID header), every client reopen carries ?lastEventId=<last seq> :: native retry at +3.1s header=undefined status=502; own attempts=6 lastEventIds=383,383,383,383,383,383
+2026-11-02T05:34:23.362Z PASS F-61 G-2-11: the client's delays are 1, 2, 4, 8 then capped at 10 s :: gaps(s)=1.0,2.0,4.0,8.0,10.0,10.0 statuses=502,502,502,502,502,502
+2026-11-02T05:34:23.421Z PASS F-74 sidecar during the outage: 'report failed; will retry' with growing backoff, /status.sendError set, app unaffected :: fails=1s,2s,4s,8s,16s sendError="post http://172.17.0.1:19701/v1/health/reports: Post "http://172.17.0.1:19701/v1"
+2026-11-02T05:34:34.987Z PASS F-92 backend A restarted and ready :: ready after 11539 ms
+2026-11-02T05:34:41.774Z PASS F-61 the page heals by itself within the 10 s cap after the service is back and shows the notice published meanwhile, no reload :: Live 6547 ms after readiness; card 235 ms later; the card from before is still there
+2026-11-02T05:34:41.914Z PASS F-20 wire: the successful reopen carried ?lastEventId=<seq before the kill>; the server replayed the created frame of the notice published via B exactly once, no snapshot :: reopen=tenantId=ve2-kill-mvytpqv4&clientId=communication-frontend&lastEventId=383; frames on the resumed stream=created#384; GET /v1/feed after recovery=1 (the hook also reloads once after a reconnect: useOutageFeed.
+2026-11-02T05:34:41.930Z PASS F-61 the replayed notice is shown exactly once (upsert by id) :: cards=1
+2026-11-02T05:35:10.189Z PASS F-74 sidecar recovery: next report accepted, sendError cleared, no notice opened by the outage :: accepted 28222 ms after readiness; monitor UP
+2026-11-02T05:35:40.194Z FAIL RUN scenario kill crashed :: locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Try again' })[22m
+
+    at Object.kill (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/e2e/scripts/failure_flows.js:117:58)
+    at async main (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/e2e/scripts/failure_flows.js:196:34)
+2026-11-02T05:35:40.194Z PASS F-92 no uncaught page errors during the failure flows :: 
+## summary: 12 pass, 2 fail at 2026-11-02T05:35:40.276Z
+exit 2
+
+## what happened around the F-74 recovery FAIL in run 1 (backend logs of A and B, health lines for ve2/ve2-app)
+2026-11-02T05:29:57.327Z INFO c.a.c.h.a.HealthObservationUseCase monitor ebc2fccd-6e81-4b30-8576-35b9aa869858 opened OUTAGE efd7805d-2d07-4581-a7eb-81a96489c607 for ve2/ve2-app
+2026-11-02T05:30:10.358Z INFO c.a.c.h.a.HealthObservationUseCase retired notice efd7805d-2d07-4581-a7eb-81a96489c607: recovered: UP (1 of 1 pod UP)
+## 2026-11-02T05:34:23.440Z starting backend A on :19701 (log appended)
+  kill -9 of A at ~05:28:30Z; A restarted 05:29:09Z, ready ~05:29:25Z (16.1 s); sidecar retries 1,2,4,8,16 s failed, the next step is 32 s (+jitter, cap 60 s, agent.go:25-26,340-347)
+  -> its first accepted report came 33.2 s after readiness; the pod had then been silent ~90 s, the instance staleness window (instance-stale-after-seconds 90),
+  so A's health sweep (stale-grace-after-start-ms=0 in this private stack; B, up the whole time, would reach the same mark under the default 5-min grace) opened OUTAGE 've2-app is down' at 05:29:57.327Z = 90.3 s after the sidecar's last accepted report (05:28:26.989Z, access log), retired 13 s later on recovery. In run 2 (A ready after 11.5 s) the report came 28.2 s after
+  readiness, inside the window: no notice. Both runs then crashed at the script's next step ('Try again' on a second page that had already healed by itself
+  during the long wait), so the second-outage checks of the verifier's run 2 (backoff reset, second restart) did not run here.
+
+correction (added at write-up): the script's "accepted ... ms after readiness" timer starts only after the page-heal checks (failure_flows.js:100-114: tReady, then the Live/card waits, then the sidecar wait), so it is not measured from readiness. From the log timestamps: run 1 ready 05:29:25.503Z, recovery seen 05:30:00.995Z = ~35.5 s; run 2 ready 05:34:34.987Z, recovery seen 05:35:10.189Z = ~35.2 s. The verifier's labels "5036 ms" and "507 ms" are the same timer; its timestamps give 7.1 s (e2e/31-failure-flows-run1.txt:8,12) and 3.2 s (e2e/32-failure-flows-kill-run2.txt:10,14). The explanation above stands: here A became ready after the sidecar's sixth attempt (16-19 s after its fifth failure) had failed, so the next attempt came one 32 s step (+ up to 20% jitter) later; there A was ready before the sixth attempt.

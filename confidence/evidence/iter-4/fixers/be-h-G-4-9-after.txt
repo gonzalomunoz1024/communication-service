@@ -1,0 +1,25 @@
+G-4-9 after: worktree /home/claude/wt4-beh at fcfd473 (all eleven be-h fixes committed on 6c15715). Command: ./gradlew --max-workers=2 --no-daemon check, 2026-11-02: BUILD SUCCESSFUL; test 264 tests, 0 failures, 0 skipped; integrationTest 50 tests, 0 failures, 0 skipped; jacocoTestCoverageVerification passed (LINE 0.9699, minimum 0.92; BRANCH 0.8564, minimum 0.84); spotbugsMain passed.
+
+PASSED  MongoCommunicationEventsAdapterTest > canResumeAfterKnowsWhatTheLogStillHolds()  (1.63 s)
+PASSED  MongoCommunicationEventsAdapterTest > streamAfterWithNothingMissedIsJustLive()  (0.027 s)
+PASSED  MongoCommunicationEventsAdapterTest > emitAppendsUnderTheNextGlobalSequenceNumber()  (0.015 s)
+PASSED  MongoCommunicationEventsAdapterTest > aDatabaseOutageWhileTailingIsOneWarningWhenPollingStopsAndOneInfoWhenItWorksAgain()  (0.194 s)
+PASSED  MongoCommunicationEventsAdapterTest > aPollThatFailsForAnotherReasonIsAWarningEachTime()  (0.007 s)
+PASSED  MongoCommunicationEventsAdapterTest > canResumeAfterIsFalseWhenTheLogIsEmptyButNotCaughtUp()  (0.004 s)
+PASSED  MongoCommunicationEventsAdapterTest > streamAfterReplaysTheGapThenContinuesLiveExactlyOnce()  (0.007 s)
+PASSED  MongoCommunicationEventsAdapterTest > closingTheContextCompletesEveryLiveStream()  (0.006 s)
+PASSED  MongoCommunicationEventsAdapterTest > positionIsZeroUntilTheLogHasBeenRead()  (0.002 s)
+PASSED  MongoCommunicationEventsAdapterTest > emitFailuresAreLoggedNotPropagated()  (0.004 s)
+PASSED  MongoCommunicationEventsAdapterTest > startsAtTheEndOfTheLogAndFansOutOnlyWhatComesAfter()  (0.005 s)
+PASSED  MongoCommunicationEventsAdapterTest > headIsTheEndOfTheLogEvenWhileTheCursorTrailsIt()  (0.003 s)
+
+Live runs below used scratchpad/beh/communication-service-beh.jar; its BOOT-INF/classes are byte-identical to the class files the check compiled from fcfd473 (diff -r, only application.yml extra, and that equals build/resources/main/application.yml).
+Live: fixed jar on :18318 against a private mongo:7.0 (beh-mongo, 127.0.0.1:18310), 'docker stop beh-mongo', about 40 s of outage, then started again (script outage_live.sh):
+beh: beh-mongo stopped at 08:55:28
+beh: beh-mongo started again at 08:56:06
+beh: event log poller lines in the backend log, about 40 s of outage:
+  count: 2
+WARN 23808 --- [communication-service] [3a9390fa6b62a5f] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readP
+INFO 23808 --- [communication-service] [ntLoopGroup-3-5] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll resumed: database reachable again after 7 skipped poll(s)
+
+Before (iteration-3 jar, same script): 7 WARN 'event log poll failed' lines, one per poll, no line when it recovered.

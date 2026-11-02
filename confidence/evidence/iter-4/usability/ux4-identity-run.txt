@@ -1,0 +1,3 @@
+[http://127.0.0.1:3600/] {"requests":["GET /v1/feed?tenantId=…&type=OUTAGE&page=0&size=100 X-Client-Id=communication-frontend","GET /v1/feed/stream?tenantId=…&type=OUTAGE&clientId=communication-frontend X-Client-Id=(none)"]}
+[http://127.0.0.1:3602/] {"requests":["GET /v1/feed?tenantId=…&type=OUTAGE&page=0&size=100 X-Client-Id=communication-frontend","GET /v1/feed/stream?tenantId=…&type=OUTAGE&clientId=communication-frontend X-Client-Id=(none)"]}
+exit 0

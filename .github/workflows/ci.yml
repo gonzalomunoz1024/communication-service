@@ -1,0 +1,140 @@
+# Continuous integration: three independent jobs, one per deliverable. Each job runs the gates a
+# developer can run locally (README "Build gates" and "Continuous integration"), so a red check
+# is always reproducible on a laptop.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The scanner for the images the backend and sidecar jobs build, pinned by digest (docker.io/aquasec/trivy
+# and mirror.gcr.io/aquasec/trivy serve the same digest). Change the tag and the digest together.
+env:
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7
+
+jobs:
+  backend:
+    name: Backend (Gradle check, SBOM scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      # compile with -Werror, unit tests, *IT tests on embedded MongoDB, SpotBugs, JaCoCo threshold, SBOM
+      - name: Gradle check
+        id: check
+        run: ./gradlew check --no-daemon
+      - name: Upload build reports (tests, SpotBugs, JaCoCo, SBOM)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: build/reports/**
+          if-no-files-found: ignore
+      # a critical or high finding in a runtime dependency fails the job
+      - name: Scan the SBOM for known vulnerabilities
+        uses: anchore/scan-action@v6
+        with:
+          sbom: build/reports/cyclonedx/bom.json
+          fail-build: true
+          severity-cutoff: high
+          output-format: table
+      # The image that ships: the root Dockerfile puts the jar on its base image. Built and scanned even
+      # when the SBOM scan failed, so one run reports both; a critical or high finding that has a fix, in
+      # the base image's packages or in the jar, fails the job.
+      - name: Build the image
+        id: image
+        if: ${{ !cancelled() && steps.check.outcome == 'success' }}
+        run: |
+          ./gradlew bootJar --no-daemon
+          docker build -t communication-service:ci .
+      - name: Scan the image for fixable critical or high vulnerabilities
+        if: ${{ !cancelled() && steps.image.outcome == 'success' }}
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
+          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:ci
+
+  frontend:
+    name: Frontend (lint, typecheck, tests, build, audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # runtime dependencies only (react, react-dom); dev-only advisories do not ship
+      - run: npm audit --omit=dev --audit-level=high
+
+  sidecar:
+    name: Sidecar (vet, tests, manifests, govulncheck, image)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sidecar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecar/go.mod
+          # the module has no third-party dependencies, so there is no go.sum to key a cache on
+          cache: false
+      # the manifest tests render the Kustomize snippets and the Helm library and validate them;
+      # pinned to the versions the tests were last run with (kustomize 5.5.0, helm 3.16.3)
+      - uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.5.0"
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      - name: Install kubeconform
+        run: |
+          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+      # gofmt -l lists every file whose formatting differs from gofmt's; any listed file fails the job
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt -l lists files that are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+      - run: go vet ./...
+      # CI=true makes the deploy tests fail instead of skip when kustomize, helm or kubeconform is
+      # missing; -race runs every test under the race detector
+      - run: CI=true go test -race ./...
+      # pinned like the other tools (v1.9.0 needs Go 1.26 or later; go.mod asks for 1.27.3)
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+      - name: Build the image
+        run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
+      # the image that ships, UBI micro and the binary: a critical or high finding that has a fix fails the job
+      - name: Scan the image for fixable critical or high vulnerabilities
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
+          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:ci

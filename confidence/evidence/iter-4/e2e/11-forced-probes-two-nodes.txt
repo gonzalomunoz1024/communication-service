@@ -1,0 +1,9 @@
+## forced probes on two sweeping nodes, run mvz4m6pa (2026-11-02T10:38:52.278Z)
+2026-11-02T10:38:52.338Z PASS F-91 register a pull monitor on a 3 s target (interval 5 s, timeout 5 s) -> 201 :: 201 {"id":"886fc056-6e41-40d9-811c-b0502bc188d9","tenantId":"ve4-forced","service":"slow-mvz4m6pa","url":"http://127.0.0.1:19552/actuator/health","policy":{"publish
+2026-11-02T10:38:52.981Z PASS F-91 the sweeps probe it (B reads lastProbeAt set) :: lastStatus=UNKNOWN lastProbeAt=2026-11-02T10:38:52.832Z
+2026-11-02T10:39:29.921Z PASS F-91 G-4-4: 12 on-demand probes forced alternately on A and B while both sweep every second -> 12/12 answered 200 (iteration 3: 0/30 on one node) :: 200 x12; A:200/3194ms/hits+1 B:200/3093ms/hits+2 A:200/3067ms/hits+2 B:200/3074ms/hits+2 A:200/3049ms/hits+2 B:200/3078ms/hits+2 A:200/3080ms/hits+2 B:200/3068ms/hits+2 A:200/3048ms/hits+2 B:200/3069ms/hits+2 A:200/3053ms/hits+2 B:200/3066ms/hits+2
+2026-11-02T10:39:29.921Z PASS F-91 G-4-4: a forced probe takes one target round trip (about 3 s), not one per retry :: durations ms: 3194,3093,3067,3074,3049,3078,3080,3068,3048,3069,3053,3066
+2026-11-02T10:39:45.421Z PASS F-91 G-4-4: A and B forced at the same instant (5 rounds, 10 probes) while both sweep -> all 200 (a 409 would be the documented persistent conflict) :: A:200/3118ms B:200/3068ms | A:200/3064ms B:200/3056ms | A:200/3052ms B:200/3126ms | A:200/3068ms B:200/3121ms | A:200/3049ms B:200/3070ms
+2026-11-02T10:39:45.428Z PASS F-91 the monitor is still UP with no notice, probed by sweeps and forced probes alike :: state={"lastStatus":"UP","lastReportAt":"2026-11-02T10:39:42.356Z","lastProbeAt":"2026-11-02T10:39:42.356Z","lastSummary":"UP (HTTP 200)","unhealthyStreak":0,"healthyStreak":23,"incidents":0}; target GETs in total=39
+2026-11-02T10:39:45.441Z PASS F-91 DELETE the monitor -> 204 :: 204
+## summary: 7 pass, 0 fail at 2026-11-02T10:39:45.442Z

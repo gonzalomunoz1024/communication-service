@@ -1,0 +1,141 @@
+
+### [04:07:13.435] P1 start the sidecar alone (it owns the network namespace; CS_STARTUP_GRACE=20s so the 'nothing answers' case shows quickly)
+started
+/status after 6 s (no app in the pod yet):
+{
+    "version": "ci-iter2",
+    "service": "payments-api",
+    "tenant": "ux2-sidecar",
+    "instance": "payments-api-7f9c6d5b4-ux2aa",
+    "upSeen": false,
+    "lastReport": {
+        "tenantId": "ux2-sidecar",
+        "service": "payments-api",
+        "status": "UNKNOWN",
+        "message": "starting: waiting for the app to listen",
+        "observedAt": "2026-11-02T04:07:17.181Z",
+        "publisher": "health-sidecar",
+        "instance": {
+            "id": "payments-api-7f9c6d5b4-ux2aa",
+            "namespace": "ux2-ns",
+            "node": "worker-1",
+            "cluster": "sandbox",
+            "version": "1.4.2",
+            "sidecar": "ci-iter2"
+        }
+    },
+    "lastSendAt": "2026-11-02T04:07:17.181885936Z",
+    "reportsSent": 2
+}
+
+### [04:07:19.792] P2 the README's service-side check with nothing answering yet
+[{"id":"2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27","tenantId":"ux2-sidecar","service":"payments-api","policy":{"publisher":"health-sidecar","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":90,"minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","lastReportAt":"2026-11-02T04:07:17.189Z","lastSummary":"UNKNOWN (1 pod starting, none reporting yet)","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-02T04:07:13.947Z","updatedAt":"2026-11-02T04:07:17.189Z","version":2}]
+
+/status after the 20 s grace (README: 'If target is empty after the grace ... set CS_PORT (and CS_PATH)'):
+{
+    "version": "ci-iter2",
+    "service": "payments-api",
+    "tenant": "ux2-sidecar",
+    "instance": "payments-api-7f9c6d5b4-ux2aa",
+    "upSeen": false,
+    "lastReport": {
+        "tenantId": "ux2-sidecar",
+        "service": "payments-api",
+        "status": "UNKNOWN",
+        "message": "no health target found after 20s: no listening port answered; set CS_PORT and CS_PATH",
+        "observedAt": "2026-11-02T04:07:36.687Z",
+        "publisher": "health-sidecar",
+        "instance": {
+            "id": "payments-api-7f9c6d5b4-ux2aa",
+            "namespace": "ux2-ns",
+            "node": "worker-1",
+            "cluster": "sandbox",
+            "version": "1.4.2",
+            "sidecar": "ci-iter2"
+        }
+    },
+    "lastSendAt": "2026-11-02T04:07:36.687008746Z",
+    "reportsSent": 8
+}
+
+### [04:07:37.858] P3 start the app in the same namespace; wait for UP
+app started
+upSeen after ~6 s (True 9)
+{
+    "version": "ci-iter2",
+    "service": "payments-api",
+    "tenant": "ux2-sidecar",
+    "instance": "payments-api-7f9c6d5b4-ux2aa",
+    "target": "http://127.0.0.1:8080/actuator/health",
+    "lastTarget": "http://127.0.0.1:8080/actuator/health",
+    "upSeen": true,
+    "lastReport": {
+        "tenantId": "ux2-sidecar",
+        "service": "payments-api",
+        "status": "UP",
+        "components": {
+            "db": {
+                "details": {
+                    "database": "PostgreSQL"
+                },
+                "status": "UP"
+            },
+            "ping": {
+                "status": "UP"
+            }
+        },
+        "observedAt": "2026-11-02T04:07:40.303Z",
+        "publisher": "health-sidecar",
+        "instance": {
+            "id": "payments-api-7f9c6d5b4-ux2aa",
+            "namespace": "ux2-ns",
+            "node": "worker-1",
+            "cluster": "sandbox",
+
+### [04:07:42.218] P4 README debugging curls (monitor, instances)
+[{"id":"2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27","tenantId":"ux2-sidecar","service":"payments-api","policy":{"publisher":"health-sidecar","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":90,"minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02T04:07:40.310Z","lastSummary":"UP (1 of 1 pod UP)","unhealthyStreak":0,"healthyStreak":1,"incidents":0},"createdAt":"2026-11-02T04:07:13.947Z","updatedAt":"2026-11-02T04:07:40.310Z","version":9}]
+
+monitorId=2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27
+[{"monitorId":"2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27","instanceId":"payments-api-7f9c6d5b4-ux2aa","status":"UP","components":[],"namespace":"ux2-ns","node":"worker-1","cluster":"sandbox","version":"1.4.2","sidecar":"ci-iter2","left":false,"lastSeenAt":"2026-11-02T04:07:40.310Z"}]
+wrong tenant (README cause 2):
+[]
+
+### [04:07:42.322] P5 the app stops listening: docker stop ux2-app
+stopped at 04:07:42.422
+OUTAGE visible in the feed after 7.4 s
+  feed item: OUTAGE MAJOR 'payments-api is down' | body: "Automated health check reported **DOWN** at 2026-11-02T04:07:48.815528360Z (rolled up from the service's pods).\n\n0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux2" | publisher: health-sidecar | externalRef: health:2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27:1
+/status while down:
+{'target': None, 'lastTarget': 'http://127.0.0.1:8080/actuator/health', 'upSeen': True, 'sendError': None, 'reportsSent': 11}
+  lastReport: DOWN 'app is not listening (last target http://127.0.0.1:8080/actuator/health)'
+sidecar log lines since the stop:
+{"time":"2026-11-02T04:07:44.343477713Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T04:07:44.362613075Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+instances while down:
+[{"monitorId":"2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27","instanceId":"payments-api-7f9c6d5b4-ux2aa","status":"DOWN","components":[],"message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)","namespace":"ux2-ns","node":"worker-1","cluster":"sandbox","version":"1.4.2","sidecar":"ci-iter2","left":false,"lastSeenAt":"2026-11-02T04:07:48.815Z"}]
+
+### [04:07:49.846] P6 the SRE's view of the automated notice (private UI :3600)
+{"cards":1,"text":"Feed 1 Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh ACTIVE NOW 1 Active Major Outage health:2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27:1 Updated just now payments-api is down Automated health check reported **DOWN** at 2026-11-02T04:07:48.815528360Z (rolled up from the service's pods). 0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux2aa) This notice is managed automatically and is retired once the service reports healthy again. payments-api Started just now health-sidecar Resolve","links":0}
+
+### [04:07:53.026] P7 the app comes back: docker start ux2-app
+started at 04:07:53.152
+notice gone from the feed after 10.6 s
+/status after recovery:
+{'target': 'http://127.0.0.1:8080/actuator/health', 'lastTarget': 'http://127.0.0.1:8080/actuator/health', 'upSeen': True, 'sendError': None, 'reportsSent': 13}
+  lastReport: UP None
+sidecar log lines since the start:
+{"time":"2026-11-02T04:07:53.303238569Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:07:53.322568217Z","level":"INFO","msg":"reported","status":"UP","message":""}
+
+### [04:08:03.699] P8 whole sidecar log: levels and messages
+levels: {'INFO': 9}
+  ('INFO', 'reported') 5
+  ('INFO', 'health target found') 2
+  ('INFO', 'health sidecar starting') 1
+  ('INFO', 'health target gone; will rediscover') 1
+
+### [04:08:03.780] P9 SIGTERM: last report says leaving
+[{"monitorId":"2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27","instanceId":"payments-api-7f9c6d5b4-ux2aa","status":"UP","components":[],"message":"instance shutting down","namespace":"ux2-ns","node":"worker-1","cluster":"sandbox","version":"1.4.2","sidecar":"ci-iter2","left":true,"lastSeenAt":"2026-11-02T04:08:03.833Z"}]
+{"time":"2026-11-02T04:07:53.322568217Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:08:03.849316815Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T04:08:03.849529558Z","level":"INFO","msg":"health sidecar stopped"}
+cleaned up containers

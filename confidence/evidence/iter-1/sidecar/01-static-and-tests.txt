@@ -1,0 +1,59 @@
+== git HEAD: 0e14838
+== go version: go version go1.24.7 linux/amd64
+== gofmt -l .
+gofmt rc=0 (files listed above, none expected)
+== go vet ./...
+vet rc=0
+== go build ./...
+build rc=0
+== go test -count=1 ./... run 1 (tools on PATH)
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.091s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.377s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.009s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.036s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.451s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.026s
+rc=0
+== go test -count=1 ./... run 2 (tools on PATH)
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.177s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.108s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.011s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.013s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.434s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.037s
+rc=0
+== go test -count=1 ./... run 3 (tools on PATH)
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	2.973s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.094s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.014s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.014s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.445s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.064s
+rc=0
+== go test -count=1 -race ./...
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.800s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.259s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.019s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.100s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.462s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.112s
+rc=0
+== go test -count=1 ./deploy/... WITHOUT kustomize/kubeconform on PATH (expect skips)
+=== RUN   TestNativeComponentKeepsExistingInitContainers
+--- SKIP: TestNativeComponentKeepsExistingInitContainers (0.00s)
+=== RUN   TestClassicComponentAppendsTheContainer
+--- SKIP: TestClassicComponentAppendsTheContainer (0.00s)
+=== RUN   TestBothComponentsShareTheContainerContract
+--- SKIP: TestBothComponentsShareTheContainerContract (0.00s)
+=== RUN   TestManualSnippetSharesTheContainerContract
+    deploy_test.go:267: kubeconform not on PATH; schema validation skipped
+--- PASS: TestManualSnippetSharesTheContainerContract (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.003s
+rc=0
+== test function count
+33

@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a91830158d2ba4acf/frontend
+
+ ❯ src/test/App.test.tsx (1 test | 1 failed) 704ms
+   ❯ App (1)
+     × "View in feed" opens the feed of the tenant that was published to, filtered to that type 702ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+Error: [2mexpect([22m[31melement[39m[2m).toHaveValue([22m[32mother[39m[2m)[22m
+
+Expected the element to have value:
+[32m  other[39m
+Received:
+[31m  acme[39m
+ ❯ src/test/App.test.tsx:80:61
+     78|
+     79|     // the shell now shows tenant "other" with the type filter on Chan…
+     80|     expect(screen.getByRole('textbox', { name: 'Tenant' })).toHaveValu…
+       |                                                             ^
+     81|     expect(screen.getByRole('combobox', { name: 'Type' })).toHaveValue…
+     82|     expect(await screen.findByText('New checkout flow')).toBeInTheDocu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  01:04:00
+   Duration  1.80s (tests 42%, environment 39%, transform 7%, setup 7%, import 5%)
+

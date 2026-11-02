@@ -1,0 +1,14 @@
+{"step": "seed", "at": "2026-11-02T04:14:18.802Z", "status": 201, "text": "{\"id\":\"40318175-823f-45ee-a7d1-c11d18958630\",\"tenantId\":\"ux2-db\",\"publisher\":\"ux2-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Seeded before the database outage\",\"affectedServices\":[\"db-api\"],\"audience\":\"CUSTOMERS", "ms": 341}
+{"step": "before", "at": "2026-11-02T04:14:21.389Z", "cards": 1, "badge": "Live"}
+{"step": "mongo-stopped", "at": "2026-11-02T04:14:21.687Z"}
+{"step": "api-feed-while-down", "at": "2026-11-02T04:14:26.706Z", "status": 503, "text": "{\"error\":\"database unavailable\"}", "ms": 5019}
+{"step": "api-readiness", "at": "2026-11-02T04:14:31.717Z", "status": 503, "text": "{\"status\":\"DOWN\"}", "ms": 5010}
+{"step": "api-liveness", "at": "2026-11-02T04:14:31.728Z", "status": 200, "text": "{\"status\":\"UP\"}"}
+{"step": "api-publish-while-down", "at": "2026-11-02T04:14:36.745Z", "status": 503, "text": "{\"error\":\"database unavailable\"}", "ms": 5017}
+{"step": "ui-feed-while-down", "at": "2026-11-02T04:14:43.840Z", "text": "Feed 1 Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again", "badge": "Live", "cards": 0}
+{"step": "ui-publish-while-down", "at": "2026-11-02T04:14:51.376Z", "banner": "The service is unreachable right now. Check that communication-service is running, then try again."}
+{"step": "mongo-started", "at": "2026-11-02T04:14:51.640Z"}
+{"step": "api-ready-again", "at": "2026-11-02T04:14:53.563Z", "afterMs": 1923}
+{"step": "api-feed-after", "at": "2026-11-02T04:14:53.583Z", "status": 200, "text": "{\"items\":[{\"id\":\"40318175-823f-45ee-a7d1-c11d18958630\",\"tenantId\":\"ux2-db\",\"publisher\":\"ux2-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Seeded before the database outage\",\"affectedServices\":[\"db-api\"],\"audience\":", "ms": 20}
+{"step": "ui-publish-after", "at": "2026-11-02T04:15:26.645Z", "heading": "Outage published", "banner": null}
+{"step": "ui-feed-after", "at": "2026-11-02T04:15:29.725Z", "cards": 2, "badge": "Live", "text": "Feed 2 Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh ACTIVE NOW 2 Active Major Outage Updated just now Publish while the database is down Started just now ux2-oncall Resolve Active Major Outage Updated 1m ago Seeded before the database outage db-api Started 1m ago ux2-oncall Resolve"}

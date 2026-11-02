@@ -1,0 +1,15 @@
+# G-3-20, after the fix: same command (isUnreachable() needs !fromService; the service's 503 with a database reason gets its own sentence)
+# cwd frontend/: npx vitest run --reporter=verbose src/test/errors.test.ts src/test/OutageFeed.test.tsx src/test/PublishOutageForm.test.tsx
+ ✓ src/test/errors.test.ts > explainError > says the service is unreachable for a failed connection or a proxy error 2ms
+ ✓ src/test/errors.test.ts > explainError > passes the service's own words through for a rejection 0ms
+ ✓ src/test/errors.test.ts > explainError > says the service failed, not that it rejected anything, for a 5xx 0ms
+ ✓ src/test/errors.test.ts > explainError > treats the service's own 503 as a failure it explained, not as the service being unreachable 1ms
+ ✓ src/test/errors.test.ts > explainPublishError > leaves every other error to explainError 0ms
+ ✓ src/test/errors.test.ts > client with the service down > keeps the reason of a 503 that carries the service's {"error"} body apart from a proxy's bare 503 1ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line 33ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > says the service cannot reach its database for its own 503, while the badge keeps reporting the stream 47ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service is unreachable instead of quoting a proxy status 214ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service cannot reach its database for its own 503 and keeps the draft editable 151ms
+ Test Files  3 passed (3)
+      Tests  32 passed (32)
+# full suite before commit: npm run lint (exit 0), npm run typecheck (exit 0), npm test -> Test Files 18 passed (18), Tests 145 passed (145)

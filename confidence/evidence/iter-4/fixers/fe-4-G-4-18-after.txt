@@ -1,0 +1,30 @@
+G-4-18 AFTER (fixer FE-4). Frontend with the fix: the error state is wrapped in role=alert, keyed by the count of failed loads
+(useOutageFeed's new 'failures'), and Try again's outcome takes keyboard focus (the next Try again, or the list).
+cd frontend && npx vitest run src/test/OutageFeed.test.tsx --reporter=verbose (exit 0)
+
+✓ src/test/OutageFeed.test.tsx > OutageFeed > shows the connection state, including the reopen attempt
+✓ src/test/OutageFeed.test.tsx > OutageFeed > announces the connection state in a live region of its own, which never repeats the resolve announcement
+✓ src/test/OutageFeed.test.tsx > OutageFeed > says it is waiting for a tenant rather than paused when none is entered, and paused only when switched off
+✓ src/test/OutageFeed.test.tsx > OutageFeed > makes the whole Live-updates row the click target of its switch, at least 24 px tall like the form
+✓ src/test/OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list
+✓ src/test/OutageFeed.test.tsx > OutageFeed > keeps keyboard focus on the page after resolving the only notice
+✓ src/test/OutageFeed.test.tsx > OutageFeed > resolves from the keyboard alone: focus follows the confirmation and lands on the list when the card leaves
+✓ src/test/OutageFeed.test.tsx > OutageFeed > says when the service has more than the first page
+✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an empty feed in terms of what the feed lists
+✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line
+✓ src/test/OutageFeed.test.tsx > OutageFeed > announces a failed load as an alert, a new one for every failed retry, and keeps keyboard focus on Try again
+✓ src/test/OutageFeed.test.tsx > OutageFeed > says the service cannot reach its database for its own 503, and the badge does not say Live beside it
+✓ src/test/OutageFeed.test.tsx > OutageFeed > keeps the error on screen through the reload after the stream comes back, then lists the notices and says Live
+Test Files  1 passed (1)
+Tests  13 passed (13)
+
+Real browser: Chromium via Playwright 1.63 (scratchpad/fe4/scripts/ui-checks.js), iteration-3 jar on :18320 with its own Mongo
+(fe4-mongo). Before = the frontend at 6c15715, no FE-4 fix (Vite :3301); after = c9923b5, all five fixes (Vite :3300).
+A feed page opened while fe4-mongo is stopped, then Try again by keyboard (Enter) and by mouse:
+[after] G-4-18 "Couldn't load the feed" inside a role=alert element: true
+[after] G-4-18 accessibility tree around it: ["- alert:","- paragraph: Couldn't load the feed","- button \"Try again\""]
+[after] G-4-18 Try again (Enter): a new role=alert within 20 s: true (5.3 s); then error on screen true; focus on <button> "Try again"
+[after] G-4-18 Try again (click): a new role=alert within 20 s: true (5.3 s); then error on screen true; focus on <button> "Try again"
+[after] G-4-18 role=alert insertions on that page: ["10.3s Couldn't load the feedThe service cannot reach its database right now ","15.7s Couldn't load the feedThe service cannot reach its database right now ","21.1s Couldn't load the feedThe service cannot reach its database right now "]
+  -> the error state is an alert; each failed retry inserts a new alert (3 in all) and focus stays on Try again.
+Production build, page opened during the outage (fe-4-G-4-17-after.txt): per-second samples: error state visible 25/30, inside role=alert 25/30.

@@ -1,0 +1,83 @@
+G-3-29 AFTER: commit 8f05a42 in the SC-3 worktree (cap 30 s, jitter taken off the step, Run wakes
+for a retry the next tick would carry past 30 s). CI=true, tools on PATH.
+
+## 1. The new test, 20 runs with -race, with its neighbours
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/WARN_app_(a_degraded_status):_one_report_per_probe
+     20     --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app
+     20     --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app
+     20 --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat
+     20 --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap
+     20 --- PASS: TestRunSendsLeavingReportOnShutdown
+     20 --- PASS: TestSendFailuresBackOffAndKeepLatest
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	3.469s
+    agent_test.go:405: waits after a refused attempt: [17.5s 17.2s 16.9s 17s 15.6s 28s 27.2s 25.6s 24.9s 26.9s 25.7s 27.2s 27.8s 29s 17.8s]
+    agent_test.go:412: the first attempt after the service was back came 26.65s after it
+    agent_test.go:405: waits after a refused attempt: [15.1s 15.3s 17.3s 16.2s 15.7s 28s 26.6s 25.6s 28.5s 29.6s 29.3s 26.2s 24.6s 27.9s 17.4s]
+    agent_test.go:412: the first attempt after the service was back came 25.837s after it
+--- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap (0.03s)
+    --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app (0.02s)
+    --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app (0.01s)
+
+## 2. Live, the same run as before-§2: hs-g29-after (built with the fix) against a stub on :18235
+##    with the same 75 s of 503s; sidecar /status on :18233. Both sidecars ran side by side.
+== after (hs-g29-after, built with the fix): 11 POSTs
+  +   1.03s 503 status=UP leaving=False
+  +   2.06s 503 status=UP leaving=False
+  +   4.44s 503 status=UP leaving=False
+  +   8.74s 503 status=UP leaving=False
+  +  16.20s 503 status=UP leaving=False
+  +  29.66s 503 status=UP leaving=False
+  +  58.17s 503 status=UP leaving=False
+  +  86.68s 202 status=UP leaving=False
+  + 117.26s 202 status=UP leaving=False
+  + 147.99s 202 status=UP leaving=False
+  + 170.00s 202 status=UP leaving=True
+  waits after a 503 (s): [1.03, 2.38, 4.3, 7.46, 13.46, 28.51, 28.51]; longest 28.51
+  first POST after the stub accepts again at +75s: +86.68s, 11.68s later, answer 202
+sidecar log, "report failed; will retry" steps: 1s 2s 4s 8s 16s 30s 30s 
+
+## 3. Mutations of the fix in a scratch copy of the worktree, each run 5 times against the new test
+### m1-cap-60s: 5 of 5 runs FAIL
+     10 attempt 9 at +NN came N after the refused one before it, want at most N (the backoff cap)
+     10 attempt 8 at +NN came N after the refused one before it, want at most N (the backoff cap)
+     10 attempt 7 at +NN came N after the refused one before it, want at most N (the backoff cap)
+  e.g. agent_test.go:387: attempt 6 at +1m54.954s came 34.143s after the refused one before it, want at most 30s (the backoff cap)
+### m2-jitter-added: 5 of 5 runs FAIL
+     15 Run waited N, want at most the N interval plus less than 20 % jitter
+     10 attempt 9 at +NN came N after the refused one before it, want at most N (the backoff cap)
+     10 attempt 8 at +NN came N after the refused one before it, want at most N (the backoff cap)
+  e.g. agent_test.go:356: Run waited 18.291883797s, want at most the 15s interval plus less than 20 % jitter
+### m3-no-wake-for-retry: 5 of 5 runs FAIL
+     10 attempt 9 at +NN came N after the refused one before it, want at most N (the backoff cap)
+     10 attempt 8 at +NN came N after the refused one before it, want at most N (the backoff cap)
+     10 attempt 7 at +NN came N after the refused one before it, want at most N (the backoff cap)
+  e.g. agent_test.go:387: attempt 6 at +1m54.332s came 32.206s after the refused one before it, want at most 30s (the backoff cap)
+### m4-no-reset-after-success: 5 of 5 runs FAIL
+     10 after a refusal that followed accepted reports the retry came N later, want the next probe (under N): the steps start again from N after a success
+  e.g. agent_test.go:422: after a refusal that followed accepted reports the retry came 24.822s later, want the next probe (under 18s): the steps start again from 1s after a success
+### m5-failedAt-unset: 5 of 5 runs FAIL
+    105 Run waited N, want at most the N interval plus less than 20 % jitter
+     10 attempt 4 at +N came N after refused attempt 4 in a row, want at least N (the next probe after the N step)
+     10 attempt 3 at +N came N after refused attempt 3 in a row, want at least N (the next probe after the N step)
+  e.g. agent_test.go:356: Run waited 29.229640173s, want at most the 15s interval plus less than 20 % jitter
+### m6-wake-at-cap-not-step: 5 of 5 runs FAIL
+      9 waits at the cap [N N N N N N N N]: want several, varied by the jitter
+      1 waits at the cap [N N N N N N N]: want several, varied by the jitter
+  e.g. agent_test.go:403: waits at the cap [30s 30s 30s 30s 30s 30s 30s 30s]: want several, varied by the jitter
+
+## 4. Gate in the worktree
+$ CI=true go test ./... -race -count=1
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	2.333s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	5.627s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.262s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.019s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.021s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.461s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.139s
+exit 0
+$ gofmt -l .
+(no files listed)
+$ go vet ./...
+vet exit 0

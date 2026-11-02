@@ -1,0 +1,27 @@
+### 3b (rerun with a relative component path): classic component against a Deployment with an existing initContainer and a StatefulSet
+4:components: [component]
+rc=0
+Deployment init: ['db-migrate'] containers: ['payments-api', 'health-sidecar']
+StatefulSet init: [] containers: ['ledger', 'health-sidecar']
+kustomize-classic-sts k8s 1.29.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+kustomize-classic-sts k8s 1.27.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+
+### 5b helm required values: full error text
+-- without endpoint:
+Error: execution error at (payments-api/templates/deployment.yaml:28:12): csHealthSidecar.endpoint is required
+-- without tenant:
+Error: execution error at (payments-api/templates/deployment.yaml:28:12): csHealthSidecar.tenant is required
+
+### 7b kubeconform detail for the native form on 1.27 (expected: restartPolicy unknown before 1.29)
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar/manifests/rendered/kustomize-native.yaml - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/0' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spec/properties/template/properties/spec/properties/initContainers/items/additionalProperties: additionalProperties 'restartPolicy' not allowed
+
+### 3c what the native patch does to an existing initContainers list, shown directly
+34-            path: /actuator/health/readiness
+35-            port: 8080
+36:      initContainers:
+37-      - env:
+38-        - name: POD_NAME
+39-          valueFrom:
+40-            fieldRef:
+41-              fieldPath: metadata.name
+42-        - name: POD_NAMESPACE

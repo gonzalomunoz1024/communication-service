@@ -1,0 +1,23 @@
+start 07:06:19.972 (CS_INTERVAL=45s CS_HEARTBEAT=45s)
+07:06:20.036 first report accepted; the service now refuses connections
+07:09:20.071 the service listens again (after 180 s)
+== requests that reached the stub
+  #00 07:06:19.977         answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #01 07:09:20.335 +180.4s answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+== attempts while refused (WARN lines) and the first accepted after
+refused attempts: 9  steps logged: ['1s', '2s', '4s', '8s', '16s', '30s', '30s', '30s', '30s']
+gaps between refused attempts: [0.9, 1.6, 3.9, 6.4, 13.9, 26.3, 26.5, 28.8]  max: 28.8
+Traceback (most recent call last):
+  File "<stdin>", line 9, in <module>
+TypeError: can't compare offset-naive and offset-aware datetimes
+== /status
+target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 lastSendAt=07:09:20.334 sendError=None
+end 07:10:00.565
+
+== analysis recomputed from the stub lines above and the sidecar log (work/bob.log)
+  refused attempts (WARN lines): 9, steps ['1s', '2s', '4s', '8s', '16s', '30s', '30s', '30s', '30s']
+  attempt times: ['07:07:07.298', '07:07:08.247', '07:07:09.885', '07:07:13.810', '07:07:20.247', '07:07:34.099', '07:08:00.430', '07:08:26.947', '07:08:55.756']
+  first refused attempt 47.3 s after the first accepted report (the 45 s heartbeat rounded to a tick)
+  gaps from each refused attempt to the next attempt: [0.9, 1.6, 3.9, 6.4, 13.9, 26.3, 26.5, 28.8, 24.6]  max 28.8 s (cap 30 s; the interval is 45 s)
+  first accepted attempt: 0.3 s after the service listened again, 24.6 s after the last refused attempt
+  error text of a refused attempt: post http://172.17.0.1:19322/v1/health/reports: Post "http://172.17.0.1:19322/v1/health/reports": dial tcp 172.17.0.1:19322: connect: connec

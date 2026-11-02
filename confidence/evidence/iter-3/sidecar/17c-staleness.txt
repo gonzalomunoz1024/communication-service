@@ -1,0 +1,33 @@
+start 07:13:32.040 (sidecar defaults: CS_INTERVAL 15s, CS_HEARTBEAT 30s; service: instance-stale-after-seconds 90, sweep 1 s)
+PHASE 1: last accepted report 07:14:06.415; the proxy goes down 25 s after it
+  07:14:31.438 proxy DOWN
+  07:14:53.453 proxy UP (outage 22 s)
+  first accepted report after the outage: 07:14:54.012 (0.6 s after the proxy came back; silence since the last accepted one: 47.6 s)
+PHASE 2: last accepted report 07:16:01.158; the proxy goes down 25 s after it, for 100 s
+  07:16:26.181 proxy DOWN
+  07:18:06.197 proxy UP (outage 100 s)
+  first accepted report after the outage: 07:18:22.168 (16.0 s after the proxy came back; silence since the last accepted one: 141.0 s)
+== accepted reports (sidecar 'reported' lines) and the attempts that failed
+{"t":"07:13:32.056","msg":"reported","in":null}
+{"t":"07:14:06.415","msg":"reported","in":null}
+{"t":"07:14:38.166","msg":"report failed; will retry","in":"1s"}
+{"t":"07:14:54.012","msg":"reported","in":null}
+{"t":"07:15:27.481","msg":"reported","in":null}
+{"t":"07:16:01.158","msg":"reported","in":null}
+{"t":"07:16:35.356","msg":"report failed; will retry","in":"1s"}
+{"t":"07:16:51.474","msg":"report failed; will retry","in":"2s"}
+{"t":"07:17:06.734","msg":"report failed; will retry","in":"4s"}
+{"t":"07:17:21.859","msg":"report failed; will retry","in":"8s"}
+{"t":"07:17:37.832","msg":"report failed; will retry","in":"16s"}
+{"t":"07:17:54.622","msg":"report failed; will retry","in":"30s"}
+{"t":"07:18:22.168","msg":"reported","in":null}
+{"t":"07:18:57.359","msg":"reported","in":null}
+== the service's view, each change of status/summary (sampled every second)
+07:13:32.067 UP | UP (1 of 1 pod UP) | notice=-
+07:17:32.200 DOWN | DOWN (1 pod has not reported since 2026-11-02 07:16:01 UTC (stale-app-7f9c6d5b4-x2k4q)) | notice=-
+07:17:33.247 DOWN | DOWN (1 pod has not reported since 2026-11-02 07:16:01 UTC (stale-app-7f9c6d5b4-x2k4q)) | notice=637e3154-d239-4815-9313-afa0af4d91ce
+07:18:22.587 UP | UP (1 of 1 pod UP) | notice=637e3154-d239-4815-9313-afa0af4d91ce
+07:18:58.382 UP | UP (1 of 1 pod UP) | notice=-
+== notices
+  (feed empty)
+end 07:19:08.002

@@ -7,6 +7,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"strconv"
@@ -49,6 +50,8 @@ type Config struct {
 	CAFile string
 	// InsecureSkipVerify disables TLS verification towards the endpoint (local experiments only).
 	InsecureSkipVerify bool
+	// LogLevel is the lowest level logged (CS_LOG_LEVEL); DEBUG adds a line for every report sent.
+	LogLevel slog.Level
 
 	Instance Instance
 }
@@ -111,12 +114,35 @@ func FromEnv(get func(string) string) (Config, error) {
 		}
 		return n
 	}
-	boolean := func(key string) bool {
-		switch strings.ToLower(strings.TrimSpace(get(key))) {
+	// boolean takes true/false, 1/0, yes/no and on/off in any case; anything else is an error
+	// rather than a guess, so a typo stops the sidecar like every other unusable value.
+	boolean := func(key string, def bool) bool {
+		v := strings.TrimSpace(get(key))
+		switch strings.ToLower(v) {
+		case "":
+			return def
 		case "1", "true", "yes", "on":
 			return true
+		case "0", "false", "no", "off":
+			return false
 		}
-		return false
+		errs = append(errs, fmt.Errorf("%s must be true or false (got %q)", key, v))
+		return def
+	}
+	logLevel := func(key string) slog.Level {
+		v := str(key, "info")
+		switch strings.ToLower(v) {
+		case "debug":
+			return slog.LevelDebug
+		case "info":
+			return slog.LevelInfo
+		case "warn":
+			return slog.LevelWarn
+		case "error":
+			return slog.LevelError
+		}
+		errs = append(errs, fmt.Errorf("%s must be debug, info, warn or error (got %q)", key, v))
+		return slog.LevelInfo
 	}
 
 	podName := str("POD_NAME", "")
@@ -139,12 +165,13 @@ func FromEnv(get func(string) string) (Config, error) {
 		Interval:           dur("CS_INTERVAL", 15*time.Second),
 		Heartbeat:          dur("CS_HEARTBEAT", 30*time.Second),
 		ProbeTimeout:       dur("CS_PROBE_TIMEOUT", 3*time.Second),
-		ReportTimeout:      dur("CS_REPORT_TIMEOUT", 5*time.Second),
+		ReportTimeout:      dur("CS_REPORT_TIMEOUT", 10*time.Second),
 		StartupGrace:       dur("CS_STARTUP_GRACE", 5*time.Minute),
 		RetryDelay:         dur("CS_RETRY_DELAY", 2*time.Second),
 		Listen:             str("CS_LISTEN", ":9465"),
 		CAFile:             str("CS_CA_FILE", ""),
-		InsecureSkipVerify: boolean("CS_INSECURE_SKIP_VERIFY"),
+		InsecureSkipVerify: boolean("CS_INSECURE_SKIP_VERIFY", false),
+		LogLevel:           logLevel("CS_LOG_LEVEL"),
 		Instance: Instance{
 			ID:        str("CS_INSTANCE_ID", podName),
 			Namespace: str("POD_NAMESPACE", ""),
@@ -190,6 +217,28 @@ func FromEnv(get func(string) string) (Config, error) {
 	}
 	if cfg.Interval < time.Second {
 		errs = append(errs, errors.New("CS_INTERVAL must be at least 1s"))
+	}
+	// A timeout of 0 or less would mean none at all (net/http and net.Dialer read it so): a probe
+	// or a report that never answers would hold the loop while /healthz stays 200. A heartbeat of 0
+	// or less means nothing either. A retry delay or a grace of 0 turns the second look or the
+	// grace off; only a negative one is refused.
+	for _, d := range []struct {
+		key    string
+		value  time.Duration
+		zeroOK bool
+	}{
+		{"CS_HEARTBEAT", cfg.Heartbeat, false},
+		{"CS_PROBE_TIMEOUT", cfg.ProbeTimeout, false},
+		{"CS_REPORT_TIMEOUT", cfg.ReportTimeout, false},
+		{"CS_RETRY_DELAY", cfg.RetryDelay, true},
+		{"CS_STARTUP_GRACE", cfg.StartupGrace, true},
+	} {
+		switch {
+		case d.zeroOK && d.value < 0:
+			errs = append(errs, fmt.Errorf("%s must not be negative (got %v)", d.key, d.value))
+		case !d.zeroOK && d.value <= 0:
+			errs = append(errs, fmt.Errorf("%s must be more than 0 (got %v)", d.key, d.value))
+		}
 	}
 	if cfg.Heartbeat < cfg.Interval {
 		cfg.Heartbeat = cfg.Interval

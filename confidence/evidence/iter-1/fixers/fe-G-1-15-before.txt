@@ -1,0 +1,400 @@
+
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a91830158d2ba4acf/frontend
+
+ ❯ src/test/App.test.tsx (1 test | 1 failed) 479ms
+   ❯ App (1)
+     × "View in feed" opens the feed of the tenant that was published to, filtered to that type 476ms
+ ❯ src/test/OutageFeed.test.tsx (3 tests | 1 failed) 514ms
+   ❯ OutageFeed (3)
+     × names the filters, announces a resolve and keeps focus on the list 73ms
+ ❯ src/test/PublishOutageForm.test.tsx (7 tests | 2 failed) 2732ms
+   ❯ PublishOutageForm accessibility (2)
+     × names the Type and Severity groups by their visible labels and keeps headings in order 135ms
+     × moves focus to the outcome once published 1172ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+TestingLibraryElementError: Unable to find an accessible element with the role "heading" and name "Outage Notifications"
+
+Here are the accessible roles:
+
+  banner:
+
+  Name "":
+  [36m<header[39m
+    [33mclass[39m=[32m"glass sticky top-0 z-40 border-b border-stroke-light"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Tenant":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Tenant"[39m
+    [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 py-1.5 text-caption px-3 pr-3 font-mono w-28 sm:w-40"[39m
+    [33mplaceholder[39m=[32m"acme"[39m
+    [33mvalue[39m=[32m"acme"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<input[39m
+    [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 py-1.5 text-caption pl-9 pr-3 font-mono"[39m
+    [33mplaceholder[39m=[32m"Any service"[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Switch to dark mode":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Switch to dark mode"[39m
+    [33mclass[39m=[32m"flex shrink-0 items-center justify-center rounded-full text-tertiary h-9 w-9 transition-all duration-150 hover:bg-surface-secondary hover:text-primary active:scale-[0.94] text-secondary"[39m
+    [33mtitle[39m=[32m"Switch to dark mode"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "LoadingRefresh":
+  [36m<button[39m
+    [33maria-busy[39m=[32m"true"[39m
+    [33mclass[39m=[32m"inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150 active:scale-[0.97] disabled:active:scale-100 rounded-full text-secondary hover:bg-surface-secondary hover:text-primary px-3 py-1.5 text-caption"[39m
+    [33mdisabled[39m=[32m""[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  [36m<main[39m
+    [33mclass[39m=[32m"mx-auto w-full max-w-3xl px-4 py-6 sm:px-6"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  tablist:
+
+  Name "Sections":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Sections"[39m
+    [33mclass[39m=[32m"flex flex-wrap gap-1 mb-5"[39m
+    [33mrole[39m=[32m"tablist"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  tab:
+
+  Name "Feed":
+  [36m<button[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors bg-surface-secondary text-primary"[39m
+    [33mdata-tab[39m=[32m"feed"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Publish":
+  [36m<button[39m
+    [33maria-selected[39m=[32m"false"[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors text-secondary hover:text-primary"[39m
+    [33mdata-tab[39m=[32m"publish"[39m
+    [33mrole[39m=[32m"tab"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Type":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Type"[39m
+    [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer appearance-none pl-3 pr-8 py-1.5 text-caption"[39m
+  [36m/>[39m
+
+  Name "Minimum severity":
+  [36m<select[39m
+    [33maria-label[39m=[32m"Minimum severity"[39m
+    [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer appearance-none pl-3 pr-8 py-1.5 text-caption"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  option:
+
+  Name "All types":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Outage":
+  [36m<option[39m
+    [33mvalue[39m=[32m"OUTAGE"[39m
+  [36m/>[39m
+
+  Name "Incident":
+  [36m<option[39m
+    [33mvalue[39m=[32m"INCIDENT"[39m
+  [36m/>[39m
+
+  Name "Maintenance":
+  [36m<option[39m
+    [33mvalue[39m=[32m"MAINTENANCE"[39m
+  [36m/>[39m
+
+  Name "Change":
+  [36m<option[39m
+    [33mvalue[39m=[32m"CHANGE"[39m
+  [36m/>[39m
+
+  Name "Health":
+  [36m<option[39m
+    [33mvalue[39m=[32m"HEALTH"[39m
+  [36m/>[39m
+
+  Name "Any severity":
+  [36m<option[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  Name "Info":
+  [36m<option[39m
+    [33mvalue[39m=[32m"INFO"[39m
+  [36m/>[39m
+
+  Name "Minor":
+  [36m<option[39m
+    [33mvalue[39m=[32m"MINOR"[39m
+  [36m/>[39m
+
+  Name "Major":
+  [36m<option[39m
+    [33mvalue[39m=[32m"MAJOR"[39m
+  [36m/>[39m
+
+  Name "Critical":
+  [36m<option[39m
+    [33mvalue[39m=[32m"CRITICAL"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  switch:
+
+  Name "Live updates":
+  [36m<button[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"Live updates"[39m
+    [33mclass[39m=[32m"relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200 h-[18px] w-[30px] bg-accent"[39m
+    [33mrole[39m=[32m"switch"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  status:
+
+  Name "Loading":
+  [36m<span[39m
+    [33maria-label[39m=[32m"Loading"[39m
+    [33mclass[39m=[32m"inline-block shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"[39m
+    [33mrole[39m=[32m"status"[39m
+    [33mstyle[39m=[32m"width: 13px; height: 13px;"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"min-h-screen bg-surface-secondary"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"glass sticky top-0 z-40 border-b border-stroke-light"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 sm:px-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-0 items-center gap-3"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"flex items-center gap-2.5 text-primary"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"flex h-7 w-7 items-center justify-center rounded-md bg-accent text-white"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"16"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"hidden text-footnote font-semibold leading-tight tracking-tight sm:inline"[39m
+              [36m>[39m
+                [0mOutage Notifications[0m
+              [36m</span>[39m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex justify-center"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-caption text-secondary"[39m
+            [36m>[39m
+              [0mTenant[0m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Tenant"[39m
+                [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 py-1.5 text-caption px-3 pr-3 font-mono w-28 sm:w-40"[39m
+                [33mplaceholder[39m=[32m"acme"[39m
+                [33mvalue[39m=[32m"acme"[39m
+              [36m/>[39m
+            [36m</label>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-0 items-center justify-end gap-1"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Switch to dark mode"[39m
+              [33mclass[39m=[32m"flex shrink-0 items-center justify-center rounded-full text-tertiary h-9 w-9 transition-all duration-150 hover:bg-surface-secondary hover:text-primary active:scale-[0.94] text-secondary"[39m
+              [33mtitle[39m=[32m"Switch to dark mode"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"18"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.7"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"18"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"4"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<main[39m
+        [33mclass[39m=[32m"mx-auto w-full max-w-3xl px-4 py-6 sm:px-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Sections"[39m
+          [33mclass[39m=[32m"flex flex-wrap gap-1 mb-5"[39m
+          [33mrole[39m=[32m"tablist"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-selected[39m=[32m"true"[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors bg-surface-secondary text-primary"[39m
+            [33mdata-tab[39m=[32m"feed"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"0"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"text-accent"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"1.7"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"14"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mFeed[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-selected[39m=[32m"false"[39m
+            [33mclass[39m=[32m"flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors text-secondary hover:text-primary"[39m
+            [33mdata-tab[39m=[32m"publish"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"-1"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"text-tertiary"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"14"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33ms...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/test/App.test.tsx:65:19
+     63|     const user = userEvent.setup()
+     64|     render(<App />)
+     65|     expect(screen.getByRole('heading', { level: 1, name: 'Outage Notif…
+       |                   ^
+     66|     expect(screen.getByRole('textbox', { name: 'Tenant' })).toHaveValu…
+     67|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/test/OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list
+TestingLibraryElementError: Found a label with the text of: Service, however no form control was found associated to that label. Make sure you're using the "for" attribute or "aria-labelledby" attribute correctly.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex flex-col gap-5"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-end gap-3 rounded-lg border border-stroke-light bg-surface-tertiary p-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-1.5 min-w-48 flex-1"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-caption font-medium text-secondary"[39m
+          [36m>[39m
+            [0mService[0m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex flex-col gap-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative w-full"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tertiary"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.7"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+              [36m>[39m
+                [36m<circle[39m

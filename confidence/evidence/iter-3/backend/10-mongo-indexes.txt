@@ -1,0 +1,28 @@
+# F-51: Mongo indexes and schema on the shared database (read-only: docker exec mongo7 mongosh communication)
+
+$ docker exec mongo7 mongosh --quiet communication --eval <getIndexes of 5 collections + counters>
+== communications (1405 documents)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"sweep_activation_idx","key":{"status":1,"startsAt":1}}
+  {"name":"feed_idx","key":{"tenantId":1,"status":1,"startsAt":-1}}
+  {"name":"sweep_expiry_idx","key":{"status":1,"expiresAt":1}}
+  {"name":"affectedServices","key":{"affectedServices":1}}
+  {"name":"external_ref_idx","key":{"tenantId":1,"externalRef":1},"unique":true,"partial":{"externalRef":{"$exists":true}}}
+== communication_events (2100 documents)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"events_tenant_seq_idx","key":{"tenantId":1,"_id":1}}
+  {"name":"events_ttl_idx","key":{"at":1},"expireAfterSeconds":86400}
+== health_monitors (232 documents)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"monitor_tenant_service_idx","key":{"tenantId":1,"service":1},"unique":true}
+== health_instances (262 documents)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"instance_monitor_idx","key":{"monitorId":1,"instanceId":1}}
+  {"name":"instance_ttl_idx","key":{"lastSeenAt":1},"expireAfterSeconds":86400}
+== counters (1 documents)
+  {"name":"_id_","key":{"_id":1}}
+== counters documents
+  {"_id":"communication_events","value":{"high":0,"low":2100,"unsigned":false}}
+== sample communications document keys (one health notice)
+  ["_id","tenantId","publisher","type","severity","severityRank","title","body","affectedServices","audience","status","startsAt","externalRef","createdAt","updatedAt","version","history","_class"]
+exit=0

@@ -23,6 +23,11 @@ class HealthRollupTest {
                 NOW.minusSeconds(seenSecondsAgo));
     }
 
+    private static HealthInstance starting(String id, String message) {
+        return new HealthInstance("m1", id, HealthStatus.UNKNOWN, List.of(), message, null, null, null, null, null,
+                false, NOW);
+    }
+
     private static HealthRollup rollup(HealthInstance... pods) {
         return HealthRollup.of(List.of(pods), STALE_AFTER, null, NOW);
     }
@@ -50,6 +55,24 @@ class HealthRollupTest {
         assertThat(r.message()).isEqualTo("2 pods starting, none reporting yet");
         assertThat(r.live()).isEqualTo(2);
         assertThat(r.tallied()).isZero();
+    }
+
+    @Test
+    void podsThatAreAllStillUnknownLendTheRollupTheFirstOnesOwnWords() {
+        // a sidecar that gave up looking for the app says so; "starting" alone would hide it
+        String gaveUp = "no health target found after 5m0s: no listening port answered; set CS_PORT and CS_PATH";
+        HealthRollup one = rollup(starting("web-1", gaveUp));
+        assertThat(one.status()).isEqualTo(HealthStatus.UNKNOWN);
+        assertThat(one.message()).isEqualTo("1 pod starting, none reporting yet (web-1: " + gaveUp + ")");
+
+        // several: the first by name that says anything, on one line, cut at 160 characters
+        String tooLong = "health target http://10.128.4.17:8080/actuator/health never answered UP since start;\n"
+                + "check CS_PORT, CS_PATH and CS_SCHEME " + "x".repeat(200);
+        HealthRollup three = rollup(starting("web-3", "other words"), starting("web-1", "  "),
+                starting("web-2", tooLong));
+        String oneLine = tooLong.replace('\n', ' ');
+        assertThat(three.message()).isEqualTo("3 pods starting, none reporting yet (web-2: "
+                + oneLine.substring(0, 159) + "\u2026)");
     }
 
     @Test

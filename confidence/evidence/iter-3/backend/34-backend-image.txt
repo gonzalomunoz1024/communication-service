@@ -1,0 +1,31 @@
+# Backend image (root Dockerfile) built from build/libs (sha256 b63ffd4ebfae68c9…), run on :19180 against mongo7 (db vb3_image)
+
+$ docker build -t vb3-backend:test .
+#7 naming to docker.io/library/vb3-backend:test
+#7 naming to docker.io/library/vb3-backend:test done
+#7 unpacking to docker.io/library/vb3-backend:test done
+#7 DONE 0.2s
+exit=0
+
+$ docker image inspect (User, ExposedPorts, Entrypoint, size)
+User=65532:65532 Ports={"8080/tcp":{}} Entrypoint=["java","-jar","/app/app.jar"] Size=335092382
+$ docker run -d --name vb3-backend -p 127.0.0.1:19180:8080 ... -> 0
+http://127.0.0.1:19180/actuator/health/readiness -> 200
+$ docker exec vb3-backend id (distroless: no shell) / docker top
+UID                 PID                 COMMAND
+65532               32467               java
+GET /actuator/health/liveness -> 200 0.009581s
+GET /actuator/health/readiness -> 200 0.016916s
+GET /v1/feed?tenantId=x without X-Client-Id -> {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"} 401
+POST /v1/communications -> 201
+docker stop took 4.42 s; exit code 143
+2026-11-02T07:04:13.624Z  INFO 1 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 7.097 seconds (process running for 
+2026-11-02T07:04:15.196Z  INFO 1 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T07:04:15.198Z  INFO 1 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+
+## Addendum 2026-11-02T07:35:58Z: real exit code of the build
+The 'exit=0' after the first build above is the exit of the trimming pipeline (tail), not of docker build. Re-run:
+$ docker build -q -t vb3-backend:test .
+exit=0 sha256:6ff47b1a586276e1c65f82b653705874415693a318201a6ce9596a6f99a021cd (every layer cached; image created 2026-11-02T06:26:49Z,
+COPY --chown=65532:65532 build/libs/communication-service-*.jar /app/app.jar; build/libs jar sha256 b63ffd4ebfae68c9db31...)
+OS-package scan of this image (Trivy, information only): 07-dependency-scan.txt, scan 2.

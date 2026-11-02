@@ -1,0 +1,19 @@
+start 10:31:14.242 (CS_INTERVAL=45s CS_HEARTBEAT=45s)
+10:31:14.343 first report accepted; the service now refuses connections
+10:34:14.414 the service listens again (after 180 s)
+== requests that reached the stub
+  #00 10:31:14.252         answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #01 10:34:24.431 +190.2s answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+== attempts while refused (WARN lines) and the first accepted after
+refused attempts: 9  steps logged: ['1s', '2s', '4s', '8s', '16s', '30s', '30s', '30s', '30s']
+gaps between refused attempts: [0.9, 1.7, 3.9, 6.7, 15.3, 25.6, 29.4, 26.5]  max: 29.4
+Traceback (most recent call last):
+  File "<stdin>", line 9, in <module>
+TypeError: can't compare offset-naive and offset-aware datetimes
+== G-4-25: INFO 'report delivered again' lines (status, failedAttempts, failingFor) and the INFO lines around them
+{"t":"10:33:56.842","level":"WARN","msg":"report failed; will retry","status":null,"failedAttempts":null,"failingFor":null,"in":"30s"}
+{"t":"10:34:24.431","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":9,"failingFor":"2m17.552s","in":null}
+  count: 1
+== /status
+target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 lastSendAt=10:34:24.429 sendError=None
+end 10:34:55.007

@@ -4,12 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -38,6 +40,8 @@ import com.atlas.communication.health.domain.RegisterMonitorCommand;
 import com.atlas.communication.health.domain.ReportInstance;
 import com.atlas.communication.health.ports.outbound.HealthInstanceRepositoryPort;
 import com.atlas.communication.health.ports.outbound.HealthMonitorRepositoryPort;
+import com.atlas.communication.health.ports.outbound.HealthProbePort;
+import com.atlas.communication.publishing.application.PublishingUseCase;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,9 +51,11 @@ import reactor.test.StepVerifier;
 class HealthMonitorUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-11-01T12:00:00Z");
-    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 300000, 0.3,
-            new HealthProperties.Defaults("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
+    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 300000, 0.3, 2,
+            Duration.ofHours(24), new HealthProperties.Defaults("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
                     Severity.MINOR, Audience.CUSTOMERS, 50, 90));
+    /** What an on-demand probe of the target saw. */
+    private static final HealthReport SEEN = HealthReport.of(HealthStatus.UP, "HTTP 200", HealthSource.PROBE, NOW);
 
     @Mock
     private HealthMonitorRepositoryPort monitors;
@@ -108,7 +114,7 @@ class HealthMonitorUseCaseTest {
         when(observation.observe(any(), any(), eq(NOW))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
         HealthReportCommand cmd = new HealthReportCommand("vmforge", "billing", "DOWN",
-                Map.of("redis", new ActuatorComponent("DOWN", null, null)), "cache lost", null, "billing-svc", null);
+                Map.of("redis", new ActuatorComponent("DOWN", null, null)), null, "cache lost", null, "billing-svc", null);
         StepVerifier.create(useCase.report(cmd))
                 .assertNext(m -> {
                     assertThat(m.pushOnly()).isTrue();
@@ -134,7 +140,7 @@ class HealthMonitorUseCaseTest {
 
         Instant observedAt = NOW.minusSeconds(5);
         StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
-                        null, null, observedAt, null, null)))
+                        null, null, null, observedAt, null, null)))
                 .expectNext(monitor)
                 .verifyComplete();
         verify(monitors, never()).save(any());
@@ -147,13 +153,13 @@ class HealthMonitorUseCaseTest {
     void concurrentFirstPushesConvergeOnTheWinnersMonitor() {
         HealthMonitor winner = existing();
         when(monitors.findByTenantAndService("vmforge", "billing"))
-                .thenReturn(Mono.empty(), Mono.just(winner));
+                .thenReturn(Mono.empty()).thenReturn(Mono.just(winner));
         when(monitors.save(any())).thenReturn(Mono.error(
                 new ResponseStatusException(HttpStatus.CONFLICT, "already exists")));
         when(observation.observe(eq(winner), any(), eq(NOW))).thenReturn(Mono.just(winner));
 
         StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "DOWN",
-                        null, null, null, null, null)))
+                        null, null, null, null, null, null)))
                 .expectNext(winner)
                 .verifyComplete();
     }
@@ -190,6 +196,7 @@ class HealthMonitorUseCaseTest {
                         .isEqualTo(HttpStatus.CONFLICT))
                 .verify();
         verify(observation, never()).probe(any(), any());
+        verify(observation, never()).probeTarget(any(), any());
     }
 
     @Test
@@ -197,9 +204,98 @@ class HealthMonitorUseCaseTest {
         HealthMonitor probed = HealthMonitor.create("m3", "vmforge", "vm-api",
                 "http://vm-api/actuator/health", PROPERTIES.defaults().asPolicy(), NOW);
         when(monitors.findById("m3")).thenReturn(Mono.just(probed));
-        when(observation.probe(probed, NOW)).thenReturn(Mono.just(probed));
+        when(observation.probeTarget(probed, NOW)).thenReturn(Mono.just(SEEN));
+        when(observation.observe(probed, SEEN, NOW)).thenReturn(Mono.just(probed));
 
         StepVerifier.create(useCase.probeNow("m3")).expectNext(probed).verifyComplete();
+    }
+
+    private static HealthMonitor probedMonitor(long version) {
+        HealthMonitor created = HealthMonitor.create("m3", "vmforge", "vm-api",
+                "http://vm-api/actuator/health", PROPERTIES.defaults().asPolicy(), NOW);
+        return new HealthMonitor(created.id(), created.tenantId(), created.service(), created.url(),
+                created.policy(), created.state(), created.createdAt(), created.updatedAt(), version);
+    }
+
+    private static ResponseStatusException modifiedConcurrently() {
+        return new ResponseStatusException(HttpStatus.CONFLICT,
+                "monitor m3 was modified concurrently; reload and retry");
+    }
+
+    @Test
+    void anOnDemandProbeThatLosesTheRaceWithTheSchedulerIsAppliedAgainToTheFreshMonitor() {
+        HealthMonitor stale = probedMonitor(0);
+        HealthMonitor fresh = probedMonitor(1); // what the scheduler saved in the meantime
+        HealthMonitor recorded = probedMonitor(2);
+        when(monitors.findById("m3")).thenReturn(Mono.just(stale)).thenReturn(Mono.just(fresh));
+        when(observation.probeTarget(stale, NOW)).thenReturn(Mono.just(SEEN));
+        when(observation.observe(stale, SEEN, NOW)).thenReturn(Mono.error(modifiedConcurrently()));
+        when(observation.observe(fresh, SEEN, NOW)).thenReturn(Mono.just(recorded));
+
+        StepVerifier.withVirtualTime(() -> useCase.probeNow("m3"))
+                .expectSubscription()
+                .thenAwait(Duration.ofMinutes(1))
+                .expectNext(recorded)
+                .verifyComplete();
+        // the monitor was read again and the observation applied to the fresh copy once: one
+        // observation recorded, not two, and the target probed once
+        verify(monitors, times(2)).findById("m3");
+        verify(observation, times(1)).observe(fresh, SEEN, NOW);
+        verify(observation, times(1)).probeTarget(any(), any());
+    }
+
+    @Test
+    void anOnDemandProbeThatKeepsLosingTheRaceIs409OnceTheRetriesAreUsedUp() {
+        HealthMonitor stale = probedMonitor(0);
+        when(monitors.findById("m3")).thenReturn(Mono.just(stale));
+        when(observation.probeTarget(stale, NOW)).thenReturn(Mono.just(SEEN));
+        when(observation.observe(stale, SEEN, NOW)).thenReturn(Mono.error(modifiedConcurrently()));
+
+        StepVerifier.withVirtualTime(() -> useCase.probeNow("m3"))
+                .expectSubscription()
+                .thenAwait(Duration.ofMinutes(1))
+                .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.CONFLICT))
+                .verify();
+        verify(observation, times(HealthMonitorUseCase.PROBE_ATTEMPTS)).observe(stale, SEEN, NOW);
+        verify(observation, times(1)).probeTarget(any(), any());
+    }
+
+    @Test
+    void anOnDemandProbeThatLosesTheRaceAppliesTheObservationItMadeInsteadOfProbingAgain() {
+        // The scheduler claims its own probe slot (a save) before it probes and saves the result
+        // after, so a slow target's on-demand probe almost always loses the version check: probing
+        // again would lose again. The observation already made is applied to the monitor as the
+        // scheduler left it, with the real observation logic and the stores mocked.
+        HealthProbePort probes = mock(HealthProbePort.class);
+        HealthMonitorUseCase withRealObservation = new HealthMonitorUseCase(monitors, instances,
+                new HealthObservationUseCase(monitors, probes, mock(PublishingUseCase.class)), PROPERTIES,
+                Clock.fixed(NOW, ZoneOffset.UTC));
+        HealthMonitor inHand = probedMonitor(0);
+        HealthMonitor claimedByTheScheduler = probedMonitor(1).withProbeClaimed(NOW.minusMillis(400));
+        when(monitors.findById("m3")).thenReturn(Mono.just(inHand)).thenReturn(Mono.just(claimedByTheScheduler));
+        when(probes.probe(eq(inHand.url()), any(), eq(NOW)))
+                .thenReturn(Mono.just(HealthReport.of(HealthStatus.UP, "HTTP 200", HealthSource.PROBE, NOW)));
+        // Mongo's version check: version 0 is stale, version 1 is current
+        when(monitors.save(any())).thenAnswer(inv -> {
+            HealthMonitor saving = inv.getArgument(0);
+            return saving.version() == 0 ? Mono.error(modifiedConcurrently())
+                    : Mono.just(new HealthMonitor(saving.id(), saving.tenantId(), saving.service(), saving.url(),
+                            saving.policy(), saving.state(), saving.createdAt(), saving.updatedAt(),
+                            saving.version() + 1));
+        });
+
+        StepVerifier.withVirtualTime(() -> withRealObservation.probeNow("m3"))
+                .expectSubscription()
+                .thenAwait(Duration.ofMinutes(1))
+                .assertNext(saved -> {
+                    assertThat(saved.version()).as("saved over the scheduler's claim").isEqualTo(2);
+                    assertThat(saved.state().lastStatus()).isEqualTo(HealthStatus.UP);
+                    assertThat(saved.state().lastProbeAt()).isEqualTo(NOW);
+                })
+                .verifyComplete();
+        verify(probes, times(1)).probe(any(), any(), any());
+        verify(monitors, times(2)).findById("m3");
     }
 
     @Test
@@ -211,7 +307,7 @@ class HealthMonitorUseCaseTest {
     // --- reports that name their instance (the health sidecar) ---
 
     private static HealthReportCommand podReport(String pod, String status, boolean leaving) {
-        return new HealthReportCommand("vmforge", "billing", status, null, null, null, "health-sidecar",
+        return new HealthReportCommand("vmforge", "billing", status, null, null, null, null, "health-sidecar",
                 new ReportInstance(pod, "retail-billing", "worker-1", "ocp-east", "1.4.2", "1.0.0", leaving));
     }
 
@@ -301,12 +397,12 @@ class HealthMonitorUseCaseTest {
     void aConcurrentUpdateIsRetriedWithAFreshMonitor() {
         HealthMonitor monitor = existing();
         when(monitors.findByTenantAndService("vmforge", "billing")).thenReturn(Mono.just(monitor));
-        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
-                Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently")),
-                Mono.just(monitor));
+        when(observation.observe(eq(monitor), any(), eq(NOW)))
+                .thenReturn(Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently")))
+                .thenReturn(Mono.just(monitor));
 
         StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
-                        null, null, null, null, null)))
+                        null, null, null, null, null, null)))
                 .expectNext(monitor)
                 .verifyComplete();
         verify(monitors, times(2)).findByTenantAndService("vmforge", "billing");
@@ -319,12 +415,37 @@ class HealthMonitorUseCaseTest {
         when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
                 Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently")));
 
-        StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
-                        null, null, null, null, null)))
+        // virtual time: the pauses between attempts add up to seconds of real time otherwise
+        StepVerifier.withVirtualTime(() -> useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
+                        null, null, null, null, null, null)))
+                .expectSubscription()
+                .thenAwait(Duration.ofMinutes(1))
                 .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(HttpStatus.CONFLICT))
                 .verify();
         verify(observation, times(HealthMonitorUseCase.REPORT_ATTEMPTS)).observe(eq(monitor), any(), eq(NOW));
+    }
+
+    @Test
+    void conflictingReportsAreRetriedMoreThanThreeTimesWithAPauseInBetween() {
+        HealthMonitor monitor = existing();
+        when(monitors.findByTenantAndService("vmforge", "billing")).thenReturn(Mono.just(monitor));
+        Mono<HealthMonitor> conflict = Mono.error(
+                new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently"));
+        // four pods got there first: the fifth attempt goes through
+        when(observation.observe(eq(monitor), any(), eq(NOW)))
+                .thenReturn(conflict).thenReturn(conflict).thenReturn(conflict).thenReturn(conflict)
+                .thenReturn(Mono.just(monitor));
+
+        StepVerifier.withVirtualTime(() -> useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
+                        null, null, null, null, null, null)))
+                .expectSubscription()
+                // the first retry is not immediate: a herd of pods must spread out
+                .expectNoEvent(Duration.ofMillis(5))
+                .thenAwait(Duration.ofMinutes(1))
+                .expectNext(monitor)
+                .verifyComplete();
+        verify(observation, times(5)).observe(eq(monitor), any(), eq(NOW));
     }
 
     @Test

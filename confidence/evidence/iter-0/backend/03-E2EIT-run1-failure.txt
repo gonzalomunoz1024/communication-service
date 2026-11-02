@@ -1,0 +1,49 @@
+# CommunicationServiceE2EIT run 1: tests=5 failures=1 errors=0 skipped=0 time=2.652s
+
+- publishFeedStreamRetireRoundTrip() passed (1.429s)
+- ticketContracts() passed (0.143s)
+- openApiSpecIsServed() passed (0.847s)
+- reconnectingWithLastEventIdReplaysWhatWasMissed() FAILED (0.121s)
+
+```
+java.lang.AssertionError: Status expected:<200 OK> but was:<500 INTERNAL_SERVER_ERROR>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.reactive.server.StatusAssertions.lambda$assertStatusAndReturn$4(StatusAssertions.java:236)
+	at org.springframework.test.web.reactive.server.ExchangeResult.assertWithDiagnostics(ExchangeResult.java:232)
+	at org.springframework.test.web.reactive.server.StatusAssertions.assertStatusAndReturn(StatusAssertions.java:236)
+	at org.springframework.test.web.reactive.server.StatusAssertions.isOk(StatusAssertions.java:68)
+	at com.atlas.communication.CommunicationServiceE2EIT.reconnectingWithLastEventIdReplaysWhatWasMissed(CommunicationServiceE2EIT.java:148)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+```
+- validationAndConflictContracts() passed (0.105s)
+
+Server-side request details logged by WebTestClient:
+```
+Request details for assertion failure:
+
+> GET http://localhost:32861/v1/feed/stream?tenantId=vmforge&service=vm-api
+> accept-encoding: [gzip]
+> user-agent: [ReactorNetty/1.2.1]
+> host: [localhost:32861]
+> X-Client-Id: [communication-service-tests]
+> WebTestClient-Request-Id: [5]
+> Accept: [text/event-stream]
+> Last-Event-ID: [4]
+> content-length: [0]
+
+No content
+
+< 500 INTERNAL_SERVER_ERROR Internal Server Error
+< transfer-encoding: [chunked]
+< Content-Type: [text/event-stream;charset=UTF-8]
+
+data:{"error":"Due to limitations of the org.bson.Document, you can't add a second 'seq' expression specified as 'seq : Document{{$lte=5}}'; Criteria already contains 'seq : Document{{$gt=4}}'"}
+
+
+
+
+```

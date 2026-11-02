@@ -1,6 +1,11 @@
 package config
 
 import (
+	"fmt"
+	"log/slog"
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -91,6 +96,183 @@ func TestFromEnvOverridesAndValidation(t *testing.T) {
 	for _, want := range []string{"CS_ENDPOINT is required", "CS_TENANT is required", "CS_PORT is required", "CS_INTERVAL"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error %q should mention %q", err, want)
+		}
+	}
+}
+
+// G-3-17: CS_INSECURE_SKIP_VERIFY takes the documented spellings of true and false in any case,
+// empty keeps the default (false), and anything else is a named error joined with the others,
+// so the process exits 2 instead of starting with verification on after a typo.
+func TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly(t *testing.T) {
+	for value, want := range map[string]bool{
+		"": false, "1": true, "true": true, "TRUE": true, "Yes": true, "on": true, " true ": true,
+		"0": false, "false": false, "False": false, "no": false, "OFF": false,
+	} {
+		cfg, err := FromEnv(env(map[string]string{
+			"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+			"POD_NAME": "payments-api-7f9c6d5b4-x2k4q", "CS_INSECURE_SKIP_VERIFY": value,
+		}))
+		if err != nil {
+			t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: unexpected error %v", value, err)
+		} else if cfg.InsecureSkipVerify != want {
+			t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: got %v, want %v", value, cfg.InsecureSkipVerify, want)
+		}
+	}
+	for _, value := range []string{"maybe", "2", "t", "enabled"} {
+		_, err := FromEnv(env(map[string]string{"CS_INSECURE_SKIP_VERIFY": value})) // CS_ENDPOINT and CS_TENANT missing too
+		if err == nil {
+			t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: expected an error", value)
+			continue
+		}
+		for _, want := range []string{`CS_INSECURE_SKIP_VERIFY must be true or false (got "` + value + `")`, "CS_ENDPOINT is required", "CS_TENANT is required"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: error %q should contain %q", value, err, want)
+			}
+		}
+	}
+}
+
+// G-3-15, G-4-23: what a report gets while the service cannot reach its own database depends on
+// how the database fails, and the README states both cases. One that refuses connections makes
+// the service answer 503 "database unavailable" after its server-selection-timeout (5 s), inside
+// the 10 s report timeout, so /status.sendError names that cause. One that hangs holds the call
+// for the service's read-timeout (15 s) and a retried read, about 20 s, past the report timeout,
+// so that report ends as "context deadline exceeded" and is retried. The service's two figures
+// are read from its application.yml (GAP-sidecar3-2: this test hard-coded 5 s as the service's
+// only database timeout and so encoded the README's wrong claim). An explicit CS_REPORT_TIMEOUT
+// still wins.
+func TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts(t *testing.T) {
+	vars := map[string]string{
+		"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+		"POD_NAME": "payments-api-7f9c6d5b4-x2k4q",
+	}
+	cfg, err := FromEnv(env(vars))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	service, err := os.ReadFile("../../../src/main/resources/application.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection := serviceTimeout(t, string(service), "server-selection-timeout")
+	read := serviceTimeout(t, string(service), "read-timeout")
+	if cfg.ReportTimeout != 10*time.Second {
+		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s", cfg.ReportTimeout)
+	}
+	if cfg.ReportTimeout <= selection {
+		t.Errorf("the %v report timeout must outlast the service's %v server-selection-timeout, or a refused database shows as a timeout instead of its 503", cfg.ReportTimeout, selection)
+	}
+	if cfg.ReportTimeout >= read {
+		t.Errorf("the README says a report to a service whose database hangs (%v read-timeout plus a retried read) ends as a timeout; with a %v report timeout it does not", read, cfg.ReportTimeout)
+	}
+	readme, err := os.ReadFile("../../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	section := configurationSection(string(readme))
+	for _, want := range []string{
+		fmt.Sprintf("%d s `server-selection-timeout`", int(selection.Seconds())), "database unavailable",
+		fmt.Sprintf("%d s `read-timeout`", int(read.Seconds())), "context deadline exceeded",
+	} {
+		if !strings.Contains(section, want) {
+			t.Errorf("the README's configuration section should say what a report gets while the service's database refuses connections and while it hangs, with %q", want)
+		}
+	}
+	vars["CS_REPORT_TIMEOUT"] = "3s"
+	if cfg, err := FromEnv(env(vars)); err != nil || cfg.ReportTimeout != 3*time.Second {
+		t.Errorf("an explicit CS_REPORT_TIMEOUT should win: %v %v", cfg.ReportTimeout, err)
+	}
+}
+
+// serviceTimeout reads one of the communication service's database timeouts from its
+// application.yml, written as PT<n>S or <n>s.
+func serviceTimeout(t *testing.T, yml, key string) time.Duration {
+	t.Helper()
+	m := regexp.MustCompile(`(?m)^\s+` + regexp.QuoteMeta(key) + `:\s*(?:PT(\d+)S|(\d+)s)\s*$`).FindStringSubmatch(yml)
+	if m == nil {
+		t.Fatalf("the service's application.yml has no %s of whole seconds", key)
+	}
+	n, err := strconv.Atoi(m[1] + m[2])
+	if err != nil {
+		t.Fatal(err)
+	}
+	return time.Duration(n) * time.Second
+}
+
+// G-4-22 (GAP-sidecar3-1): a timeout or heartbeat of 0 or less, or a negative retry delay or
+// startup grace, is a named error joined with the others, so the process exits 2. A zero
+// CS_REPORT_TIMEOUT or CS_PROBE_TIMEOUT used to mean no timeout at all: a service or app that
+// never answered held the loop while /healthz stayed 200. A retry delay or grace of 0 stays
+// usable (no second look, no grace).
+func TestDurationsTheSidecarCannotUseAreRejected(t *testing.T) {
+	base := func(key, value string) map[string]string {
+		return map[string]string{
+			"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+			"POD_NAME": "payments-api-7f9c6d5b4-x2k4q", key: value,
+		}
+	}
+	for _, tc := range []struct{ key, value, want string }{
+		{"CS_PROBE_TIMEOUT", "0s", "CS_PROBE_TIMEOUT must be more than 0 (got 0s)"},
+		{"CS_PROBE_TIMEOUT", "-1s", "CS_PROBE_TIMEOUT must be more than 0 (got -1s)"},
+		{"CS_REPORT_TIMEOUT", "0s", "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"},
+		{"CS_REPORT_TIMEOUT", "-5s", "CS_REPORT_TIMEOUT must be more than 0 (got -5s)"},
+		{"CS_HEARTBEAT", "0s", "CS_HEARTBEAT must be more than 0 (got 0s)"},
+		{"CS_HEARTBEAT", "-30s", "CS_HEARTBEAT must be more than 0 (got -30s)"},
+		{"CS_RETRY_DELAY", "-2s", "CS_RETRY_DELAY must not be negative (got -2s)"},
+		{"CS_STARTUP_GRACE", "-1m", "CS_STARTUP_GRACE must not be negative (got -1m0s)"},
+	} {
+		_, err := FromEnv(env(base(tc.key, tc.value)))
+		if err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%s=%s: error %v, want one saying %q", tc.key, tc.value, err, tc.want)
+		}
+	}
+	for _, tc := range []struct {
+		key, value string
+		got        func(Config) time.Duration
+		want       time.Duration
+	}{
+		{"CS_RETRY_DELAY", "0", func(c Config) time.Duration { return c.RetryDelay }, 0},
+		{"CS_STARTUP_GRACE", "0s", func(c Config) time.Duration { return c.StartupGrace }, 0},
+		{"CS_PROBE_TIMEOUT", "500ms", func(c Config) time.Duration { return c.ProbeTimeout }, 500 * time.Millisecond},
+		{"CS_REPORT_TIMEOUT", "1s", func(c Config) time.Duration { return c.ReportTimeout }, time.Second},
+		{"CS_HEARTBEAT", "1m", func(c Config) time.Duration { return c.Heartbeat }, time.Minute},
+	} {
+		cfg, err := FromEnv(env(base(tc.key, tc.value)))
+		if err != nil {
+			t.Errorf("%s=%s: unexpected error %v", tc.key, tc.value, err)
+		} else if got := tc.got(cfg); got != tc.want {
+			t.Errorf("%s=%s: got %v, want %v", tc.key, tc.value, got, tc.want)
+		}
+	}
+}
+
+// G-3-14: CS_LOG_LEVEL is the lowest level logged: debug, info, warn or error in any case, info
+// when empty; anything else is a named error joined with the others, so the process exits 2.
+func TestLogLevelIsReadAndValidated(t *testing.T) {
+	for value, want := range map[string]slog.Level{
+		"": slog.LevelInfo, "debug": slog.LevelDebug, " DEBUG ": slog.LevelDebug, "info": slog.LevelInfo,
+		"Warn": slog.LevelWarn, "error": slog.LevelError,
+	} {
+		cfg, err := FromEnv(env(map[string]string{
+			"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+			"POD_NAME": "payments-api-7f9c6d5b4-x2k4q", "CS_LOG_LEVEL": value,
+		}))
+		if err != nil {
+			t.Errorf("CS_LOG_LEVEL=%q: unexpected error %v", value, err)
+		} else if cfg.LogLevel != want {
+			t.Errorf("CS_LOG_LEVEL=%q: level %v, want %v", value, cfg.LogLevel, want)
+		}
+	}
+	for _, value := range []string{"loud", "trace", "warning", "DEBUG+1"} {
+		_, err := FromEnv(env(map[string]string{"CS_LOG_LEVEL": value})) // CS_ENDPOINT and CS_TENANT missing too
+		if err == nil {
+			t.Errorf("CS_LOG_LEVEL=%q: expected an error", value)
+			continue
+		}
+		for _, want := range []string{`CS_LOG_LEVEL must be debug, info, warn or error (got "` + value + `")`, "CS_ENDPOINT is required"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("CS_LOG_LEVEL=%q: error %q should contain %q", value, err, want)
+			}
 		}
 	}
 }

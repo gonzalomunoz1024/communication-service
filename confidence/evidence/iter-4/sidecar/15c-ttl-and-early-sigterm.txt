@@ -1,0 +1,11 @@
+### F-46: indexes of vs4_main.health_instances (a throw-away mongosh client container on the host network; nothing exec'd into mongo7)
+[{"name":"_id_","key":{"_id":1}},{"name":"instance_monitor_idx","key":{"monitorId":1,"instanceId":1}},{"name":"instance_ttl_idx","key":{"lastSeenAt":1},"expireAfterSeconds":86400}]
+exit 0
+### F-76: SIGTERM during the first tick (pinned app that never answers, default 3 s probe timeout); recording stub :19348
+  docker stop returned after 0.19 s, exit 0
+  sidecar log:
+{"t":"10:45:07.292","level":"INFO","msg":"health sidecar starting","status":null,"message":null,"error":""}
+{"t":"10:45:08.429","level":"INFO","msg":"leaving report sent","status":null,"message":null,"error":""}
+{"t":"10:45:08.429","level":"INFO","msg":"health sidecar stopped","status":null,"message":null,"error":""}
+  reports the service received: [{"at":"10:45:08.428","status":"UNKNOWN","message":"instance shutting down","leaving":true}]
+end 10:45:09.089

@@ -1,0 +1,52 @@
+Iteration-3 audit: closed gaps the sampled replays do not reach, checked statically or with read-only commands (09:35-09:40Z; nothing written in the repository)
+
+== G-3-4 (JaCoCo exclusions no longer hide config/**): build.gradle.kts at 4a0e84e
+    val coverageExclusions = listOf(
+        "com/atlas/communication/config/*Config*",
+        "com/atlas/communication/config/*Properties*",
+        "com/atlas/communication/*Application*",
+    )
+    -> only *Config*, *Properties* and *Application* are excluded; GlobalExceptionHandler, the filters and the indicators are measured. jacocoTestCoverageVerification itself not run (outside the Gradle tasks the brief allows); the verifier's ev/01 stands.
+
+== G-3-5 (the scanned SBOM lists the runtime classpath only)
+    build/reports/cyclonedx/bom.json: 87 components; build or test tools among them: none
+    // cyclonedxBom (the file CI scans) aggregates this project's cyclonedxDirectBom.
+    tasks.named<org.cyclonedx.gradle.CyclonedxDirectTask>("cyclonedxDirectBom") {
+        includeConfigs = listOf("runtimeClasspath")
+    }
+
+== G-3-10 (root README names the build's Spring Boot line)
+    README.md:21: - Java 21 · Spring Boot 3.5 · WebFlux (Reactor/Netty) · Reactive MongoDB · Gradle (Kotlin DSL)
+    build.gradle.kts:8: id("org.springframework.boot") version "3.5.16"
+
+== G-3-26 (useTheme covered; 503 body tests): the auditor's coverage run (30-frontend-replays.txt, static 07)
+    src/ui/useTheme.ts:  100% Statements 51/51, 96% Branches 24/25, 100% Functions 18/18, 100% Lines 46/46 
+    (was 60.9 % lines in iteration 2); errors.test.ts +90 lines in 54fead9/05bec99/ad8f6d2 (01-test-weakening-check.txt §C)
+
+== G-3-27 and G-3-28 (the e2e suite: new failure-path specs; lint gate)
+    cd e2e && npm run lint -> exit 0 ; npm run typecheck -> exit 0 (logs: scratchpad audit3/logs/e2e-lint.txt, e2e-typecheck.txt)
+    .github/workflows/e2e.yml:55-56: npm run typecheck / npm run lint
+    npx playwright test --list:
+      01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body
+      01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body
+      01-api-contract.spec.ts:27:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id
+      02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed
+      03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves
+      04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhi
+      05-f76-sidecar-sigterm.spec.ts:7:5 › F-76 F-48 F-91 SIGTERM to the sidecar → a leaving report and exit 0 → the pod is marked left and no notice opens → started again, the pod reports aga
+      06-f39-pull-monitor.spec.ts:37:5 › F-31 F-37 F-39 F-40 F-41 a pull monitor probes the fake app every 5 s: DEGRADED twice → HEALTH notice, DOWN twice → OUTAGE in its place, UP twice → ret
+      07-f92-database-down.spec.ts:6:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why and offers Try again, the open page keeps its stream →
+    Total: 9 tests in 7 files
+    -> specs 05 (SIGTERM), 06 (pull monitor) and 07 (database down) are new in iteration 3 (ac7026a). Of the suite the auditor ran only spec 04 (the G-3-12 mutation, 50-e2e-replays.txt); the verifier's three runs of 27/27 stand for the rest.
+
+== G-3-31 (README states the frozen-database timings that 23-backend-outage-and-gaps.txt measured: 20.05 s read, 15.04 s write, then 5.01 s)
+    README.md: (15 s per socket read); they win over the same options given on the URI. How long a call waits for
+    README.md: its 503 depends on how the database fails. One that refuses connections (stopped, nothing listening
+    README.md: on its port) costs one `server-selection-timeout`: 5 s. One that stops answering on connections
+    README.md: already open (a frozen process, `docker pause`, a network black hole) holds a call for `read-timeout`,
+    README.md: 15 s, and the driver retries a read once, which waits one more `server-selection-timeout`: about 20 s
+    README.md: (15 s for a write, which a standalone server does not retry). Once the driver has given up on such a
+    README.md: server (within 15 s with a paused mongod) later calls get their 503 after 5 s again.
+    README.md: 
+
+== G-3-14 (sidecar log level documented): sidecar/README.md:222 and :249 name CS_LOG_LEVEL=debug; behaviour replayed in 40 (04-config-errors levels) and 60 (usability#52).

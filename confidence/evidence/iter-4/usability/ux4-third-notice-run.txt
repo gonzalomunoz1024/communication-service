@@ -1,0 +1,9 @@
+[n1] {"outcome":"Outage published"}
+[n2-attempt1] {"outcome":"409","banner":"The service rejected this. INC4100001 is already the reference of a notice in tenant ux4-third (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC4100001-2.","suggestion":"INC4100001-2"}
+[n2-attempt2-follows-advice] {"outcome":"Outage published"}
+[n3-attempt1] {"outcome":"409","banner":"The service rejected this. INC4100001 is already the reference of a notice in tenant ux4-third (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC4100001-3.","suggestion":"INC4100001-3"}
+[n3-attempt2-follows-advice] {"outcome":"Outage published"}
+[m1] {"outcome":"Maintenance scheduled"}
+[m2-same-date-ref] {"outcome":"409","banner":"The service rejected this. payments-2026-11-12 is already the External reference of a notice in tenant ux4-third. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as payments-2026-11-13.","suggestion":"payments-2026-11-13"}
+[refs] {"refs":["payments-2026-11-12 SCHEDULED","INC4100001-3 ACTIVE","INC4100001-2 ACTIVE","INC4100001 ACTIVE"]}
+exit 0

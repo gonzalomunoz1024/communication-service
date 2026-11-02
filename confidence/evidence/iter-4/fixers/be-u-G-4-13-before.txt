@@ -1,0 +1,26 @@
+# G-4-13 before: the regression tests on the code before the fix (int4 + G-4-1, G-4-3, G-4-12 = eefec53)
+# ./gradlew --max-workers=2 --no-daemon --continue test --tests '*GlobalExceptionHandlerMessagesTest'
+#   --tests '*RestControllerPublishingAdapterTest' integrationTest --tests '*CommunicationServiceE2EIT'
+# -> BUILD FAILED; 35 unit tests completed, 3 failed; 10 IT tests completed, 1 failed.
+# Every failure is a new test; every existing test in the three classes passes.
+
+GlobalExceptionHandlerMessagesTest tests=17 failures=2 errors=0 skipped=0
+  FAILED everyUnknownFieldOfABodyIsNamedSortedWithTheFieldsOfEachObjectHoldingOne()
+    org.opentest4j.AssertionFailedError: 
+    expected: "unknown fields 'sevrity', 'titel'; known fields: first, severity, slots, title"
+     but was: "unknown field 'titel'; known fields: first, severity, slots, title"
+  FAILED theAnswerAboutUnknownFieldsComesOnceTheRestOfTheBodyBindsSoItNamesThemAll()
+    org.opentest4j.AssertionFailedError: 
+    expected: "severity: 'HUGE' is not one of [MINOR, MAJOR]"
+     but was: "unknown field 'first.ot'; known fields: from, to"
+RestControllerPublishingAdapterTest tests=18 failures=1 errors=0 skipped=0
+  FAILED everyUnknownFieldOfABodyIsNamedInOneAnswerSorted()
+    java.lang.AssertionError: JSON path "$.error" expected:<unknown fields 'expiryAt', 'sevrity'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type> but was:<unknown field 'sevrity'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type>
+CommunicationServiceE2EIT tests=10 failures=1 errors=0 skipped=0
+  FAILED aNoticePutBackWholeNamesEveryFieldAnUpdateDoesNotTakeInOneAnswer()
+    java.lang.AssertionError: JSON path "$.error" expected:<unknown fields 'createdAt', 'externalRef', 'history', 'id', 'publisher', 'status', 'tenantId', 'type', 'updatedAt', 'version'; known fields: actor, affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, ticket, title> but was:<unknown field 'id'; known fields: actor, affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, ticket, title>
+
+# Read: the first unknown field ends the read (RejectUnknownFieldsModule threw UnrecognizedPropertyException
+# at it), so a body with several gets one per round trip; a GET document PUT back whole is refused on 'id'
+# first, then on the next field. A nested unknown field ('first.ot') also ended the read before a later
+# value that does not bind, so the answer could name it while another unknown field ('sevrity') waited.

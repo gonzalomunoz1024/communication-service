@@ -1,0 +1,30 @@
+## kill: SIGKILL backend A under a streaming page (2026-11-02T04:22:15.912Z)
+2026-11-02T04:22:16.536Z PASS F-60 a notice published over HTTP arrives live (gives the page a last event id) :: 330 ms
+2026-11-02T04:22:18.042Z PASS F-61 SIGKILL: the proxy ends the browser's stream and the badge says Reconnecting within a second :: process gone after 1457 ms; Reconnecting after 4 ms
+2026-11-02T04:22:18.280Z PASS F-57 backend down: 'Couldn't load the feed' + 'The service is unreachable right now…' + Try again (not a bare 502) :: Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again
+2026-11-02T04:22:18.386Z PASS F-92 the second node keeps serving while A is dead (publish via B -> 201) :: id=453a0292-c780-4af0-a45f-e010d4342e6d
+2026-11-02T04:22:54.578Z FAIL F-61 G-2-11: every reopen attempt carries ?lastEventId=, delays 1,2,4,8 then capped at 10 s :: attempts=7 gaps(s)=1.6,1.0,2.0,4.0,8.0,10.0,10.0 lastEventIds=,,,,,,
+2026-11-02T04:22:54.619Z PASS F-74 sidecar during the outage: 'report failed; will retry' with growing backoff, /status.sendError set, app unaffected :: fails=1s,2s,4s,8s,16s sendError="post http://172.17.0.1:19501/v1/health/reports: Post "http://172.17.0.1:19501/v1"
+2026-11-02T04:23:01.464Z PASS F-92 backend A restarted and ready :: ready after 6802 ms
+2026-11-02T04:23:03.461Z PASS F-61 the page heals by itself within the 10 s cap after the service is back and shows the notice published meanwhile, no reload :: Live 1878 ms after readiness; card 113 ms later; still 1 card from before
+2026-11-02T04:23:03.527Z FAIL F-20 wire: the successful reopen carried lastEventId and the server replayed the created frame of the notice published via B (exactly once) :: reopen url=/v1/feed/stream?tenantId=ve2-kill-mvyr5v34&clientId=communication-frontend; frames on the resumed stream=snapshot#75,snapshot#75; GET /v1/feed reloads after recovery=1 (the hook reloads once after a reconnect by design)
+2026-11-02T04:23:03.531Z PASS F-61 the replayed notice is shown exactly once (upsert by id) :: cards=1
+2026-11-02T04:23:08.586Z PASS F-74 sidecar recovery: next report accepted, sendError cleared, no notice opened by the outage :: accepted 5036 ms after readiness; monitor UP
+2026-11-02T04:23:12.652Z FAIL F-61 G-2-11: the backoff restarted from 1 s after the successful open (second outage: attempts at ~1 s, ~2 s) :: gaps(s)=3.0,1.0
+2026-11-02T04:23:26.752Z PASS F-92 second restart: ready and the page is Live again :: ready 6779 ms, Live 7305 ms later
+## mongo: stop the database under A and B (2026-11-02T04:23:26.908Z)
+2026-11-02T04:23:38.631Z PASS F-92 G-2-4: GET /v1/feed -> 503 {"error":"database unavailable"} within ~5 s (was 500 after 30 s) :: 503 {"error":"database unavailable"} in 5026 ms
+2026-11-02T04:23:43.645Z PASS F-92 POST -> 503 database unavailable, no driver cluster description in the body :: 503 {"error":"database unavailable"} in 5013 ms
+2026-11-02T04:23:48.661Z PASS F-92 readiness DOWN (503) while Mongo is unreachable, liveness still UP :: readiness 503 {"status":"DOWN"} in 5010 ms; liveness 200
+2026-11-02T04:23:53.693Z PASS F-92 node B answers the same 503 :: 503 in 5031 ms
+2026-11-02T04:23:58.707Z PASS F-92 health report during the outage -> 503 (the sidecar treats it as retryable) :: 503 {"error":"database unavailable"}
+2026-11-02T04:24:03.854Z PASS F-57 UI reload during the outage: 'Couldn't load the feed' with the unreachable wording (a 503 is treated as the service not being there) + Try again :: badge=Live; Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again
+2026-11-02T04:24:23.905Z PASS F-92 stream behaviour during the outage recorded (reopen attempts and their statuses) :: badge now=Live; stream requests since the stop=0 statuses= failed=
+2026-11-02T04:24:23.907Z FAIL F-92 G-2-4 log hygiene: sweeps log one WARN per skipped run without a stack trace; calls log a WARN -> 503; no ERROR storm :: new lines=167 'sweep skipped' WARN=11 '-> 503' WARN=4 ERROR=0 stack-trace lines=74
+2026-11-02T04:24:23.945Z FAIL F-74 sidecar: the 503 is retried with backoff ('report failed; will retry'), nothing permanent :: fails=5 first="post http://172.17.0.1:19501/v1/health/reports: Post "http://172.17.0.1:19501/v1/health/reports": co" in=1s,2s,4s,8s,16s
+2026-11-02T04:24:26.091Z PASS F-92 Mongo back -> API 200 and readiness UP again without a backend restart :: feed 200 after 1866 ms, readiness UP after 17 ms
+2026-11-02T04:24:26.826Z PASS F-92 UI recovers: 'Try again' lists the feed, the badge is Live, a notice published via B arrives live, no page reload :: listed 3 ms, Live 1 ms, live card 619 ms
+2026-11-02T04:24:26.922Z PASS F-74 sidecar reports accepted again, no notice from the database outage :: sendError cleared after 2 ms; monitor UP summary=UP (1 of 1 pod UP)
+2026-11-02T04:24:26.990Z PASS F-92 no uncaught page errors during the failure flows :: 
+## summary: 21 pass, 5 fail at 2026-11-02T04:24:27.077Z
+exit=5

@@ -1,0 +1,33 @@
+# Artifact provenance: what the suite and the private stack ran (2026-11-02T10:53:01Z)
+$ git rev-parse --short HEAD; git log --oneline -6
+d10369b
+d10369b Count iteration 4's commits right: 35 fixes, 39 in all over 6c15715
+aa37365 Describe the iteration-4 verification stack
+ec4cfcb Record iteration 4's fixes: gap, commit, guarding test, gates on the combined code
+1cd3f13 Fix G-4-11: the e2e contract smoke expects the suggested follow-up value in the 409
+48d5e1d Summarise iteration 3: audited scores, what changed, what kept them under 95
+52fa6b8 Record the iteration-3 audit and its evidence
+
+$ git diff --stat 1cd3f13 HEAD -- . ':!confidence'   (empty = no code change after 1cd3f13; aa37365, named in the brief, is one of these confidence-only commits)
+exit=0 lines=0
+
+$ git log -1 -- src/main ; -- frontend/src ; -- sidecar ; -- e2e
+src/main: 4eff8f4 2026-11-02T09:41:18+00:00 Fix G-4-13: name every unknown field of a body in one 400
+frontend/src: 70d21c4 2026-11-02T08:59:55+00:00 Fix G-4-21: suggest the follow-up reference the service names in its 409
+sidecar: 67f0d77 2026-11-02T09:16:38+00:00 Fix G-4-16: cover status words that are only white space in the sidecar's trim table
+e2e: 1cd3f13 2026-11-02T09:55:33+00:00 Fix G-4-11: the e2e contract smoke expects the suggested follow-up value in the 409
+
+$ sha256sum (jar)
+64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9  build/libs/communication-service-0.0.1-SNAPSHOT.jar
+64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9  <scratchpad>/communication-service-iter4.jar
+build/libs jar mtime 2026-11-02 10:05:00.164052359
+
+$ frontend/dist (served by vite preview in the suite and in the private stack)
+2026-11-02 10:05:04.976052645 frontend/dist/assets/index-Df4wR-sk.js
+2026-11-02 10:05:04.979124717 frontend/dist/index.html
+markers of iteration-4 frontend code in the bundle: 'Service degraded' x1 (G-4-17), 'suggestedExternalRef' x4 (G-4-21)
+
+$ docker image inspect (suite images, still present)
+communication-service:e2e id=sha256:8dc2601c5af1833cb51fd9bdd4152b679190b068994edd200ade31297f3ed9d3 created=2026-11-02T09:51:54.598505992Z user=65532:65532 version=<no value>
+health-sidecar:e2e id=sha256:e8cdc472640a0b8c44c3764500cf5889dc77a570633ee4b4d07313e85d221ee8 created=2026-11-02T10:19:31.298323194Z user=1001 version=d10369b
+fakeapp:e2e id=sha256:199ef79b0d40aeab236c637cdc5a80efaed215100d7fc8d6a1dc3f505ad5823f created=2026-11-02T02:48:58.062771498Z user=65532:65532 version=<no value>

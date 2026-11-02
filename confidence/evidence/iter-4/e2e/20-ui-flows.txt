@@ -1,0 +1,47 @@
+## ui flows run mvz4ng1f tenant ve4-ui-mvz4ng1f at 2026-11-02T10:39:51.136Z
+PASS F-60 G-4-17: on a tenant with nothing to show (no frame), the badge says Live only after the stream stayed open about 6 s :: Live 7069 ms after the page was opened
+PASS F-56 the tenant chosen in the header flows into the form :: ve4-ui-mvz4ng1f
+PASS F-56 UI publish -> 201 with X-Client-Id communication-frontend; request body carries ticket + services :: 201 id=2c61392d-66c8-4d67-8500-05217ada6a68 ticket={"system":"servicenow","number":"INC0012345"} externalRef=INC0012345
+PASS F-56 confirmation card 'Outage published' with ticket chip, 'Publish another' and 'View in feed' :: h2#.text-title3 role= text=Outage published
+PASS F-90 second browser context shows the card live, without reload and without re-fetching /v1/feed :: card after 8 ms (from click 237 ms total); feed GETs before=1 after=1
+PASS F-09 the live card carries the services, the publisher and the ticket chip (F-09 UI) :: Active Major Outage INC0012345 Updated just now F-90 card payments failing mvz4ng1f Card payments fail for about a third of requests; retries succeed. checkout-web payments-api Started just now ve4-oncall Resolve
+PASS F-90 consumer GET /v1/feed with the service filter lists it; another service does not :: payments-api=1 other=0
+PASS F-56 'View in feed' switches to the feed tab showing the item under Active now :: http://127.0.0.1:19530/#/feed
+PASS F-56 G-4-19: after 'View in feed' focus is on the results list (not <body>) :: {"tag":"div","tabindex":"-1","holdsCards":true}
+PASS F-62 G-3-22: opening the inline confirmation moves focus into it (not to <body>) :: {"inCard":true,"tag":"input","placeholder":"Resolution note (optional)","text":""}
+PASS F-62 inline confirm names the actor and the tenant ('Resolve as ve4-oncall? … tenant …') :: Active Major Outage INC0012345 Updated just now F-90 card payments failing mvz4ng1f Card payments fail for about a third of requests; retries succeed. checkout-web payments-api Started just now ve4-oncall Resolve as ve4-oncall? It leaves tenant ve4-ui-mvz4ng1f
+PASS F-62 G-4-20: Escape inside the inline confirmation cancels it like Cancel (no POST) and returns focus to the Resolve button :: {"noteFields":0,"focus":"button#_r_3_-action.inline-flex role= text=Resolve","posts":0}
+PASS F-62 resolve posts {actor: publisher, note} -> 200 :: {"actor":"ve4-oncall","note":"fixed by ve4"}
+PASS F-62 card removed at once, resolution announced in the live region, focus not lost to <body> (G-2-10) :: gone after 5 ms announced=true focus=div#.outline-none role= text=All clearNo outage is active for ve4-ui-
+PASS F-90 the watcher loses the card through the retired frame (no reload, no re-fetch) :: gone after 527 ms feed GETs=1
+PASS F-90 API: feed no longer lists it, permalink RETIRED, history holds the note and the actor :: [{"at":"2026-11-02T10:40:07.211Z","actor":"ve4-oncall","action":"ACTIVE -> RETIRED: fixed by ve4"}]
+PASS F-57 G-3-21: duplicate externalRef via the UI -> 409; the banner explains it in the form's terms (INC0012345 is already the reference in this tenant, permanent), the service's own sentence (naming the holder) kept under "What the service said" :: banner="The service rejected this. INC0012345 is already the reference of a notice in tenant ve4-ui-mvz4ng1f (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-3. What the service said" said="What the service saidexternalRef 'INC0012345' is already used by notice 2c61392d-66c8-4d67-8500-05217ada6a68 in tenant ve4-ui-mvz4ng1f. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (f"
+PASS F-57 G-4-11 + G-4-21: with INC0012345-2 taken over HTTP (201), the 409 carries suggestedExternalRef INC0012345-3 and the banner offers exactly that value (the service's, not the local -2) :: HTTP -2 publish=201; 409 body keys=error,suggestedExternalRef suggestedExternalRef=INC0012345-3; banner offers INC0012345-3
+PASS F-57 the form stays editable and focus moves to the banner (G-2-10); (focus after "Publish another" is ui_focus.js: here the confirmation had already left with the tab switch) :: focus now=div#.flex role=alert text=The service rejected this. INC0012345 is
+PASS F-57 G-4-21: the offered value accepted through the form -> 201 with externalRef INC0012345-3 and the ticket INC0012345 kept; confirmation shown :: 201 externalRef=INC0012345-3 ticket={"system":"servicenow","number":"INC0012345"} heading=true
+PASS F-07 malformed incident number: blocked inline before sending (UI mirrors the rule) or surfaced as the 400 text :: POSTs 4->4; form text: separated. Consumers filter the feed by these names. ServiceNow incident Not an incident number; expected INC0012345 Who and where Tenant* The tenant whose feed this lands in
+PASS F-58 default type Outage: 'Active now 2' with the CRITICAL first, no Upcoming section :: Beta outage | Alpha outage query=?tenantId=ve4-ui-mvz4ng1f-feed&type=OUTAGE&page=0&size=100
+PASS F-16 All types: 'Active now 3' + 'Upcoming 1' with the maintenance ('Scheduled', 'Starts in 1d'), query without type= :: Scheduled Info Maintenance Updated just now Alpha maintenance alpha Starts in 24h Expected end in 1d ve4-api Withdraw query=?tenantId=ve4-ui-mvz4ng1f-feed&page=0&size=100
+PASS F-58 Service filter -> only beta items, query carries service=beta :: Beta outage | Beta incident query=?tenantId=ve4-ui-mvz4ng1f-feed&service=beta&page=0&size=100
+PASS F-58 Minimum severity Major -> only the CRITICAL outage, query carries severity=MAJOR :: Beta outage query=?tenantId=ve4-ui-mvz4ng1f-feed&service=beta&severity=MAJOR&page=0&size=100
+PASS F-58 Refresh re-fetches the page :: GETs 5 -> 6
+PASS F-16 a not-started notice offers 'Withdraw', not 'Resolve' :: 
+PASS F-62 Withdraw explains itself and retires the scheduled notice (200, note recorded) :: Scheduled Info Maintenance Updated just now Alpha maintenance alpha Starts in 24h Expected end in 1d ve4-api Withdraw as ve4-oncall? Withdrawing retires it before it starts: tenant ve4-ui-mvz4ng1f-fee
+PASS F-60 curl-publish -> card appears live :: after 527 ms (publish took 17 ms)
+PASS F-60 curl-update -> card text changes live (updated frame) :: after 315 ms
+PASS F-60 curl-retire -> card disappears live (retired frame) :: after 419 ms
+PASS F-60 Live switch off -> 'Paused', no updates arrive; on -> Live again and the missed item arrives through the fresh stream's snapshot :: paused=6ms seenWhilePaused=0 liveAgain=2ms snapshotCard=107ms
+PASS F-02 UI 'Save draft' -> DRAFT, 'Draft saved' without 'View in feed'; invisible in feed and permalink 404 :: status=DRAFT permalink=404
+PASS F-02 POST /publish makes the draft ACTIVE and it shows up in the feed :: 200 ACTIVE
+PASS F-60 G-3-23: with no tenant the badge says 'Waiting for a tenant' (not 'Paused') inside a role=status aria-live=polite region :: waiting=true paused=false region=status/polite
+PASS F-58 G-3-24: typing the tenant key by key (15 keys) -> one GET /v1/feed and one stream, for the whole name :: typing took 7856 ms; GETs=ve4-ui-mvz4ng1f streams=ve4-ui-mvz4ng1f
+PASS F-64 every /v1 fetch carried X-Client-Id communication-frontend; every stream carried ?clientId=; same origin (Vite preview proxy, no CORS) :: fetches=23 streams=15 bad=0/0
+PASS F-64 no failed requests besides the deliberate 409 :: 
+PASS F-90 no console errors or page errors across the flows (Chromium's own 409/aborted-stream lines excluded) :: 
+## summary: 39 pass, 0 fail at 2026-11-02T10:40:57.837Z
+
+## focus checks (scripts/ui_flows.js focus)
+NOTE textboxes whose accessible name is exactly "Tenant" on the Publish tab: 2
+PASS F-56 after publishing, focus is on the confirmation heading; after "Publish another", focus is on the Title field (G-2-10) :: publish=201 afterPublish=h2# role= label= text=Outage published afterAnother=input#_r_1_-title role= label= text= titleId=_r_1_-title
+PASS F-56 "Publish another" keeps tenant and publisher :: 
+## summary: 2 pass, 0 fail

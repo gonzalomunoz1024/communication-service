@@ -1,0 +1,116 @@
+Iteration-3 audit: sidecar replays (18 sampled claims), compared with confidence/evidence/iter-3/sidecar/
+Method: the verifier's scripts (evidence/iter-3/sidecar/scripts) copied to scratchpad/audit3/sc/scripts and re-mapped only for isolation:
+  host ports 193xx -> 197xx, names vs3-* -> au3-s*, image health-sidecar:vs3 -> health-sidecar:au3 (built by 03-image-build.sh from the repo Dockerfile
+  with the same substituted bases), version label 1.0.0-vs3 -> 1.0.0-au3, work folder -> scratchpad/audit3/sc. Private backend :19700 (03/05-backend.sh A,
+  database au3-smain). Run as one chain 08:42:59Z-08:57:24Z, then 20 (re-run), 42, 40, 14, go test x3 and the shared-pod reads 09:00-09:07Z.
+Comparison: diff after normalising clock times, uuids, ports and the vs3/au3 names. Script chain exit codes:
+  04-config-errors exit=0 (55 s) end 08:44:01Z
+  10-lifecycle exit=0 (132 s) end 08:46:13Z
+  12-send-policy exit=0 (84 s) end 08:47:37Z
+  13-variants exit=0 (54 s) end 08:48:31Z
+  15-backend-contract exit=0 (110 s) end 08:50:21Z
+  15b-vocabulary-edges exit=0 (43 s) end 08:51:04Z
+  15c-ttl-and-early-sigterm exit=0 (3 s) end 08:51:07Z
+  17c-staleness exit=0 (343 s) end 08:56:50Z
+  30-restricted-v2 exit=0 (24 s) end 08:57:14Z
+  20-manifests exit=0 (10 s) end 08:57:24Z
+  done 08:57:24Z
+  42-readme exit=0 (108 s) end 09:03:23Z
+  40-security exit=0 (5 s) end 09:04:50Z
+  (20-manifests run 1 exit 0 but its Helm half failed on a missing work/helm folder: an auditor-harness ordering slip, the verifier's folder existed
+   from earlier runs; run 2 at 09:00Z is byte-identical to the verifier's file after vs3->au3. Run 1 kept as logs/20-manifests-run1-harness.txt.)
+
+| # | claim | replay (scratchpad/audit3/sc/logs/...) | result |
+|---|---|---|---|
+| sidecar#04 | G-3-17 closed: maybe/2/enabled -> exit 2 with one ERROR line; 16 spellings start; yes -> verification off, No -> on | 04-config-errors (0 differing lines after normalising), 14-tls: yes sent=1, No sent=0 with x509 unknown authority | MATCH |
+| sidecar#12 | O-1: README L155-156 (33 / 67 req/s) are upper bounds | 42 §G identical (it computes from the verifier's cadence constants); auditor's own 17c heartbeat gaps 34.5, 34.7, 33.1, 32.8 s -> ~30 req/s healthy; a failing cycle is >= 15 s, so <= 67 | MATCH (nuance) |
+| sidecar#17 | O-6: SIGTERM during the first probe -> UNKNOWN, one leaving report | 15c F-76: docker stop 0.08 s, one report UNKNOWN 'instance shutting down' leaving=true | MATCH |
+| sidecar#27 | cmd-9: CI=true go test -count=1 -shuffle=on ./... x3 -> 0/0/0 | 01-go-test-ci-x3: 7/7 packages ok in each run, exit 0, 0, 0 | MATCH |
+| sidecar#33 | cmd-15: 12-send-policy (14 documents, 60 s each) exit 0 | identical levels, summaries, notices, debug lines; sent/60s identical except comp-notserving 19 vs 18 and comp-error 18 vs 17 | MATCH (nuance: +-1 send per minute) |
+| sidecar#38 | cmd-20: 15b-vocabulary-edges exit 0 | identical except a notice id | MATCH (exact) |
+| sidecar#44 | cmd-26: 17c-staleness exit 0 | same sequence: 22 s outage -> no DOWN; 100 s outage -> DOWN 'has not reported since' about 91 s after the last accepted report, notice opened, UP and notice retired after recovery; first accepted report 2.0 s / 19.1 s after the proxy returned (verifier 0.6 / 16.0 s) | MATCH (nuance: backoff timing) |
+| sidecar#46 | cmd-28: 30-restricted-v2 exit 0 | 5 UID/GID choices: identical Uid/Gid/Groups, CapEff 0, NoNewPrivs 1, Seccomp 2, mounts, fds, no shell; VmRSS within 0.3 MB; strace call set identical (SIGURG 2 vs 3) | MATCH |
+| sidecar#49 | cmd-31: 40-security: 0 / 0 / 1 (vuln.go.dev Forbidden) / 1 (requires go1.25) / 000 and 200 | byte-identical apart from the scratch path | MATCH (exact); see 08-security-scans-sidecar-frontend.txt for what a reachable DB shows |
+| sidecar#53 | cmd-35: shared pod read only | 44-shared-pod: /status UP, /healthz 200, User=1000660000:0 read-only CapDrop ALL no-new-privileges, the same 3 INFO log lines | MATCH |
+| sidecar#55 | F-36 PASS | 15 §2 identical (blank/missing status, missing tenantId/service -> 400 naming the field; unknown keys 202); 10 A identical | MATCH |
+| sidecar#56 | F-38 PASS (34 spellings) | 15 §3 identical, every word overall and as a component | MATCH |
+| sidecar#63 | F-70 PASS | 10 B (Actuator DOWN with db DOWN -> DOWN with components) and 12 (WARN -> DEGRADED; component words) identical | MATCH |
+| sidecar#64 | F-71 PASS | 13 CASE 3: CS_PORT+CS_PATH=/ping, tcp, actuator, http targets identical | MATCH |
+| sidecar#68 | F-75 PASS | 42 §D headers identical (X-Client-Id, User-Agent health-sidecar/<version>, Content-Type, Accept); 13 CASE 6 253 accepted / 254 -> 400 permanent, 1 send in 5 s; 15c leaving body. 11-ladder not re-run (bodies equivalent in 13, 15c) | MATCH |
+| sidecar#73 | F-80 PARTIAL (UBI bases unreachable) | 03-image-build identical facts (go1.25.14 static, -trimpath, User=1001, labels); registry.access.redhat.com/v2/ -> 000 from here at 09:05Z | MATCH |
+| sidecar#80 | F-87 PASS | 20 run 2 identical: §1 liveness httpGet /healthz on cs-status every 30 s, no readiness/startup probe, no preStop/grace; §8 identical | MATCH |
+| sidecar#86 | GAP-sidecar3-2 (README:218 vs the service's 15 s read timeout) | ../logs/be-34 (auditor's direct POSTs during docker pause of its own Mongo): 503 after 20.03 s, then 5.02 s, 5.01 s; README:218, application.yml:59 PT15S and README.md:119-124 read as cited | MATCH (exact) |
+
+Differences that are not results:
+- 13-variants CASE 5 prints 000 in both runs (the script moved the flap sidecar off its pod); the verifier re-ran it as 13b, not replayed (not sampled).
+- 42 §D retry classification: in this run the 500 answer was seen (WARN, next try in 30 s), so the 30 s backoff covered the 400/401/202 windows;
+  in the verifier's run the 16 s backoff skipped the 500 window and met 400/401 (ERROR). Both follow README L170-172; the windows are fixed 9 s steps.
+- 42 'live keys' line greps 13b-own-endpoints.txt, which the auditor did not run (grep error in that one line).
+- 14-tls: the per-service tally line works here (the re-mapped port happened to be the stub's control port); the verifier's printed a jq error.
+
+Key lines
+--- 12-send-policy (auditor) ---
+case             document                                                   sent/60s  every?    level   service: lastStatus | summary
+up               {"status":"UP","components":{"db":{"status":"UP"}}}        2         heartbeat   UP | UP (1 of 1 pod UP)
+down             {"status":"DOWN","components":{"db":{"status":"DOWN"}}}    14        every-probe DOWN | DOWN (0 of 1 pod UP (DOWN: down-7f9c6d5b4-x2k4q)): db DOWN
+warn             {"status":"WARN"}                                          14        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: warn-7f9c6d5b4-x2k4q))
+comp-down        {"status":"UP","components":{"db":{"status":"DOWN"},"ping" 18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-down-7f9c6d5b4-x2k4q)): db DOWN
+comp-warn        {"status":"UP","components":{"cache":{"status":"WARN"}}}   18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-warn-7f9c6d5b4-x2k4q)): cache DEGRADED
+comp-nested      {"status":"UP","components":{"db":{"status":"UP","componen 18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-nested-7f9c6d5b4-x2k4q)): db.replica DOWN
+comp-unknown     {"status":"UP","components":{"discovery":{"status":"UNKNOW 2         heartbeat   UP | UP (1 of 1 pod UP)
+comp-pass        {"status":"UP","components":{"a":{"status":"pass"},"b":{"s 2         heartbeat   UP | UP (1 of 1 pod UP)
+comp-fail        {"status":"UP","components":{"a":{"status":"fail"}}}       18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-fail-7f9c6d5b4-x2k4q)): a DOWN
+comp-notserving  {"status":"UP","components":{"a":{"status":"NOT_SERVING"}, 19        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-notserving-7f9c6d5b4-x2k4q)): a DOWN, b DOWN
+comp-error       {"status":"UP","components":{"a":{"status":"error"},"b":{" 18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-error-7f9c6d5b4-x2k4q)): a DOWN, b DOWN
+overall-pass     {"status":"pass","components":{"a":{"status":"PASS"}}}     2         heartbeat   UP | UP (1 of 1 pod UP)
+never-up         (nothing listens; grace 10s)                               2         heartbeat   UNKNOWN | UNKNOWN (1 pod starting, none reporting yet)
+pinned-never-up  (CS_PORT=8080 pinned, app answers DOWN)                    2         heartbeat   UNKNOWN | UNKNOWN (1 pod starting, none reporting yet)
+--- 17c-staleness (auditor) ---
+PHASE 1: last accepted report 08:51:43.826; the proxy goes down 25 s after it
+  08:52:08.859 proxy DOWN
+  08:52:30.883 proxy UP (outage 22 s)
+  first accepted report after the outage: 08:52:32.906 (2.0 s after the proxy came back; silence since the last accepted one: 49.1 s)
+PHASE 2: last accepted report 08:53:40.674; the proxy goes down 25 s after it, for 100 s
+  08:54:05.705 proxy DOWN
+  08:55:45.722 proxy UP (outage 100 s)
+  first accepted report after the outage: 08:56:04.822 (19.1 s after the proxy came back; silence since the last accepted one: 144.1 s)
+== accepted reports (sidecar 'reported' lines) and the attempts that failed
+08:51:09.371 UP | UP (1 of 1 pod UP) | notice=-
+08:55:12.128 DOWN | DOWN (1 pod has not reported since 2026-11-02 08:53:40 UTC (stale-app-7f9c6d5b4-x2k4q)) | notice=-
+08:55:13.145 DOWN | DOWN (1 pod has not reported since 2026-11-02 08:53:40 UTC (stale-app-7f9c6d5b4-x2k4q)) | notice=d7b5e166-05bb-4b76-9a48-ef4aa48eaa7e
+08:56:05.298 UP | UP (1 of 1 pod UP) | notice=d7b5e166-05bb-4b76-9a48-ef4aa48eaa7e
+08:56:37.920 UP | UP (1 of 1 pod UP) | notice=-
+== notices
+--- go test x3 ---
+### run 1 09:05:32Z exit 0 ### run 2 09:05:37Z exit 0 ### run 3 09:05:42Z exit 0 
+--- 40-security (auditor) govulncheck ---
+### govulncheck @latest (what CI runs)
+exit 1
+go: golang.org/x/vuln@v1.9.0 requires go >= 1.26.0; switching to go1.26.10
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1
+### govulncheck @v1.1.4
+exit 1
+/home/claude/communication-service/sidecar/cmd/health-sidecar/main.go:3:1: package requires newer Go version go1.25 (application built with go1.24)
+
+For details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.
+
+exit status 1
+### reachability through the sandbox proxy
+  https://vuln.go.dev/index/db.json.gz -> 000
+  https://proxy.golang.org/golang.org/x/vuln/@v/list -> 200
+--- 14-tls (auditor) ---
+== no-ca (verification on, private CA unknown)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg
+== with-ca (CS_CA_FILE mounted read-only)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg
+== CS_INSECURE_SKIP_VERIFY=yes
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg
+== CS_INSECURE_SKIP_VERIFY=No (must verify)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg
+== TLS 1.1-only endpoint (skip-verify on; MinVersion TLS 1.2)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg
+== dead HTTPS_PROXY, non-loopback endpoint
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg
+== same + NO_PROXY=172.17.0.1
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg

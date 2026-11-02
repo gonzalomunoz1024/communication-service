@@ -1,0 +1,24 @@
+# Gradle on the idle machine (auditor, iteration 4): ./gradlew test --rerun integrationTest --rerun (no clean), main checkout at 42b38e8 (code = 1cd3f13)
+started 11:29:04 (load average, then exit and finish time below)
+3.59 2.39 2.03 2/476 15429 finished exit 0
+11:30:39
+2.73 2.41 2.06 1/478 17163
+BUILD SUCCESSFUL in 1m 34s
+test: 29 classes, tests=270 failures=0 errors=0 skipped=0, suite timestamps 2026-11-02T11:29:18.308Z .. 2026-11-02T11:29:42.842Z
+   HealthObservationUseCaseTest.publishFailureReleasesTheClaim() 0.003 s
+   HealthObservationUseCaseTest.lostClaimRacePublishesNothing() 0.002 s
+   HealthObservationUseCaseTest.openClaimsTheMonitorBeforePublishingAnOutage() 0.002 s
+integrationTest: 9 classes, tests=55 failures=0 errors=0 skipped=0, suite timestamps 2026-11-02T11:29:54.038Z .. 2026-11-02T11:30:23.100Z
+   MongoHealthMonitorRepositoryAdapterIT.staleVersionIsConflict() 0.022 s
+   CommunicationServiceE2EIT.openApiSpecIsServed() 1.303 s
+   MongoCommunicationRepositoryAdapterIT.staleVersionIsConflict() 0.026 s
+
+jar sha256 before the run: 64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9
+jar sha256 after the run:  64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9
+scratchpad communication-service-iter4.jar: 64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9
+scratchpad communication-service-iter3.jar: b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f
+
+Reading:
+- verifier backend cmd-3 (run 3: 0) and cmd-4 (sha 64e07ece... before and after): reproduced; 270 + 55 tests, 0 failures, 0 skipped (the verifier: 270 + 55).
+- openApiSpecIsServed: 1.303 s here on the idle machine; the verifier saw 2.75-3.6 s and one 5.07 s timeout failure (run 2, under load; GAP-backend4-3 attributes the slowdown to springdoc 3). Iteration 3's runs took 1.2-1.6 s, so 'springdoc 3 made it slower' is not reproduced; the flake is load-driven. The test-health deduction for the flake stands as scored.
+- F-42's unit tests (openClaimsTheMonitorBeforePublishingAnOutage, lostClaimRacePublishesNothing, publishFailureReleasesTheClaim) and both staleVersionIsConflict ITs exist and pass.

@@ -1,0 +1,193 @@
+# A: publishing, feed, SSE, admin, client id, errors, OpenAPI on :8080 (iteration-4 code)
+
+Checks: 110/113 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| A-01a | F-01 | PASS | 201 ACTIVE audience=CUSTOMERS; got 201 ACTIVE CUSTOMERS |
+| A-01b | F-01 | PASS | Location=/v1/communications/98149410-643a-401a-9bb9-c146fd001171 |
+| A-01c | F-01 | PASS | future startsAt -> 201 SCHEDULED |
+| A-01d | F-01/F-18 | PASS | stream 200; frames=[('snapshot', '2162'), ('created', '2161'), ('created', '2162'), ('created', '2163')]; created-for-new=1 |
+| A-02a | F-02 | PASS | draft -> 201 DRAFT |
+| A-02b | F-02 | PASS | draft absent from feed (2 items) |
+| A-02c | F-02/F-17 | PASS | permalink of draft -> 404 {'error': 'communication e0118472-2ea9-479e-a50d-524f7b0bff29 not found'} |
+| A-02d | F-02 | PASS | publish draft -> 200 ACTIVE |
+| A-02e | F-02 | PASS | publish again -> 409 {'error': 'only DRAFT communications can be published; e0118472-2ea9-479e-a50d-524f7b0bff29 is ACTIVE'} |
+| A-03a | F-03 | PASS | history=['created (DRAFT)', 'DRAFT -> ACTIVE'] |
+| A-03b | F-03 | PASS | unknown -> 404 {'error': 'communication 9dd276c1-a7af-4149-9597-268728f31bc9 not found'} |
+| A-04a | F-04 | PASS | list total=4 keys=['hasNext', 'items', 'page', 'size', 'totalElements'] |
+| A-04b | F-04 | PASS | status=SCHEDULED -> ['6539f1d3-e87b-4d03-ae25-dc77732390b8'] |
+| A-04c | F-04 | PASS | paging -> items=2 hasNext=True page=0 size=2 |
+| A-05a | F-05 | PASS | PUT title -> 200 version 0->1 history=['created (ACTIVE)', 'updated'] |
+| A-05b | F-05 | PASS | stale version -> 409 {'error': 'expectedVersion 0 does not match current version 1'} |
+| A-05c | F-05 | PASS | missing expectedVersion -> 400 {'error': 'expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since'} |
+| A-06a | F-06 | PASS | retire -> 200 RETIRED last={'at': '2026-11-02T10:22:29.683326261Z', 'actor': 'vb4-admin', 'action': 'ACTIVE -> RETIRED: resolved by test'} |
+| A-06b | F-06 | PASS | idempotent -> 200 history len 3->3 |
+| A-05d | F-05/F-13 | PASS | PUT on RETIRED -> 409 {'error': 'communication 98149410-643a-401a-9bb9-c146fd001171 is RETIRED and can no longer be updated'} |
+| A-06c | F-06 | PASS | retire without body: actor defaults to publisher -> {'at': '2026-11-02T10:22:29.745298827Z', 'actor': 'vb4-sre', 'action': 'ACTIVE -> RETIRED'} |
+| A-07 | F-07 tenantId missing | PASS | 400 {"error": "tenantId: must not be blank"} |
+| A-07 | F-07 publisher missing | PASS | 400 {"error": "publisher: must not be blank"} |
+| A-07 | F-07 title missing | PASS | 400 {"error": "title: must not be blank"} |
+| A-07 | F-07 title too long | PASS | 400 {"error": "title: size must be between 0 and 200"} |
+| A-07 | F-07 body too big | PASS | 400 {"error": "body: size must be between 0 and 16384"} |
+| A-07 | F-07 affectedServices > 20 | PASS | 400 {"error": "affectedServices: size must be between 0 and 20"} |
+| A-07 | F-07 MAINTENANCE without endsAt | PASS | 400 {"error": "MAINTENANCE requires endsAt"} |
+| A-07 | F-07 OUTAGE with INFO severity | PASS | 400 {"error": "OUTAGE requires severity MINOR or higher"} |
+| A-07 | F-07 endsAt before startsAt | PASS | 400 {"error": "endsAt 2030-01-01T00:00:00Z must be after startsAt 2030-01-02T00:00:00Z"} |
+| A-07 | F-07 expiresAt before startsAt | PASS | 400 {"error": "expiresAt 2030-01-01T00:00:00Z must be after startsAt 2030-01-02T00:00:00Z"} |
+| A-07 | F-07 ticket without number | PASS | 400 {"error": "ticket.number: must not be blank"} |
+| A-08 | F-08 | PASS | 201/409({'error': "externalRef 'INC-67555c' is already used by notice 427d1756-68c0-4749-981f-73d883d7f6de in tenant vb4-a-67555c. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC-67555c-2, which is still free) |
+| A-09a | F-09 | PASS | 201 ticket={'system': 'servicenow', 'number': 'INC0077001'} externalRef=INC0077001 |
+| A-09b | F-09 | PASS | no servicenow.instance-url configured on :8080 -> url absent? ticket={'system': 'servicenow', 'number': 'INC0077001'} |
+| A-09c | F-09 | PASS | bad number -> 400 {'error': "ticket.number 'ABC123' is not a ServiceNow incident number (like INC0012345)"} |
+| A-09d | F-09 | PASS | ticket.url ftp -> 400 {'error': 'ticket.url must be an http(s) link'} |
+| A-09e | F-09 | PASS | second notice on same ticket w/o externalRef -> 409 (externalRef defaults to number) |
+| A-09f | F-09 | PASS | with explicit externalRef -> 201 |
+| A-09g | F-09 | PASS | PUT attaches ticket -> 200 {'system': 'servicenow', 'number': 'INC0099999'} history=['created (SCHEDULED)', 'updated', 'ticket attached: INC0099999'] |
+| A-09h | F-09 | PASS | feed item carries ticket: {'system': 'servicenow', 'number': 'INC0077001'} |
+| A-10 | F-10 | PASS | expiresAt=2030-01-01T03:00:00Z |
+| A-10b | F-10 | PASS | startsAt defaults to now -> 2026-11-02T10:22:30.822123196Z ACTIVE |
+| A-11a | F-11 | PASS | history=['created (ACTIVE)', 'updated', 'updated', 'ACTIVE -> RETIRED: done'] |
+| A-11b | F-11 | PASS | after 60 updates history len=50 |
+| A-11c | F-11 | PASS | actor fallback -> {'at': '2026-11-02T10:22:32.868805155Z', 'actor': 'p', 'action': 'ACTIVE -> RETIRED: no actor given, publisher p'} |
+| A-12 | F-12 | PASS | 8 parallel PUTs same expectedVersion -> [200, 409, 409, 409, 409, 409, 409, 409] |
+| A-13a | F-13 | PASS | DRAFT -> RETIRED: 200 RETIRED |
+| A-13b | F-13 | PASS | SCHEDULED -> RETIRED: 200 |
+| A-15a | F-15 | PASS | permalink status after expiry (before sweep) = EXPIRED |
+| A-15b | F-15 | PASS | expired item absent from feed before the 30s sweeper |
+| A-13c | F-13/F-06 | PASS | retire an expired item -> 409 {'error': 'communication fda2abe7-f81b-445f-8a26-ab966483ead1 already expired; retiring would rewrite history'} (stored status was EXPIRED) |
+| A-14a | F-14/F-16 | PASS | default feed (sorted severity desc): ['o-crit', 'i-major', 'o-minor', 'm-upcoming', 'c-info'] |
+| A-14a2 | F-14 | PASS | severity ordering CRITICAL>MAJOR>MINOR>INFO: ['o-crit', 'i-major', 'o-minor', 'm-upcoming', 'c-info'] |
+| A-14b | F-14 | PASS | service=pay -> ['o-crit', 'o-minor', 'c-info'] |
+| A-14c | F-14 | PASS | type=INCIDENT -> ['i-major'] |
+| A-14d | F-14 | PASS | severity>=MAJOR -> ['o-crit', 'i-major'] |
+| A-14e | F-14 | PASS | audience=INTERNAL -> ['i-major'] |
+| A-16a | F-16 | PASS | includeUpcoming=false -> ['o-crit', 'i-major', 'o-minor', 'c-info'] |
+| A-16b | F-16 | PASS | upcoming maintenance shown, future outage hidden -> ['o-crit', 'i-major', 'o-minor', 'm-upcoming', 'c-info'] |
+| A-14f | F-14/F-15 | PASS | activeAt=+1d shows the future outage: ['o-crit', 'o-future-hidden', 'i-major', 'o-minor', 'm-upcoming', 'c-info'] |
+| A-14g | F-14 | PASS | size=500 -> size=100 |
+| A-14h | F-14 | PASS | page=-1 -> 400 {'error': 'page must be >= 0'} |
+| A-14i | F-14 | PASS | size=0 -> 400 {'error': 'size must be >= 1'} |
+| A-14j | F-14 | PASS | missing tenantId -> 400 {'error': "Required query parameter 'tenantId' is not present."} |
+| A-14k | F-14 | PASS | blank tenantId -> 400 {'error': 'tenantId is required'} |
+| A-14l | F-14 | PASS | paging math: total=5 hasNext=True |
+| A-14m | F-14 FeedItem shape | PASS | feed item keys=['affectedServices', 'audience', 'id', 'publisher', 'severity', 'startsAt', 'status', 'tenantId', 'title', 'type', 'updatedAt'] |
+| A-17a | F-17 | PASS | retired permalink -> 200 RETIRED |
+| A-17b | F-17 | PASS | unknown -> 404 {'error': 'communication d8de1b26-738a-49e5-b745-65ae6c8f8947 not found'} |
+| A-18a | F-18 | PASS | first frame is snapshot of pre-existing: ['snapshot:2c3cae27', 'created:2c3cae27'] |
+| A-18b | F-18 | FAIL | live frame names in order: ['snapshot', 'created', 'created', 'updated', 'retired'] |
+| A-18c | F-18 | PASS | ids monotonic: [2255, 2255, 2256, 2258, 2259] |
+| A-18d | F-18 payload | PASS | frame payload keys=['at', 'communication', 'seq', 'type'] |
+| A-19 | F-19 | PASS | filtering: A=['snapshot:2c3cae27', 'created:2c3cae27', 'created:2d02f0c7', 'updated:2d02f0c7', 'retired:2d02f0c7'] B=['created:df96c2cc'] |
+| A-20a | F-20 | PASS | reconnect with Last-Event-ID=2255 -> HTTP 200 [{'id': '2256', 'event': 'created', 'data': '{"seq":2256,"type":"CREATED","at":"2026-11-02T10:22:37.607Z","communication":{"id":"2d02f0c7-6060-4970-aafd-3b767293531c","tenantId":"vb4-sse-67555c","publisher":"p","type":"OUTAGE","severity":"MAJOR","title": |
+| A-20b | F-20 | FAIL | replayed frames: ['created', 'updated', 'retired'] |
+| A-20c | F-20 | FAIL | ?lastEventId= -> 200 ['created', 'updated', 'retired'] |
+| A-20d | F-20 | PASS | unknown id falls back to snapshot: 200 ['snapshot', 'snapshot'] |
+| A-20e | F-20 | PASS | non-numeric header ignored -> 200 ['snapshot', 'snapshot'] |
+| A-18e | F-18 | PASS | keepalive comments in 17s: [':connected', ':keepalive'] frames=0 |
+| A-23a | F-23 | PASS | admin search retired in vb4-a-67555c: 6 items, history present |
+| A-23b | F-23 | PASS | cross-tenant by publisher: tenants=['vb4-a-67555c', 'vb4-a2-67555c'] |
+| A-23c | F-23 | PASS | from=2030 -> 0 |
+| A-23d | F-23 | PASS | status set filter -> ['RETIRED'] total=6 |
+| A-24 | F-24 | PASS | tenant summary [{'tenantId': 'vb4-a-67555c', 'counts': {'SCHEDULED': 1, 'ACTIVE': 6, 'EXPIRED': 1, 'RETIRED': 6}, 'total': 14}] vs stored statuses in Mongo {'EXPIRED': 1, 'ACTIVE': 6, 'RETIRED': 6, 'SCHEDULED': 1}; listing total=14 effective={'RETIRED': 6, 'EXPIRED': 1, 'ACTIVE': 6, 'SCHEDULED': 1}; |
+| A-25 | F-25 | PASS | admin retire -> 200 RETIRED stream=['snapshot', 'snapshot', 'created', 'retired'] |
+| A-26 | F-26 | PASS | purge -> 204; GET -> 404; purge again -> 404 {'error': 'communication 7e36fb7d-31d1-4f37-9a0d-5b1d4af72e5c not found'} |
+| A-27a | F-27 | PASS | no header -> 401 {'error': 'missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)'} |
+| A-27b | F-27 | PASS | 'bad id!' -> 400 {'error': "X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"} |
+| A-27c | F-27 | PASS | 101 chars -> 400 |
+| A-27d | F-27 | PASS | ?clientId= on a plain GET -> 200 |
+| A-27e | F-27 | PASS | stream with ?clientId= and no header -> 200 |
+| A-27e2 | F-27 | PASS | stream with header -> 200 |
+| A-27f | F-27 | PASS | stream without any id -> 401 b'{"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?' |
+| A-27g | F-27 | PASS | OPTIONS without header exempt -> 200 |
+| A-27h | F-27 | PASS | /v3/api-docs without header -> 200 |
+| A-27i | F-27 | PASS | /swagger-ui.html without header -> 200 |
+| A-27j | F-27 | PASS | POST /v1/health/reports without header -> 401 |
+| A-27k | F-27 | PASS | admin without header -> 401 |
+| A-28a | F-28 | PASS | invalid enum -> 400 {"error":"type: 'NOPE' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"} |
+| A-28b | F-28 | PASS | malformed JSON -> 400 {"error":"malformed JSON at line 1, column 2: Unexpected character ('n' (code 110)): was expecting double-quote to start property name"} |
+| A-28c | F-28/G-3-8 (iteration-3 behaviour change: unknown fields on publish are a 400) | PASS | unknown JSON field -> 400 {"error":"unknown field 'unknownField'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"} |
+| A-28d | F-28 | PASS | page=abc -> 400 {"error":"page: 'abc' is not a number"} |
+| A-28e | F-28 | PASS | unknown /v1 route -> 404 {"error":"no such endpoint: GET /v1/nope (the API is documented at /swagger-ui.html)"} |
+| A-28f | F-28 | PASS | wrong content type -> 415 {"error":"Content-Type 'text/plain' is not supported here; send application/json or application/*+json or application/x-ndjson"} |
+| A-28g | F-28 | PASS | PATCH -> 405 {"error":"PATCH is not allowed on /v1/communications/98149410-643a-401a-9bb9-c146fd001171; allowed: GET, PUT"} |
+| A-28h | F-28 | PASS | invalid enum in body -> 400 {"error":"severity: 'HUGE' is not one of [INFO, MINOR, MAJOR, CRITICAL]"} |
+| A-28i | F-28 | PASS | invalid date in body -> 400 {"error":"startsAt: 'yesterday' is not an ISO-8601 UTC timestamp like 2026-11-01T12:00:00Z"} |
+| A-29a | F-29 | PASS | api-docs paths=16 missing=[] extra=[] |
+| A-29b | F-29 | PASS | securitySchemes={'X-Client-Id': {'type': 'apiKey', 'description': 'Click Authorize and paste the repository name of the system you are calling from (e.g. vmforge-tools). Required on every /v1 request; identification only, nothing is verified. EventSource clients send ?clientId= instead.', 'name': 'X |
+| A-29c | F-29 | PASS | swagger ui index -> 200 |
+| A-30 | F-30 | PASS | /actuator/health -> 200 (Actuator present since iteration 1; the iteration-0 matrix text is outdated) |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "api degraded", "affectedServices": ["svc-a"]} -> 201 {"id":"98149410-643a-401a-9bb9-c146fd001171","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"api degraded","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:22:24.687137524Z","createdAt":"2026-11-02T10:22:24.687137524Z","updatedAt":"2026-11-02T10:22:24.687137524Z","version":0,"history":[{"at":"2026-11-02T10:2
+  [PASS] A-01a (F-01): 201 ACTIVE audience=CUSTOMERS; got 201 ACTIVE CUSTOMERS
+  [PASS] A-01b (F-01): Location=/v1/communications/98149410-643a-401a-9bb9-c146fd001171
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "future outage", "affectedServices": ["svc-a"], "startsAt": "2026-11-02T11:22:24Z"} -> 201 {"id":"6539f1d3-e87b-4d03-ae25-dc77732390b8","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-02T11:22:24Z","createdAt":"2026-11-02T10:22:24.704881081Z","updatedAt":"2026-11-02T10:22:24.704881081Z","version":0,"history":[{"at":"2026-11-02T10:22:24.7
+  [PASS] A-01c (F-01): future startsAt -> 201 SCHEDULED
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "live created", "affectedServices": ["svc-a"], "externalRef": "live-67555c"} -> 201 {"id":"b685a076-3163-45b3-b987-f7ac86c68e35","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"live created","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:22:25.934956345Z","externalRef":"live-67555c","createdAt":"2026-11-02T10:22:25.934956345Z","updatedAt":"2026-11-02T10:22:25.934956345Z","version":0,"hist
+SSE http://localhost:8080/v1/feed/stream?tenantId=vb4-a-67555c hdr=None -> 200, 4 frames, 1 comments
+  [PASS] A-01d (F-01/F-18): stream 200; frames=[('snapshot', '2162'), ('created', '2161'), ('created', '2162'), ('created', '2163')]; created-for-new=1
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "draft one", "affectedServices": ["svc-a"], "draft": true} -> 201 {"id":"e0118472-2ea9-479e-a50d-524f7b0bff29","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"draft one","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"DRAFT","startsAt":"2026-11-02T10:22:28.781479540Z","createdAt":"2026-11-02T10:22:28.781479540Z","updatedAt":"2026-11-02T10:22:28.781479540Z","version":0,"history":[{"at":"2026-11-02T10:22:28
+  [PASS] A-02a (F-02): draft -> 201 DRAFT
+GET http://localhost:8080/v1/feed?tenantId=vb4-a-67555c body= -> 200 {"items":[{"id":"b685a076-3163-45b3-b987-f7ac86c68e35","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"live created","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:22:25.934Z","externalRef":"live-67555c","updatedAt":"2026-11-02T10:22:25.934Z"},{"id":"98149410-643a-401a-9bb9-c146fd001171","tenantId":"vb4-a-
+  [PASS] A-02b (F-02): draft absent from feed (2 items)
+GET http://localhost:8080/v1/feed/e0118472-2ea9-479e-a50d-524f7b0bff29 body= -> 404 {"error":"communication e0118472-2ea9-479e-a50d-524f7b0bff29 not found"}
+  [PASS] A-02c (F-02/F-17): permalink of draft -> 404 {'error': 'communication e0118472-2ea9-479e-a50d-524f7b0bff29 not found'}
+POST http://localhost:8080/v1/communications/e0118472-2ea9-479e-a50d-524f7b0bff29/publish body= -> 200 {"id":"e0118472-2ea9-479e-a50d-524f7b0bff29","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"draft one","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:22:28.781Z","createdAt":"2026-11-02T10:22:28.781Z","updatedAt":"2026-11-02T10:22:29.048352199Z","version":1,"history":[{"at":"2026-11-02T10:22:28.781Z","act
+  [PASS] A-02d (F-02): publish draft -> 200 ACTIVE
+POST http://localhost:8080/v1/communications/e0118472-2ea9-479e-a50d-524f7b0bff29/publish body= -> 409 {"error":"only DRAFT communications can be published; e0118472-2ea9-479e-a50d-524f7b0bff29 is ACTIVE"}
+  [PASS] A-02e (F-02): publish again -> 409 {'error': 'only DRAFT communications can be published; e0118472-2ea9-479e-a50d-524f7b0bff29 is ACTIVE'}
+GET http://localhost:8080/v1/communications/e0118472-2ea9-479e-a50d-524f7b0bff29 body= -> 200 {"id":"e0118472-2ea9-479e-a50d-524f7b0bff29","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"draft one","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:22:28.781Z","createdAt":"2026-11-02T10:22:28.781Z","updatedAt":"2026-11-02T10:22:29.048Z","version":1,"history":[{"at":"2026-11-02T10:22:28.781Z","actor":"v
+  [PASS] A-03a (F-03): history=['created (DRAFT)', 'DRAFT -> ACTIVE']
+GET http://localhost:8080/v1/communications/9dd276c1-a7af-4149-9597-268728f31bc9 body= -> 404 {"error":"communication 9dd276c1-a7af-4149-9597-268728f31bc9 not found"}
+  [PASS] A-03b (F-03): unknown -> 404 {'error': 'communication 9dd276c1-a7af-4149-9597-268728f31bc9 not found'}
+GET http://localhost:8080/v1/communications?tenantId=vb4-a-67555c body= -> 200 {"items":[{"id":"6539f1d3-e87b-4d03-ae25-dc77732390b8","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-02T11:22:24Z","createdAt":"2026-11-02T10:22:24.704Z","updatedAt":"2026-11-02T10:22:24.704Z","version":0,"history":[{"at":"2026-11-02T10:22:24.704
+  [PASS] A-04a (F-04): list total=4 keys=['hasNext', 'items', 'page', 'size', 'totalElements']
+GET http://localhost:8080/v1/communications?tenantId=vb4-a-67555c&status=SCHEDULED body= -> 200 {"items":[{"id":"6539f1d3-e87b-4d03-ae25-dc77732390b8","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-02T11:22:24Z","createdAt":"2026-11-02T10:22:24.704Z","updatedAt":"2026-11-02T10:22:24.704Z","version":0,"history":[{"at":"2026-11-02T10:22:24.704
+  [PASS] A-04b (F-04): status=SCHEDULED -> ['6539f1d3-e87b-4d03-ae25-dc77732390b8']
+GET http://localhost:8080/v1/communications?tenantId=vb4-a-67555c&page=0&size=2 body= -> 200 {"items":[{"id":"6539f1d3-e87b-4d03-ae25-dc77732390b8","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-02T11:22:24Z","createdAt":"2026-11-02T10:22:24.704Z","updatedAt":"2026-11-02T10:22:24.704Z","version":0,"history":[{"at":"2026-11-02T10:22:24.704
+  [PASS] A-04c (F-04): paging -> items=2 hasNext=True page=0 size=2
+GET http://localhost:8080/v1/communications/98149410-643a-401a-9bb9-c146fd001171 body= -> 200 {"id":"98149410-643a-401a-9bb9-c146fd001171","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"api degraded","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:22:24.687Z","createdAt":"2026-11-02T10:22:24.687Z","updatedAt":"2026-11-02T10:22:24.687Z","version":0,"history":[{"at":"2026-11-02T10:22:24.687Z","actor"
+PUT http://localhost:8080/v1/communications/98149410-643a-401a-9bb9-c146fd001171 body={"title": "api degraded (updated)", "expectedVersion": 0} -> 200 {"id":"98149410-643a-401a-9bb9-c146fd001171","tenantId":"vb4-a-67555c","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"api degraded (updated)","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:22:24.687Z","createdAt":"2026-11-02T10:22:24.687Z","updatedAt":"2026-11-02T10:22:29.621497653Z","version":1,"history":[{"at":"2026-11-02T10:22:
+  [PASS] A-05a (F-05): PUT title -> 200 version 0->1 history=['created (ACTIVE)', 'updated']
+PUT http://localhost:8080/v1/communications/98149410-643a-401a-9bb9-c146fd001171 body={"title": "stale", "expectedVersion": 0} -> 409 {"error":"expectedVersion 0 does not match current version 1"}
+  [PASS] A-05b (F-05): stale version -> 409 {'error': 'expectedVersion 0 does not match current version 1'}
+PUT http://localhost:8080/v1/communications/98149410-643a-401a-9bb9-c146fd001171 body={"title": "no version"} -> 400 {"error":"expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since"}
+... 264 transcript lines trimmed here (kept the first 34 and the last 34 of 332); full file: <scratch>/backend4/full-evidence/20-http-publishing-feed-admin.txt
+GET http://localhost:8080/v1/feed?tenantId=vb4-a-67555c&type=NOPE body= -> 400 {"error":"type: 'NOPE' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"}
+  [PASS] A-28a (F-28): invalid enum -> 400 {"error":"type: 'NOPE' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"}
+POST http://localhost:8080/v1/communications body={not json -> 400 {"error":"malformed JSON at line 1, column 2: Unexpected character ('n' (code 110)): was expecting double-quote to start property name"}
+  [PASS] A-28b (F-28): malformed JSON -> 400 {"error":"malformed JSON at line 1, column 2: Unexpected character ('n' (code 110)): was expecting double-quote to start property name"}
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "api degraded", "affectedServices": ["svc-a"], "unknownField": "x"} -> 400 {"error":"unknown field 'unknownField'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"}
+  [PASS] A-28c (F-28/G-3-8 (iteration-3 behaviour change: unknown fields on publish are a 400)): unknown JSON field -> 400 {"error":"unknown field 'unknownField'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"}
+GET http://localhost:8080/v1/feed?tenantId=vb4-a-67555c&page=abc body= -> 400 {"error":"page: 'abc' is not a number"}
+  [PASS] A-28d (F-28): page=abc -> 400 {"error":"page: 'abc' is not a number"}
+GET http://localhost:8080/v1/nope body= -> 404 {"error":"no such endpoint: GET /v1/nope (the API is documented at /swagger-ui.html)"}
+  [PASS] A-28e (F-28): unknown /v1 route -> 404 {"error":"no such endpoint: GET /v1/nope (the API is documented at /swagger-ui.html)"}
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "api degraded", "affectedServices": ["svc-a"]} -> 415 {"error":"Content-Type 'text/plain' is not supported here; send application/json or application/*+json or application/x-ndjson"}
+  [PASS] A-28f (F-28): wrong content type -> 415 {"error":"Content-Type 'text/plain' is not supported here; send application/json or application/*+json or application/x-ndjson"}
+PATCH http://localhost:8080/v1/communications/98149410-643a-401a-9bb9-c146fd001171 body={"title": "x"} -> 405 {"error":"PATCH is not allowed on /v1/communications/98149410-643a-401a-9bb9-c146fd001171; allowed: GET, PUT"}
+  [PASS] A-28g (F-28): PATCH -> 405 {"error":"PATCH is not allowed on /v1/communications/98149410-643a-401a-9bb9-c146fd001171; allowed: GET, PUT"}
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "HUGE", "title": "api degraded", "affectedServices": ["svc-a"]} -> 400 {"error":"severity: 'HUGE' is not one of [INFO, MINOR, MAJOR, CRITICAL]"}
+  [PASS] A-28h (F-28): invalid enum in body -> 400 {"error":"severity: 'HUGE' is not one of [INFO, MINOR, MAJOR, CRITICAL]"}
+POST http://localhost:8080/v1/communications body={"tenantId": "vb4-a-67555c", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "api degraded", "affectedServices": ["svc-a"], "startsAt": "yesterday"} -> 400 {"error":"startsAt: 'yesterday' is not an ISO-8601 UTC timestamp like 2026-11-01T12:00:00Z"}
+  [PASS] A-28i (F-28): invalid date in body -> 400 {"error":"startsAt: 'yesterday' is not an ISO-8601 UTC timestamp like 2026-11-01T12:00:00Z"}
+GET http://localhost:8080/v3/api-docs body= -> 200 {"openapi":"3.1.0","info":{"title":"Communication Service","description":"Shared customer communications platform: publish incidents, changes, outages, maintenance windows and health notices; consume them via feed and SSE.","version":"v1"},"servers":[{"url":"http://localhost:8080","description":"Generated server url"}],"security":[{"X-Client-Id":[]}],"tags":[{"name":"Admin","description":"Cross-te
+  [PASS] A-29a (F-29): api-docs paths=16 missing=[] extra=[]
+  [PASS] A-29b (F-29): securitySchemes={'X-Client-Id': {'type': 'apiKey', 'description': 'Click Authorize and paste the repository name of the system you are calling from (e.g. vmforge-tools). Required on every /v1 request; identification only, nothing is verified. EventSource clients send ?clientId= instead.', 'name': 'X-Client-Id', 'in': 'header'}} global security=[{'X-Client-Id': []}]
+GET http://localhost:8080/swagger-ui/index.html body= -> 200 <!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="./swagger-ui.css" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/pn
+  [PASS] A-29c (F-29): swagger ui index -> 200
+GET http://localhost:8080/actuator/health body= -> 200 {"status":"UP","groups":["liveness","readiness"]}
+  [PASS] A-30 (F-30): /actuator/health -> 200 (Actuator present since iteration 1; the iteration-0 matrix text is outdated)
+```

@@ -1,0 +1,69 @@
+Iteration-3 audit: E2E replays (15 sampled claims), compared with confidence/evidence/iter-3/e2e/
+Private stack: the verifier's scripts (evidence/iter-3/e2e/scripts) copied to scratchpad/audit3/e2e/scripts, re-mapped only for isolation
+(195xx -> 197xx, e2e3-*/ve3-* -> au3-e*, database au3-emain, image health-sidecar:au3). stack-up.sh at 09:09Z (log: scratchpad/audit3/e2e/out/stack-up.txt):
+  ## 2026-11-02T09:09:09.413Z private stack up (head 6c15715, jar 32b20665b778)
+  au3-emongo started
+  2026-11-02T09:09:38.518Z backend A readiness ready after 26 s
+  2026-11-02T09:09:38.841Z backend B readiness ready after 0 s
+  2026-11-02T09:09:39.908Z vite preview (frontend/dist) -> A ready after 1 s
+  au3-enetns started
+  au3-eapp started (fakeapp:e2e)
+  au3-esidecar started (health-sidecar:au3, uid 1000660000, read-only, cap-drop ALL, no-new-privileges)
+  au3-estub started (pull-probe target)
+  2026-11-02T09:09:41.311Z fake app in the pod ready after 0 s
+  2026-11-02T09:09:42.345Z sidecar reported ready after 1 s
+  2026-11-02T09:09:42.406Z backend A sees monitor au3e/au3e-app UP ready after 0 s
+  ## 2026-11-02T09:09:42.412Z private stack up: A :19701 B :19702 UI :19730 pod app :19740 status :19741 stub :19751 mongo :19727
+The repository suite (compose project e2e, ports 28030/28080/28090/28091) was used once, for the G-3-12 mutation (no e2e-* container existed before; none after).
+
+| # | claim | auditor's replay (scratchpad/audit3/e2e/out/...) | result |
+|---|---|---|---|
+| e2e#03 | G-3-12: spec 04 unchanged behind a proxy: pass mode passes, strip mode fails | 41-g312-mutation: pass 1 passed ('replayed as created#2 on the stream resumed after 1'); strip 1 failed (expected ['created'], received ['snapshot']; the proxy stripped last id 5 three times); stack down, no e2e-* left | MATCH |
+| e2e#04 | G-3-13: README Dockerfile text gives go1.25.14 and builds the sidecar --no-cache; labels; no local/go-toolset:1.24 | 40-g313-readme-go-recipe: README L50-54 verbatim -> go1.25.14; --no-cache build ran go build (14.1 s); labels version/revision from the build args, user 1001; binary exits 2 naming CS_ENDPOINT/CS_TENANT; no 'go-toolset:1.24' in e2e/ | MATCH |
+| e2e#07 | G-3-18: never-UP pod: 4 UNKNOWN reports in 40 s at the 8 s heartbeat; ignored by the service | 30-pod-flows (unknownpod): reports in the window=4; 'UNKNOWN (1 pod starting, none reporting yet)', no notice | MATCH (exact) |
+| e2e#13 | G-3-29 kill run 2: retry steps 1,2,4,8,16 s; accepted 3.6 s after A was ready; B saw 47.0 s of silence and opened no notice | 31-failure-flows (first run): steps 1,2,4,8 only, because A came back during the 8 s step (check line FAIL: the script wants >= 5 steps); re-run once as the brief asks for timing checks, 31b: steps 1,2,4,8,16, accepted 5.3 s after readiness, B silence 50.2 s, notices [] | MATCH (nuance: timing; the first run's FAIL is the script's step-count assumption) |
+| e2e#20 | cmd-6: e2e/fakeapp go vet + go test -> 0 | ../logs/e2e-cmd6-fakeapp.txt: exit 0, ok fakeapp (host Go 1.24.7) | MATCH |
+| e2e#27 | cmd-13: jar sha256 equal, frontend/dist from 06:42:24, no code diff 4a0e84e..e3968c4 | ../logs/e2e-cmd13-provenance.txt: b63ffd4e... both; dist 06:42:24; both diffs empty (also e3968c4..HEAD) | MATCH |
+| e2e#29 | cmd-15: http_checks.py core sse health fanout -> 0 (119/119) | 10-http-contracts: 119 pass, 0 fail; the same 119 check names in the same order | MATCH (exact) |
+| e2e#30 | cmd-16: ui_flows.js run 1 -> 3 (31/34; three errors in the verifier's script) | 20-ui-flows with the kept (corrected) script: 34/34, names identical to the verifier's run 2 (ev/22) except '16 keys' for the longer tenant; the three run-1 FAIL lines (F-57 focus, F-60 waiting badge, F-58 typing) pass | MATCH (equivalent: the run-1 script is not kept) |
+| e2e#34 | cmd-20: failure_flows run 1 crashed (ReferenceError: since), A left down 60 s | the crashing version is not kept; the kept script runs both scenarios to completion (31, 31b); the accidental-outage figures are the verifier's own (ev/32) | EVIDENCE ONLY: the crashing version was not kept, so the run cannot be repeated; its log (ev/31a) shows 'ReferenceError: since is not defined', and ev/32's arithmetic (steps 1,2,4,8,16,30; accepted 21.5 s after readiness; silence 82.3 s < 90 s) is consistent; the 60 s outage was not re-run |
+| e2e#35 | cmd-21: run 2 -> 1 (26/27; the FAIL was the script checking 1.4 s after the stream ended) | 31: the late-page check that waits for the Reconnecting badge and the retry passes (mongo 15/15) | MATCH (equivalent) |
+| e2e#36 | cmd-22: failure_flows mongo run 3 -> 0 (15/15) | 31 mongo section: the same 15 check names, all PASS; 503 in 5.019 s, readiness 503 in 1.014 s, B 503 in 5.032 s | MATCH (exact) |
+| e2e#41 | F-02 PASS | 10: DRAFT absent from feed, permalink 404, /publish -> ACTIVE, non-draft 409; 20: UI 'Save draft' -> 'Draft saved' without View in feed | MATCH |
+| e2e#43 | F-07 PASS | 10: 24 F-07 rows, every rule names its field (G-3-7 positions, G-3-8 unknown fields on publish/PUT/retire, G-3-9, G-3-32) | MATCH |
+| e2e#52 | F-38 PASS | 10: 21 F-38 rows incl. G-3-30 words; 30 (words, degraded): 'pass' -> UP, 'fail' -> DOWN component, UP with db DOWN -> DEGRADED through the real sidecar | MATCH |
+| e2e#74 | GAP-e2e3-2: a send that succeeds after failures with the status unchanged is logged at DEBUG only | code agent.go:355-360 as cited; observed in 31b: five WARN 'report failed; will retry' 09:18:32-09:18:55, then A logs 'POST /v1/health/reports -> 202' and the sidecar logs nothing | MATCH |
+
+Key lines
+--- 41-g312-mutation ---
+== 2026-11-02T09:21:10Z stack up
+== 2026-11-02T09:21:53Z spec 04 with the proxy in mode 'pass'
+F-92: replayed as created#2 on the stream resumed after 1; 1 list reload
+  ✓  1 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and
+  1 passed (19.8s)
+playwright exit=0
+== 2026-11-02T09:22:15Z spec 04 with the proxy in mode 'strip'
+  ✘  1 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and
+    - Expected  - 1
+    + Received  + 1
+    -   "created",
+    +   "snapshot",
+  1 failed
+playwright exit=1
+2026-11-02T09:22:23.790Z #1 stripped last id 5 from /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend
+2026-11-02T09:22:24.822Z #2 stripped last id 5 from /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=5
+2026-11-02T09:22:36.956Z #3 stripped last id 5 from /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=5
+== 2026-11-02T09:22:47Z stack down
+--- 31 / 31b G-3-29 lines ---
+2026-11-02T09:16:27.210Z FAIL F-74 G-3-29: sidecar retries step 1,2,4,8,16 then 30 s (cap), next report accepted within 30 s of A's readiness :: steps=09:15:58 in=1s, 09:16:01 in=2s, 09:16:05 in=4s, 09:16:11 in=8s; accepted 2 ms after readiness (34.7 s after t
+2026-11-02T09:16:31.211Z PASS F-48 G-3-29: no false OUTAGE on the second node (B, stale grace 0, sweep 1 s) for the pod that could not reach A :: B polls=85 notices opened=[]; longest gap between the pod's accepted reports as B saw it=37.0 s (window 90 s)
+2026-11-02T09:17:33.742Z PASS F-74 G-3-15: the sidecar's reports during the outage fail with the service's 503 (its 10 s report timeout outlasts the 5 s database timeout), retried with backoff :: fails=3 first="post http://172.17.0.1:19701/v1/health/reports: H
+2026-11-02T09:17:39.125Z PASS F-74 sidecar reports accepted again, no notice from the database outage :: sendError cleared 3016 ms after recovery; monitor UP summary=UP (1 of 1 pod UP)
+2026-11-02T09:19:12.770Z PASS F-74 G-3-29: sidecar retries step 1,2,4,8,16 then 30 s (cap), next report accepted within 30 s of A's readiness :: steps=09:18:32 in=1s, 09:18:35 in=2s, 09:18:39 in=4s, 09:18:45 in=8s, 09:18:55 in=16s; accepted 5314 ms after readi
+2026-11-02T09:19:16.771Z PASS F-48 G-3-29: no false OUTAGE on the second node (B, stale grace 0, sweep 1 s) for the pod that could not reach A :: B polls=95 notices opened=[]; longest gap between the pod's accepted reports as B saw it=50.2 s (window 90 s)
+--- summaries ---
+  10-http-contracts: ## summary: 119 pass, 0 fail at 2026-11-02T09:11:15.658Z
+  20-ui-flows: ## summary: 34 pass, 0 fail at 2026-11-02T09:12:37.288Z
+  30-pod-flows: ## summary: 24 pass, 0 fail at 2026-11-02T09:15:18.824Z
+  31-failure-flows: ## summary: 26 pass, 1 fail at 2026-11-02T09:17:39.239Z
+  31b-failure-flows-kill-rerun: ## summary: 13 pass, 0 fail at 2026-11-02T09:19:46.960Z

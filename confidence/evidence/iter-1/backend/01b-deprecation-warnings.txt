@@ -1,0 +1,5 @@
+      1 /home/claude/communication-service/src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:191: warning: [removal] ensureIndex(IndexDefinition) in R
+      1 /home/claude/communication-service/src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapter.java:61: warning: [removal] ensureIndex(IndexDefinition) i
+      1 /home/claude/communication-service/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapterIT.java:37: warning: [removal] ensureIndex(IndexDefinition
+      1 /home/claude/communication-service/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthMonitorRepositoryAdapterIT.java:44: warning: [removal] ensureIndex(IndexDefinition)
+      2 2 warnings

@@ -1,0 +1,33 @@
+# 16c: why ClientIdWebFilter logs 200 for a cancelled request: Spring Framework's ReactorServerHttpResponse.getStatusCode()
+# (spring-web-7.0.10.jar from BOOT-INF/lib of scratchpad/communication-service-iter4.jar), disassembled with javap -c -p:
+# when no status was set it returns the Netty response's status (default 200 OK), so it is never null on the real server.
+  public org.springframework.http.HttpStatusCode getStatusCode();
+    Code:
+       0: aload_0
+       1: invokespecial #37                 // Method org/springframework/http/server/reactive/AbstractServerHttpResponse.getStatusCode:()Lorg/springframework/http/HttpStatusCode;
+       4: astore_1
+       5: aload_1
+       6: ifnull        13
+       9: aload_1
+      10: goto          28
+      13: aload_0
+      14: getfield      #31                 // Field response:Lreactor/netty/http/server/HttpServerResponse;
+      17: invokeinterface #41,  1           // InterfaceMethod reactor/netty/http/server/HttpServerResponse.status:()Lio/netty/handler/codec/http/HttpResponseStatus;
+      22: invokevirtual #45                 // Method io/netty/handler/codec/http/HttpResponseStatus.code:()I
+      25: invokestatic  #51                 // InterfaceMethod org/springframework/http/HttpStatusCode.valueOf:(I)Lorg/springframework/http/HttpStatusCode;
+      28: areturn
+
+# the filter's branch that expects null (src/main/java/com/atlas/communication/config/ClientIdWebFilter.java):
+    91	    private static void access(ServerWebExchange exchange, String clientId, long started, SignalType signal) {
+    92	        ServerHttpRequest request = exchange.getRequest();
+    93	        // the status is null when no handler set one explicitly, which the server sends as 200
+    94	        HttpStatusCode status = exchange.getResponse().getStatusCode();
+    95	        Object outcome = status != null ? status.value()
+    96	                : switch (signal) {
+    97	                    case ON_COMPLETE -> 200;
+    98	                    case CANCEL -> "cancelled";
+    99	                    case ON_ERROR -> "error";
+   100	                    default -> "?";
+   101	                };
+   102	        log.info("client={} {} {} -> {} ({} ms)", clientId, request.getMethod(), request.getPath().value(),
+   103	                outcome, (System.nanoTime() - started) / 1_000_000);

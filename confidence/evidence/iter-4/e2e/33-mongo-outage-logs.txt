@@ -1,0 +1,75 @@
+# Mongo outage seen from backend A's log (failure_flows.js mongo: out/mongo-outage-backendA-lines.txt, the lines written between docker stop and docker start) and the private sidecar's whole log (out/e2e4-sidecar-log.txt)
+
+## backend A
+2026-11-02T10:52:50.891Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluste
+2026-11-02T10:52:50.899Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-failure-checks GET /v1/feed -> 503 (5017 ms)
+2026-11-02T10:52:50.900Z  WARN [57a912aa70ff307] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clu
+2026-11-02T10:52:51.342Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:52:56.345Z  WARN [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:52:58.148Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that matches WritableServerSelector. Client view of cluster state is {type=UN
+2026-11-02T10:52:58.150Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-failure-checks POST /v1/communications -> 503 (5009 ms)
+2026-11-02T10:52:59.174Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client vie
+2026-11-02T10:52:59.176Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-app-repo POST /v1/health/reports -> 503 (5011 ms)
+2026-11-02T10:53:01.348Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:53:06.350Z  WARN [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:53:07.521Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client vie
+2026-11-02T10:53:07.524Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-app-repo POST /v1/health/reports -> 503 (5007 ms)
+2026-11-02T10:53:11.353Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:53:14.555Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client vie
+2026-11-02T10:53:14.557Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-failure-checks POST /v1/health/reports -> 503 (5008 ms)
+2026-11-02T10:53:15.897Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client vie
+2026-11-02T10:53:15.899Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-app-repo POST /v1/health/reports -> 503 (5007 ms)
+2026-11-02T10:53:16.356Z  WARN [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:53:19.705Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluste
+2026-11-02T10:53:19.707Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed -> 503 (5010 ms)
+2026-11-02T10:53:19.708Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of
+2026-11-02T10:53:19.709Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed/stream -> 503 (5007 ms)
+2026-11-02T10:53:21.359Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:53:24.159Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client vie
+2026-11-02T10:53:24.162Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-app-repo POST /v1/health/reports -> 503 (5009 ms)
+2026-11-02T10:53:25.722Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of
+2026-11-02T10:53:25.724Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed/stream -> 503 (5005 ms)
+2026-11-02T10:53:26.361Z  WARN [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:53:31.364Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T10:53:32.220Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client vie
+2026-11-02T10:53:32.223Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=ve4-app-repo POST /v1/health/reports -> 503 (5008 ms)
+2026-11-02T10:53:32.734Z  WARN [57a912aa70ff307] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of
+2026-11-02T10:53:32.736Z  INFO [57a912aa70ff307] c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed/stream -> 503 (5004 ms)
+
+## e2e4-sidecar (docker logs at the end of the failure flows)
+{"time":"2026-11-02T10:36:58.657050907Z","level":"INFO","msg":"health sidecar starting","version":"e2e4","service":"ve4-app","tenant":"ve4","instance":"ve4-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T10:36:58.660904274Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:36:59.167067795Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:41:28.345733923Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T10:41:36.154272249Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:41:52.768785998Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:42:00.367064845Z","level":"INFO","msg":"reported","status":"WARN","message":"health document reports WARN"}
+{"time":"2026-11-02T10:42:03.780190722Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:42:39.864480546Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:42:46.240277512Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:43:00.91411137Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports  DOWN\t"}
+{"time":"2026-11-02T10:43:08.296109676Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:43:25.531961966Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports    "}
+{"time":"2026-11-02T10:43:33.097309373Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:43:50.114189232Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports \u0001"}
+{"time":"2026-11-02T10:43:57.926280689Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:44:12.384441526Z","level":"INFO","msg":"reported","status":"PASS ","message":"health document reports PASS "}
+{"time":"2026-11-02T10:44:19.845236596Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:44:36.735378733Z","level":"INFO","msg":"reported","status":" ","message":"health document reports  "}
+{"time":"2026-11-02T10:44:44.910678288Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:45:01.65045819Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:45:08.491904628Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:45:41.663234704Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:45:51.60964042Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:46:37.950554515Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T10:46:37.950656458Z","level":"INFO","msg":"health sidecar stopped"}
+{"time":"2026-11-02T10:46:42.277041638Z","level":"INFO","msg":"health sidecar starting","version":"e2e4","service":"ve4-app","tenant":"ve4","instance":"ve4-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T10:46:42.28333923Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:46:42.299534711Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:46:46.81375607Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T10:46:46.827597676Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+{"time":"2026-11-02T10:46:54.600407414Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:46:54.613139948Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:49:46.788407793Z","level":"INFO","msg":"health sidecar starting","version":"e2e4","service":"ve4-app","tenant":"ve4","instance":"ve4-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T10:49:46.791532691Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:49:46.816498028Z","level":"INFO","msg":"reported","status":"UP","message":""}

@@ -1,0 +1,8 @@
+{"time":"2026-11-02T07:06:27.814508364Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"vf3-fake-app","tenant":"vf3-pod-mvyx104c","instance":"vf3-fake-app-5d7c9b8f6-q1w2e","endpoint":"http://172.17.0.1:19200","probe":"auto"}
+{"time":"2026-11-02T07:06:27.818095057Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T07:06:28.074509492Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T07:06:31.450041532Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T07:06:36.918347988Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T07:06:46.967774057Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T07:06:56.934598663Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T07:06:56.93473313Z","level":"INFO","msg":"health sidecar stopped"}

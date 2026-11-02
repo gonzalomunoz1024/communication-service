@@ -1,0 +1,59 @@
+#!/bin/bash
+# iter-1 sidecar verifier (sc1): probe ladder, rediscovery, send policy, heartbeat cadence, SIGTERM and the wire contract
+# against a RECORDING backend stub (stub -mode backend, source: ../../iter-0/sidecar/scripts/stub-main.go).
+S=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad
+IMG=gcr.io/distroless/static-debian12:latest
+V="-v $S/sidecar1/bin:/bin-ro:ro"
+P=sc1-ladder
+ts(){ date -u +%H:%M:%S; }
+status(){ curl -s --max-time 3 http://127.0.0.1:59465/status | python3 $S/sidecar1/j.py status; }
+reqs(){ curl -s --max-time 3 http://127.0.0.1:59100/__requests; }
+nreq(){ reqs | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))'; }
+docker rm -f $P-sidecar $P-9001 $P-9002 $P-9003 $P-9004 $P-backend $P >/dev/null 2>&1
+set -e
+docker run -d --name $P -p 127.0.0.1:59465:9465 -p 127.0.0.1:59100:9100 $V $IMG /bin-ro/stub -mode hold >/dev/null
+docker run -d --name $P-backend --network container:$P $V $IMG /bin-ro/stub -mode backend -port 9100 -code 202 >/dev/null
+docker run -d --name $P-9001 --network container:$P $V $IMG /bin-ro/stub -mode plain404 -port 9001 >/dev/null
+docker run -d --name $P-9002 --network container:$P $V $IMG /bin-ro/stub -mode healthz -port 9002 >/dev/null
+docker run -d --name $P-9003 --network container:$P $V $IMG /bin-ro/stub -mode actuator -port 9003 >/dev/null
+sleep 1
+echo "[$(ts)] STEP 1 (F-68/F-69): ports 9001 (404 everywhere), 9002 (/healthz), 9003 (/actuator/health), backend stub 9100 (ignored via CS_IGNORE_PORTS); start sidecar"
+docker run -d --name $P-sidecar --network container:$P --user 1000660000:0 --read-only --cap-drop ALL --security-opt no-new-privileges \
+  -e CS_ENDPOINT=http://127.0.0.1:9100 -e CS_TENANT=sc1-ladder -e CS_SERVICE=ladder-app -e CS_CLIENT_ID=sc1-ladder-repo \
+  -e CS_INTERVAL=2s -e CS_HEARTBEAT=6s -e CS_RETRY_DELAY=1s -e CS_IGNORE_PORTS=9100 \
+  -e POD_NAME=ladder-app-6d4f8b7c9-abcde -e POD_NAMESPACE=sc1-ns -e NODE_NAME=node-a -e CS_CLUSTER=sandbox -e CS_VERSION=2.3.4 \
+  health-sidecar:sc1 >/dev/null
+set +e
+sleep 4
+echo "[$(ts)] status after start (expect target http://127.0.0.1:9003/actuator/health):"; status
+echo "[$(ts)] STEP 2 (F-77): stop 9003 -> expect rediscovery to 9002 /healthz (http mode)"
+docker stop -t 1 $P-9003 >/dev/null; sleep 9; status
+echo "[$(ts)] STEP 3: stop 9002 -> expect fallback to 9001 '/' (404 counts as UP on root)"
+docker stop -t 1 $P-9002 >/dev/null; sleep 9; status
+echo "[$(ts)] STEP 4: stop 9001, start a raw TCP listener on 9004 -> expect tcp://127.0.0.1:9004"
+docker stop -t 1 $P-9001 >/dev/null
+docker run -d --name $P-9004 --network container:$P $V $IMG /bin-ro/stub -mode tcp -port 9004 >/dev/null
+sleep 9; status
+echo "[$(ts)] STEP 5 (F-74): send policy: backend answers 500 -> backoff; then 400 -> rejected; then 409 -> retried; then 202"
+N5=$(nreq); curl -s -X POST 'http://127.0.0.1:59100/__code?c=500' >/dev/null; sleep 12; status; echo "  requests during 12 s of 500s: $(( $(nreq) - N5 ))"
+echo "[$(ts)] now 400"; N5=$(nreq); curl -s -X POST 'http://127.0.0.1:59100/__code?c=400' >/dev/null; sleep 12; status; echo "  requests during 12 s of 400s: $(( $(nreq) - N5 ))"
+echo "[$(ts)] now 409"; N5=$(nreq); curl -s -X POST 'http://127.0.0.1:59100/__code?c=409' >/dev/null; sleep 12; status; echo "  requests during 12 s of 409s: $(( $(nreq) - N5 ))"
+echo "[$(ts)] now 202"; curl -s -X POST 'http://127.0.0.1:59100/__code?c=202' >/dev/null; sleep 9; status
+echo "[$(ts)] STEP 6 (F-74 heartbeat): nothing changing, CS_HEARTBEAT=6s: count requests over 24 s"
+N0=$(nreq); sleep 24; N1=$(nreq); echo "  requests before=$N0 after=$N1 -> $((N1-N0)) in 24 s (expect 4, one per 6 s)"
+echo "[$(ts)] STEP 7 (F-76): docker stop sidecar (SIGTERM) -> expect a final request with instance.leaving=true"
+T0=$(date +%s.%N); docker stop -t 30 $P-sidecar >/dev/null; T1=$(date +%s.%N); echo "  stop took $(python3 -c "print(round($T1-$T0,2))") s; exit code: $(docker inspect $P-sidecar --format '{{.State.ExitCode}}')"
+echo "[$(ts)] SIDECAR LOG:"; docker logs $P-sidecar 2>&1 | cut -c1-260
+echo "[$(ts)] RECORDED REQUESTS (backend stub) (F-75/F-27 wire contract):"; reqs | python3 -c '
+import json,sys
+rs=json.load(sys.stdin)
+print("total", len(rs))
+for r in rs:
+    b=r["body"]; inst=b.get("instance",{}) if isinstance(b,dict) else {}
+    print(r["at"][11:23], r["method"], r["path"], "status=",b.get("status") if isinstance(b,dict) else b, "msg=",(b.get("message","") if isinstance(b,dict) else "")[:50], "leaving=",inst.get("leaving"), "| X-Client-Id=",r["headers"].get("X-Client-Id"), "UA=",r["headers"].get("User-Agent"), "CT=",r["headers"].get("Content-Type"), "Accept=",r["headers"].get("Accept"))
+print("FIRST BODY:", json.dumps(rs[0]["body"], sort_keys=True) if rs else None)
+print("LAST BODY:", json.dumps(rs[-1]["body"], sort_keys=True) if rs else None)
+hdr=set(); [hdr.update(r["headers"].keys()) for r in rs]; print("HEADER NAMES SEEN:", sorted(hdr))
+'
+docker rm -f $P-sidecar $P-9001 $P-9002 $P-9003 $P-9004 $P-backend $P >/dev/null 2>&1 || true
+echo "[$(ts)] DONE"

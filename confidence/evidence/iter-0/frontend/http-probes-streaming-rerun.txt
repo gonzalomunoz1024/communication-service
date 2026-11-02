@@ -1,0 +1,36 @@
+# streaming probes re-run, output written to a file then printed (tenant fe-http-1793576825)
+
+$ curl -i -N '/v1/feed/stream?tenantId=fe-http-1793576825&clientId=communication-frontend' (no header, 4s)
+HTTP/1.1 200 OK
+transfer-encoding: chunked
+Content-Type: text/event-stream;charset=UTF-8
+
+id:307
+event:snapshot
+   [data lines: 1]
+
+$ curl -i -N '/v1/feed/stream?tenantId=fe-http-1793576825&lastEventId=999999999' (4s) → expected fresh snapshot
+HTTP/1.1 200 OK
+transfer-encoding: chunked
+Content-Type: text/event-stream;charset=UTF-8
+
+id:307
+event:snapshot
+   [data lines: 1]
+
+$ curl -i -N -H 'Last-Event-ID: not-a-number' (4s) → expected ignored, snapshot
+HTTP/1.1 200 OK
+transfer-encoding: chunked
+Content-Type: text/event-stream;charset=UTF-8
+
+id:307
+event:snapshot
+   [data lines: 1]
+
+$ curl -i -N -H 'Last-Event-ID: 1' (4s)
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+Content-Length: 191
+
+{"error":"Due to limitations of the org.bson.Document, you can't add a second 'seq' expression specified as 'seq : Document{{$lte=307}}'; Criteria already contains 'seq : Document{{$gt=1}}'"}
+   [data lines: 0]

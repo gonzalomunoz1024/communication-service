@@ -1,0 +1,14 @@
+# sc-4 G-4-26 BEFORE: the README names csHealthSidecar.extraEnv without its shape (commit 8364a3d + the new test)
+# date: 2026-11-02T08:24:16Z; helm v3.16, kubeconform development
+
+$ grep -n 'extraEnv' README.md
+263:Helm to `csHealthSidecar.extraEnv`; the container reads it when it starts, so restart the pods
+
+$ CI=true go test -count=1 -run 'TestHelmExtraEnvFromTheReadmeReachesTheSidecar' -v ./deploy/
+=== RUN   TestHelmExtraEnvFromTheReadmeReachesTheSidecar
+    helm_test.go:91: the README prints no csHealthSidecar.extraEnv snippet
+--- FAIL: TestHelmExtraEnvFromTheReadmeReachesTheSidecar (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.004s
+FAIL
+exit=1

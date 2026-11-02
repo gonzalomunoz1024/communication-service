@@ -1,0 +1,198 @@
+
+### 0. versions and tree
+$ git -C /home/claude/communication-service rev-parse --short HEAD; git -C /home/claude/communication-service diff --quiet 1cd3f13 HEAD -- sidecar .github && echo 'sidecar/ and .github/ identical to 1cd3f13'
+d10369b
+sidecar/ and .github/ identical to 1cd3f13
+exit=0
+$ git -C /home/claude/communication-service status --porcelain -- sidecar | wc -l
+0
+exit=0
+$ which go; go version; go env GOROOT GOTOOLCHAIN GOFLAGS GOPROXY | tr '\n' ' '; echo
+/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.3.linux-amd64/bin/go
+go version go1.27.3 linux/amd64
+/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.3.linux-amd64 local  https://proxy.golang.org,direct 
+exit=0
+$ kustomize version; helm version --short; kubeconform -v; kubectl version --client 2>/dev/null | head -1
+(devel)
+v3.16
+development
+Client Version: v1.37.2
+exit=0
+
+### 1. gofmt -l . (expect no files)
+$ gofmt -l .   -> exit=0, files listed: 0
+
+### 2. go vet ./...
+$ go vet ./...
+exit=0
+
+### 3. go build ./...
+$ go build ./...
+exit=0
+
+### 4. MODE A plain: go test -count=1 ./... (tools on PATH, CI unset)
+$ env -u CI go test -count=1 ./... 2>&1 | tail -12
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.302s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	6.923s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.371s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.005s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.009s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.430s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.020s
+exit=0
+
+### 5. MODE B race: go test -count=1 -race ./...
+$ env -u CI go test -count=1 -race ./... 2>&1 | tail -12
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	2.780s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	7.553s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.584s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.065s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.025s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.505s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.189s
+exit=0
+
+### 6. MODE C CI=true with tools on PATH, -race (CI's own command), -v tally
+exit=0
+top-level: PASS=59 FAIL=0 SKIP=0
+subtests: PASS=25 FAIL=0 SKIP=0
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	2.667s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	7.734s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.692s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.057s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.031s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.490s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.144s
+
+### 7. MODE D CI=true WITHOUT the tools on PATH (deploy tests must FAIL naming the tool), then without CI (must SKIP)
+$ PATH=/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.3.linux-amd64/bin:/usr/bin:/bin CI=true go test -count=1 -v ./deploy/
+exit=1
+    deploy_test.go:197: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestNativeComponentKeepsExistingInitContainers (0.00s)
+    deploy_test.go:223: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestClassicComponentAppendsTheContainer (0.00s)
+    deploy_test.go:238: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestBothComponentsShareTheContainerContract (0.00s)
+    deploy_test.go:287: kubeconform is not on PATH and CI is set: install kubeconform in the CI image, the manifest tests must not skip there
+--- FAIL: TestManualSnippetSharesTheContainerContract (0.00s)
+--- PASS: TestEachAttachPathNamesTheConfigMapItsContainerReads (0.00s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+    helm_test.go:35: helm is not on PATH and CI is set: install helm in the CI image, the manifest tests must not skip there
+--- FAIL: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment (0.00s)
+    helm_test.go:84: helm is not on PATH and CI is set: install helm in the CI image, the manifest tests must not skip there
+--- FAIL: TestHelmExtraEnvFromTheReadmeReachesTheSidecar (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.004s
+FAIL
+$ PATH=/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.3.linux-amd64/bin:/usr/bin:/bin go test -count=1 -v ./deploy/ (no CI)
+    deploy_test.go:197: kustomize not on PATH
+--- SKIP: TestNativeComponentKeepsExistingInitContainers (0.00s)
+    deploy_test.go:223: kustomize not on PATH
+--- SKIP: TestClassicComponentAppendsTheContainer (0.00s)
+    deploy_test.go:238: kustomize not on PATH
+--- SKIP: TestBothComponentsShareTheContainerContract (0.00s)
+    deploy_test.go:287: kubeconform not on PATH; schema validation skipped
+--- PASS: TestManualSnippetSharesTheContainerContract (0.00s)
+--- PASS: TestEachAttachPathNamesTheConfigMapItsContainerReads (0.00s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+    helm_test.go:37: helm not on PATH
+--- SKIP: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment (0.00s)
+    helm_test.go:86: helm not on PATH
+--- SKIP: TestHelmExtraEnvFromTheReadmeReachesTheSidecar (0.00s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.009s
+exit=0
+$ PATH=/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.3.linux-amd64/bin:/usr/bin:/bin go test -count=1 ./... (no CI, whole module)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.334s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.038s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.302s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.005s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.008s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.556s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.022s
+exit=0
+
+### 8. MODE E cover: CI=true go test -count=1 -cover ./...
+$ CI=true go test -count=1 -cover -coverprofile=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar4/work/cover.out ./... 2>&1 | tail -8
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.293s	coverage: 80.8% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	6.831s	coverage: [no statements]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.690s	coverage: 91.8% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.159s	coverage: 91.1% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.016s	coverage: 92.3% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.499s	coverage: 91.9% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.065s	coverage: 80.0% of statements
+exit=0
+total:												(statements)	90.4%
+functions under 70%:
+github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar/main.go:25:	main		0.0%
+github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent/agent.go:123:		fixedTarget	50.0%
+github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent/agent.go:253:		notListening	66.7%
+github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent/agent.go:492:		contains	50.0%
+github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe/probe.go:59:		String		66.7%
+github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe/probe.go:135:		New		66.7%
+github.com/gonzalomunoz1024/communication-service/sidecar/internal/report/client.go:50:		Error		0.0%
+github.com/gonzalomunoz1024/communication-service/sidecar/internal/report/client.go:64:		NewClient	66.7%
+
+### 9. iteration-4 tests 20x with -race
+$ go test -count=20 -race -run '^(TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo|TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat|TestRetriesAreNeverFurtherApartThanTheBackoffCap|TestUpWithAFailingComponentIsSentEveryProbe|TestUnknownIsSentAtTheHeartbeat|TestStatusShowsTheLastReportComposedSentOrNot|TestRunSendsLeavingReportOnShutdown|TestRejectedDownReportKeepsTheHeartbeatCadence|TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug)$' -v ./internal/agent/ 2>&1 | grep -E '^(--- |ok|FAIL)' | sed -E 's/ \(.*\)$//; s/\t[0-9.]+s$//' | sort | uniq -c
+     20 --- PASS: TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo
+     20 --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat
+     20 --- PASS: TestRejectedDownReportKeepsTheHeartbeatCadence
+     20 --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap
+     20 --- PASS: TestRunSendsLeavingReportOnShutdown
+     20 --- PASS: TestStatusShowsTheLastReportComposedSentOrNot
+     20 --- PASS: TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug
+     20 --- PASS: TestUnknownIsSentAtTheHeartbeat
+     20 --- PASS: TestUpWithAFailingComponentIsSentEveryProbe
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent
+exit=0
+$ go test -count=20 -race -run '^(TestDurationsTheSidecarCannotUseAreRejected|TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts|TestProxyVariablesAreDocumented|TestEveryEnvironmentVariableIsDocumented|TestFromEnvOverridesAndValidation)$' -v ./internal/config/ 2>&1 | grep -E '^(--- |ok|FAIL)' | sed -E 's/ \(.*\)$//; s/\t[0-9.]+s$//' | sort | uniq -c
+     20 --- PASS: TestDurationsTheSidecarCannotUseAreRejected
+     20 --- PASS: TestEveryEnvironmentVariableIsDocumented
+     20 --- PASS: TestFromEnvOverridesAndValidation
+     20 --- PASS: TestProxyVariablesAreDocumented
+     20 --- PASS: TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config
+exit=0
+$ go test -count=20 -race -run '^(TestStatusWordsAreTrimmedLikeTheService|TestNormalize|TestFailingCountsTheComponentsTheServiceCounts)$' -v ./internal/probe/ 2>&1 | grep -E '^(--- |ok|FAIL)' | sed -E 's/ \(.*\)$//; s/\t[0-9.]+s$//' | sort | uniq -c
+     20 --- PASS: TestFailingCountsTheComponentsTheServiceCounts
+     20 --- PASS: TestNormalize
+     20 --- PASS: TestStatusWordsAreTrimmedLikeTheService
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe
+exit=0
+$ go test -count=5 -race -run '^(TestRunRejectsAnUnusableValueWithExit2|TestRunRejectsAnUnreadableCAFile|TestRunReportsWithTheBuildVersionAndStopsCleanly|TestRunLogsAtTheConfiguredLevel)$' -v ./cmd/health-sidecar/ 2>&1 | grep -E '^(--- |ok|FAIL)' | sed -E 's/ \(.*\)$//; s/\t[0-9.]+s$//' | sort | uniq -c
+      5 --- PASS: TestRunLogsAtTheConfiguredLevel
+      5 --- PASS: TestRunRejectsAnUnreadableCAFile
+      5 --- PASS: TestRunRejectsAnUnusableValueWithExit2
+      5 --- PASS: TestRunReportsWithTheBuildVersionAndStopsCleanly
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+exit=0
+
+### 10. flake check: the whole suite 3 more times, shuffled, CI=true with tools
+(trimmed for size: per run, the number of packages "ok" / "FAIL" and the exit code)
+run 1: packages ok=7 FAIL lines=0 exit=0
+run 2: packages ok=7 FAIL lines=0 exit=0
+run 3: packages ok=7 FAIL lines=0 exit=0
+
+### 11. the iteration-4 tests' subtests (names only)
+--- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY
+--- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL
+--- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_REPORT_TIMEOUT
+--- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_PROBE_TIMEOUT
+
+### 12. G-4-2 toolchain rules on the host Go (1.24.7)
+$ GOTOOLCHAIN=auto /usr/local/go/bin/go version   (in sidecar/)
+go version go1.27.3 linux/amd64
+exit=0
+$ GOTOOLCHAIN=local /usr/local/go/bin/go build ./...
+exit=1
+go: go.mod requires go >= 1.27.3 (running go 1.24.7; GOTOOLCHAIN=local)
+$ GOTOOLCHAIN=local /usr/local/go/bin/go test ./...
+exit=1
+go: go.mod requires go >= 1.27.3 (running go 1.24.7; GOTOOLCHAIN=local)
+$ GOMODCACHE=<empty dir> GOTOOLCHAIN=auto /usr/local/go/bin/go version   (README L334: an older Go downloads 1.27.3 through the module proxy)
+go: downloading go1.27.3 (linux/amd64)
+go version go1.27.3 linux/amd64
+exit=0
+downloaded: toolchain@v0.0.1-go1.27.3.linux-amd64 

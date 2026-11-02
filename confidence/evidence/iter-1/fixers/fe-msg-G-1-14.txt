@@ -1,0 +1,26 @@
+Fix G-1-14: say when the service is unreachable instead of quoting a status
+
+With the service down, the form announced "The service rejected this. 502 Bad
+Gateway" and the feed showed the bare status line (UX-4): both read as the
+request being wrong rather than the service being away.
+
+- errors.ts: isUnreachable() (connection failure, or a 502/503/504 from a
+  proxy in front of the service) and explainError(), which returns a plain
+  "The service is unreachable right now. Check that communication-service is
+  running, then try again." for those and the service's own {"error"} words
+  for a rejection.
+- api.ts: a fetch that fails to connect becomes ApiError with status 0, so
+  callers see one error type.
+- PublishOutageForm: the alert prefixes "The service rejected this." only for
+  a rejection; OutageCard's retire error and the feed's load error go through
+  explainError (the feed's "Try again" already reopens the stream since G-1-3).
+- README: documents the wording.
+
+Tests: src/test/errors.test.ts (classification, pass-through, status 0 from a
+failed fetch), PublishOutageForm.test.tsx (502 -> unreachable wording without
+"rejected"/"502"; 400 -> the service's reason), OutageFeed.test.tsx (503 ->
+unreachable wording and a Try again button). With the previous consumers 5 of
+the new tests fail; with the fix 12 files / 65 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

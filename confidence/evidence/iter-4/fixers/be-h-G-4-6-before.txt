@@ -1,0 +1,45 @@
+G-4-6 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  MongoOutageReadinessTest > readinessWhileMongoIsUnreachableAnswersWithinAKubeletsDefaultProbeTimeout()  (5.125 s)
+    java.lang.AssertionError: [each DOWN answers within a kubelet's default probe timeout, leaving room for the HTTP answer: [PT1.001315331S, PT1.001051851S, PT1.001054303S]] 
+    Expecting all elements of:
+      [1.001315331S, 1.001051851S, 1.001054303S]
+    to satisfy given requirements, but these elements did not:
+    
+    1.001315331S
+    error: java.lang.AssertionError: 
+    Expecting actual:
+      1.001315331S
+    to be less than:
+      1S 
+    
+    1.001051851S
+    error: java.lang.AssertionError: 
+    Expecting actual:
+      1.001051851S
+    to be less than:
+      1S 
+    
+    1.001054303S
+    error: java.lang.AssertionError: 
+    Expecting actual:
+      1.001054303S
+    to be less than:
+      1S 
+
+Live: iteration-3 jar on :18314 against a private mongo:7.0 (container beh-mongo, 127.0.0.1:18310), then 'docker stop beh-mongo' and 12 readiness probes 0.5 s apart (curl time_total; script g46_readiness.sh):
+iter3: readiness before the outage: {"status":"UP"} 200
+iter3: beh-mongo stopped at 08:42:13
+iter3 probe 1: HTTP 503 in 1.012238 s
+iter3 probe 2: HTTP 503 in 1.009103 s
+iter3 probe 3: HTTP 503 in 1.007282 s
+iter3 probe 4: HTTP 503 in 1.008770 s
+iter3 probe 5: HTTP 503 in 1.007441 s
+iter3 probe 6: HTTP 503 in 1.008629 s
+iter3 probe 7: HTTP 503 in 1.006962 s
+iter3 probe 8: HTTP 503 in 1.007393 s
+iter3 probe 9: HTTP 503 in 1.012949 s
+iter3 probe 10: HTTP 503 in 1.010127 s
+iter3 probe 11: HTTP 503 in 1.010462 s
+iter3 probe 12: HTTP 503 in 1.008955 s
+iter3: backend on :18314 stopped

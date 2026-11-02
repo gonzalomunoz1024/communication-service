@@ -1,0 +1,11 @@
+{"time":"2026-11-02T10:30:57.381179743Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter4","service":"payments-api","tenant":"ux4-sidecar","instance":"payments-api-7f9c6d5b4-ux4aa","endpoint":"http://172.17.0.1:19600","probe":"auto"}
+{"time":"2026-11-02T10:30:57.408488166Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-02T10:31:17.489657107Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found after 20s: no listening port answered; set CS_PORT and CS_PATH"}
+{"time":"2026-11-02T10:31:34.15137441Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:31:34.184915229Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:31:38.338322662Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T10:31:38.362657833Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+{"time":"2026-11-02T10:31:54.52799463Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:31:54.542332697Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:32:09.009400779Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T10:32:24.589036926Z","level":"INFO","msg":"reported","status":"UP","message":""}

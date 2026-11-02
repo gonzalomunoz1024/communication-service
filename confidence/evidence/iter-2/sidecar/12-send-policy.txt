@@ -1,0 +1,27 @@
+[04:09:58.317] PHASE 1 (UP): start the sidecar (CS_INTERVAL=3s CS_HEARTBEAT=30s, retry delay default 2s), wait 5 s, then count reports in the next 30 s
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  reports in 30 s while UP: 1 (expect 0 or 1: only the heartbeat)
+  recorded: 2 statuses: UP UP | gaps(s): [32.4]
+[04:10:33.927] PHASE 2 (DOWN): app answers DOWN; count reports in 30 s after the first DOWN report
+  first DOWN seen: status=DOWN target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=3 sendErr=None
+  reports in 30 s while DOWN: 5 (expect one per probe: tick = 3s + jitter <=0.6s + 2s retry -> 5-6)
+  recorded: 8 statuses: UP UP DOWN DOWN DOWN DOWN DOWN DOWN | gaps(s): [32.4, 5.1, 5.6, 5.5, 5.0, 5.3, 5.2]
+  log lines since the DOWN (default level): 1
+{"time":"2026-11-02T04:10:36.164468342Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+[04:11:07.231] PHASE 3 (UP again, then DOWN again): transitions -> exactly one INFO 'reported' line each
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=9 sendErr=None
+  status=DOWN target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=11 sendErr=None
+  log lines since: 2 (expect 2: UP, DOWN)
+{"time":"2026-11-02T04:11:07.791661Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:11:19.779184985Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+[04:11:27.434] PHASE 4 (rejected while DOWN): stub answers 400 -> one 'report rejected', then no retry until the heartbeat (30 s) or a change
+  after the rejection: status=DOWN target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=11 sendErr='report rejected: HTTP 400 {"stub":"answered 400"}'
+  requests in the 20 s after the rejected one: 0 (expect 0)
+  log since: 
+{"time":"2026-11-02T04:11:30.186099297Z","level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"stub\":\"answered 400\"}"}
+  stub back to 202; after the heartbeat the DOWN body is accepted and every probe is sent again: +2 requests in 15 s; status=DOWN target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=13 sendErr=None
+[04:12:09.838] PHASE 5 (UNKNOWN during the startup grace): sidecar with every port ignored, CS_STARTUP_GRACE=5m -> UNKNOWN 'starting' is sent every probe
+  status=UNKNOWN target=None lastTarget=None upSeen=False msg='starting: waiting for the app to listen' comps=None sent=5 sendErr=None
+  reports in ~16 s (CS_INTERVAL=3s): 5
+  recorded: 5 statuses: UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN | gaps(s): [3.3, 3.0, 3.2, 3.4]
+[04:12:26.844] DONE

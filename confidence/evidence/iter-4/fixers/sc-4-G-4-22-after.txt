@@ -1,0 +1,45 @@
+# sc-4 G-4-22 AFTER: FromEnv refuses a timeout or heartbeat of 0 or less and a negative retry delay or grace
+# date: 2026-11-02T08:19:46Z
+
+$ go test -count=1 -run 'TestDurationsTheSidecarCannotUseAreRejected|TestRunRejectsAnUnusableValueWithExit2' -v ./internal/config/ ./cmd/health-sidecar/
+=== RUN   TestDurationsTheSidecarCannotUseAreRejected
+--- PASS: TestDurationsTheSidecarCannotUseAreRejected (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.008s
+=== RUN   TestRunRejectsAnUnusableValueWithExit2
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_REPORT_TIMEOUT
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_PROBE_TIMEOUT
+--- PASS: TestRunRejectsAnUnusableValueWithExit2 (0.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY (0.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL (0.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_REPORT_TIMEOUT (0.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_PROBE_TIMEOUT (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	0.020s
+exit=0
+
+## the image built from the final head, health-sidecar:sc4-final (GO_IMAGE=local/go-toolset:1.27, distroless static, revision 7a67abd),
+## run as in a restricted-v2 pod (--user 1000660000:0 --read-only --cap-drop ALL --security-opt no-new-privileges, --network none),
+## with the values of iteration 3's ev/04 section 6 plus a zero heartbeat; the last two must still start
+CS_REPORT_TIMEOUT=0s -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_REPORT_TIMEOUT must be more than 0 (got 0s)
+CS_REPORT_TIMEOUT=-5s -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_REPORT_TIMEOUT must be more than 0 (got -5s)
+CS_PROBE_TIMEOUT=0s -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_PROBE_TIMEOUT must be more than 0 (got 0s)
+CS_PROBE_TIMEOUT=-1s -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_PROBE_TIMEOUT must be more than 0 (got -1s)
+CS_RETRY_DELAY=-2s -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_RETRY_DELAY must not be negative (got -2s)
+CS_STARTUP_GRACE=-1m -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_STARTUP_GRACE must not be negative (got -1m0s)
+CS_HEARTBEAT=-30s -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_HEARTBEAT must be more than 0 (got -30s)
+CS_HEARTBEAT=0s -> exit=2, 1 line(s):
+    ERROR invalid configuration | CS_HEARTBEAT must be more than 0 (got 0s)
+CS_RETRY_DELAY=0 -> running after 3 s (running), exit=0 after SIGTERM; first line:
+    INFO health sidecar starting version=1.0.0-sc4
+CS_STARTUP_GRACE=0s -> running after 3 s (running), exit=0 after SIGTERM; first line:
+    INFO health sidecar starting version=1.0.0-sc4

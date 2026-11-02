@@ -1,0 +1,23 @@
+# G-3-2: one probe per interval across two nodes (pair, sweep 1 s), quiet loser
+
+Checks: 3/3 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| G32-a | F-43/G-3-2 one probe per interval across two instances | PASS | 6 probes of the 3 s endpoint in 31 s with interval 5 s on 2 instances sweeping every 1 s (uncoordinated would be ~12); min gap 5.02 s, max gap 5.03 s |
+| G32-b | F-89/G-3-2 the losing instance stays quiet | PASS | 'skipping monitor'/CONFLICT WARN lines: :19100 0, :19101 0; ERROR lines 0/0; all WARN lines in the window: [] |
+| G32-c | F-43 the monitor keeps its state | PASS | state {'lastStatus': 'UP', 'lastReportAt': '2026-11-02T10:39:27.315Z', 'lastProbeAt': '2026-11-02T10:39:27.315Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 6, 'incidents': 0} version 12 |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:19100/v1/health/monitors body={"tenantId": "vb4-claim-c3c408", "service": "slow-race", "url": "http://127.0.0.1:19160/slow-race", "intervalSeconds": 5, "failureThreshold": 2, "recoveryThreshold": 1} -> 201 {"id":"3d3535cf-76ef-449c-a33f-a8f552226d31","tenantId":"vb4-claim-c3c408","service":"slow-race","url":"http://127.0.0.1:19160/slow-race","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStre
+GET http://127.0.0.1:19160/hits?path=/slow-race body= -> 200 [{"t": 1793615942.187336, "path": "/slow-race", "ua": null, "cid": null}, {"t": 1793615947.217576, "path": "/slow-race", "ua": null, "cid": null}, {"t": 1793615952.243171, "path": "/slow-race", "ua": null, "cid": null}, {"t": 1793615957.269712, "path": "/slow-race", "ua": null, "cid": null}, {"t": 1793615962.2989342, "path": "/slow-race", "ua": null, "cid": null}, {"t": 1793615967.323248, "path": 
+GET http://localhost:19100/v1/health/monitors/3d3535cf-76ef-449c-a33f-a8f552226d31 body= -> 200 {"id":"3d3535cf-76ef-449c-a33f-a8f552226d31","tenantId":"vb4-claim-c3c408","service":"slow-race","url":"http://127.0.0.1:19160/slow-race","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"202
+probe start times (s after registration): [0.9, 5.9, 10.9, 15.9, 21.0, 26.0]
+gaps between consecutive probes: [5.03, 5.03, 5.03, 5.03, 5.02]
+  [PASS] G32-a (F-43/G-3-2 one probe per interval across two instances): 6 probes of the 3 s endpoint in 31 s with interval 5 s on 2 instances sweeping every 1 s (uncoordinated would be ~12); min gap 5.02 s, max gap 5.03 s
+  [PASS] G32-b (F-89/G-3-2 the losing instance stays quiet): 'skipping monitor'/CONFLICT WARN lines: :19100 0, :19101 0; ERROR lines 0/0; all WARN lines in the window: []
+  [PASS] G32-c (F-43 the monitor keeps its state): state {'lastStatus': 'UP', 'lastReportAt': '2026-11-02T10:39:27.315Z', 'lastProbeAt': '2026-11-02T10:39:27.315Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 6, 'incidents': 0} version 12
+DELETE http://localhost:19100/v1/health/monitors/3d3535cf-76ef-449c-a33f-a8f552226d31 body= -> 204 
+```

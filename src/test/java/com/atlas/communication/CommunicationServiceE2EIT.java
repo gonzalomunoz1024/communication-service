@@ -2,7 +2,11 @@ package com.atlas.communication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,9 +14,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.Ticket;
@@ -28,10 +39,13 @@ import reactor.test.StepVerifier;
  * error contract (validation 400, duplicate 409) and that the OpenAPI spec is served.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class CommunicationServiceE2EIT {
 
     @Autowired
     private WebTestClient client;
+    @LocalServerPort
+    private int port;
 
     @BeforeEach
     void identifyAsTestClient() {
@@ -167,6 +181,36 @@ class CommunicationServiceE2EIT {
     }
 
     @Test
+    void streamIsCommittedAtOnceForATenantWithNothingVisible() {
+        // nothing is visible for this tenant, so no snapshot frame will ever be written; the
+        // status, headers and an opening comment must still reach the client immediately
+        // (before this fix they arrived with the first keepalive, 15 s in)
+        WebClient raw = WebClient.create("http://localhost:" + port);
+        long started = System.nanoTime();
+        String firstBytes = raw.get()
+                .uri("/v1/feed/stream?tenantId=nobody-publishes-here-" + started)
+                .header(ClientIdWebFilter.HEADER, "communication-service-tests")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .exchangeToFlux(response -> {
+                    assertThat(response.statusCode()).isEqualTo(HttpStatus.OK);
+                    assertThat(response.headers().contentType()).hasValueSatisfying(type ->
+                            assertThat(type.isCompatibleWith(MediaType.TEXT_EVENT_STREAM)).isTrue());
+                    return response.bodyToFlux(DataBuffer.class)
+                            .map(buffer -> {
+                                String text = buffer.toString(StandardCharsets.UTF_8);
+                                DataBufferUtils.release(buffer);
+                                return text;
+                            });
+                })
+                .next()
+                .block(Duration.ofSeconds(5));
+        long elapsedMs = Duration.ofNanos(System.nanoTime() - started).toMillis();
+
+        assertThat(firstBytes).startsWith(":connected");
+        assertThat(elapsedMs).as("time to first bytes").isLessThan(2000);
+    }
+
+    @Test
     void ticketContracts() {
         // a ticket is optional; one given is normalised, linked into the configured instance,
         // and becomes the externalRef unless one was set
@@ -253,19 +297,141 @@ class CommunicationServiceE2EIT {
                 .expectBody()
                 .jsonPath("$.error").value(msg -> assertThat((String) msg).contains("endsAt"));
 
-        // duplicate externalRef -> 409
-        publishOutage("INC-e2e-dup");
+        // duplicate externalRef -> 409 whose body names the notice holding it and says the key is permanent
+        Communication dupHolder = publishOutage("INC-e2e-dup");
         client.post().uri("/v1/communications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
                         "severity", "MAJOR", "title", "again", "externalRef", "INC-e2e-dup"))
                 .exchange()
-                .expectStatus().isEqualTo(409);
+                .expectStatus().isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .contains("permanent").contains(dupHolder.id()).contains("INC-e2e-dup-2"));
 
         // invalid enum -> 400, not 500
         client.get().uri("/v1/feed?tenantId=vmforge&type=NOPE")
                 .exchange()
                 .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void publisherAndAdminReadsReportTheEffectiveStatusBeforeTheSweeperRuns() {
+        // published when its window had already closed: ACTIVE in the store until the status sweep
+        // (every 60 s in tests) converges it, EXPIRED for every reader from the start
+        String tenant = "vmforge-lapsed-" + System.nanoTime();
+        Instant now = Instant.now();
+        Communication lapsed = client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", tenant, "publisher", "vmforge-sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "over before it was published",
+                        "startsAt", now.minusSeconds(7200).toString(),
+                        "expiresAt", now.minusSeconds(3600).toString()))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Communication.class)
+                .returnResult().getResponseBody();
+        String item = "$.items[?(@.id=='%s')]".formatted(lapsed.id());
+
+        client.get().uri("/v1/feed/{id}", lapsed.id()).exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.status").isEqualTo("EXPIRED");
+        client.get().uri("/v1/communications/{id}", lapsed.id()).exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo("EXPIRED")
+                .jsonPath("$.version").isEqualTo(0)
+                .jsonPath("$.history.length()").isEqualTo(1);
+        client.get().uri("/v1/communications?tenantId={tenant}", tenant).exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath(item + ".status").isEqualTo("EXPIRED");
+        client.get().uri("/v1/admin/communications?tenantId={tenant}", tenant).exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath(item + ".status").isEqualTo("EXPIRED");
+        assertThat(lapsed.status()).as("the publish answer").isEqualTo(CommunicationStatus.EXPIRED);
+    }
+
+    @Test
+    void anExpiryBeforeTheDefaultedStartAndAMissingVersionSayWhatWasSentAndWhatToSend() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "already over", "expiresAt", "2026-10-01T09:00:00Z"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg).matches(
+                        "expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now "
+                                + "\\(\\d{4}-\\d\\d-\\d\\dT[0-9:.]+Z\\)"));
+        client.put().uri("/v1/communications/{id}", publishOutage("INC-e2e-version").id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("body", "Mitigation in progress."))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("expectedVersion is required: send the version from your last GET "
+                        + "of this notice; a 409 means someone changed it since");
+    }
+
+    @Test
+    void publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "vmforge-sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "typo", "expiryAt", "2026-11-01T14:00:00Z"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("unknown field 'expiryAt'; known fields: ").contains("expiresAt"));
+
+        // the service's own Actuator document forwarded as is, plus tenant and service
+        client.post().uri("/v1/health/reports")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"tenantId":"vmforge-forwarded","service":"vm-api","status":"UP",
+                         "groups":["liveness","readiness"],"components":{"ping":{"status":"UP"}}}
+                        """)
+                .exchange()
+                .expectStatus().isAccepted();
+    }
+
+    @Test
+    void aNoticePutBackWholeNamesEveryFieldAnUpdateDoesNotTakeInOneAnswer() {
+        // read-modify-write as a client first tries it: GET the notice, change the body, PUT the document back
+        String id = publishOutage("INC-e2e-put-back").id();
+        Map<String, Object> document = new LinkedHashMap<>(client.get().uri("/v1/communications/{id}", id)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(new ParameterizedTypeReference<Map<String, Object>>() { })
+                .returnResult().getResponseBody());
+        document.put("body", "Mitigation in progress.");
+        List<String> readOnly = List.of("createdAt", "externalRef", "history", "id", "publisher", "status",
+                "tenantId", "type", "updatedAt", "version");
+
+        client.put().uri("/v1/communications/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(document)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown fields 'createdAt', 'externalRef', 'history', 'id', "
+                        + "'publisher', 'status', 'tenantId', 'type', 'updatedAt', 'version'; known fields: actor, "
+                        + "affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, "
+                        + "ticket, title");
+
+        // one answer was enough: without the fields it named, and with the version it read, the update saves
+        Object version = document.get("version");
+        document.keySet().removeAll(readOnly);
+        document.put("expectedVersion", version);
+        client.put().uri("/v1/communications/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(document)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.body").isEqualTo("Mitigation in progress.")
+                .jsonPath("$.version").isEqualTo(1);
     }
 
     @Test

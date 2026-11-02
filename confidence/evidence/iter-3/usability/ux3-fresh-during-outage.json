@@ -1,0 +1,81 @@
+{
+  "samples": [
+    "0s Connecting skeleton",
+    "1s Live skeleton",
+    "2s Live skeleton",
+    "3s Live skeleton",
+    "4s Live skeleton",
+    "5s Reconnecting skeleton",
+    "6s Reconnecting skeleton",
+    "7s Reconnecting skeleton",
+    "8s Live skeleton",
+    "9s Live skeleton",
+    "10s Live skeleton",
+    "11s Live skeleton",
+    "12s Live skeleton",
+    "13s Reconnecting skeleton",
+    "14s Reconnecting skeleton",
+    "15s Reconnecting ERROR-SHOWN",
+    "16s Live skeleton",
+    "17s Live skeleton",
+    "18s Live skeleton",
+    "19s Live skeleton",
+    "20s Live skeleton",
+    "21s Reconnecting ERROR-SHOWN",
+    "22s Reconnecting ERROR-SHOWN",
+    "23s Reconnecting ERROR-SHOWN",
+    "24s Live skeleton",
+    "25s Live skeleton",
+    "26s Live skeleton",
+    "27s Live skeleton",
+    "28s Live skeleton",
+    "29s Reconnecting ERROR-SHOWN",
+    "30s Reconnecting ERROR-SHOWN",
+    "31s Reconnecting ERROR-SHOWN",
+    "32s Live skeleton",
+    "33s Live skeleton",
+    "34s Live skeleton",
+    "35s Live skeleton",
+    "36s Live skeleton",
+    "37s Reconnecting ERROR-SHOWN",
+    "38s Reconnecting ERROR-SHOWN",
+    "39s Reconnecting ERROR-SHOWN",
+    "40s Live skeleton",
+    "41s Live skeleton",
+    "42s Live skeleton",
+    "43s Live skeleton",
+    "44s Live skeleton"
+  ],
+  "feedGets": 7,
+  "streams": 6,
+  "getAnswers": [
+    {
+      "t": 5476,
+      "status": 503
+    },
+    {
+      "t": 10481,
+      "status": 503
+    },
+    {
+      "t": 15495,
+      "status": 503
+    },
+    {
+      "t": 21515,
+      "status": 503
+    },
+    {
+      "t": 29528,
+      "status": 503
+    },
+    {
+      "t": 37548,
+      "status": 503
+    },
+    {
+      "t": 45560,
+      "status": 503
+    }
+  ]
+}

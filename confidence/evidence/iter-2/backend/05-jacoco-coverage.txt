@@ -1,0 +1,41 @@
+# 05 - coverage: the build's JaCoCo gate vs the measured ratio, and what the config/** exclusion leaves out, 2026-11-02T04:22:19Z
+
+## gate (build.gradle.kts:134-145): LINE COVEREDRATIO >= 0.92 over test + integrationTest, classDirectories exclude com/atlas/communication/config/** and *Application*
+## measured by run 1 (build/reports/jacoco/test/jacocoTestReport.xml, filtered as the gate sees it)
+  INSTRUCTION  covered= 7792 missed=  425 ratio=0.9483
+  BRANCH       covered=  586 missed=  126 ratio=0.8230
+  LINE         covered= 1176 missed=   55 ratio=0.9553
+  COMPLEXITY   covered=  629 missed=  132 ratio=0.8265
+  METHOD       covered=  383 missed=   17 ratio=0.9575
+  CLASS        covered=   63 missed=    0 ratio=1.0000
+  margin above the 0.92 line gate: 0.0353 = 43 lines
+
+## unfiltered (verifier init script, ALL main classes incl. config/** and the main class), from the same exec data
+  INSTRUCTION  covered= 8623 missed=  535 ratio=0.9416
+  BRANCH       covered=  650 missed=  172 ratio=0.7908
+  LINE         covered= 1332 missed=   76 ratio=0.9460
+  COMPLEXITY   covered=  691 missed=  170 ratio=0.8026
+  METHOD       covered=  426 missed=   18 ratio=0.9595
+  CLASS        covered=   70 missed=    0 ratio=1.0000
+
+## the excluded classes, line coverage (unfiltered report)
+  CommunicationServiceApplication        lines covered=   1 missed=   2 ratio=0.333
+  GlobalExceptionHandler                 lines covered=  81 missed=  16 ratio=0.835 branches covered=41 missed=43
+  ClientIdWebFilter                      lines covered=  44 missed=   4 ratio=0.917 branches covered=22 missed=4
+  OpenApiConfig                          lines covered=  19 missed=   0 ratio=1.000
+  MongoClientConfig                      lines covered=   7 missed=   0 ratio=1.000
+  MongoTimeoutProperties                 lines covered=   1 missed=   0 ratio=1.000
+  ClockConfig                            lines covered=   2 missed=   0 ratio=1.000
+  excluded total: lines covered=155 missed=22 ratio=0.8757
+
+## lowest-covered classes overall (unfiltered), line ratio
+  0.333 covered=   1 missed=   2 CommunicationServiceApplication
+  0.333 covered=   2 missed=   4 RestControllerAdminAdapter
+  0.750 covered=   3 missed=   1 FeedQuery
+  0.800 covered=   8 missed=   2 RestControllerPublishingAdapter
+  0.807 covered=  71 missed=  17 MongoCommunicationEventsAdapter
+  0.835 covered=  81 missed=  16 GlobalExceptionHandler
+  0.871 covered=  74 missed=  11 HealthObservationUseCase
+  0.909 covered=  10 missed=   1 Page
+  0.917 covered=  44 missed=   4 ClientIdWebFilter
+  0.923 covered=  24 missed=   2 RestControllerFeedAdapter

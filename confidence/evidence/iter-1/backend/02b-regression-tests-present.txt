@@ -1,0 +1,10 @@
+reconnectingWithLastEventIdReplaysWhatWasMissed                        1 file(s), failures: 0
+streamIsCommittedAtOnceForATenantWithNothingVisible                    1 file(s), failures: 0
+anOperatorRetiringTheAutoNoticeMakesTheMonitorCountAgain               1 file(s), failures: 0
+aFleetOfPodsReportingInTheSameInstantIsAccepted                        1 file(s), failures: 0
+closingTheContextCompletesEveryLiveStream                              1 file(s), failures: 0
+letsProbesReachTheHealthEndpointWithoutAnId                            1 file(s), failures: 0
+logsEveryIdentifiedRequestWithItsOutcome                               1 file(s), failures: 0
+retireAfterExpiresAtButBeforeTheSweepIs409                             1 file(s), failures: 0
+conflictingReportsAreRetriedMoreThanThreeTimesWithAPauseInBetween      1 file(s), failures: 0
+streamEndsWhenTheEventSourceEnds                                       1 file(s), failures: 0

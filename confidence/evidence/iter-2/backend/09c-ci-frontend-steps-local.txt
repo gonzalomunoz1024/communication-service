@@ -1,0 +1,50 @@
+# 09c - frontend CI steps run locally (lint, typecheck, test, build, audit); npm ci skipped because frontend/node_modules serves the shared dev server on :3000
+# 09c - frontend CI steps run locally (npm ci skipped: node_modules is in use by the shared dev server on :3000; lint, typecheck, test, build to the scratchpad, audit)
+Mon Nov  2 04:11:30 UTC 2026
+node v22.23.4 npm 10.9.9
+## npm run lint
+
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+
+EXIT=0
+## npm run typecheck
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+EXIT=0
+## npm run test
+
+> @atlas/communication-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+
+
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+   Start at  04:11:42
+   Duration  9.68s (tests 41%, environment 40%, setup 14%, import 4%, transform 2%)
+
+    Isolate  18 workers spawned · ~716ms startup each (spawn + environment, per file)
+             at least ~3.58s faster with isolate: false — reuses workers across files instead of one per file
+
+EXIT=0
+## build (tsc -b --noEmit is what typecheck did; vite build with --outDir in the scratchpad so frontend/dist is untouched)
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 47 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/backend2/fe-dist/index.html                   1.25 kB │ gzip:  0.71 kB
+../../../../tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/backend2/fe-dist/assets/index-AK2MvNYg.css   31.12 kB │ gzip:  7.09 kB
+../../../../tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/backend2/fe-dist/assets/index-CATUeeII.js   268.29 kB │ gzip: 83.73 kB
+
+✓ built in 608ms
+EXIT=0
+## npm audit --omit=dev --audit-level=high
+found 0 vulnerabilities
+EXIT=0
+Mon Nov  2 04:11:54 UTC 2026

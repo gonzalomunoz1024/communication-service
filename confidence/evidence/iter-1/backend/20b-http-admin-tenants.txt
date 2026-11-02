@@ -1,0 +1,19 @@
+# Iteration 1: admin tenant summary
+
+Checks: 3/3 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| A-24a | F-24 shape | PASS | keys=['counts', 'tenantId', 'total'] |
+| A-24b | F-24 sorted by tenant | PASS | 82 tenants, first=audit-es-1tno last=ux-sre2 |
+| A-24c | F-24 counts match the publisher listing (stored status) | PASS | checked be-a-* tenants; mismatches=[] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+GET http://localhost:8080/v1/admin/tenants body= -> 200 [{"tenantId":"audit-es-1tno","counts":{"ACTIVE":1},"total":1},{"tenantId":"audit-f01-ygjho","counts":{"ACTIVE":2},"total":2},{"tenantId":"audit-f11-ygjho","counts":{"ACTIVE":1},"total":1},{"tenantId":"audit-f15-de8e","counts":{"EXPIRED":1},"total":1},{"tenantId":"audit-f16-ygjho","counts":{"SCHEDULED":3},"total":3},{"tenantId":"audit-f17-ygjho","counts":{"DRAFT":1,"RETIRED":2},"total":3},{"tenantI
+  [PASS] A-24a (F-24 shape): keys=['counts', 'tenantId', 'total']
+  [PASS] A-24b (F-24 sorted by tenant): 82 tenants, first=audit-es-1tno last=ux-sre2
+GET http://localhost:8080/v1/communications?tenantId=be1-a-12ab3a&size=100 body= -> 200 {"items":[{"id":"0ecdceba-ef93-4465-9ca2-bcd396e20b42","tenantId":"be1-a-12ab3a","publisher":"be1-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T02:31:22Z","ticket":{"system":"servicenow","number":"INC0099999"},"createdAt":"2026-11-02T01:31:22.645Z","updatedAt":"2026-11-02T01:31:31.904Z",
+  [PASS] A-24c (F-24 counts match the publisher listing (stored status)): checked be-a-* tenants; mismatches=[]
+```

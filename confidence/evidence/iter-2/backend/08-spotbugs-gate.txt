@@ -1,0 +1,22 @@
+# 08 - SpotBugs gate: what 'check' enforces, the exclusions, and what a LOW-confidence run adds, 2026-11-02T04:22:19Z
+
+## gate as configured (build.gradle.kts:83-109): effort MAX, reportLevel MEDIUM, excludeFilter config/spotbugs/exclude.xml, spotbugsTest disabled, html+xml reports; spotbugsMain is a dependency of check
+## run 1 result (build/reports/spotbugs/main.html): '2820 lines of code analyzed, in 89 classes, in 23 packages', High 0, Medium 0, Total 0; main.xml: 89 <Jar> class entries, 84 AuxClasspathEntry, 0 BugInstance (FindBugsSummary total_classes=0 is the XML writer's summary quirk; the HTML metrics and the Jar list show the classes were analysed)
+## does the gate bite? fixers' before-evidence (confidence/evidence/iter-2/fixers/be-d-G-2-2-before.txt): the same task FAILED the build with 31 findings before the G-2-2 fixes
+
+## exclude.xml judged entry by entry (verifier read the code)
+1. EI_EXPOSE_REP2 on the constructors of MongoCommunicationEventsAdapter, ClientIdWebFilter, FeedUseCase, WebClientHealthProbeAdapter, HealthSweepUseCase: Spring constructor injection of singleton collaborators (ReactiveMongoTemplate, ObjectMapper, ports, use cases); copying them would be wrong. Justified, scoped to <init> of five named classes.
+2. URF_UNREAD_FIELD HealthInstanceDocument.id: @Id written in fromDomain (HealthInstanceDocument.java:27-49) and read by Spring Data's mapping; justified.
+3. EI_EXPOSE_REP TenantSummary.counts: compact constructor wraps a LinkedHashMap copy in Collections.unmodifiableMap (TenantSummary.java, iteration-2 diff) to keep status order; SpotBugs only recognises Map.copyOf. Justified.
+4. EI_EXPOSE_REP ActuatorComponent.details/components/children: compact constructor makes unmodifiable LinkedHashMap copies (ActuatorComponent.java); Map.copyOf would reject null detail values that Actuator documents carry. Justified.
+5. EI_EXPOSE_REP HealthReportCommand.details/components: same copies in its compact constructor (HealthReportCommand.java). Justified.
+No entry excludes a package, a class wholesale or a pattern wholesale; nothing hides a correctness finding.
+
+## what the MEDIUM threshold leaves out: the same analysis at LOW confidence (verifier init script, ignoreFailures, report in the scratchpad)
+LOW-confidence run: 6 findings
+  P3 rank20 PERFORMANCE URF_UNREAD_FIELD: CommunicationDocument.severityRank line 67 :: Unread field: com.atlas.communication.common.adapters.outbound.CommunicationDocument.severityRank
+  P3 rank20 PERFORMANCE URF_UNREAD_FIELD: CommunicationEventDocument.tenantId line 34 :: Unread field: com.atlas.communication.common.adapters.outbound.CommunicationEventDocument.tenantId
+  P3 rank20 STYLE UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR: CommunicationEventDocument.toDomain().seq line 40 :: CommunicationEventDocument.seq not initialized in constructor and dereferenced in com.atlas.communication.common.adapters.outbound.Communica
+  P3 rank20 STYLE UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR: CommunicationEventDocument.fanOut().seq line 122 :: CommunicationEventDocument.seq not initialized in constructor and dereferenced in com.atlas.communication.common.adapters.outbound.MongoComm
+  P3 rank20 STYLE UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR: CommunicationEventDocument.lambda$canResumeAfter$10().seq line 178 :: CommunicationEventDocument.seq not initialized in constructor and dereferenced in com.atlas.communication.common.adapters.outbound.MongoComm
+  P3 rank20 STYLE REC_CATCH_EXCEPTION: WebClientHealthProbeAdapter.parse() line 77 :: Exception is caught when Exception is not thrown in com.atlas.communication.health.adapters.outbound.WebClientHealthProbeAdapter.parse(Strin

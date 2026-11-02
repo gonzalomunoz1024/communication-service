@@ -1,0 +1,11 @@
+pod IP (non-loopback address of the app): '172.17.0.4'
+== P1 (dead proxies, NO_PROXY=service host) /status:
+   target=http://172.17.0.4:8080/actuator/health lastTarget=http://172.17.0.4:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=10:42:51.497 sendError=None
+   log: {"time":"2026-11-02T10:42:51.499875028Z","level":"INFO","msg":"health target found","target":"http://172.17.0.4:8080/actuator/health","status":"UP"}
+   requests at the plain service stub 19326: 1
+== P2 (HTTP_PROXY = recording stub 19325; endpoint 19324 has no listener) /status:
+   target=http://172.17.0.4:8080/actuator/health lastTarget=http://172.17.0.4:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=10:42:51.786 sendError=None
+   log: {"time":"2026-11-02T10:42:51.794168223Z","level":"INFO","msg":"health target found","target":"http://172.17.0.4:8080/actuator/health","status":"UP"}
+   every request the recording proxy received (method, path; a probe would be GET /actuator/health):
+    {'POST /v1/health/reports': 1}
+end 10:43:00.560

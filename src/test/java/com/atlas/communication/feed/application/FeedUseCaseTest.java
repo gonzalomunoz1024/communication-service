@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -156,13 +157,13 @@ class FeedUseCaseTest {
     }
 
     @Test
-    void streamEmitsMatchingLiveEventsAndASnapshotStampedWithThePosition() {
+    void streamEmitsMatchingLiveEventsAndASnapshotStampedWithTheLogHead() {
         Communication visible = outage("c1", NOW.minusSeconds(60), null);
         Communication otherTenant = Communication.create("x1", "otherpod", "sre",
                 CommunicationType.OUTAGE, Severity.MAJOR, "other", null, List.of(), null, false,
                 NOW, null, null, null, NOW);
         when(repository.query(any())).thenReturn(Flux.just(visible));
-        when(events.position()).thenReturn(42L);
+        when(events.head()).thenReturn(Mono.just(42L));
         when(events.stream()).thenReturn(Flux.just(
                 new CommunicationEvent(7, CommunicationEventType.RETIRED, NOW, otherTenant),
                 new CommunicationEvent(8, CommunicationEventType.RETIRED, NOW, visible)));
@@ -180,6 +181,27 @@ class FeedUseCaseTest {
                     assertThat(e.communication().id()).isEqualTo("c1");
                 })
                 .verifyComplete();
+    }
+
+    @Test
+    void theSnapshotIsStampedWithTheLogHeadReadBeforeItIsQueried() {
+        Communication visible = outage("c1", NOW.minusSeconds(60), null);
+        when(repository.query(any())).thenReturn(Flux.just(visible));
+        // the log holds 43 events, whatever this node's fan-out cursor has got to
+        when(events.head()).thenReturn(Mono.just(43L));
+        when(events.stream()).thenReturn(Flux.never());
+
+        StepVerifier.create(useCase.stream(query(0, 100)).take(1))
+                .assertNext(e -> {
+                    assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT);
+                    assertThat(e.seq()).as("a resume from the snapshot id may repeat 43, never skip it")
+                            .isEqualTo(43);
+                })
+                .verifyComplete();
+        // read before the query, so nothing appended while the snapshot was built is skipped by a resume
+        InOrder inOrder = Mockito.inOrder(events, repository);
+        inOrder.verify(events).head();
+        inOrder.verify(repository).query(any());
     }
 
     @Test
@@ -207,11 +229,15 @@ class FeedUseCaseTest {
     void streamFallsBackToASnapshotWhenLastEventIdIsTooOld() {
         Communication visible = outage("c1", NOW.minusSeconds(60), null);
         when(events.canResumeAfter(3)).thenReturn(Mono.just(false));
+        when(events.head()).thenReturn(Mono.just(9L));
         when(events.stream()).thenReturn(Flux.empty());
         when(repository.query(any())).thenReturn(Flux.just(visible));
 
         StepVerifier.create(useCase.stream(query(0, 100), 3L))
-                .assertNext(e -> assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT))
+                .assertNext(e -> {
+                    assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT);
+                    assertThat(e.seq()).as("the fresh snapshot carries the head, so the next resume works").isEqualTo(9);
+                })
                 .verifyComplete();
         verify(events, never()).streamAfter(any(), anyLong());
     }

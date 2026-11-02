@@ -1,0 +1,13 @@
+{"time":"2026-11-02T02:39:24.337264171Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter1","service":"audit1-app","tenant":"audit1-pod","instance":"audit1-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19805","probe":"auto"}
+{"time":"2026-11-02T02:39:24.339842719Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T02:39:24.671402902Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T02:39:56.88997575Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T02:40:28.966077898Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T02:41:01.234231902Z","level":"INFO","msg":"reported","status":"WARN","message":"health document reports WARN"}
+{"time":"2026-11-02T02:41:06.712719914Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T02:41:36.754769044Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T02:41:36.769246738Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+{"time":"2026-11-02T02:42:09.119988612Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T02:42:09.143494208Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T02:42:39.306001569Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T02:42:39.306364914Z","level":"INFO","msg":"health sidecar stopped"}

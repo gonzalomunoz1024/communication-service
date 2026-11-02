@@ -1,0 +1,11 @@
+# be-e final suite: ./gradlew --max-workers=2 --no-daemon test integrationTest in the BE-E worktree at d334871
+# 2026-11-02T03:37:02Z
+
+test (unit):            tests=205 failures=0 errors=0 skipped=0
+integrationTest:        tests=42 failures=0 errors=0 skipped=0
+gradle exit code:       0
+
+9:> Task :testClasses UP-TO-DATE
+12:> Task :test
+15:> Task :integrationTest
+178:BUILD SUCCESSFUL in 39s

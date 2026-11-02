@@ -1,0 +1,14 @@
+# axe color-contrast 'incomplete' on the Publish tab (shared :3000, read-only), then a hand check of that node
+$ node scripts/ux3-contrast-incomplete.js
+== light: violations 0, passes nodes 47, incomplete nodes 1
+  #_r_1_-body | Element's background color could not be determined because it's partially obscured by another element | fg undefined bg undefined ratio 0 reason elmPartiallyObscured
+    text: ""
+== dark: violations 0, passes nodes 47, incomplete nodes 1
+  #_r_1_-body | Element's background color could not be determined because it's partially obscured by another element | fg undefined bg undefined ratio 0 reason elmPartiallyObscured
+    text: ""
+exit 0
+
+$ node scripts/ux3-contrast-body.js   # WCAG 1.4.3 needs >= 4.5:1
+light {"label":"Details","rect":[486,618],"viewportH":800,"fg":[29,29,31],"bg":[245,245,247],"text":"15.46","placeholder":[110,110,115],"placeholderRatio":"4.66","placeholderText":"Card payments fail for roughly 30% of requests. Retries succeed. Next update in 30 minutes.","atBottomEdge":"textarea itself"}
+dark {"label":"Details","rect":[486,618],"viewportH":800,"fg":[245,245,247],"bg":[28,28,30],"text":"15.63","placeholder":[152,152,157],"placeholderRatio":"5.93","placeholderText":"Card payments fail for roughly 30% of requests. Retries succeed. Next update in 30 minutes.","atBottomEdge":"textarea itself"}
+exit 0

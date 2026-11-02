@@ -1,0 +1,41 @@
+## 2026-11-02T05:30:55Z G-3-28 after (worktree on 709c4d8 + this change): npm ci, then the static checks CI runs before the suite
+added 113 packages in 3s
+$ npm run typecheck
+exit=0
+$ npm run lint
+exit=0
+$ npm audit
+found 0 vulnerabilities
+## rules the gate applies to tests/*.ts (from eslint --print-config)
+  102 rules on, 37 from playwright/:
+  playwright/consistent-spacing-between-blocks, playwright/expect-expect, playwright/max-nested-describe, playwright/missing-playwright-await, playwright/no-conditional-expect, playwright/no-conditional-in-test, playwright/no-duplicate-hooks, playwright/no-duplicate-slow, playwright/no-element-handle, playwright/no-eval, playwright/no-focused-test, playwright/no-force-option, playwright/no-identical-title, playwright/no-nested-step, playwright/no-networkidle, playwright/no-page-pause, playwright/no-skipped-test, playwright/no-standalone-expect, playwright/no-unnecessary-assertions, playwright/no-unsafe-references, playwright/no-unused-locators, playwright/no-useless-await, playwright/no-useless-not, playwright/no-wait-for-navigation, playwright/no-wait-for-selector, playwright/no-wait-for-timeout, playwright/prefer-hooks-in-order, playwright/prefer-hooks-on-top, playwright/prefer-locator, playwright/prefer-to-have-count, playwright/prefer-to-have-length, playwright/prefer-web-first-assertions, playwright/valid-describe-callback, playwright/valid-expect, playwright/valid-expect-in-promise, playwright/valid-test-tags, playwright/valid-title
+## the gate catches what the type-check cannot: a probe spec with an unawaited assertion and a focused test (deleted afterwards)
+tsc exit=0
+> eslint . --max-warnings 0
+  3:6  error  Unexpected focused test                    playwright/no-focused-test
+  4:3  error  'toBeVisible' must be awaited or returned  playwright/missing-playwright-await
+✖ 2 problems (2 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+lint exit=1
+$ grep -n 'npm run lint' ../.github/workflows/e2e.yml
+53-        run: |
+54-          npm ci
+55-          npm run typecheck
+56:          npm run lint
+57-          npx playwright install --with-deps chromium
+
+## 2026-11-02T06:18:26Z at the final commit 7ee45f4 (seven spec files, incl. the new 05-07 and the changed 04)
+$ ls tests/
+  01-api-contract.spec.ts
+  02-f90-publish-live-resolve.spec.ts
+  03-f91-sidecar-auto-notice.spec.ts
+  04-f92-backend-restart.spec.ts
+  05-f76-sidecar-sigterm.spec.ts
+  06-f39-pull-monitor.spec.ts
+  07-f92-database-down.spec.ts
+  helpers.ts
+$ npm run typecheck
+exit=0
+$ npm run lint
+
+exit=0

@@ -1,0 +1,31 @@
+== G-3-19 before: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat at 3806e7c (agent_test.go:573-616), wall clock
+-- its timing and assertions (source):
+578:		{"DOWN app: one report per probe", "DOWN", 3, 20},
+579:		{"UP app: the first report, then nothing before the heartbeat", "UP", 1, 1},
+586:			h.agent.Now = time.Now // Run's timers are real, so the heartbeat clock must be too
+593:			time.Sleep(300 * time.Millisecond)
+607:				t.Fatalf("%d reports in 300 ms at a 50 ms interval, want between %d and %d", len(sent), tc.min, tc.max)
+
+-- go test -run TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat -count=20 -race (passes; 300 ms of real time per subtest, 12 s in all):
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	13.242s
+real	0m14.635s
+
+-- mutation: (a) the every-probe clause removed from send()
+    agent_test.go:607: 1 reports in 300 ms at a 50 ms interval, want between 3 and 20
+--- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat (0.61s)
+    --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe (0.31s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_nothing_before_the_heartbeat (0.31s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.644s
+FAIL
+
+-- mutation: (b) the heartbeat never fires (>= Heartbeat -> >= 1000*Heartbeat): NOT caught
+--- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat (0.61s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe (0.30s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_nothing_before_the_heartbeat (0.30s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.629s
+
+-- mutation: (c) Run's jitter 0.2 -> 3.0 (waits of 1x-4x the interval): caught or not depending on the random waits; 10 runs:
+      4     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+      6     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+-- mutations reverted; old tree clean: yes

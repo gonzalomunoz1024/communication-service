@@ -5,6 +5,8 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.Document;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -14,6 +16,7 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
 import com.atlas.communication.common.ports.outbound.CommunicationEventsPort;
+import com.atlas.communication.config.GlobalExceptionHandler;
 import com.mongodb.MongoCommandException;
 
 import jakarta.annotation.PostConstruct;
@@ -33,7 +36,9 @@ import reactor.util.retry.Retry;
  * with {@code Last-Event-ID} gets exactly what it missed, in order.
  * <p>
  * Tailing is a poll, not a change stream, so a standalone Mongo (local development, embedded
- * tests) works; live latency is bounded by {@code communication.events.poll-interval-ms}.
+ * tests) works; live latency is bounded by {@code communication.events.poll-interval-ms}. While
+ * the database cannot be reached the poll is skipped: one WARN line when that starts, one INFO
+ * line when a poll works again, DEBUG in between.
  */
 @Component
 @Slf4j
@@ -50,6 +55,8 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
     private final EventsProperties properties;
     /** Last sequence fanned out by this instance; -1 until the log position has been read. */
     private final AtomicLong cursor = new AtomicLong(-1);
+    /** Polls skipped in a row because the database could not be reached; the lines are logged on the change. */
+    private final AtomicLong skippedPolls = new AtomicLong();
     // directBestEffort: slow subscribers miss events instead of blocking the tail; they can
     // resume from Last-Event-ID, and the snapshot-on-subscribe contract heals the rest.
     private final Sinks.Many<CommunicationEvent> sink =
@@ -76,11 +83,33 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
                                 signal.failure().toString())))
                 .thenMany(Flux.interval(interval, interval)
                         .onBackpressureDrop()
-                        .concatMap(tick -> pollOnce().onErrorResume(ex -> {
-                            log.warn("event log poll failed: {}", ex.toString());
-                            return Mono.empty();
-                        }), 1))
+                        .concatMap(tick -> pollOnce()
+                                .doOnNext(fannedOut -> pollWorked())
+                                .onErrorResume(ex -> {
+                                    pollFailed(ex);
+                                    return Mono.empty();
+                                }), 1))
                 .subscribe();
+    }
+
+    private void pollWorked() {
+        long skipped = skippedPolls.getAndSet(0);
+        if (skipped > 0) {
+            log.info("event log poll resumed: database reachable again after {} skipped poll(s)", skipped);
+        }
+    }
+
+    /** One WARN line per outage, not one per poll (two a second by default). */
+    private void pollFailed(Throwable ex) {
+        if (!GlobalExceptionHandler.isDatabaseUnavailable(ex)) {
+            log.warn("event log poll failed: {}", ex.toString());
+            return;
+        }
+        if (skippedPolls.getAndIncrement() == 0) {
+            log.warn("event log poll skipped: {}: {}", GlobalExceptionHandler.DATABASE_UNAVAILABLE, ex.getMessage());
+        } else {
+            log.debug("event log poll skipped: {}: {}", GlobalExceptionHandler.DATABASE_UNAVAILABLE, ex.getMessage());
+        }
     }
 
     @PreDestroy
@@ -88,6 +117,20 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
         if (tail != null) {
             tail.dispose();
         }
+    }
+
+    /**
+     * Ends every live stream the moment the context starts closing. SSE responses never finish
+     * on their own, so the graceful shutdown of the web server (which waits for in-flight
+     * requests before anything else is stopped) would otherwise sit out its whole timeout,
+     * 30 s by default, and then cut the connections. {@link ContextClosedEvent} is published
+     * before that wait begins; subscribers see their stream complete, reconnect to another
+     * instance and resume with {@code Last-Event-ID}. Late subscribers complete at once.
+     */
+    @EventListener(ContextClosedEvent.class)
+    public void closeStreams() {
+        stop();
+        sink.tryEmitComplete();
     }
 
     /** Positions the cursor at the end of the log, so only events from now on are fanned out. */
@@ -142,8 +185,7 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
                     .subscribe(buffer::tryEmitNext, buffer::tryEmitError, buffer::tryEmitComplete);
             long replayedUpTo = Math.max(cursor.get(), afterSeq);
             Flux<CommunicationEvent> replay = repository
-                    .findByTenantIdAndSeqGreaterThanAndSeqLessThanEqualOrderBySeqAsc(
-                            tenantId, afterSeq, replayedUpTo)
+                    .findTenantEventsInWindow(tenantId, afterSeq, replayedUpTo)
                     .map(CommunicationEventDocument::toDomain);
             return Flux.concat(replay, buffer.asFlux().filter(e -> e.seq() > replayedUpTo))
                     .doFinally(signal -> live.dispose());
@@ -166,14 +208,19 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
     }
 
     @Override
-    public long position() {
+    public Mono<Long> head() {
+        return sequence.current();
+    }
+
+    /** Last sequence this instance has fanned out: the tail cursor, which trails {@link #head()} by up to one poll. */
+    long position() {
         return Math.max(cursor.get(), 0);
     }
 
     private Mono<Void> ensureTtlIndex() {
         Index ttl = new Index().on("at", Sort.Direction.ASC).named(TTL_INDEX)
                 .expire(properties.retention());
-        return template.indexOps(CommunicationEventDocument.class).ensureIndex(ttl)
+        return template.indexOps(CommunicationEventDocument.class).createIndex(ttl)
                 .onErrorResume(MongoCommunicationEventsAdapter::isIndexConflict, ex -> updateTtl())
                 .then();
     }

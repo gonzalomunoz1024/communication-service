@@ -1,0 +1,41 @@
+# sc-4 G-4-26 AFTER: the README prints the extraEnv list snippet; the test renders it through a consuming chart
+# date: 2026-11-02T08:24:52Z; helm v3.16
+
+$ grep -n -B2 -A8 'shaped like a container' README.md
+263:Helm add it to `csHealthSidecar.extraEnv`, a list of entries shaped like a container's `env` (a map
+264-such as `CS_LOG_LEVEL: debug` there fails `helm template`):
+265-
+266-```yaml
+267-# values.yaml of the consuming chart, next to endpoint and tenant
+268-csHealthSidecar:
+269-  extraEnv:
+270-    - name: CS_LOG_LEVEL
+271-      value: debug
+272-```
+273-
+
+$ CI=true go test -count=1 -run 'TestHelm' -v ./deploy/
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container
+    helm_test.go:73: kubeconform 1.27.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+    helm_test.go:73: kubeconform 1.29.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer
+    helm_test.go:73: kubeconform 1.29.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment (2.28s)
+    --- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container (1.51s)
+    --- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer (0.77s)
+=== RUN   TestHelmExtraEnvFromTheReadmeReachesTheSidecar
+    helm_test.go:106: kubeconform 1.29.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestHelmExtraEnvFromTheReadmeReachesTheSidecar (0.83s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.117s
+exit=0
+
+## by hand, the README's snippet and the map form as values files of a consuming chart
+$ helm template payments-api payments-api -f readme-snippet.yaml   -> exit 0, sidecar env:
+51:            - name: CS_LOG_LEVEL
+52-              value: debug
+$ ... | kubeconform -strict -summary -kubernetes-version 1.29.0
+Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+$ helm template payments-api payments-api -f map-form.yaml   (extraEnv: {CS_LOG_LEVEL: debug})   -> exit 1
+Error: YAML parse error on payments-api/templates/deployment.yaml: error converting YAML to JSON: yaml: line 48: did not find expected '-' indicator

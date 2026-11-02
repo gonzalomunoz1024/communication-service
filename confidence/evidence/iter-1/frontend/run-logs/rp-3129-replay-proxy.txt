@@ -1,0 +1,29 @@
++0.0s front on http://127.0.0.1:3129 → backend :19150, HOLD=false
++61.1s stream /v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communica… last-event-id=(none) → upstream 200
++61.1s upstream stream aborted → ending the browser's response
++61.1s stream /v1/feed/stream?tenantId=fe1-replay-mvylyx64&type=OUTAGE&cli… last-event-id=(none) → upstream 200
++61.1s upstream stream aborted → ending the browser's response
++61.1s stream /v1/feed/stream?tenantId=fe1-replay-mvylyx64&clientId=commun… last-event-id=(none) → upstream 200
++61.2s /__drop: dropped 1 open stream(s)
++61.2s upstream stream aborted → ending the browser's response
++64.2s stream /v1/feed/stream?tenantId=fe1-replay-mvylyx64&clientId=commun… last-event-id=11 → upstream 200
++65.4s /__fail-next-stream armed
++65.4s /__drop: dropped 1 open stream(s)
++65.4s upstream stream aborted → ending the browser's response
++68.4s stream /v1/feed/stream?tenantId=fe1-replay-mvylyx64&clientId=commun… last-event-id=13 → answered 502 by the test control
++69.4s stream /v1/feed/stream?tenantId=fe1-replay-mvylyx64&clientId=commun… last-event-id=(none) → upstream 200
++70.5s upstream stream aborted → ending the browser's response
++206.8s stream /v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communica… last-event-id=(none) → upstream 200
++206.9s upstream stream aborted → ending the browser's response
++206.9s stream /v1/feed/stream?tenantId=fe1-replay-mvym21s3&type=OUTAGE&cli… last-event-id=(none) → upstream 200
++206.9s upstream stream aborted → ending the browser's response
++206.9s stream /v1/feed/stream?tenantId=fe1-replay-mvym21s3&clientId=commun… last-event-id=(none) → upstream 200
++207.0s /__drop: dropped 1 open stream(s)
++207.0s upstream stream aborted → ending the browser's response
++210.0s stream /v1/feed/stream?tenantId=fe1-replay-mvym21s3&clientId=commun… last-event-id=15 → upstream 200
++211.1s /__fail-next-stream armed
++211.1s /__drop: dropped 1 open stream(s)
++211.1s upstream stream aborted → ending the browser's response
++214.1s stream /v1/feed/stream?tenantId=fe1-replay-mvym21s3&clientId=commun… last-event-id=16 → answered 502 by the test control
++215.1s stream /v1/feed/stream?tenantId=fe1-replay-mvym21s3&clientId=commun… last-event-id=(none) → upstream 200
++220.3s upstream stream aborted → ending the browser's response

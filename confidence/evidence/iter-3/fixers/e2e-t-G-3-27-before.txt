@@ -1,0 +1,45 @@
+G-3-27 before: the in-repo suite at 3806e7c covers none of: database down, SIGTERM of the sidecar, a pull monitor.
+
+$ git ls-tree --name-only 3806e7c e2e/tests/
+e2e/tests/01-api-contract.spec.ts
+e2e/tests/02-f90-publish-live-resolve.spec.ts
+e2e/tests/03-f91-sidecar-auto-notice.spec.ts
+e2e/tests/04-f92-backend-restart.spec.ts
+e2e/tests/helpers.ts
+
+$ git grep -n -E 'stop|mongo|SIGTERM|leaving|intervalSeconds|POST.*health/monitors|url:' 3806e7c -- e2e/tests/   (nothing found = no such flow)
+(no match)
+
+$ git show 3806e7c:e2e/stack.sh | sed -n '/^case/,/^esac/p'   (no command stops the database or the sidecar)
+case "${1:-}" in
+  up) up ;;
+  down) compose down -v --remove-orphans ;;
+  restart-backend) restart_backend ;;
+  app-set) shift; app_set "$@" ;;
+  logs) compose logs --no-color --timestamps ;;
+  *) usage ;;
+esac
+
+== the suite as it was (baseline run on this machine before any change, iteration-2 jar, fresh stack)
+Running 6 tests using 1 worker
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused … (103ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {err… (1.0s)
+  ✓  3 tests/01-api-contract.spec.ts:27:7 › API contract smoke › F-92 the readiness probe answers 200 without a … (126ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → reso… (7.5s)
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card f… (12.9s)
+  ✓  6 tests/04-f92-backend-restart.spec.ts:4:5 › F-92 the backend restarts mid-stream → Reconnecting → the page res… (31.2s)
+  6 passed (56.8s)
+
+== the new spec 07 against the frontend bundle built from 3806e7c (before FE-3's G-3-20, a791cb0)
+It catches GAP-e2e2-2: the error state names no reason, because errors.ts at 3806e7c maps any 503 to
+export const UNREACHABLE_MESSAGE = 'The service is unreachable right now. Check that communication-service is running, then try again.'
+Running 1 test using 1 worker
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+  ✘  1 tests/07-f92-database-down.spec.ts:6:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a …
+    Error: expect(locator).toBeVisible() failed
+    Locator: getByText(/database unavailable/)
+    Expected: visible
+    Error: element(s) not found
+    > 37 |     await expect(late.getByText(/database unavailable/)).toBeVisible()
+  1 failed
+exit=1

@@ -1,0 +1,74 @@
+== kustomize classic example
+rc=0
+2
+kind: ConfigMap
+  name: cs-health-sidecar
+kind: Deployment
+  name: payments-api
+        - name: POD_NAME
+        - name: POD_NAMESPACE
+        - name: NODE_NAME
+        - name: CS_SERVICE
+        - name: CS_VERSION
+== native example (component switched to add-native-sidecar.yaml)
+rc=0
+36:      initContainers:
+38:        - name: POD_NAME
+42:        - name: POD_NAMESPACE
+46:        - name: NODE_NAME
+50:        - name: CS_SERVICE
+54:        - name: CS_VERSION
+80:        restartPolicy: Always
+== Deployment with an existing init container + StatefulSet, classic component
+Error: accumulating components: loader.New "new root '/home/claude/communication-service/sidecar/deploy/kustomize/component' cannot be absolute"
+rc=1
+init containers kept (classic):
+== same input, native component
+Error: accumulating components: loader.New "new root '/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit/manifests/native/component' cannot be absolute"
+rc=1
+== kubeconform
+classic @1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+classic @1.27.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+native @1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+native @1.27.0: Summary: 2 resources found in 1 file - Valid: 1, Invalid: 1, Errors: 0, Skipped: 0
+withinit-classic @1.29.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+withinit-classic @1.27.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+withinit-native @1.29.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+withinit-native @1.27.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+manual @1.29: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+manual @1.27: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+== securityContext / forbidden keys across rendered forms + manual
+3
+none of runAsUser/privileged/hostPath/hostNetwork
+== F-87 probes/resources (classic, native, manual)
+-- /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit/manifests/classic.yaml
+32: readinessProbe:;62: livenessProbe:;66: periodSeconds: 30;74: cpu: 50m;75: memory: 32Mi;77: cpu: 10m;78: memory: 16Mi;
+-- /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit/manifests/native.yaml
+32: readinessProbe:;63: livenessProbe:;67: periodSeconds: 30;75: cpu: 50m;76: memory: 32Mi;78: cpu: 10m;79: memory: 16Mi;
+-- sidecar/deploy/manual/deployment.yaml
+64: livenessProbe:;68: periodSeconds: 30;71: cpu: 10m;72: memory: 16Mi;74: cpu: 50m;75: memory: 32Mi;
+== GAP-sidecar-5 drift: imagePullPolicy / protocol per form
+classic.yaml: imagePullPolicy=1 protocol=1
+native.yaml: imagePullPolicy=1 protocol=1
+deployment.yaml: imagePullPolicy=0 protocol=0
+== retry: Deployment with existing init container + StatefulSet (relative component paths)
+classic rc=0
+5:kind: ConfigMap
+10:kind: Deployment
+60:        name: health-sidecar
+81:      initContainers:
+83:        name: db-migrate
+86:kind: StatefulSet
+137:        name: health-sidecar
+native rc=0
+5:kind: ConfigMap
+10:kind: Deployment
+29:      initContainers:
+61:        name: health-sidecar
+85:kind: StatefulSet
+105:      initContainers:
+137:        name: health-sidecar
+withinit-classic @1.29.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+withinit-classic @1.27.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+withinit-native @1.29.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+withinit-native @1.27.0: Summary: 3 resources found in 1 file - Valid: 1, Invalid: 2, Errors: 0, Skipped: 0

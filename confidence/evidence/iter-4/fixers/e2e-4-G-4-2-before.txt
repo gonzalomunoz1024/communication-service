@@ -1,0 +1,34 @@
+G-4-2, e2e half, before: the suite's substitute Go builder at 6c15715 against the sidecar of SC-4's 080765b
+(go.mod 'go 1.27.3', build stage GOTOOLCHAIN=local). 2026-11-02 ~08:40Z.
+
+$ git show 6c15715:e2e/README.md | sed -n '44,59p'
+variable to override it). Where Red Hat's registry is unreachable, build the sidecar from substitutes: a
+stand-in for `ubi9/go-toolset` at the Go release of `sidecar/go.mod` (1.25) that has the CA bundle at
+the UBI path the `Dockerfile` copies from, and distroless instead of UBI micro. The variables reach the
+`Dockerfile`'s build args; unset, its own defaults apply.
+
+```sh
+docker build -t go-toolset:e2e - <<'EOF'
+FROM golang:1.25
+RUN mkdir -p /etc/pki/ca-trust/extracted/pem \
+ && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+EOF
+GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up
+```
+
+`golang:1.25` by itself compiles the sidecar but fails the image build at that `COPY`;
+`mirror.gcr.io/library/golang:1.25` is the same image when Docker Hub rate-limits.
+$ git show 6c15715:e2e/docker-compose.yml | sed -n '55,57p'
+      # labels name the commit under test. Where the UBI registry is unreachable, GO_IMAGE=go-toolset:e2e
+      # (golang:1.25, the Go release of ../sidecar/go.mod, plus the CA-bundle path the Dockerfile copies
+      # from; README.md shows the build) and BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot
+
+## (b) SC-4's sidecar tree (git archive 080765b sidecar: go.mod 'go 1.27.3', GOTOOLCHAIN=local) with the stand-in the README named before, go-toolset:e2e
+go version go1.25.14 linux/amd64
+#12 0.213 go: go.mod requires go >= 1.27.3 (running go 1.25.14; GOTOOLCHAIN=local)
+#12 ERROR: process "/bin/sh -c go build -ldflags=\"-s -w -X main.version=${VERSION}\" -o /tmp/health-sidecar ./cmd/health-sidecar" did not complete successfully: exit code: 1
+0.213 go: go.mod requires go >= 1.27.3 (running go 1.25.14; GOTOOLCHAIN=local)
+exit=1
+no image produced
+
+-> the image the README tells you to build (go-toolset:e2e, go1.25.14) can no longer build the sidecar.

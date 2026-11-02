@@ -1,0 +1,7 @@
+import { test, expect } from '@playwright/test'
+test.only('probe', async ({ page }) => {
+  await page.waitForTimeout(1000)
+  page.goto('/')
+  if (Date.now() > 0) { expect(1).toBe(1) }
+})
+test.skip('skipped', async () => {})

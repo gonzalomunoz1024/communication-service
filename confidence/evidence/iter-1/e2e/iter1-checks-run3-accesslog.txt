@@ -1,0 +1,6 @@
+### access_log 2026-11-02T01:50:01.338343Z
+F-89 PASS every identified request is logged at INFO with client id, verb, path, status and duration (G-1-22) :: matching lines 78 -> 79; last: on-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=e2e1-verifier GET /v1/feed -> 200 (6 ms)
+F-89 PASS a rejected (unidentified) request is logged too :: rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)
+
+SUMMARY: 2 checks, 2 pass, 0 fail
+EXIT=0

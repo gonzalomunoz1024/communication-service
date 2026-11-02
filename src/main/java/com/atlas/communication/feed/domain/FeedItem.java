@@ -32,6 +32,10 @@ public record FeedItem(
         Ticket ticket,
         Instant updatedAt) {
 
+    public FeedItem {
+        affectedServices = affectedServices == null ? List.of() : List.copyOf(affectedServices);
+    }
+
     public static FeedItem from(Communication c, Instant now) {
         return new FeedItem(c.id(), c.tenantId(), c.publisher(), c.type(), c.severity(),
                 c.title(), c.body(), c.affectedServices(), c.audience(), c.effectiveStatus(now),

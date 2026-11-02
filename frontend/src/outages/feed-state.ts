@@ -34,16 +34,33 @@ export function toFeedItem(c: Communication, now = Date.now()): FeedItem {
   }
 }
 
-const visible = (s: CommunicationStatus) => s === 'ACTIVE' || s === 'SCHEDULED'
+/**
+ * How far ahead scheduled maintenance is listed: mirrors `communication.feed.upcoming-window`
+ * in the service's application.yml (P7D). Keep the two in step.
+ */
+export const UPCOMING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
 /**
- * Applies one stream event to the feed: upsert by id while the communication is visible,
- * drop it once it is retired, expired or a draft. Older updates never overwrite newer ones.
+ * The visibility rule of GET /v1/feed (CommunicationQuery.visibleAt): everything live, plus
+ * scheduled MAINTENANCE that starts within the upcoming window. Scheduled outages, incidents
+ * and changes appear only once they start. Stream frames go through the same rule, so the
+ * live list and a reload agree.
+ */
+export function inFeed(item: Pick<FeedItem, 'status' | 'type' | 'startsAt'>, now = Date.now()): boolean {
+  if (item.status === 'ACTIVE') return true
+  if (item.status !== 'SCHEDULED') return false
+  return item.type === 'MAINTENANCE' && Date.parse(item.startsAt) <= now + UPCOMING_WINDOW_MS
+}
+
+/**
+ * Applies one stream event to the feed: upsert by id while the communication is in the feed,
+ * drop it once it is retired, expired, a draft or scheduled outside what the feed lists.
+ * Older updates never overwrite newer ones.
  */
 export function applyEvent(items: FeedItem[], event: CommunicationEvent, now = Date.now()): FeedItem[] {
   const next = toFeedItem(event.communication, now)
   const i = items.findIndex((it) => it.id === next.id)
-  if (!visible(next.status)) return i === -1 ? items : items.filter((it) => it.id !== next.id)
+  if (!inFeed(next, now)) return i === -1 ? items : items.filter((it) => it.id !== next.id)
   if (i === -1) return [...items, next]
   if (Date.parse(items[i].updatedAt) > Date.parse(next.updatedAt)) return items
   const copy = items.slice()
@@ -54,6 +71,48 @@ export function applyEvent(items: FeedItem[], event: CommunicationEvent, now = D
 /** Removes one item (after a retire from this page, before the stream confirms it). */
 export function removeItem(items: FeedItem[], id: string): FeedItem[] {
   return items.filter((it) => it.id !== id)
+}
+
+/**
+ * Replaces the list with a freshly loaded page, keeping local items the stream updated after
+ * the request started (`since`, ms): a frame that arrived while the GET was in flight is newer
+ * than the page and must not be lost. Items of another tenant never survive the swap.
+ */
+export function reconcile(local: FeedItem[], page: FeedItem[], since: number, tenantId: string): FeedItem[] {
+  const onPage = new Set(page.map((it) => it.id))
+  const fresh = local.filter((it) => !onPage.has(it.id) && it.tenantId === tenantId && Date.parse(it.updatedAt) >= since)
+  return [...page, ...fresh]
+}
+
+/**
+ * Re-projects every item's status at `now` (a start reached, an expiry passed) and drops what has
+ * left the feed, so a card goes on time even when no stream frame says so (the service's sweeper
+ * runs on an interval). Returns the same array when nothing changed.
+ */
+export function revise(items: FeedItem[], now: number): FeedItem[] {
+  let changed = false
+  const out: FeedItem[] = []
+  for (const it of items) {
+    const status = effectiveStatus(it, now)
+    const next = status === it.status ? it : { ...it, status }
+    if (next !== it) changed = true
+    if (inFeed(next, now)) out.push(next)
+    else changed = true
+  }
+  return changed ? out : items
+}
+
+/** When revise() would next change something: the earliest future start or expiry among the items, if any. */
+export function nextChange(items: FeedItem[], now: number): number | undefined {
+  let next: number | undefined
+  for (const it of items) {
+    for (const t of [it.startsAt, it.expiresAt]) {
+      if (!t) continue
+      const at = Date.parse(t)
+      if (at > now && (next === undefined || at < next)) next = at
+    }
+  }
+  return next
 }
 
 const STATUS_ORDER: Record<CommunicationStatus, number> = { ACTIVE: 0, SCHEDULED: 1, DRAFT: 2, EXPIRED: 3, RETIRED: 4 }

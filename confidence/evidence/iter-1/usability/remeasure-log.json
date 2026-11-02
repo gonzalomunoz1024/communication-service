@@ -1,0 +1,137 @@
+{
+ "feedLight": {
+  "typeSelectDefault": {
+   "text": "All typesOutageIncidentMainten",
+   "color": "rgb(29, 29, 31)",
+   "bg": "rgb(245,245,247)",
+   "fontSize": 12,
+   "weight": 400,
+   "ratio": 15.46,
+   "aa": true
+  },
+  "severitySelectDefault": {
+   "text": "Any severityInfoMinorMajorCrit",
+   "color": "rgb(29, 29, 31)",
+   "bg": "rgb(245,245,247)",
+   "fontSize": 12,
+   "weight": 400,
+   "ratio": 15.46,
+   "aa": true
+  },
+  "refresh": {
+   "text": "Refresh",
+   "color": "rgb(88, 88, 93)",
+   "bg": "rgb(251,251,253)",
+   "fontSize": 12,
+   "weight": 400,
+   "ratio": 6.84,
+   "aa": true
+  },
+  "tabPublishUnselected": {
+   "text": "Publish",
+   "color": "rgb(88, 88, 93)",
+   "bg": "rgb(245,245,247)",
+   "fontSize": 14,
+   "weight": 500,
+   "ratio": 6.5,
+   "aa": true
+  },
+  "tabFeedSelected": {
+   "text": "Feed2",
+   "color": "rgb(29, 29, 31)",
+   "bg": "rgb(245,245,247)",
+   "fontSize": 14,
+   "weight": 500,
+   "ratio": 15.46,
+   "aa": true
+  },
+  "liveSwitchLabel": {
+   "error": "TimeoutError: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - wait"
+  },
+  "badge": {
+   "text": "Live",
+   "color": "rgb(88, 88, 93)",
+   "bg": "rgb(251,251,253)",
+   "fontSize": 12,
+   "weight": 400,
+   "ratio": 6.84,
+   "aa": true
+  },
+  "typeSelectChosen": {
+   "text": "All typesOutageIncidentMainten",
+   "color": "rgb(29, 29, 31)",
+   "bg": "rgb(245,245,247)",
+   "fontSize": 12,
+   "weight": 400,
+   "ratio": 15.46,
+   "aa": true
+  }
+ },
+ "feedDark": {
+  "typeSelectDefault": {
+   "text": "All typesOutageIncidentMainten",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgb(28,28,30)",
+   "fontSize": 12,
+   "weight": 400,
+   "ratio": 15.63,
+   "aa": true
+  },
+  "refresh": {
+   "text": "Refresh",
+   "color": "rgb(174, 174, 178)",
+   "bg": "rgb(44,44,46)",
+   "fontSize": 12,
+   "weight": 400,
+   "ratio": 6.3,
+   "aa": true
+  },
+  "tabPublishUnselected": {
+   "text": "Publish",
+   "color": "rgb(174, 174, 178)",
+   "bg": "rgb(28,28,30)",
+   "fontSize": 14,
+   "weight": 500,
+   "ratio": 7.69,
+   "aa": true
+  },
+  "tabFeedSelected": {
+   "text": "Feed2",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgb(28,28,30)",
+   "fontSize": 14,
+   "weight": 500,
+   "ratio": 15.63,
+   "aa": true
+  }
+ },
+ "switch": {
+  "w": 30,
+  "h": 18,
+  "ariaLabel": "Save as draft",
+  "labelledBy": null,
+  "labelTag": "LABEL",
+  "labelText": "Save as draft (not visible to consumers)",
+  "labelRect": {
+   "w": 288,
+   "h": 20
+  },
+  "parentTag": "LABEL",
+  "parentRect": {
+   "w": 288,
+   "h": 20
+  },
+  "insideLabel": true,
+  "afterLabelClick": "true",
+  "afterSecondLabelClick": "false"
+ },
+ "afterPublishFocus": {
+  "tag": "H2",
+  "text": "Outage published"
+ },
+ "afterPublishAnotherFocus": {
+  "tag": "BODY",
+  "id": "",
+  "text": "Outage NotificationsTenantFeed"
+ }
+}

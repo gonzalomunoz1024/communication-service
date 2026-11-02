@@ -1,0 +1,113 @@
+# Frozen database (SIGSTOP), iteration 4 (:19110) vs iteration 3 (:19111): what every caller gets
+
+Checks: 1/4 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| FRZ-1 | F-28/G-3-31/G-4-10 iteration 4: every call while mongod is frozen is a 503 {"error":"database unavailable"} | FAIL | 15/108 were 503; others [(1, 0, 'feed', '500'), (1, 2, 'feed', '500'), (1, 2, 'stream', '500'), (1, 2, 'publish', '500'), (1, 2, 'feed', '500'), (1, 4, 'feed', '500'), (1, 4, 'stream', '500'), (1, 2, 'stream', '500'), (1, 2, 'list', '500'), (1, 4, 'list', '500'), (1, 4, 'stream', '500'), (1, 4, 'pub |
+| FRZ-2 | F-28 iteration 4: no answer carries driver detail (ServerId, cluster id, the database address) | FAIL | 93 of 108 bodies name the driver's pool/server: [('feed', '500', 'application/json'), ('feed', '500', 'application/json'), ('stream', '500', 'text/event-stream'), ('publish', '500', 'application/json'), ('feed', '500', 'application/json'), ('feed', '500', 'application/json'), ('stream', '500', 'text |
+| FRZ-3 | A/B iteration 3 jar in the same rounds (record only) | PASS | iteration 3: 10/108 were 503; 62 bodies name the driver's pool/server: [('feed', '500'), ('feed', '500'), ('list', '500'), ('publish', '500'), ('feed', '500'), ('feed', '500'), ('publish', '500'), ('list', '500'), ('feed', '500'), ('list', '500'), ('feed', '500'), ('publish', '500')] |
+| FRZ-4 | F-18/G-4-10 iteration 4: every stream opened while frozen is a JSON 503 before any byte | FAIL | [(1, 2, '500', 'text/event-stream', 17.23), (1, 4, '500', 'text/event-stream', 15.23), (1, 2, '500', 'text/event-stream', 17.25), (1, 4, '500', 'text/event-stream', 15.24), (1, 6, '500', 'text/event-stream', 13.3), (1, 6, '500', 'text/event-stream', 13.3), (1, 8, '500', 'text/event-stream', 11.29),  |
+
+## Transcript (request -> status body, trimmed)
+
+```
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+round 1: docker kill -s STOP vb4-mongo -> exit 0
+round 1: all 72 calls answered 20.1s after the freeze; docker kill -s CONT -> exit 0
+GET http://localhost:19110/actuator/health/readiness body= -> 200 {"status":"UP"}
+GET http://localhost:19111/actuator/health/readiness body= -> 200 {"status":"UP"}
+round 1: both readiness 200 after 0.0s
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+round 2: docker kill -s STOP vb4-mongo -> exit 0
+round 2: all 72 calls answered 20.1s after the freeze; docker kill -s CONT -> exit 0
+GET http://localhost:19110/actuator/health/readiness body= -> 200 {"status":"UP"}
+GET http://localhost:19111/actuator/health/readiness body= -> 200 {"status":"UP"}
+round 2: both readiness 200 after 0.3s
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19110/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[{"id":"03eb8671-ea2e-48d4-8560-9d3c6c9c9995","tenantId":"vb4-frz-1db122","publisher":"vb4","type":"OUTAGE","severity":"MAJOR","title":"frozen","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:56:03.222Z","updatedAt":"2026-11-02T10:56:03.222Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:19111/v1/feed?tenantId=vb4-frz-1db122 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+round 3: docker kill -s STOP vb4-mongo -> exit 0
+round 3: all 72 calls answered 20.1s after the freeze; docker kill -s CONT -> exit 0
+GET http://localhost:19110/actuator/health/readiness body= -> 200 {"status":"UP"}
+GET http://localhost:19111/actuator/health/readiness body= -> 200 {"status":"UP"}
+round 3: both readiness 200 after 0.3s
+iter4: 108 calls; by (kind, status, content type): feed 500 application/json x32 (9.32-19.85s); feed 503 application/json x4 (20.01-20.03s); list 500 application/json x16 (9.33-19.86s); list 503 application/json x2 (20.04-20.04s); publish 500 application/json x15 (9.33-17.87s); publish 503 application/json x3 (15.03-15.05s); stream 500 text/event-stream x30 (9.32-17.86s); stream 503 application/json x6 (20.01-20.04s)
+  iter4 round 1 +0s feed: 500 application/json after 19.23s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter4 round 1 +2s feed: 500 application/json after 17.23s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter4 round 1 +2s stream: 500 text/event-stream;charset=UTF-8 after 17.23s body '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}\r\n2\r\n\n\n\r\n0\r\n\r\n'
+  iter4 round 1 +2s publish: 500 application/json after 17.24s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter4 round 1 +2s feed: 500 application/json after 17.25s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter4 round 1 +4s feed: 500 application/json after 15.24s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter4 round 1 +4s stream: 500 text/event-stream;charset=UTF-8 after 15.23s body '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}\r\n2\r\n\n\n\r\n0\r\n\r\n'
+  iter4 round 1 +2s stream: 500 text/event-stream;charset=UTF-8 after 17.25s body '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b99e7cea5e22f1d4f7\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}\r\n2\r\n\n\n\r\n0\r\n\r\n'
+iter4 log over the three rounds: 358 lines, ERROR 2, stack lines 158, lines naming '-> 500' 93
+  iter4 log: 2026-11-02T10:56:02.162Z ERROR 6623 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+  iter4 log: 2026-11-02T10:56:43.578Z ERROR 6623 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+  iter4 log: 2026-11-02T10:56:02.149Z  INFO 6623 --- [communication-service] [e7cea5e22f1d4f7] c.a.c.config.ClientIdWebFilter           : client=vb4-verifier GET /v1/feed -> 500 (19210 ms)
+  iter4 log: 2026-11-02T10:56:02.171Z  INFO 6623 --- [communication-service] [e7cea5e22f1d4f7] c.a.c.config.ClientIdWebFilter           : client=vb4-verifier GET /v1/feed -> 500 (17225 ms)
+  iter4 log: 2026-11-02T10:56:02.171Z  INFO 6623 --- [communication-service] [or-http-epoll-4] c.a.c.config.ClientIdWebFilter           : client=vb4-verifier GET /v1/feed/stream -> 500 (17227 ms)
+iter3: 108 calls; by (kind, status, content type): feed 500 application/json x30 (9.3-17.84s); feed 503 application/json x6 (20.01-20.04s); list 500 application/json x15 (9.3-17.84s); list 503 application/json x3 (20.02-20.04s); publish 500 application/json x17 (9.32-19.85s); publish 503 application/json x1 (15.26-15.26s); stream 200 text/event-stream x36 (0.0-0.02s)
+  iter3 round 1 +2s stream: 200 text/event-stream;charset=UTF-8 after 0.01s body 'c\r\n:connected\n\n\r\nc\r\n:keepalive\n\n\r\n'
+  iter3 round 1 +2s feed: 500 application/json after 17.19s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b967160239c2a5b351\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter3 round 1 +2s feed: 500 application/json after 17.2s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b967160239c2a5b351\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter3 round 1 +2s stream: 200 text/event-stream;charset=UTF-8 after 0.01s body 'c\r\n:connected\n\n\r\nc\r\n:keepalive\n\n\r\n'
+  iter3 round 1 +2s list: 500 application/json after 17.2s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b967160239c2a5b351\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter3 round 1 +2s publish: 500 application/json after 17.2s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b967160239c2a5b351\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter3 round 1 +4s feed: 500 application/json after 15.19s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b967160239c2a5b351\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+  iter3 round 1 +4s feed: 500 application/json after 15.19s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae869b967160239c2a5b351\', description=\'null\'}, address=127.0.0.1:19198} is paused because another operation failed"}'
+iter3 log over the three rounds: 1993 lines, ERROR 63, stack lines 270, lines naming '-> 500' 62
+  iter3 log: 2026-11-02T10:56:02.134Z ERROR 6626 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+  iter3 log: 2026-11-02T10:56:02.147Z ERROR 6626 --- [communication-service] [or-http-epoll-1] o.s.w.s.adapter.HttpWebHandlerAdapter    : [73189a22-28] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=vb4-frz-1db122", but ServerHttpResponse already committed (200 OK)
+  iter3 log: 2026-11-02T10:56:02.149Z ERROR 6626 --- [communication-service] [or-http-epoll-1] r.n.http.server.HttpServerOperations     : [73189a22-1, L:/127.0.0.1:19111 - R:/127.0.0.1:36044] Error finishing response. Closing connection
+  iter3 log: 2026-11-02T10:56:02.137Z  INFO 6626 --- [communication-service] [7160239c2a5b351] c.a.c.config.ClientIdWebFilter           : client=vb4-verifier POST /v1/communications -> 500 (17170 ms)
+  iter3 log: 2026-11-02T10:56:02.148Z  INFO 6626 --- [communication-service] [7160239c2a5b351] c.a.c.config.ClientIdWebFilter           : client=vb4-verifier GET /v1/feed -> 500 (17180 ms)
+  iter3 log: 2026-11-02T10:56:02.158Z  INFO 6626 --- [communication-service] [7160239c2a5b351] c.a.c.config.ClientIdWebFilter           : client=vb4-verifier GET /v1/feed -> 500 (17192 ms)
+  [FAIL] FRZ-1 (F-28/G-3-31/G-4-10 iteration 4: every call while mongod is frozen is a 503 {"error":"database unavailable"}): 15/108 were 503; others [(1, 0, 'feed', '500'), (1, 2, 'feed', '500'), (1, 2, 'stream', '500'), (1, 2, 'publish', '500'), (1, 2, 'feed', '500'), (1, 4, 'feed', '500'), (1, 4, 'stream', '500'), (1, 2, 'stream', '500'), (1, 2, 'list', '500'), (1, 4, 'list', '500'), (1, 4, 'stream', '500'), (1, 4, 'publish', '500')]
+  [FAIL] FRZ-2 (F-28 iteration 4: no answer carries driver detail (ServerId, cluster id, the database address)): 93 of 108 bodies name the driver's pool/server: [('feed', '500', 'application/json'), ('feed', '500', 'application/json'), ('stream', '500', 'text/event-stream'), ('publish', '500', 'application/json'), ('feed', '500', 'application/json'), ('feed', '500', 'application/json'), ('stream', '500', 'text/event-stream'), ('stream', '500', 'text/event-stream'), ('list', '500', 'application/json'), ('list', '500', 'application/json'), ('stream', '500', 'text/event-stream'), ('publish', '500', 'application/json')]
+  [PASS] FRZ-3 (A/B iteration 3 jar in the same rounds (record only)): iteration 3: 10/108 were 503; 62 bodies name the driver's pool/server: [('feed', '500'), ('feed', '500'), ('list', '500'), ('publish', '500'), ('feed', '500'), ('feed', '500'), ('publish', '500'), ('list', '500'), ('feed', '500'), ('list', '500'), ('feed', '500'), ('publish', '500')]
+  [FAIL] FRZ-4 (F-18/G-4-10 iteration 4: every stream opened while frozen is a JSON 503 before any byte): [(1, 2, '500', 'text/event-stream', 17.23), (1, 4, '500', 'text/event-stream', 15.23), (1, 2, '500', 'text/event-stream', 17.25), (1, 4, '500', 'text/event-stream', 15.24), (1, 6, '500', 'text/event-stream', 13.3), (1, 6, '500', 'text/event-stream', 13.3), (1, 8, '500', 'text/event-stream', 11.29), (1, 8, '500', 'text/event-stream', 11.3), (1, 10, '500', 'text/event-stream', 9.32), (1, 10, '500', 'text/event-stream', 9.34), (2, 2, '500', 'text/event-stream', 17.86), (2, 2, '500', 'text/event-stream', 17.85), (2, 4, '500', 'text/event-stream', 15.84), (2, 4, '500', 'text/event-stream', 15
+```

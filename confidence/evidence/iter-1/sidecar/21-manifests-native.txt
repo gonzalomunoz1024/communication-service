@@ -1,0 +1,138 @@
+== 2' native example through a RELATIVE component path (kustomize refuses absolute component roots, which is why 20-manifests.txt step 2/3b errored)
+--- deploy/kustomize/example/kustomization.yaml:
+    # Example overlay: an existing app plus the sidecar component and the ConfigMap it reads.
+    # For the native sidecar form (OpenShift 4.16+) point components at ../component-native instead.
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    
+    resources:
+      - deployment.yaml
+    
+    components:
+      - ../component
+    
+    configMapGenerator:
+      - name: cs-health-sidecar
+        options:
+          disableNameSuffixHash: true
+        literals:
+          - CS_ENDPOINT=https://communication.apps.example.com
+          - CS_TENANT=retail
+          - CS_CLUSTER=ocp-east
+--- scratch example-native/kustomization.yaml (diff vs example):
+    10c10
+    <   - ../component
+    ---
+    >   - ../component-native
+kustomize build rc=0
+   native.yaml ConfigMap cs-health-sidecar ['CS_CLUSTER', 'CS_ENDPOINT', 'CS_TENANT']
+   native.yaml Deployment payments-api containers [('payments-api', 'registry.example.com/retail/payments-api:1.4.2')] initContainers [('health-sidecar', 'Always', 'registry.example.com/platform/health-sidecar:1.0.0')]
+
+== 2'' README 'images:' override on top of the native example (documented in sidecar/README.md 'Image')
+kustomize build rc=0
+    28:      - image: registry.example.com/retail/payments-api:1.4.2
+    61:        image: registry.apps.example.com/platform/health-sidecar:2.0.0
+
+== 3b' CLASSIC component on workloads that already have init containers (testdata workloads.yaml)
+    # Test fixture: an app that already has an init container and a StatefulSet, plus the native
+    # component. Used by deploy_test.go to prove the component keeps existing init containers.
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    
+    resources:
+      - workloads.yaml
+    
+    components:
+      - ../component
+    
+    configMapGenerator:
+      - name: cs-health-sidecar
+        options:
+          disableNameSuffixHash: true
+        literals:
+          - CS_ENDPOINT=https://communication.apps.example.com
+          - CS_TENANT=retail
+kustomize build rc=0
+   classic-with-init.yaml ConfigMap cs-health-sidecar ['CS_ENDPOINT', 'CS_TENANT']
+   classic-with-init.yaml Deployment payments-api containers [('payments-api', 'registry.example.com/retail/payments-api:1.4.2'), ('health-sidecar', 'registry.example.com/platform/health-sidecar:1.0.0')] initContainers [('db-migrate', None, 'registry.example.com/retail/payments-api:1.4.2')]
+   classic-with-init.yaml StatefulSet ledger containers [('ledger', 'registry.example.com/retail/ledger:2.0.0'), ('health-sidecar', 'registry.example.com/platform/health-sidecar:1.0.0')] initContainers [('fetch-config', None, 'registry.example.com/retail/ledger:2.0.0')]
+
+== kubeconform -strict
+  native             1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  native             1.27.0: Summary: 2 resources found in 1 file - Valid: 1, Invalid: 1, Errors: 0, Skipped: 0
+  native-images      1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  native-images      1.27.0: Summary: 2 resources found in 1 file - Valid: 1, Invalid: 1, Errors: 0, Skipped: 0
+  classic-with-init  1.29.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+  classic-with-init  1.27.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+
+== why 1.27.0 rejects the native forms (expected: initContainers[].restartPolicy exists since 1.28; README says OpenShift 4.16+/K8s 1.29+)
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar1/manifests/native-with-init.yaml - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/i
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar1/manifests/native-with-init.yaml - StatefulSet ledger is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initCo
+
+== Helm consumer rendered WITHOUT endpoint/tenant (full error)
+Error: execution error at (payments-api/templates/deployment.yaml:24:3): csHealthSidecar.endpoint is required
+Use --debug flag to render out invalid YAML
+
+== Helm: required values checked one at a time
+Use --debug flag to render out invalid YAML
+Use --debug flag to render out invalid YAML
+
+== forbidden/required keys (native, native-images, classic-with-init)
+  native             runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=1 readOnlyRoot=1 runAsNonRoot=1 seccompRuntimeDefault=1
+  native-images      runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=1 readOnlyRoot=1 runAsNonRoot=1 seccompRuntimeDefault=1
+  classic-with-init  runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=2 readOnlyRoot=2 runAsNonRoot=2 seccompRuntimeDefault=2
+
+== rendered native sidecar init container (example-native), verbatim
+env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: CS_SERVICE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.labels['app.kubernetes.io/name']
+    - name: CS_VERSION
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.labels['app.kubernetes.io/version']
+    envFrom:
+    - configMapRef:
+        name: cs-health-sidecar
+    image: registry.example.com/platform/health-sidecar:1.0.0
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: cs-status
+      periodSeconds: 30
+    name: health-sidecar
+    ports:
+    - containerPort: 9465
+      name: cs-status
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 50m
+        memory: 32Mi
+      requests:
+        cpu: 10m
+        memory: 16Mi
+    restartPolicy: Always
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault

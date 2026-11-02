@@ -1,0 +1,9 @@
+# scratch: the README's "point components at ../component-native instead" applied to the example
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: [deployment.yaml]
+components: [../component-native]
+configMapGenerator:
+  - name: cs-health-sidecar
+    options: {disableNameSuffixHash: true}
+    literals: [CS_ENDPOINT=https://communication.apps.example.com, CS_TENANT=retail, CS_CLUSTER=ocp-east]

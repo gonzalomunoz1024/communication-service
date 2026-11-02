@@ -1,0 +1,58 @@
+# G-3-6 before: readiness while MongoDB is unreachable (code at 778bf0c: Boot's MongoReactiveHealthIndicator, no driver log level)
+# Command: ./gradlew --max-workers=2 --no-daemon test --tests 'com.atlas.communication.config.MongoOutageReadinessTest'
+# The test runs the app's MongoClientConfig with Boot's Mongo auto-configuration and the logging.level entries of the
+# shipped src/main/resources/application.yml against a closed local port, probes readiness three times and captures the
+# root logger (org.mongodb, org.springframework.boot.actuate, com.atlas.communication). Lines cut at 260 characters.
+
+MongoOutageReadinessTest > readinessWhileMongoIsUnreachableAnswersDownQuicklyAndLogsOneLineWithoutAStackTrace() FAILED
+    java.lang.AssertionError: [no stack trace above DEBUG (probes answered in [PT5.30935743S, PT5.02077813S, PT5.010940242S]): [
+      INFO org.mongodb.driver.client MongoClient with metadata {"driver": {"name": "mongo-java-driver|reactive-streams|spring-boot", "version": "5.5.2"}, "os": {"type": "Linux", "name": "Linux", "architecture": "amd64", "version": "6.18.44-fc-v185"}, "platform
+      INFO org.mongodb.driver.cluster Exception in monitor thread while connecting to server 127.0.0.1:45553 [+ stack trace com.mongodb.MongoSocketOpenException], 
+      INFO org.mongodb.driver.cluster Waiting for server to become available for operation with ID 3. Remaining time: 4983 ms. Selector: ReadPreferenceServerSelector{readPreference=primary}, topology description: {type=UNKNOWN, servers=[{address=127.0.0.1:4555
+      WARN org.springframework.boot.actuate.data.mongo.MongoReactiveHealthIndicator Mongo health check failed [+ stack trace org.springframework.dao.DataAccessResourceFailureException], 
+      INFO org.mongodb.driver.cluster Waiting for server to become available for operation with ID 14. Remaining time: 4999 ms. Selector: ReadPreferenceServerSelector{readPreference=primary}, topology description: {type=UNKNOWN, servers=[{address=127.0.0.1:455
+      WARN org.springframework.boot.actuate.data.mongo.MongoReactiveHealthIndicator Mongo health check failed [+ stack trace org.springframework.dao.DataAccessResourceFailureException], 
+      INFO org.mongodb.driver.cluster Waiting for server to become available for operation with ID 25. Remaining time: 4999 ms. Selector: ReadPreferenceServerSelector{readPreference=primary}, topology description: {type=UNKNOWN, servers=[{address=127.0.0.1:455
+      WARN org.springframework.boot.actuate.data.mongo.MongoReactiveHealthIndicator Mongo health check failed [+ stack trace org.springframework.dao.DataAccessResourceFailureException]]] 
+    Expecting no elements of:
+      [[INFO] MongoClient with metadata {"driver": {"name": "mongo-java-driver|reactive-streams|spring-boot", "version": "5.5.2"}, "os": {"type": "Linux", "name": "Linux", "architecture": "amd64", "version": "6.18.44-fc-v185"}, "platform": "Java/Ubuntu/21.0.12
+        [INFO] Exception in monitor thread while connecting to server 127.0.0.1:45553,
+        [INFO] Waiting for server to become available for operation with ID 3. Remaining time: 4983 ms. Selector: ReadPreferenceServerSelector{readPreference=primary}, topology description: {type=UNKNOWN, servers=[{address=127.0.0.1:45553, type=UNKNOWN, state=
+        [WARN] Mongo health check failed,
+        [INFO] Waiting for server to become available for operation with ID 14. Remaining time: 4999 ms. Selector: ReadPreferenceServerSelector{readPreference=primary}, topology description: {type=UNKNOWN, servers=[{address=127.0.0.1:45553, type=UNKNOWN, state
+        [WARN] Mongo health check failed,
+        [INFO] Waiting for server to become available for operation with ID 25. Remaining time: 4999 ms. Selector: ReadPreferenceServerSelector{readPreference=primary}, topology description: {type=UNKNOWN, servers=[{address=127.0.0.1:45553, type=UNKNOWN, state
+        [WARN] Mongo health check failed]
+    to match given predicate but this element did:
+      [INFO] Exception in monitor thread while connecting to server 127.0.0.1:45553
+        at com.atlas.communication.config.MongoOutageReadinessTest.readinessWhileMongoIsUnreachableAnswersDownQuicklyAndLogsOneLineWithoutAStackTrace(MongoOutageReadinessTest.java:103)
+
+1 test completed, 1 failed
+
+
+BUILD FAILED in 40s
+5 actionable tasks: 2 executed, 3 up-to-date
+RC=1
+
+## Live check, the same scenario on the running service (script /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/beg/tools/live.sh)
+# jar: /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter2.jar (iteration-2 build, same backend code as 3806e7c) on :18212,
+# its own mongod 7.0.14 on 127.0.0.1:18211 (scratch dbpath, db fixbeg_before); mongod stopped with SIGTERM, readiness probed
+# three times, mongod started again; the log window runs from the stop to 2 s after readiness is back.
+[before] app ready on :18212 (pid 6739), mongod pid 6685
+[before] 05:38:03 stopping mongod (SIGTERM)
+[before] 05:38:08 readiness probe 1: {"status":"DOWN"} HTTP 503 in 5.011301s
+[before] 05:38:17 readiness probe 2: {"status":"DOWN"} HTTP 503 in 5.008655s
+[before] 05:38:26 readiness probe 3: {"status":"DOWN"} HTTP 503 in 5.007163s
+[before] 05:38:30 starting mongod again
+[before] readiness 200 again after 0.1 s
+[before] log lines from the stop of mongod to the end of the check: 204
+[before] log entries by level / logger / message (digits as #):
+    13  INFO  org.mongodb.driver.cluster                    Waiting for server to become available for operation with ID #. Remain
+     5  WARN  .c.c.a.o.MongoCommunicationEventsAdapter      event log poll failed: org.springframework.dao.DataAccessResourceFailu
+     3  WARN  o.s.b.a.d.m.MongoReactiveHealthIndicator      Mongo health check failed
+     3  WARN  c.a.c.h.application.HealthSweepUseCase        health sweep skipped: database unavailable: Timed out while waiting fo
+     2  INFO  org.mongodb.driver.cluster                    Exception in monitor thread while connecting to server #.#.#.#:#
+     1  INFO  org.mongodb.driver.cluster                    Monitor thread successfully connected to server with description Serve
+[before] stack-trace lines: 164
+    47 after INFO org.mongodb.driver.cluster
+   117 after WARN o.s.b.a.d.m.MongoReactiveHealthIndicator

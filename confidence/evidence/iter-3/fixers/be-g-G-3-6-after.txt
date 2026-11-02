@@ -1,0 +1,42 @@
+# G-3-6 after: readiness answers from MongoReadinessIndicator (ping, communication.mongo.readiness-timeout=PT1S, one line per
+# change of state, stack trace at DEBUG); logging.level.org.mongodb.driver.cluster=WARN in the shipped application.yml
+# Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests 'com.atlas.communication.config.*' integrationTest --tests '*OperationsEndpointsIT'
+
+BUILD SUCCESSFUL in 1m
+RC=0
+  PASS OperationsEndpointsIT.livenessIsUp() (1.304 s)
+  PASS OperationsEndpointsIT.onlyHealthIsExposed() (0.057 s)
+  PASS OperationsEndpointsIT.readinessAsksMongoAndLivenessDoesNot() (0.099 s)
+  PASS OperationsEndpointsIT.readinessIsUpWhenMongoAnswers() (0.024 s)
+  PASS OperationsEndpointsIT.theMongoClientGivesUpOnAnUnreachableDatabaseWithinSeconds() (0.017 s)
+  PASS OperationsEndpointsIT.overallHealthNeedsNoClientIdAndHidesDetails() (0.028 s)
+  PASS MongoClientConfigTest.theConfiguredValuesWinOverTheUri() (0.01 s)
+  PASS MongoClientConfigTest.appliesTheConfiguredTimeoutsToTheClient() (0.002 s)
+  PASS MongoOutageReadinessTest.readinessWhileMongoIsUnreachableAnswersDownQuicklyAndLogsOneLineWithoutAStackTrace() (10.933 s)
+  PASS MongoReadinessIndicatorTest.anOutageLogsOneWarningWhenItStartsAndOneLineWhenItEnds() (0.112 s)
+  PASS MongoReadinessIndicatorTest.upWhileTheDatabaseAnswersAndNothingIsLogged() (0.002 s)
+  PASS MongoReadinessIndicatorTest.aPingWithoutAnswerIsDownAfterTheReadinessTimeoutNotTheServerSelectionTimeout() (0.027 s)
+
+## MongoOutageReadinessTest console lines from the readiness indicator and the driver (INFO and above):
+  05:35:02.754 [Test worker] INFO org.mongodb.driver.client -- MongoClient with metadata {"driver": {"name": "mongo-java-driver|reactive-streams|spring-boot", "version": "5.5.2"}, "os": {"type": "Linux"
+  05:35:04.914 [parallel-1] WARN com.atlas.communication.config.MongoReadinessIndicator -- readiness DOWN: MongoDB did not answer a ping: no answer within 1000 ms
+
+## Live check, fixed jar (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/beg/communication-service-beg-g36.jar, built from this worktree) on :18213, db fixbeg_after, same script
+[after] app ready on :18213 (pid 9412), mongod pid 9231
+[after] 05:38:54 stopping mongod (SIGTERM)
+[after] 05:38:55 readiness probe 1: {"status":"DOWN"} HTTP 503 in 1.008841s
+[after] 05:39:00 readiness probe 2: {"status":"DOWN"} HTTP 503 in 1.009602s
+[after] 05:39:05 readiness probe 3: {"status":"DOWN"} HTTP 503 in 1.011919s
+[after] 05:39:09 starting mongod again
+[after] readiness 200 again after 0.0 s
+[after] log lines from the stop of mongod to the end of the check: 6
+[after] log entries by level / logger / message (digits as #):
+     3  WARN  .c.c.a.o.MongoCommunicationEventsAdapter      event log poll failed: org.springframework.dao.DataAccessResourceFailu
+     1  WARN  c.a.c.config.MongoReadinessIndicator          readiness DOWN: MongoDB did not answer a ping: no answer within # ms
+     1  WARN  c.a.c.h.application.HealthSweepUseCase        health sweep skipped: database unavailable: Timed out while waiting fo
+     1  INFO  c.a.c.config.MongoReadinessIndicator          readiness UP: MongoDB answers again
+[after] stack-trace lines: 0
+
+## the readiness lines of the live window
+2026-11-02T05:38:55.580Z  WARN 9412 --- [communication-service] [     parallel-3] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 1000 ms
+2026-11-02T05:39:11.176Z  INFO 9412 --- [communication-service] [ntLoopGroup-3-5] c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again

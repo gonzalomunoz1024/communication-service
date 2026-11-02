@@ -1,0 +1,64 @@
+# G-3-4 after (af7b5f0): exclusions config/*Config*, config/*Properties*, *Application*; LINE >= 0.92, BRANCH >= 0.84
+# Command: ./gradlew --max-workers=2 --no-daemon check   (the final check of this fixer, run on af7b5f0)
+> Task :cyclonedxDirectBom UP-TO-DATE
+> Task :cyclonedxBom UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileTestJava
+> Task :processTestResources UP-TO-DATE
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+> Task :jacocoTestCoverageVerification
+> Task :spotbugsMain UP-TO-DATE
+> Task :spotbugsTest SKIPPED
+> Task :verifySbomScope
+SBOM scope: 87 components, none of them a build or test tool
+> Task :jacocoTestReport
+> Task :check
+BUILD SUCCESSFUL in 59s
+12 actionable tasks: 6 executed, 6 up-to-date
+RC=0
+
+## python3 jacoco.py build/reports/jacoco/test/jacocoTestReport.xml (the report of that check run)
+REPORT: LINE covered=1359 missed=55 ratio=0.9611; BRANCH covered=716 missed=134 ratio=0.8424
+  class com/atlas/communication/config/GlobalExceptionHandler: LINE covered=97 missed=0 ratio=1.0000; BRANCH covered=83 missed=1 ratio=0.9881
+  class com/atlas/communication/config/ClientIdWebFilter: LINE covered=48 missed=0 ratio=1.0000; BRANCH covered=25 missed=1 ratio=0.9615
+  class com/atlas/communication/config/MongoReadinessIndicator: LINE covered=20 missed=0 ratio=1.0000; BRANCH covered=8 missed=0 ratio=1.0000
+classes in report: 80
+  com/atlas/communication/config/MongoReadinessIndicator.java lines with missed instructions or branches (nr, mi, mb, cb):
+  com/atlas/communication/config/GlobalExceptionHandler.java lines with missed instructions or branches (nr, mi, mb, cb):
+     (192, 0, 1, 3)
+  com/atlas/communication/config/ClientIdWebFilter.java lines with missed instructions or branches (nr, mi, mb, cb):
+     (88, 0, 1, 3)
+     (92, 1, 0, 0)
+   left: GlobalExceptionHandler:192 'path == null' (JsonMappingException.getPath() never returns null);
+         ClientIdWebFilter:88/92 the switch default (doFinally signals only complete, error or cancel)
+
+## the measurement the gate was set from (test integrationTest jacocoTestReport, same code, before the BRANCH rule was added)
+BUILD SUCCESSFUL in 1m 17s
+RC=0
+REPORT: LINE covered=1359 missed=55 ratio=0.9611; BRANCH covered=717 missed=133 ratio=0.8435
+-> BRANCH minimum 0.84 (0.8435 rounded down); LINE minimum stays 0.92. The check run above and one forced rerun
+   (test --rerun integrationTest --rerun jacocoTestReport) both measured 716 of 850 = 0.8424: one branch varies between runs.
+
+## test results (build/test-results, forced rerun of the same tree)
+test: 235 tests, 0 failures, 0 errors
+integrationTest: 42 tests, 0 failures, 0 errors
+  GlobalExceptionHandlerMessagesTest: 14 tests, 0 failures: aFieldInsideAListIsNamedByItsPathWithTheIndex, aBindingFailureWithoutFieldErrorsStillAnswersASentence, aStatusWithoutAReasonOrAStandardPhraseSaysUnexpectedError, anInputErrorWithoutAJacksonCauseAnswersWithItsReason, malformedJsonWithoutALocationStillSaysWhatIsWrong, aQueryParameterSpringCannotConvertIsNamedByTheParameter, eachKindOfFieldSaysWhatItTakes, withoutAPathOrAParameterNameTheFieldIsCalledBody, anOversizedBodyNamesTheLimitWhenTheCauseCarriesIt, aMethodNotAllowedWithoutAlternativesListsNone, anUnknownFieldIsNamedWithTheKnownOnesWhenThereAreAny, aBodyThatIsNotAnObjectIsNamedAfterTheHandlersParameter, aValueOfUnknownTypeIsAskedForAsAValidValue, anUnsupportedMediaTypeWithoutDetailsAsksForJson
+  ClientIdWebFilterEdgeCasesTest: 4 tests, 0 failures: aBlankClientIdParameterIsNoId, aRequestTheCallerAbandonsBeforeAStatusIsSetIsLoggedAsCancelled, anErrorBodyThatCannotBeSerialisedFallsBackToAFixedJsonError, aRequestWhoseHandlerFailsBeforeSettingAStatusIsLoggedAsError
+  MongoReadinessIndicatorTest: 4 tests, 0 failures: anOutageLogsOneWarningWhenItStartsAndOneLineWhenItEnds, upWhileTheDatabaseAnswersAndNothingIsLogged, aFailureWithoutAMessageIsNamedByItsType, aPingWithoutAnswerIsDownAfterTheReadinessTimeoutNotTheServerSelectionTimeout
+
+## final check on HEAD b94bf6b (G-3-31, README only, committed after the run above): ./gradlew --max-workers=2 --no-daemon check
+> Task :compileJava UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+> Task :test UP-TO-DATE
+> Task :integrationTest UP-TO-DATE
+> Task :spotbugsMain UP-TO-DATE
+> Task :verifySbomScope
+> Task :jacocoTestCoverageVerification
+> Task :check
+BUILD SUCCESSFUL in 20s
+12 actionable tasks: 2 executed, 10 up-to-date
+RC=0

@@ -1,0 +1,38 @@
+[23:48:45] private backend pid 16092 on :18800 (Netty started on port 18800)
+  six noise services reporting (keeps silent share at 1/8 = 12.5 %)
+  silent-1 UP -> 202  (no further reports)
+  zero-1 UP -> 202
+  zero-2 UP -> 202
+  zero-1 leaving -> 202
+  zero-2 leaving -> 202
+[23:49:06] +20 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:49:26] +40 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:49:46] +60 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:50:06] +80 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:50:26] +100 s:
+    monitor goes-silent     lastStatus=DOWN     unhealthy=5 incidents=1 summary='DOWN (1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1))'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[23:50:47] +121 s:
+    monitor goes-silent     lastStatus=DOWN     unhealthy=15 incidents=1 summary='DOWN (1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1))'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[23:51:07] +141 s:
+    monitor goes-silent     lastStatus=DOWN     unhealthy=25 incidents=1 summary='DOWN (1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1))'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[23:51:07] backend log lines about staleness/silence:
+2026-11-01T23:50:19.501Z  INFO 16092 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : monitor c69fd654-e14c-46e0-ab46-e05531bf6019 opened OUTAGE 338a7861-b0f8-41c7-9751-d6158e08e10c for sc-silent/goes-silent
+[23:51:07] DONE

@@ -1,0 +1,38 @@
+== F-51: indexes on the auditor's database audit1-main (created by the iteration-1 jar on boot), read-only via mongosh
+-- communications
+{"name":"_id_","key":{"_id":1}}
+{"name":"sweep_activation_idx","key":{"status":1,"startsAt":1}}
+{"name":"feed_idx","key":{"tenantId":1,"status":1,"startsAt":-1}}
+{"name":"affectedServices","key":{"affectedServices":1}}
+{"name":"sweep_expiry_idx","key":{"status":1,"expiresAt":1}}
+{"name":"external_ref_idx","key":{"tenantId":1,"externalRef":1},"unique":true,"partialFilterExpression":{"externalRef":{"$exists":true}}}
+-- communication_events
+{"name":"_id_","key":{"_id":1}}
+{"name":"events_tenant_seq_idx","key":{"tenantId":1,"_id":1}}
+{"name":"events_ttl_idx","key":{"at":1},"expireAfterSeconds":86400}
+-- health_monitors
+{"name":"_id_","key":{"_id":1}}
+{"name":"monitor_tenant_service_idx","key":{"tenantId":1,"service":1},"unique":true}
+-- health_instances
+{"name":"_id_","key":{"_id":1}}
+{"name":"instance_monitor_idx","key":{"monitorId":1,"instanceId":1}}
+{"name":"instance_ttl_idx","key":{"lastSeenAt":1},"expireAfterSeconds":86400}
+-- counters
+{"name":"_id_","key":{"_id":1}}
+
+== the backend verifier's list (ev/10-mongo-indexes.txt) for comparison
+name: '_id_',
+name: 'sweep_activation_idx',
+name: 'feed_idx',
+name: 'sweep_expiry_idx',
+name: 'affectedServices',
+name: 'external_ref_idx',
+name: '_id_',
+name: 'events_tenant_seq_idx',
+name: 'events_ttl_idx',
+name: '_id_',
+name: 'monitor_tenant_service_idx',
+name: '_id_',
+name: 'instance_monitor_idx',
+name: 'instance_ttl_idx',
+name: '_id_',

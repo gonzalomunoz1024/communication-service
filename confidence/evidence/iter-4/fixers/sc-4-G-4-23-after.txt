@@ -1,0 +1,27 @@
+# sc-4 G-4-23 AFTER: the README states both cases; the test reads the service's figures from application.yml
+# date: 2026-11-02T08:21:02Z
+
+## the service's figures the test reads
+57:    server-selection-timeout: PT5S
+59:    read-timeout: PT15S
+
+## README.md, configuration section
+218:| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included; what a report gets while the service's own database is down is described below the table |
+While the communication service cannot reach its own database, what a report gets depends on how
+the database fails. One that refuses connections (stopped, nothing listening) makes the service
+answer `503 {"error":"database unavailable"}` after its 5 s `server-selection-timeout`, inside the
+report timeout, so `sendError` names that cause. One that hangs (a frozen process, a network black
+hole) holds the service's answer for its 15 s `read-timeout` plus a retried read, about 20 s, so a
+report sent then ends at the report timeout with `context deadline exceeded` in `sendError` and is
+retried with the backoff like any failed send; once the service's driver has given up on that
+database, later reports get the 503 after 5 s again. Either way the app is unaffected and the
+reports get through once the database is back.
+
+$ go test -count=1 -run 'TestReportTimeoutDefault|TestEveryEnvironmentVariableIsDocumented' -v ./internal/config/
+=== RUN   TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts
+--- PASS: TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts (0.00s)
+=== RUN   TestEveryEnvironmentVariableIsDocumented
+--- PASS: TestEveryEnvironmentVariableIsDocumented (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.004s
+exit=0

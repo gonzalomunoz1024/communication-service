@@ -1,0 +1,5 @@
+# 17a/17b: the gap lines whose in-script analysis raised "offset-naive vs offset-aware" (a verifier script bug), recomputed
+# from the raw lines of the same files (17a: stub arrival times; 17b: WARN/INFO times).
+17a (defaults, 503 for 240 s): attempts answered 503: 10 | gaps from the first 503 to the first 202 after it: [16.9, 17.3, 17.8, 15.1, 17.2, 27.6, 28.1, 26.5, 25.6, 24.7] | max 28.1
+17a first accepted 10:35:59.395, 9.7 s after the service answered 202 again (10:35:49.691)
+17b (45 s interval, refused 180 s): last refused attempt 10:33:56.842 -> first accepted 10:34:24.431: gap 27.6 s; 10.0 s after the service listened again (10:34:14.414)

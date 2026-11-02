@@ -1,0 +1,1 @@
+integrationTest: classes 8 tests 39 failures 0 errors 0 skipped 0

@@ -1,0 +1,66 @@
+# Strategic-merge patch that adds the health sidecar as a native sidecar (an init container with
+# restartPolicy: Always). initContainers merge by name, so init containers the app already
+# declares (migrations, config fetchers, ...) are kept; kustomize currently renders the sidecar
+# first, so it starts before the app's own init containers and keeps running alongside the app.
+# kind and metadata.name below are placeholders: kustomize replaces them with each target's own.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patched-by-target
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: health-sidecar
+          image: registry.example.com/platform/health-sidecar:1.0.0
+          imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: cs-health-sidecar
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            # Service name from the standard label; falls back to the workload name derived from the pod name.
+            - name: CS_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/name']
+            - name: CS_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/version']
+          ports:
+            - name: cs-status
+              containerPort: 9465
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: cs-status
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault

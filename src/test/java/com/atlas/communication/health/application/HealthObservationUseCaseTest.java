@@ -127,7 +127,7 @@ class HealthObservationUseCaseTest {
         assertThat(cmd.getValue().type()).isEqualTo(CommunicationType.OUTAGE);
         assertThat(cmd.getValue().severity()).isEqualTo(Severity.MAJOR);
         assertThat(cmd.getValue().title()).isEqualTo("vm-api is down");
-        assertThat(cmd.getValue().body()).contains("- db: DOWN");
+        assertThat(cmd.getValue().body()).contains("\ndb: DOWN\n");
         assertThat(cmd.getValue().affectedServices()).containsExactly("vm-api");
         assertThat(cmd.getValue().audience()).isEqualTo(Audience.INTERNAL);
         assertThat(cmd.getValue().draft()).isFalse();
@@ -177,7 +177,7 @@ class HealthObservationUseCaseTest {
 
         ArgumentCaptor<RetireRequest> request = ArgumentCaptor.forClass(RetireRequest.class);
         verify(publishing).retire(eq("c1"), request.capture());
-        assertThat(request.getValue().actor()).isEqualTo(HealthObservationUseCase.ACTOR);
+        assertThat(request.getValue().actor()).as("the monitor's publisher").isEqualTo("vmforge-sre");
         assertThat(request.getValue().note()).isEqualTo("recovered: UP (HTTP 200)");
         verify(publishing, never()).create(anyString(), any());
     }
@@ -212,9 +212,9 @@ class HealthObservationUseCaseTest {
         ArgumentCaptor<UpdateCommunicationCommand> cmd = ArgumentCaptor.forClass(UpdateCommunicationCommand.class);
         verify(publishing).update(eq("c1"), cmd.capture());
         assertThat(cmd.getValue().expectedVersion()).isEqualTo(3L);
-        assertThat(cmd.getValue().actor()).isEqualTo(HealthObservationUseCase.ACTOR);
+        assertThat(cmd.getValue().actor()).as("the monitor's publisher").isEqualTo("vmforge-sre");
         assertThat(cmd.getValue().severity()).isEqualTo(Severity.MAJOR);
-        assertThat(cmd.getValue().body()).contains("- redis: DOWN");
+        assertThat(cmd.getValue().body()).contains("\nredis: DOWN\n");
         verify(publishing, never()).create(anyString(), any());
     }
 
@@ -227,10 +227,91 @@ class HealthObservationUseCaseTest {
         StepVerifier.create(useCase.observe(openDown("c1", "DOWN[]"), report, NOW))
                 .assertNext(m -> {
                     assertThat(m.state().hasOpen()).isFalse();
-                    assertThat(m.state().unhealthyStreak()).isZero();
+                    // the observation that noticed the retire is itself failing: the new count starts at 1
+                    assertThat(m.state().unhealthyStreak()).isEqualTo(1);
                 })
                 .verifyComplete();
         verify(publishing, never()).update(anyString(), any());
+    }
+
+    @Test
+    void operatorRetiredNoticeIsNoticedEvenWhenTheFailingSetIsUnchanged() {
+        saveReturnsArgument();
+        when(publishing.get("c1")).thenReturn(Mono.just(communication("c1", CommunicationStatus.RETIRED, 3)));
+
+        // same failure as the open notice: nothing to update, but the notice is gone by hand
+        HealthReport report = down(List.of(failing("db")));
+        HealthMonitor cleared = useCase.observe(openDown("c1", report.signature()), report, NOW).block();
+        assertThat(cleared).isNotNull();
+        assertThat(cleared.state().hasOpen()).isFalse();
+        assertThat(cleared.state().unhealthyStreak()).isEqualTo(1); // this failing observation is the first of the new count
+        verify(publishing, never()).update(anyString(), any());
+        verify(publishing, never()).create(anyString(), any());
+
+        // counting restarts: the next threshold crossing opens a fresh notice (incident #2)
+        when(publishing.create(anyString(), any())).thenAnswer(inv ->
+                Mono.just(communication(inv.getArgument(0), CommunicationStatus.ACTIVE, 0)));
+        StepVerifier.create(useCase.observe(cleared, report, NOW))
+                .assertNext(m -> {
+                    assertThat(m.state().hasOpen()).isTrue();
+                    assertThat(m.state().openCommunicationId()).isNotEqualTo("c1");
+                    assertThat(m.state().incidents()).isEqualTo(2);
+                })
+                .verifyComplete();
+    }
+
+    /** Threshold 3: how many failing observations an operator's retire buys before the notice reopens. */
+    private static final HealthMonitor.Policy POLICY3 = new HealthMonitor.Policy("vmforge-sre",
+            30, 5000, 3, 1, Severity.MAJOR, Severity.MINOR, Audience.INTERNAL, null, null);
+
+    @Test
+    void afterAnOperatorsRetireTheNoticeReopensOnTheThresholdthFailingObservation() {
+        saveReturnsArgument();
+        HealthReport report = down(List.of(failing("db")));
+        HealthMonitor open = HealthMonitor.create("m1", "vmforge", "vm-api", "http://vm-api/actuator/health", POLICY3, NOW);
+        for (int i = 0; i < 3; i++) {
+            open = open.evaluate(report, NOW).monitor();
+        }
+        open = open.withOpen("c1", HealthStatus.DOWN, report.signature());
+        when(publishing.get("c1")).thenReturn(Mono.just(communication("c1", CommunicationStatus.RETIRED, 3)));
+
+        // the first failing observation after the retire notices it and is the first of the new count
+        HealthMonitor first = useCase.observe(open, report, NOW).block();
+        assertThat(first).isNotNull();
+        assertThat(first.state().hasOpen()).isFalse();
+        assertThat(first.state().unhealthyStreak()).isEqualTo(1);
+
+        // the second is still below the threshold
+        HealthMonitor second = useCase.observe(first, report, NOW).block();
+        assertThat(second).isNotNull();
+        assertThat(second.state().hasOpen()).isFalse();
+        assertThat(second.state().unhealthyStreak()).isEqualTo(2);
+        verify(publishing, never()).create(anyString(), any());
+
+        // the third (= failureThreshold) opens a fresh notice, incident #2: "counts again", not threshold + 1
+        when(publishing.create(anyString(), any())).thenAnswer(inv ->
+                Mono.just(communication(inv.getArgument(0), CommunicationStatus.ACTIVE, 0)));
+        HealthMonitor third = useCase.observe(second, report, NOW).block();
+        assertThat(third).isNotNull();
+        assertThat(third.state().hasOpen()).isTrue();
+        assertThat(third.state().incidents()).isEqualTo(2);
+    }
+
+    @Test
+    void anOpenNoticeThatIsStillActiveIsLeftAloneWhenNothingChanged() {
+        saveReturnsArgument();
+        when(publishing.get("c1")).thenReturn(Mono.just(communication("c1", CommunicationStatus.ACTIVE, 3)));
+
+        HealthReport report = down(List.of(failing("db")));
+        StepVerifier.create(useCase.observe(openDown("c1", report.signature()), report, NOW))
+                .assertNext(m -> {
+                    assertThat(m.state().openCommunicationId()).isEqualTo("c1");
+                    assertThat(m.state().unhealthyStreak()).isEqualTo(2);
+                })
+                .verifyComplete();
+        verify(publishing, never()).update(anyString(), any());
+        verify(publishing, never()).create(anyString(), any());
+        verify(publishing, never()).retire(anyString(), any());
     }
 
     @Test
@@ -267,12 +348,48 @@ class HealthObservationUseCaseTest {
         ArgumentCaptor<RetireRequest> retire = ArgumentCaptor.forClass(RetireRequest.class);
         verify(publishing).retire(eq("c1"), retire.capture());
         assertThat(retire.getValue().note()).startsWith("reclassified as DEGRADED");
+        assertThat(retire.getValue().actor()).as("the monitor's publisher").isEqualTo("vmforge-sre");
         ArgumentCaptor<CreateCommunicationCommand> cmd = ArgumentCaptor.forClass(CreateCommunicationCommand.class);
         verify(publishing).create(anyString(), cmd.capture());
         assertThat(cmd.getValue().type()).isEqualTo(CommunicationType.HEALTH);
         assertThat(cmd.getValue().severity()).isEqualTo(Severity.MINOR);
         assertThat(cmd.getValue().title()).isEqualTo("vm-api is degraded");
         assertThat(cmd.getValue().externalRef()).isEqualTo("health:m1:2");
+    }
+
+    @Test
+    void aNoticeIsUpdatedAndRetiredUnderTheNameItWasPublishedWith() {
+        // auto-registered from a sidecar's first report: the monitor publishes as health-sidecar, and
+        // its later update and the recovery must be signed with that name too, not with a second one
+        HealthMonitor.Policy sidecar = new HealthMonitor.Policy("health-sidecar", 30, 5000, 1, 1,
+                Severity.MAJOR, Severity.MINOR, Audience.CUSTOMERS, 90, null);
+        HealthMonitor monitor = HealthMonitor.create("m2", "podtest", "fake-app", null, sidecar, NOW);
+        saveReturnsArgument();
+        when(publishing.create(anyString(), any())).thenAnswer(inv ->
+                Mono.just(communication(inv.getArgument(0), CommunicationStatus.ACTIVE, 0)));
+
+        HealthMonitor open = useCase.observe(monitor, new HealthReport(HealthStatus.DOWN, List.of(failing("db")),
+                "0 of 1 pod UP (DOWN: fake-app-1)", HealthSource.ROLLUP, NOW), NOW).block();
+        assertThat(open).isNotNull();
+        String id = open.state().openCommunicationId();
+        when(publishing.get(id)).thenReturn(Mono.just(communication(id, CommunicationStatus.ACTIVE, 0)));
+        when(publishing.update(eq(id), any())).thenReturn(Mono.just(communication(id, CommunicationStatus.ACTIVE, 1)));
+        HealthMonitor updated = useCase.observe(open, new HealthReport(HealthStatus.DOWN,
+                List.of(failing("db"), failing("redis")), "0 of 1 pod UP (DOWN: fake-app-1)",
+                HealthSource.ROLLUP, NOW), NOW).block();
+        assertThat(updated).isNotNull();
+        when(publishing.retire(eq(id), any())).thenReturn(Mono.just(communication(id, CommunicationStatus.RETIRED, 2)));
+        useCase.observe(updated, HealthReport.of(HealthStatus.UP, "1 of 1 pod UP", HealthSource.ROLLUP, NOW), NOW).block();
+
+        ArgumentCaptor<CreateCommunicationCommand> created = ArgumentCaptor.forClass(CreateCommunicationCommand.class);
+        verify(publishing).create(eq(id), created.capture());
+        ArgumentCaptor<UpdateCommunicationCommand> update = ArgumentCaptor.forClass(UpdateCommunicationCommand.class);
+        verify(publishing).update(eq(id), update.capture());
+        ArgumentCaptor<RetireRequest> retire = ArgumentCaptor.forClass(RetireRequest.class);
+        verify(publishing).retire(eq(id), retire.capture());
+        assertThat(created.getValue().publisher()).isEqualTo("health-sidecar");
+        assertThat(update.getValue().actor()).as("update actor").isEqualTo("health-sidecar");
+        assertThat(retire.getValue().actor()).as("retire actor").isEqualTo("health-sidecar");
     }
 
     @Test

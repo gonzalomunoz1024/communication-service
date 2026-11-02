@@ -1,0 +1,15 @@
+# G-3-21, after the fix: same command (409 + the word externalRef is recognised; explanation from the request that was sent; server sentence under <details> 'What the service said')
+# cwd frontend/: npx vitest run --reporter=verbose src/test/errors.test.ts src/test/PublishOutageForm.test.tsx
+ ✓ src/test/errors.test.ts > explainPublishError > explains a bare duplicate-externalRef 409 in the form's terms: the key is permanent, so a follow-up needs a new reference 1ms
+ ✓ src/test/errors.test.ts > explainPublishError > explains a duplicate reference in the form's terms whatever the service's sentence says around it 0ms
+ ✓ src/test/errors.test.ts > explainPublishError > explains the service's current duplicate-reference sentence without its notice id or client-library terms 1ms
+ ✓ src/test/errors.test.ts > explainPublishError > names the External reference the person typed, and suggests the next follow-up number, from the request that was sent 1ms
+ ✓ src/test/errors.test.ts > explainPublishError > reads the reference and the tenant from the sentence when no request is at hand, with or without the holder 1ms
+ ✓ src/test/errors.test.ts > explainPublishError > suggests the next follow-up number, and -2 for anything else 0ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains a 409 for a reused incident number: the reference is permanent, a follow-up needs a new one 246ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > keeps the service's own words in a details element when its 409 explains the permanent key and names the notice 193ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains the service's current 409 sentence in the form's words, with that sentence one click away 341ms
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > names the External reference that was typed and suggests the next follow-up number 445ms
+ Test Files  2 passed (2)
+      Tests  31 passed (31)
+# full suite before commit: npm run lint (exit 0), npm run typecheck (exit 0), npm test -> Test Files 18 passed (18), Tests 151 passed (151)

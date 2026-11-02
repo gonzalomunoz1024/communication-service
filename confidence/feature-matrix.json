@@ -1,0 +1,958 @@
+[
+  {
+    "id": "F-01",
+    "feature": "Publish a communication: POST /v1/communications → 201 + Location; status ACTIVE (start now/past) or SCHEDULED (future start); audience defaults to CUSTOMERS; CREATED event emitted",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "RestControllerPublishingAdapter.java:40-47; PublishingUseCase.java:46-68; Communication.java:52-68",
+    "e2e_path": "UI (Publish tab) or HTTP",
+    "how_to_verify": "POST with/without startsAt; assert 201, Location header, status, audience; SSE shows `created`. Existing: PublishingUseCaseTest, CommunicationServiceE2EIT.publishFeedStreamRetireRoundTrip"
+  },
+  {
+    "id": "F-02",
+    "feature": "Draft: draft=true → stored DRAFT, invisible in feed/stream/permalink, no event; POST /{id}/publish moves it to SCHEDULED/ACTIVE and emits CREATED; 409 when not DRAFT",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "PublishingUseCase.java:111-124,151-153; FeedUseCase.java:62-68; PublishOutageForm.tsx:217",
+    "e2e_path": "UI (Save as draft) + HTTP (publish)",
+    "how_to_verify": "Create draft via UI, GET /v1/feed and /v1/feed/{id} → absent/404; POST publish → 200 ACTIVE; publish again → 409. Existing: createDraftIsSilent, publishDraftWithFutureStart…, publishNonDraftIs409"
+  },
+  {
+    "id": "F-03",
+    "feature": "Read one communication with audit history: GET /v1/communications/{id} (any status); unknown → 404 {error}",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerPublishingAdapter.java:50-54; PublishingUseCase.java:71-73,155-158",
+    "e2e_path": "HTTP",
+    "how_to_verify": "GET known id → history[] present; GET random id → 404 JSON body. Existing: getUnknownIdIs404"
+  },
+  {
+    "id": "F-04",
+    "feature": "Publisher listing: GET /v1/communications?tenantId=&status=&type=&page=&size= (no time predicate, any status)",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerPublishingAdapter.java:56-65; PublishingUseCase.java:76-85; CommunicationQuery.java:264-268",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Create DRAFT+ACTIVE+RETIRED, list with/without status filter, check totalElements/hasNext. Existing: listClampsSizeAndComputesPage"
+  },
+  {
+    "id": "F-05",
+    "feature": "Partial update: PUT /v1/communications/{id} with required expectedVersion; null fields untouched; 400 when expectedVersion missing; 409 on version mismatch or terminal status; UPDATED event unless draft",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerPublishingAdapter.java:68-73; PublishingUseCase.java:88-108; UpdateCommunicationCommand.java:67-79; Communication.java:71-88",
+    "e2e_path": "HTTP",
+    "how_to_verify": "PUT title only → other fields kept, version+1, history 'updated'; stale version → 409; on RETIRED → 409; body without expectedVersion → 400. Existing: updateWithStaleVersionIs409…, updateHappyPath…, updateTerminalStatusIs409"
+  },
+  {
+    "id": "F-06",
+    "feature": "Retire: POST /v1/communications/{id}/retire with optional {actor,note}; idempotent on RETIRED; 409 on EXPIRED; actor defaults to publisher; note lands in audit; RETIRED event",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "RestControllerPublishingAdapter.java:83-88; PublishingUseCase.java:127-144; OutageCard.tsx:174-184",
+    "e2e_path": "UI (Resolve) or HTTP",
+    "how_to_verify": "Retire active → 200 RETIRED + history 'ACTIVE -> RETIRED: note'; retire again → 200 same; retire an expired item → 409. Existing: retireActiveEmitsRetired, retireAlreadyRetiredIsIdempotentNoOp, retireExpiredIs409"
+  },
+  {
+    "id": "F-07",
+    "feature": "Request validation → 400 {error}: bean validation (tenantId/publisher/title required, title ≤200, body ≤16384 bytes, affectedServices ≤20) and domain invariants (MAINTENANCE needs endsAt, OUTAGE/INCIDENT need severity ≥ MINOR, endsAt/expiresAt after startsAt, ticket.number required)",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "CreateCommunicationCommand.java:24-39; Communication.java:156-176; GlobalExceptionHandler.java:131-149; validation.ts:349-367",
+    "e2e_path": "HTTP (and UI mirrors it client-side)",
+    "how_to_verify": "Send each invalid body, expect 400 with a message naming the field; UI shows the same rule inline before sending. Existing: CommunicationTest (invariants), CommunicationServiceE2EIT.validationAndConflictContracts, validation.test.ts"
+  },
+  {
+    "id": "F-08",
+    "feature": "Idempotent publish: externalRef unique per tenant via partial unique index; duplicate → 409 'duplicate externalRef'",
+    "services": [
+      "BE"
+    ],
+    "where": "MongoCommunicationRepositoryAdapter.java:54-74; CommunicationDocument.java:21-27",
+    "e2e_path": "HTTP",
+    "how_to_verify": "POST twice with same tenantId+externalRef → 201 then 409; same externalRef in another tenant → 201. Existing: MongoCommunicationRepositoryAdapterIT.duplicateExternalRefWithinTenantIsConflict (never run in sandbox), E2E IT validationAndConflictContracts"
+  },
+  {
+    "id": "F-09",
+    "feature": "Ticket add-on: ticket.number trimmed + upper-cased, system defaults to servicenow, number must match communication.tickets.number-pattern (400 otherwise), ticket.url must be http(s), url auto-linked when communication.servicenow.instance-url is set, externalRef defaults to the number, ticket attachable/replaceable later via PUT with audit 'ticket attached/changed'; rides on feed + SSE payloads",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "TicketPolicy.java:271-301; PublishingUseCase.java:60-61,101-104; Communication.java:94-104; TicketTag.tsx:272-285; PublishOutageForm.tsx:142-144",
+    "e2e_path": "UI (incident field + chip) or HTTP",
+    "how_to_verify": "POST with ' inc0077001 ' → ticket {servicenow, INC0077001, url}; externalRef == number; bad number → 400; PUT attaches; feed item carries ticket; UI chip links out. Existing: TicketPolicyTest, PublishingUseCaseTest ticket cases, CommunicationServiceE2EIT.ticketContracts"
+  },
+  {
+    "id": "F-10",
+    "feature": "Maintenance defaults: expiresAt defaults to endsAt for MAINTENANCE; startsAt defaults to now",
+    "services": [
+      "BE"
+    ],
+    "where": "Communication.java:57-59",
+    "e2e_path": "HTTP",
+    "how_to_verify": "POST MAINTENANCE with endsAt only → expiresAt == endsAt. Existing: CommunicationTest.maintenanceDefaultsExpiryToWindowEnd"
+  },
+  {
+    "id": "F-11",
+    "feature": "Audit history: every mutation appends {at, actor, action}; capped at 50 entries; actor 'unknown' when absent",
+    "services": [
+      "BE"
+    ],
+    "where": "Communication.java:178-185,35",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Create, update ×2, retire → 4 history entries in order; 60 updates → 50 kept. Existing: transitionsAppendAuditAndBumpUpdatedAt, historyIsCappedAtFifty"
+  },
+  {
+    "id": "F-12",
+    "feature": "Optimistic concurrency on the document (@Version): concurrent save → 409 'modified concurrently'",
+    "services": [
+      "BE"
+    ],
+    "where": "CommunicationDocument.java:56-57; MongoCommunicationRepositoryAdapter.java:71-73",
+    "e2e_path": "HTTP (two racing PUTs) / IT",
+    "how_to_verify": "Two PUTs with the same expectedVersion in parallel → one 200, one 409. Existing: MongoCommunicationRepositoryAdapterIT.staleVersionIsConflict (never run in sandbox)"
+  },
+  {
+    "id": "F-13",
+    "feature": "Lifecycle state machine: DRAFT→SCHEDULED/ACTIVE/RETIRED, SCHEDULED→ACTIVE/RETIRED, ACTIVE→EXPIRED/RETIRED; EXPIRED/RETIRED terminal; illegal transition → 400",
+    "services": [
+      "BE"
+    ],
+    "where": "Communication.java:112-131; CommunicationStatus.java:143-145",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Drive each transition over the API; attempt retire on EXPIRED (409) and update on RETIRED (409). Existing: CommunicationTest.stateMachineBlocksIllegalTransitions"
+  },
+  {
+    "id": "F-14",
+    "feature": "Consumer feed: GET /v1/feed?tenantId= (required → 400 if blank) with filters service (exact match in affectedServices), type, severity (inclusive minimum), audience, activeAt (default now), includeUpcoming (default true), page/size (default 20, ≤100 capped, page<0/size<1 → 400); sorted severityRank desc, startsAt desc, _id desc",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "RestControllerFeedAdapter.java:141-155; FeedUseCase.java:50-59,105-110; MongoCommunicationRepositoryAdapter.java:44-45,142-198; Page.java:195-208; FeedQuery.java:198-202",
+    "e2e_path": "UI (Feed tab filters) or HTTP",
+    "how_to_verify": "Seed items across services/types/severities; query each filter; check ordering and paging math; size=500 → 100 items max; page=-1 → 400. Existing: FeedUseCaseTest, MongoCommunicationRepositoryAdapterIT.visibilityPredicate…/sortsBy… (IT never run)"
+  },
+  {
+    "id": "F-15",
+    "feature": "Effective status computed on read: feed/permalink status derived from startsAt/expiresAt regardless of stored SCHEDULED/ACTIVE; expired items disappear from the feed at expiresAt exactly, before the sweeper runs; frontend applies the same rule to SSE payloads",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "Communication.java:137-149; FeedItem.java:168-172; feed-state.ts:293-298",
+    "e2e_path": "HTTP (activeAt param) or UI (wait past expiry)",
+    "how_to_verify": "Publish with expiresAt=now+5s; GET /v1/feed immediately (present) and after 6s (absent) with sweep interval 30s; GET /v1/feed/{id} → status EXPIRED. Existing: feedProjectsEffectiveStatusNotStoredStatus, feed-state.test.ts"
+  },
+  {
+    "id": "F-16",
+    "feature": "Scheduled visibility: future-dated items hidden, except SCHEDULED MAINTENANCE starting within communication.feed.upcoming-window (P7D) when includeUpcoming=true; UI shows them under 'Upcoming'",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "MongoCommunicationRepositoryAdapter.java:181-198; FeedUseCase.java:105-110; OutageFeed.tsx:42,123-127",
+    "e2e_path": "UI or HTTP",
+    "how_to_verify": "Publish MAINTENANCE starting in 1 day and OUTAGE starting in 1 day; feed shows only the maintenance; includeUpcoming=false hides it; UI lists it under Upcoming with 'Starts in 1d'. Existing: feedTranslatesFiltersIncludingUpcomingWindow, IT visibilityPredicate (never run)"
+  },
+  {
+    "id": "F-17",
+    "feature": "Permalink: GET /v1/feed/{id} returns the FeedItem for any non-draft status (EXPIRED/RETIRED stay retrievable); DRAFT or unknown → 404",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerFeedAdapter.java:157-161; FeedUseCase.java:62-68",
+    "e2e_path": "HTTP",
+    "how_to_verify": "GET retired id → 200 status RETIRED; GET draft id → 404. Existing: itemHidesDrafts, itemServesExpiredPermalinks"
+  },
+  {
+    "id": "F-18",
+    "feature": "SSE stream: GET /v1/feed/stream?tenantId= (text/event-stream) sends one `snapshot` frame per visible item (id = node's log position), then live `created/updated/activated/expired/retired` frames named after the event type lower-cased, `id:` = global seq, `:keepalive` comment every 15s",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "RestControllerFeedAdapter.java:163-187; FeedUseCase.java:93-103; api.ts:250-265",
+    "e2e_path": "UI (Live indicator) or HTTP (curl -N)",
+    "how_to_verify": "curl -N the stream, publish/update/retire in another shell, observe frame names, ids monotonic, keepalive comments; UI applies them. Existing: streamEmitsMatchingLiveEventsAndASnapshotStampedWithThePosition, E2E IT round trip"
+  },
+  {
+    "id": "F-19",
+    "feature": "SSE per-subscriber filtering: tenant, service, type, min severity, audience applied to live events server-side (snapshot uses the same store filters, first page of 100)",
+    "services": [
+      "BE"
+    ],
+    "where": "FeedUseCase.java:112-132",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Two streams (service=a, service=b); publish for a → only stream a gets `created`. Existing: streamFiltersByServiceAndSeverity"
+  },
+  {
+    "id": "F-20",
+    "feature": "Resume: Last-Event-ID header or ?lastEventId= replays every retained event of the tenant after that seq, in order, without snapshot frames, then continues live exactly once; ids never issued or already expired from the log fall back to a fresh snapshot; non-numeric header ignored",
+    "services": [
+      "BE",
+      "FE"
+    ],
+    "where": "RestControllerFeedAdapter.java:176,190-199; FeedUseCase.java:76-85; MongoCommunicationEventsAdapter.java:334-365",
+    "e2e_path": "HTTP (curl with header); browser does it on reconnect",
+    "how_to_verify": "Subscribe, note id, disconnect, retire+publish, reconnect with Last-Event-ID → RETIRED then CREATED, no snapshot; lastEventId=999999 → snapshot. Existing: streamResumesFromLastEventId…, streamFallsBackToASnapshot…, MongoCommunicationEventsAdapterTest, E2E IT reconnectingWithLastEventIdReplaysWhatWasMissed"
+  },
+  {
+    "id": "F-21",
+    "feature": "Multi-instance fan-out: events appended to communication_events under a global counter (counters/communication_events); every instance tails the log every communication.events.poll-interval-ms (500) and fans out to its own subscribers; TTL index on `at` = communication.events.retention (P1D), updated via collMod when the retention changes; emit failures logged not propagated",
+    "services": [
+      "BE"
+    ],
+    "where": "MongoCommunicationEventsAdapter.java:268-326,372-389; MongoEventSequence.java:176-190; CommunicationEventDocument.java:108-110",
+    "e2e_path": "HTTP against two backend instances on one Mongo",
+    "how_to_verify": "Start two instances (ports 8080/8081), subscribe on 8081, publish on 8080 → `created` arrives on 8081 within ~1s; check index expireAfterSeconds. Existing: MongoCommunicationEventsAdapterTest (unit, fake repo)"
+  },
+  {
+    "id": "F-22",
+    "feature": "Status sweeper: every communication.sweep.interval-ms (30000) SCHEDULED items whose start passed become ACTIVE (`activated` event) and ACTIVE items past expiresAt become EXPIRED (`expired` event); save conflicts skipped (multi-node safe)",
+    "services": [
+      "BE"
+    ],
+    "where": "StatusSweepUseCase.java:199-228; MongoCommunicationRepositoryAdapter.java:97-110",
+    "e2e_path": "HTTP (wait one interval) / unit",
+    "how_to_verify": "Run with sweep interval 2s; publish startsAt=now+3s → `activated` frame on the stream ~5s later and stored status ACTIVE; expiresAt=now+3s → `expired`. Existing: StatusSweepUseCaseTest, IT sweeperScansFindDueDocuments (never run)"
+  },
+  {
+    "id": "F-23",
+    "feature": "Admin search: GET /v1/admin/communications with optional tenantId, status (set), type, publisher, from/to (createdAt range), paging; any status, history included",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerAdminAdapter.java:39-51; AdminUseCase.java:240-250; CommunicationQuery.java:271-276",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Seed two tenants; search without tenantId → both; with publisher/from/to narrows. Existing: AdminUseCaseTest.searchBuildsAdminQueryWithCreatedRange"
+  },
+  {
+    "id": "F-24",
+    "feature": "Admin tenant summary: GET /v1/admin/tenants → per-tenant counts by stored status and total, sorted by tenant",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerAdminAdapter.java:54-58; MongoCommunicationRepositoryAdapter.java:119-140",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Seed known counts, compare. Existing: IT summarizesTenants (never run), AdminUseCaseTest.tenantsPassesSummariesThrough"
+  },
+  {
+    "id": "F-25",
+    "feature": "Admin retire override: POST /v1/admin/communications/{id}/retire → same rules/events as publisher retire",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerAdminAdapter.java:61-66; AdminUseCase.java:258-260",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Retire another tenant's item → 200 RETIRED + `retired` event. Existing: retireDelegatesToPublishingRules"
+  },
+  {
+    "id": "F-26",
+    "feature": "Admin purge: DELETE /v1/admin/communications/{id} → 204 hard delete (audit destroyed); unknown → 404",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerAdminAdapter.java:68-72; AdminUseCase.java:263-268",
+    "e2e_path": "HTTP",
+    "how_to_verify": "DELETE then GET /v1/communications/{id} → 404; DELETE again → 404. Existing: purgeMissingIdIs404, purgeExistingCompletesEmpty"
+  },
+  {
+    "id": "F-27",
+    "feature": "Caller identification: every /v1/** request (except OPTIONS) needs X-Client-Id (or ?clientId= for EventSource); missing → 401 {error}, not matching [A-Za-z0-9][A-Za-z0-9._/-]{0,99} → 400; non-/v1 paths (Swagger, api-docs) exempt; communication.client-id.required=false disables; id exposed as exchange attribute + Reactor context, logged at debug",
+    "services": [
+      "BE",
+      "FE",
+      "SC"
+    ],
+    "where": "ClientIdWebFilter.java:45,57-89; api.ts:206-207,228-232,252; report/client.go:498",
+    "e2e_path": "HTTP + UI + sidecar",
+    "how_to_verify": "curl without header → 401; with 'bad id!' → 400; stream with ?clientId= → 200; /swagger-ui.html without header → 200; UI network tab shows header; sidecar POST carries CS_CLIENT_ID. Existing: ClientIdWebFilterTest, RestControllerHealthAdapterTest.callsWithoutAClientIdNeverReachTheController, api.test.ts"
+  },
+  {
+    "id": "F-28",
+    "feature": "Error contract: IllegalArgumentException/bind/input errors → 400, ResponseStatusException → its status, anything else → 500; body always {\"error\": …}; invalid enum query value → 400 not 500; unknown JSON fields ignored",
+    "services": [
+      "BE"
+    ],
+    "where": "GlobalExceptionHandler.java:128-166",
+    "e2e_path": "HTTP",
+    "how_to_verify": "GET /v1/feed?tenantId=x&type=NOPE → 400 JSON; malformed JSON body → 400; check no stack traces leak. Existing: E2E IT validationAndConflictContracts (invalid enum)"
+  },
+  {
+    "id": "F-29",
+    "feature": "OpenAPI: /v3/api-docs lists every /v1 path, Swagger UI at /swagger-ui.html with an Authorize (apiKey header X-Client-Id) scheme applied globally",
+    "services": [
+      "BE"
+    ],
+    "where": "OpenApiConfig.java:184-198; application.yml springdoc section",
+    "e2e_path": "HTTP / browser",
+    "how_to_verify": "GET /v3/api-docs → paths incl. /v1/feed/stream, /v1/health/reports; securitySchemes.clientId present; Swagger UI renders. Existing: openApiSpecIsServed, HealthMonitoringE2EIT.validationContracts"
+  },
+  {
+    "id": "F-30",
+    "feature": "Backend operational endpoints: there is NO Spring Boot Actuator dependency, so the backend exposes no /actuator/health, liveness or readiness endpoint; no Dockerfile or K8s manifests for the backend exist in the repo",
+    "services": [
+      "BE"
+    ],
+    "where": "build.gradle.kts:22-37 (no actuator); repo tree",
+    "e2e_path": "HTTP",
+    "how_to_verify": "GET /actuator/health → 404 (expected today). Verifier decides whether that is a gap against the 'health endpoints' rubric line"
+  },
+  {
+    "id": "F-31",
+    "feature": "Register a monitor: POST /v1/health/monitors → 201 + Location; policy fields default from communication.health.defaults (publisher health-monitor, interval 30s, timeout 5000, thresholds 2/2, MAJOR/MINOR, CUSTOMERS, minHealthyPercent 50) and can be overridden; url makes it probed, absent url = push-only; 409 when (tenantId, service) exists; url must be absolute http(s) → 400",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerHealthAdapter.java:124-131; HealthMonitorUseCase.java:50-57,151-164; HealthMonitor.java:211-227; HealthProperties.java:185-207; HealthMonitorDocument.java:392",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Register minimal → defaults in response; register again → 409; url 'not a url' → 400. Existing: registerFillsPolicyFromDefaultsThenOverrides, RestControllerHealthAdapterTest, HealthMonitoringE2EIT.validationContracts, MongoHealthMonitorRepositoryAdapterIT.oneMonitorPerTenantAndService (never run)"
+  },
+  {
+    "id": "F-32",
+    "feature": "Monitor policy validation: intervalSeconds ≥5, timeoutMs 100..60000, failure/recoveryThreshold ≥1, downSeverity ≥ MINOR, degradedSeverity/audience required, staleAfterSeconds ≥1, minHealthyPercent 0..100 → 400 otherwise (bean validation first, domain second)",
+    "services": [
+      "BE"
+    ],
+    "where": "RegisterMonitorCommand.java:169-183; HealthMonitor.java:54-71",
+    "e2e_path": "HTTP",
+    "how_to_verify": "POST each out-of-range value, expect 400 naming the field. Existing: registerValidatesTheBody, registerRejectsAnInvalidPolicy, createValidatesUrlAndPolicy"
+  },
+  {
+    "id": "F-33",
+    "feature": "Monitor reads: GET /v1/health/monitors (all) or ?tenantId= (one tenant) with live state (streaks, lastStatus, open notice id, incidents); GET /v1/health/monitors/{id}; unknown → 404",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerHealthAdapter.java:133-144; HealthMonitorUseCase.java:60-68",
+    "e2e_path": "HTTP",
+    "how_to_verify": "List with/without tenant filter; GET unknown → 404. Existing: listPassesTheTenantFilterThrough, unknownMonitorIs404, listGetProbeAndDeleteMapStatuses"
+  },
+  {
+    "id": "F-34",
+    "feature": "Probe now: POST /v1/health/monitors/{id}/probe applies a probe immediately and returns the monitor; push-only monitor → 409",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerHealthAdapter.java:161-165; HealthMonitorUseCase.java:100-108",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Probe a URL monitor → lastProbeAt set; probe push-only → 409. Existing: probeNowRejectsPushOnlyMonitors, probeNowDelegatesForProbedMonitors, HealthMonitoringE2EIT"
+  },
+  {
+    "id": "F-35",
+    "feature": "Delete monitor: DELETE /v1/health/monitors/{id} → 204; retires any open notice (audit 'monitor deleted'), removes its instance records; unknown → 404",
+    "services": [
+      "BE"
+    ],
+    "where": "RestControllerHealthAdapter.java:154-158; HealthMonitorUseCase.java:76-81",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Open a notice, delete the monitor → feed empty, permalink RETIRED, instances gone. Existing: deleteClosesTheOpenNoticeBeforeRemovingTheMonitor, HealthMonitoringE2EIT.pushedReports…"
+  },
+  {
+    "id": "F-36",
+    "feature": "Push a health report: POST /v1/health/reports (Actuator-shaped: status, components, message, observedAt, publisher, instance) → 202 + monitor; first contact auto-registers a push-only monitor (using the report's publisher); status required → 400; tenantId/service required",
+    "services": [
+      "BE",
+      "SC"
+    ],
+    "where": "RestControllerHealthAdapter.java:167-171; HealthMonitorUseCase.java:84-97,138-149; HealthReportCommand.java:141-155",
+    "e2e_path": "HTTP (curl or sidecar)",
+    "how_to_verify": "POST for an unknown service → 202, GET monitors shows url=null; POST without status → 400. Existing: firstPushAutoRegistersAPushOnlyMonitorAndObserves, reportBindsActuatorShapedComponentsAndReturns202, reportRequiresAStatus"
+  },
+  {
+    "id": "F-37",
+    "feature": "Pull probing: HTTP GET of the monitor url with the policy timeout; JSON body with top-level status read as a health document (components included) regardless of HTTP status; otherwise 2xx → UP, else DOWN; connection errors/timeouts → DOWN with reason; body capped at 256 KiB",
+    "services": [
+      "BE"
+    ],
+    "where": "WebClientHealthProbeAdapter.java:33,46-80",
+    "e2e_path": "HTTP (fake actuator app)",
+    "how_to_verify": "Point a monitor at a stub returning 503+{status:DOWN,...} → DOWN with components; at a plain 200 page → UP; at a closed port → DOWN 'probe failed'; at a slow endpoint with timeoutMs=200 → DOWN 'no response within 200ms'. Existing: WebClientHealthProbeAdapterTest, HealthMonitoringE2EIT.probedServiceGoingDown…"
+  },
+  {
+    "id": "F-38",
+    "feature": "Actuator vocabulary: UP/OK/HEALTHY → UP; DOWN/OUT_OF_SERVICE/FATAL/UNHEALTHY → DOWN; UNKNOWN/blank → UNKNOWN; anything else → DEGRADED; nested components flattened to dotted names (composite indicators and legacy `details` nesting); UP overall with a failing component → DEGRADED; component detail text capped at 200 chars, error first",
+    "services": [
+      "BE",
+      "SC"
+    ],
+    "where": "HealthStatus.java:268-278; HealthReport.java:40-95; ActuatorComponent.java:348-376",
+    "e2e_path": "HTTP",
+    "how_to_verify": "POST reports with each code and a nested composite; inspect monitor.state.lastSummary and the notice body. Existing: HealthReportTest, statusCodesMapOntoNormalizedVocabulary"
+  },
+  {
+    "id": "F-39",
+    "feature": "Debounce: failureThreshold consecutive observations of the same unhealthy status open a notice; the streak restarts when the unhealthy status changes (DOWN↔DEGRADED); recoveryThreshold consecutive UPs resolve it; UNKNOWN carries no information (streaks untouched); lastReportAt/lastProbeAt bookkeeping by source",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthMonitor.java:136-171",
+    "e2e_path": "HTTP (probe now / reports)",
+    "how_to_verify": "thresholds 2/2: DOWN, DOWN → notice; UP → still open; UP → retired; DOWN, DEGRADED, DEGRADED → HEALTH notice (not after 2nd). Existing: HealthMonitorTest, HealthMonitoringE2EIT"
+  },
+  {
+    "id": "F-40",
+    "feature": "Notice content: DOWN → OUTAGE at downSeverity, DEGRADED → HEALTH at degradedSeverity; title '<service> is down|degraded'; Markdown body with source line (probe url / reported by the service / silence since / rolled up from pods), message, failing components (≤25 lines, then '... and n more'), closing sentence; affectedServices=[service]; publisher = policy.publisher; externalRef health:<monitorId>:<incident#>; audience from policy",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthNotice.java:377-416; HealthObservationUseCase.java:127-136; HealthMonitor.java:203-205",
+    "e2e_path": "HTTP (feed)",
+    "how_to_verify": "Open a notice, GET /v1/feed → fields as listed; body contains '- db: DOWN - error=…'. Existing: HealthNoticeTest, HealthMonitoringE2EIT.probedServiceGoingDown…"
+  },
+  {
+    "id": "F-41",
+    "feature": "Open-notice lifecycle: new failing components (signature change) → notice updated in place (UPDATED event, same id); kind change DOWN↔DEGRADED → old notice retired 'reclassified as …' and a new one opened (incident# +1); recovery → retired with 'recovered: <summary>'; a notice an operator retired by hand is respected (monitor clears state, failure streak reset); a purged notice is re-created under the claimed id",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthObservationUseCase.java:58-68,84-125; HealthMonitor.java:189-200",
+    "e2e_path": "HTTP",
+    "how_to_verify": "Sequence reports: DOWN db → notice; DOWN db+redis → same id, body gains redis, SSE `updated`; UP,UP → retired; DEGRADED×2 after DOWN notice → two notices, first RETIRED; retire notice manually then keep reporting DOWN → counts from 1 again. Existing: HealthObservationUseCaseTest, sameProblemWhileOpenIsQuietButNewFailingComponentsUpdate, changeOfKindWhileOpenReplacesAfterThreshold"
+  },
+  {
+    "id": "F-42",
+    "feature": "Notice claim exclusivity: the monitor is saved with the new communication id (optimistic version) BEFORE the communication is created; the loser of a race drops its evaluation; a publish failure after the claim releases it",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthObservationUseCase.java:75-94,153-162; HealthMonitorDocument.java:404-405",
+    "e2e_path": "unit / IT only (needs an induced race)",
+    "how_to_verify": "Existing: openClaimsTheMonitorBeforePublishingAnOutage, lostClaimRacePublishesNothing, publishFailureReleasesTheClaim; MongoHealthMonitorRepositoryAdapterIT.staleVersionIsConflict (never run)"
+  },
+  {
+    "id": "F-43",
+    "feature": "Health scheduler: every communication.health.sweep-interval-ms (5000, initial delay same) monitors whose interval elapsed are probed (concurrency 8); one monitor's failure never stops the sweep",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthSweepUseCase.java:224-245,268-282; HealthMonitor.java:112-118",
+    "e2e_path": "HTTP (register with intervalSeconds=5 and wait)",
+    "how_to_verify": "Register a probed monitor with interval 5 against a DOWN stub, wait ~15s → notice opened without calling /probe. Existing: HealthSweepUseCaseTest.probesOnlyMonitorsWhoseIntervalElapsed, aFailingMonitorDoesNotStopTheSweep"
+  },
+  {
+    "id": "F-44",
+    "feature": "Staleness: a push-only monitor with staleAfterSeconds that has been silent (since last report, or registration) longer than the window is observed as DOWN with source STALE and message 'no health report received since …'; counts toward the debounce like any observation",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthMonitor.java:124-133; HealthSweepUseCase.java:288-311",
+    "e2e_path": "HTTP (wait; needs stale-grace-after-start-ms lowered)",
+    "how_to_verify": "Start backend with communication.health.stale-grace-after-start-ms=0, register push-only with staleAfterSeconds=5, failureThreshold=1, wait 15s → OUTAGE in feed; report UP → retired. Existing: silentPushOnlyMonitorsAreObservedAsDown, pushOnlyMonitorsGoStaleFromRegistrationOrLastReport"
+  },
+  {
+    "id": "F-45",
+    "feature": "Staleness safety valve: silence is not trusted for stale-grace-after-start-ms (300000) after startup, nor while more than stale-pause-fraction (0.3) of ≥3 stale-capable monitors are silent at once (logged once on pause/resume)",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthSweepUseCase.java:204,248-266; HealthProperties.java:186-188",
+    "e2e_path": "unit (timing) / HTTP with tuned properties",
+    "how_to_verify": "Existing: silenceIsNotTrustedDuringTheStartupGrace, silenceIsNotTrustedWhenMostMonitorsGoSilentTogether, oneSilentMonitorAmongManyIsStillDeclaredDown"
+  },
+  {
+    "id": "F-46",
+    "feature": "Per-instance records: a report with `instance` is upserted into health_instances (id monitorId:instanceId; effective status, failing components, message, namespace/node/cluster/version/sidecar, left, lastSeenAt) with a 1-day TTL; GET /v1/health/monitors/{id}/instances lists them (404 for unknown monitor)",
+    "services": [
+      "BE",
+      "SC"
+    ],
+    "where": "HealthMonitorUseCase.java:71-73,111-121; HealthInstanceDocument.java:144-165; RestControllerHealthAdapter.java:147-152",
+    "e2e_path": "HTTP",
+    "how_to_verify": "POST two reports for pods a and b, GET instances → 2 entries ordered by id with lastSeenAt; repeat for a → still 2. Existing: instancesListsAMonitorsPodsAnd404sForUnknownMonitors, MongoHealthInstanceRepositoryAdapterIT (never run)"
+  },
+  {
+    "id": "F-47",
+    "feature": "Rollup rules (computed before the debounce from all live instances): live = not left and seen within the staleness window; UNKNOWN pods live but not tallied; nothing tallied → UNKNOWN; all UP → UP; none UP → DOWN (DEGRADED if any pod DEGRADED); some UP → DEGRADED when any pod reports a failing dependency or UP share < minHealthyPercent (default 50), else UP; failing components unioned by name; message 'x of y pods UP (DOWN: a, b; 1 starting)' with names capped at 5",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthRollup.java:279-360; HealthMonitorUseCase.java:111-127",
+    "e2e_path": "HTTP (several instance reports)",
+    "how_to_verify": "5 pods: 4 UP + 1 DOWN(no components) → monitor lastStatus UP, summary '4 of 5 pods UP (DOWN: pod5)'; 2 UP + 3 DOWN → DEGRADED; 1 pod UP with component db DOWN + 4 UP → DEGRADED; minHealthyPercent=100 → DEGRADED at 4/5. Existing: HealthRollupTest, instanceReportsAreRolledUpBeforeTheMonitorSeesThem"
+  },
+  {
+    "id": "F-48",
+    "feature": "Clean shutdown vs silence: instance.leaving=true keeps the record marked left (dropped from the rollup at once); a service whose pods all left is scaled to zero and never declared stale; pods that went silent make the service DOWN after the window with a message naming up to 5 of them",
+    "services": [
+      "BE",
+      "SC"
+    ],
+    "where": "HealthInstance.java:240-250; HealthSweepUseCase.java:284-317; agent.go:294-311",
+    "e2e_path": "HTTP (+ sidecar SIGTERM)",
+    "how_to_verify": "Report leaving for every pod, wait past window → no notice; report then stop one pod, wait → OUTAGE naming it. Existing: aLeavingInstanceIsKeptMarkedLeft, aServiceWhosePodsAllLeftIsScaledToZeroNotStale, aServiceWhosePodsWentSilentIsDownAndNamesThem, TestRunSendsLeavingReportOnShutdown"
+  },
+  {
+    "id": "F-49",
+    "feature": "Instance staleness window: monitors auto-registered by an instance report get staleAfterSeconds = defaults.instance-stale-after-seconds (90); an explicit staleAfterSeconds on the monitor overrides it for both rollup liveness and silence detection",
+    "services": [
+      "BE"
+    ],
+    "where": "HealthMonitorUseCase.java:123-127,138-143; application.yml communication.health.defaults",
+    "e2e_path": "HTTP",
+    "how_to_verify": "First instance report → GET monitor shows policy.staleAfterSeconds=90; registered with 20 → rollup ignores a pod unseen for 25s. Existing: firstInstanceReportAutoRegistersWithTheInstanceStalenessWindow"
+  },
+  {
+    "id": "F-50",
+    "feature": "Concurrent instance reports: a report that hits the monitor's optimistic-lock 409 is retried up to 3 attempts with a fresh monitor; a persistent conflict → 409 (sidecar treats 409 as retryable)",
+    "services": [
+      "BE",
+      "SC"
+    ],
+    "where": "HealthMonitorUseCase.java:41,92-96,129-131; report/client.go:518-524",
+    "e2e_path": "HTTP (parallel POSTs)",
+    "how_to_verify": "Fire 20 instance reports in parallel for one service → all 202 (or a documented 409 rate). Existing: aConcurrentUpdateIsRetriedWithAFreshMonitor, aPersistentConflictIsReturnedAfterTheRetries, TestSendClassifiesFailures"
+  },
+  {
+    "id": "F-51",
+    "feature": "Mongo indexes and schema: communications feed_idx/sweep_expiry_idx/sweep_activation_idx/affectedServices + partial unique external_ref_idx; health_monitors unique (tenantId, service); health_instances compound + TTL instance_ttl_idx (1d); communication_events tenant+seq + events_ttl_idx; auto-index-creation on",
+    "services": [
+      "BE"
+    ],
+    "where": "CommunicationDocument.java:28-33; MongoCommunicationRepositoryAdapter.java:54-62; HealthMonitorDocument.java:392; HealthInstanceDocument.java:145,164; CommunicationEventDocument.java:109; MongoCommunicationEventsAdapter.java:372-378",
+    "e2e_path": "IT / mongosh listIndexes",
+    "how_to_verify": "Start backend on a fresh Mongo, `db.<coll>.getIndexes()` for each collection and compare. Existing: *IT tests (never run in sandbox)"
+  },
+  {
+    "id": "F-52",
+    "feature": "App shell: header with title, tenant input (persisted in localStorage key comm-tenant, default 'acme', mono, aria-label), theme toggle; two tabs Feed/Publish with hash routing (#/feed, #/publish) surviving reload; document.title per tab; Feed tab badge = active count",
+    "services": [
+      "FE"
+    ],
+    "where": "App.tsx:19-41,43-45,55-58,71-89; Tabs.tsx",
+    "e2e_path": "UI",
+    "how_to_verify": "Load /, change tenant, reload → kept; navigate #/publish directly → Publish tab; badge count equals 'Active now' count"
+  },
+  {
+    "id": "F-53",
+    "feature": "Theme: light/dark/system, persisted (atlas-theme), applied before first paint by an inline script, toggle flips to the opposite of the current appearance, follows OS changes in system mode",
+    "services": [
+      "FE"
+    ],
+    "where": "useTheme.ts; ThemeToggle.tsx; index.html:130-140",
+    "e2e_path": "UI",
+    "how_to_verify": "Toggle, reload → no flash and same theme; emulate prefers-color-scheme → follows while 'system'. Screenshots exist in project files outage-ui/feed-dark.png, feed-light.png"
+  },
+  {
+    "id": "F-54",
+    "feature": "Publish form fields: type segmented control (OUTAGE/INCIDENT/MAINTENANCE/CHANGE; HEALTH excluded with hint text), severity segmented, title with n/200 counter and maxLength, details textarea, affected services (comma/newline split, deduped, previewed as chips), ServiceNow incident, tenant (prefilled from header until edited; lockable), publisher (required; remembered after first publish), audience select, external reference, Timing panel (Starts/Ends/Expires datetime-local in local tz → ISO instants; Ends required for MAINTENANCE), 'Save as draft' switch, Clear",
+    "services": [
+      "FE"
+    ],
+    "where": "PublishOutageForm.tsx:10,25-41,79-229; validation.ts:311-346",
+    "e2e_path": "UI",
+    "how_to_verify": "Fill each field, inspect the POST body in the network tab (instants in UTC, services array, ticket {servicenow, UPPER}); 'Clear' resets but keeps tenant/publisher/type. Screenshots: outage-ui/publish-empty.png, publish-filled.png"
+  },
+  {
+    "id": "F-55",
+    "feature": "Client-side validation mirrors the service: required tenant/publisher/title, title ≤200, body ≤16 KB (UTF-8 bytes), ≤20 services, severity ≥ MINOR for OUTAGE/INCIDENT, maintenance needs an end, end/expiry after start, incident number INC\\d{7} after trim+upper-case; errors shown inline under the field (role=alert), the Timing panel opens itself when a timing error exists, field error clears on edit, nothing is sent while invalid",
+    "services": [
+      "FE"
+    ],
+    "where": "validation.ts:349-367; PublishOutageForm.tsx:43-50,38-41; Field.tsx:37-41",
+    "e2e_path": "UI",
+    "how_to_verify": "Submit empty → three errors; INFO outage → severity error; MAINTENANCE without end → Timing opens with error; 'inc12' → ticket error. Existing: validation.test.ts"
+  },
+  {
+    "id": "F-56",
+    "feature": "Publish submit: POST /v1/communications; busy state on the button; success replaces the form with a confirmation card ('Outage published' / 'Maintenance scheduled' + 'Goes live in …' / 'Draft saved'), severity tag, id, ticket chip, 'Publish another' (keeps tenant/publisher/type) and 'View in feed' (hidden for drafts, switches tab); publisher remembered in localStorage comm-publisher",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "PublishOutageForm.tsx:51-62,72-74,233-275; App.tsx:93-106",
+    "e2e_path": "UI",
+    "how_to_verify": "Publish an outage → card, then View in feed → item listed under Active now; publish future maintenance → 'scheduled' wording. Screenshot: outage-ui/publish-done.png"
+  },
+  {
+    "id": "F-57",
+    "feature": "Server error surfacing: a non-2xx answer's {error} text (or 'status statusText') is shown in a role=alert banner 'The service rejected this.' and the form stays editable; feed load errors show 'Couldn't load the feed' with the text and Try again; resolve errors show under the confirm row",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "api.ts:157-165,196-204,235; PublishOutageForm.tsx:206-213; OutageFeed.tsx:91-102; OutageCard.tsx:255",
+    "e2e_path": "UI (backend returning 400/409/401/5xx or stopped)",
+    "how_to_verify": "Publish a duplicate externalRef → banner with 'duplicate externalRef'; stop the backend → feed error state with Try again; build with VITE_CLIENT_ID='bad id!' → 400 text surfaces. Existing: api.test.ts 'surfaces the service error text'"
+  },
+  {
+    "id": "F-58",
+    "feature": "Feed tab: GET /v1/feed?tenantId&service&type&severity&page=0&size=100 on load and whenever a filter changes (stale responses ignored); filters Service (text), Type (default Outage, 'All types' option), Minimum severity; items split into 'Active now' (ACTIVE) and 'Upcoming' (SCHEDULED) sections with counts; sorted active first, then severity desc, then latest start; Refresh button",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "OutageFeed.tsx:29-45,56-87,118-127; useOutageFeed.ts:385-399; api.ts:242; feed-state.ts:347-354",
+    "e2e_path": "UI",
+    "how_to_verify": "Seed items of several types/severities; switch filters and confirm the list and the query string; note only the first 100 items are ever shown (no paging in the UI). Screenshot: outage-ui/feed-all-types.png"
+  },
+  {
+    "id": "F-59",
+    "feature": "Feed states: empty tenant → 'Choose a tenant'; loading with no items → three skeleton cards (aria-busy); error → 'Couldn't load the feed' + Try again; no items → 'All clear' naming the filter; otherwise the sections",
+    "services": [
+      "FE"
+    ],
+    "where": "OutageFeed.tsx:89-116",
+    "e2e_path": "UI",
+    "how_to_verify": "Clear the tenant; throttle the network; stop the backend; filter to a service with nothing → each state in turn"
+  },
+  {
+    "id": "F-60",
+    "feature": "Live updates: EventSource on /v1/feed/stream?tenantId&…&clientId=; frames snapshot/created/updated/activated/expired/retired upsert by id while ACTIVE/SCHEDULED (effective status recomputed client-side) and remove on retired/expired/draft; an event older than what is shown (updatedAt) is ignored; connection indicator Paused/Connecting/Live/Reconnecting; 'Live updates' switch closes the stream; malformed frames skipped",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "useOutageFeed.ts:401-411; api.ts:250-265; feed-state.ts:322-337; OutageFeed.tsx:21-26,78-82",
+    "e2e_path": "UI (publish/retire from a second tab or curl while the feed is open)",
+    "how_to_verify": "With the feed open, curl-publish → card appears without refresh; curl-retire → disappears; curl-update title → card text changes; switch Live off → indicator Paused and no updates; on → Connecting then Live. Existing: feed-state.test.ts, api.test.ts stream"
+  },
+  {
+    "id": "F-61",
+    "feature": "Reconnect behaviour: on a dropped stream the browser's EventSource reconnects by itself and sends Last-Event-ID (last `id:` seen, snapshot ids included); the UI shows Reconnecting then Live; missed events are replayed by the server (F-20) so the list converges without a manual refresh",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "api.ts:262-264; useOutageFeed.ts:409; RestControllerFeedAdapter.java:173-176",
+    "e2e_path": "UI (restart the backend while the feed is open)",
+    "how_to_verify": "Open feed, stop backend → Reconnecting; publish after restart → appears; publish while down then restart → appears after reconnect (via snapshot/replay)"
+  },
+  {
+    "id": "F-62",
+    "feature": "Resolve from the feed card: Resolve → inline confirm ('Resolving retires it…') with optional note → POST /v1/communications/{id}/retire {actor: publisher if known, note}; busy state; item removed locally at once (the `retired` frame confirms); failure shows the error and keeps the card; hidden when allowResolve=false",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "OutageCard.tsx:167-184,236-257; OutageFeed.tsx:47-52; api.ts:244-248",
+    "e2e_path": "UI",
+    "how_to_verify": "Resolve with a note → GET /v1/communications/{id} history shows the note and actor; resolve an item retired elsewhere → still 200 (idempotent) and card gone"
+  },
+  {
+    "id": "F-63",
+    "feature": "Outage card content: severity rail colour + tag, Active / 'Starts in …' state tag, type tag, audience tag when not CUSTOMERS, ServiceNow chip (links out in a new tab when url present, otherwise plain), externalRef tag when it differs from the ticket number, title, pre-wrapped body, service chips, started/starts and expected end (relative, full date on hover), publisher, 'Updated … ago'",
+    "services": [
+      "FE"
+    ],
+    "where": "OutageCard.tsx:186-242; TicketTag.tsx:272-285; format.ts relativeTime/longDate",
+    "e2e_path": "UI",
+    "how_to_verify": "Publish with ticket+externalRef+audience INTERNAL+endsAt and compare the card; hover times. Screenshot: outage-ui/feed-light.png"
+  },
+  {
+    "id": "F-64",
+    "feature": "Frontend ↔ backend identity and base URL: X-Client-Id 'communication-frontend' on every fetch (override VITE_CLIENT_ID at build time), ?clientId= on the stream, same-origin by default with the Vite dev proxy (/v1 → COMM_BACKEND, default http://localhost:8080, SSE proxied, no CORS needed); VITE_API_BASE for a static build served elsewhere (the backend has no CORS configuration, so a cross-origin static deployment would be blocked by the browser)",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "api.ts:206-232,252; App.tsx:26; vite.config.ts:6-26; vite-env.d.ts",
+    "e2e_path": "UI + unit",
+    "how_to_verify": "Network tab shows the header; `npm run build` with VITE_API_BASE=http://localhost:8080 served from another origin → requests fail CORS preflight (expected today); dev server proxies SSE. Existing: api.test.ts"
+  },
+  {
+    "id": "F-65",
+    "feature": "Accessibility basics: every input has a <label htmlFor> or aria-label; tabs use role=tablist/tab with arrow-key navigation; segmented controls are role=radiogroup/radio with arrow/Home/End keys; switches are role=switch with aria-checked and aria-label; errors use role=alert; invalid inputs set aria-invalid; focus rings via focus-visible; colour-scheme meta for dark mode; status dot has text label",
+    "services": [
+      "FE"
+    ],
+    "where": "Field.tsx:26-47,56-70,169-199; Tabs.tsx:23-60; Segmented.tsx:26-60; Button.tsx; StatusDot.tsx",
+    "e2e_path": "UI (keyboard + axe)",
+    "how_to_verify": "Tab through the publish form end to end; run an axe scan on both tabs in light and dark; check contrast of tag text on tints"
+  },
+  {
+    "id": "F-66",
+    "feature": "Frontend build & checks: `npm run build` (tsc -b then vite build → dist/), `npm run typecheck` (strict TS), `npm test` (vitest, node env, 3 files / 21 cases); there is NO lint script, no ESLint config, no coverage config, no component/DOM tests",
+    "services": [
+      "FE"
+    ],
+    "where": "frontend/package.json:6-12; tsconfig.app.json; vite.config.ts:27-30; frontend/src/test/*",
+    "e2e_path": "CLI",
+    "how_to_verify": "Run the three commands 3× and record pass/fail and timing; note the missing lint/coverage/DOM-test tooling as findings, not failures"
+  },
+  {
+    "id": "F-67",
+    "feature": "Configuration from env: CS_ENDPOINT (required, http(s), trailing slash trimmed), CS_TENANT (required), CS_SERVICE (default: DeriveService(POD_NAME or hostname): strips Deployment '<hash>-<5>', ReplicaSet/DaemonSet '-<5>', StatefulSet '-<n>' suffixes; required when underivable), CS_CLIENT_ID (default = service), CS_PUBLISHER (default health-sidecar; undocumented in README), CS_PROBE auto|actuator|http|tcp, CS_PORT (0..65535; required for non-auto), CS_PATH (leading / added), CS_SCHEME http|https, CS_HOST list (127.0.0.1,::1), CS_IGNORE_PORTS ranges (15000-15099), CS_INTERVAL 15s (≥1s), CS_HEARTBEAT 30s (raised to ≥ interval), CS_PROBE_TIMEOUT 3s, CS_REPORT_TIMEOUT 5s, CS_STARTUP_GRACE 5m, CS_RETRY_DELAY 2s, CS_LISTEN :9465, CS_CA_FILE, CS_INSECURE_SKIP_VERIFY, instance from CS_INSTANCE_ID/POD_NAME, POD_NAMESPACE, NODE_NAME, CS_CLUSTER, CS_VERSION; all errors joined and reported at once; exit code 2 on invalid config",
+    "services": [
+      "SC"
+    ],
+    "where": "config.go:136-255,279-317; main.go:26-30",
+    "e2e_path": "CLI (run the binary with env)",
+    "how_to_verify": "Run with no env → exit 2 listing both required vars; with each bad value → named error; DeriveService table. Existing: TestFromEnvDefaults, TestFromEnvOverridesAndValidation, TestDeriveService, TestParsePortRanges"
+  },
+  {
+    "id": "F-68",
+    "feature": "Port discovery: parses /proc/net/tcp and /proc/net/tcp6 (either may be missing), keeps LISTEN (0A) sockets only, hex port decode, dedup + ascending, skips the sidecar's own listen port and CS_IGNORE_PORTS; works in a pod because containers share one network namespace and need no RBAC",
+    "services": [
+      "SC"
+    ],
+    "where": "discover/ports.go:24-80; agent.go:191-194",
+    "e2e_path": "CLI (real /proc) and pod",
+    "how_to_verify": "Run the binary next to a listener on 18080 → /status.target names 18080; with CS_IGNORE_PORTS=18080 → stays UNKNOWN 'no health target'. Existing: TestParseKeepsOnlyListeningSockets, TestListeningPortsMergesTablesAndSkips"
+  },
+  {
+    "id": "F-69",
+    "feature": "Probe ladder (CS_PROBE=auto): pass 1 GET /actuator/health on every port (lowest first) accepting any health document; pass 2 /health,/healthz,/readyz,/ready,/livez,/q/health accepting a document or UP; pass 3 '/' accepting UP or DOWN (any answer <500 is UP, 5xx is DOWN); then TCP connect to the lowest port; hosts tried in order (127.0.0.1 then ::1); http first then https when the port speaks TLS (Go 'HTTPS server' hint); redirects are answers, not followed; first target kept",
+    "services": [
+      "SC"
+    ],
+    "where": "probe.go:116-120,236-293,351-420; agent.go:182-189",
+    "e2e_path": "CLI (stub servers on several ports)",
+    "how_to_verify": "Stubs: 9001 plain 404 on everything, 9002 /healthz 200, 9003 /actuator/health doc → target 9003 actuator; remove 9003 → 9002 http; only a raw TCP listener → tcp mode. Existing: TestDetectPrefersActuatorOverAnyPort, TestDetectFallsBackToRootThenTCP, TestDetectSwitchesToHTTPS"
+  },
+  {
+    "id": "F-70",
+    "feature": "Status normalisation and classification: UP/OK/PASS/HEALTHY/GREEN/SERVING → UP; DOWN/FAIL/FAILED/ERROR/UNHEALTHY/OUT_OF_SERVICE/FATAL/RED/NOT_SERVING → DOWN; ''/UNKNOWN → UNKNOWN (then HTTP code decides); other words passed through upper-cased (service treats as DEGRADED); without a document: 5xx DOWN, <400 UP, 4xx on a health path UNKNOWN (with 'check CS_PATH' message), 4xx on '/' UP; components from `components` or legacy status-bearing `details`; body limit 64 KiB",
+    "services": [
+      "SC",
+      "BE"
+    ],
+    "where": "probe.go:122,282-346",
+    "e2e_path": "CLI",
+    "how_to_verify": "Stub returning {status:'WARN'} → report status WARN → backend monitor lastStatus DEGRADED. Existing: TestNormalize, TestProbePlainHTTPClassification, TestProbeDownDocumentAndOldActuatorShape, TestProbeActuatorDocument"
+  },
+  {
+    "id": "F-71",
+    "feature": "Pinned target (CS_PORT set): CS_PROBE=auto + path → http; auto without path → actuator path; tcp ignores path; actuator/http default their paths; scheme defaults to http; discovery and rediscovery disabled",
+    "services": [
+      "SC"
+    ],
+    "where": "agent.go:82-114",
+    "e2e_path": "CLI",
+    "how_to_verify": "Run with CS_PORT=18080 CS_PATH=/ping → /status.target http://127.0.0.1:18080/ping; CS_PROBE=tcp CS_PORT=18080 → tcp://…"
+  },
+  {
+    "id": "F-72",
+    "feature": "Startup rule: until the app has answered UP once and while the grace (CS_STARTUP_GRACE) runs, the report is UNKNOWN ('starting: waiting for the app to listen' / '…first healthy answer from <target>'); no target after the grace → UNKNOWN with 'set CS_PORT and CS_PATH'; a pinned target that never answered UP stays UNKNOWN after the grace with a config hint; once UP was seen, real statuses flow (DOWN after the app dies)",
+    "services": [
+      "SC",
+      "BE"
+    ],
+    "where": "agent.go:196-235",
+    "e2e_path": "CLI (fake clock in tests; real run with CS_STARTUP_GRACE=10s)",
+    "how_to_verify": "Start sidecar before the app → first reports UNKNOWN (backend ignores: no notice); start app → UP; kill app → DOWN. Existing: TestStartupGraceReportsUnknownUntilFirstUp, TestNoListeningPortStaysUnknown, TestPinnedTargetThatNeverAnswersUpStaysUnknown"
+  },
+  {
+    "id": "F-73",
+    "feature": "Flap damping: a non-UP probe is repeated after CS_RETRY_DELAY (2s) before it counts; the second answer wins",
+    "services": [
+      "SC"
+    ],
+    "where": "agent.go:164-168",
+    "e2e_path": "CLI",
+    "how_to_verify": "Stub that fails exactly one request then recovers → report stays UP; set CS_RETRY_DELAY=0 → DOWN reported. Covered indirectly by agent tests (RetryDelay=0 in harness; verify there is a case with a delay)"
+  },
+  {
+    "id": "F-74",
+    "feature": "Send policy: a report is posted when the signature (status + non-UP components) changes or CS_HEARTBEAT elapsed since the last successful send; every tick is jittered by up to 20% of CS_INTERVAL; on transport/5xx failure exponential backoff 1s→60s (+20% jitter) keeping only the latest report (dirty flag); a 4xx other than 408/409/429 is permanent: logged as 'report rejected', not retried until the next change/heartbeat; nothing retried mid-shutdown",
+    "services": [
+      "SC",
+      "BE"
+    ],
+    "where": "agent.go:23-28,251-292; report/client.go:485-524",
+    "e2e_path": "CLI (stub backend returning 500/400/409)",
+    "how_to_verify": "Stub 500 → /status.sendError set, retries at 1,2,4,8…s; stub 400 → one error log, next send at heartbeat; stub 409 → retried like 5xx. Existing: TestReportsChangesAndHeartbeats, TestSendFailuresBackOffAndKeepLatest, TestSendClassifiesFailures"
+  },
+  {
+    "id": "F-75",
+    "feature": "Report wire contract (sidecar → POST /v1/health/reports): {tenantId, service, status, components?, message?, observedAt (UTC ms), publisher, instance{id, namespace?, node?, cluster?, version?, sidecar (binary version), leaving?}} with headers Content-Type/Accept application/json, X-Client-Id = CS_CLIENT_ID, User-Agent health-sidecar/<version>; matches HealthReportCommand/ReportInstance (id ≤253, namespace/node ≤253, cluster/version/sidecar ≤100)",
+    "services": [
+      "SC",
+      "BE"
+    ],
+    "where": "report/client.go:408-428,487-499; HealthReportCommand.java:141-149; ReportInstance.java:195-203",
+    "e2e_path": "HTTP (real sidecar against real backend)",
+    "how_to_verify": "Run sidecar against the backend; GET /v1/health/monitors/{id}/instances shows the pod with sidecar version; a 253-char pod id accepted, 254 → 400 (permanent, logged). Existing: TestSendPostsReportWithClientId, reportBindsActuatorShapedComponentsAndReturns202"
+  },
+  {
+    "id": "F-76",
+    "feature": "Graceful shutdown: SIGTERM/SIGINT cancels the loop, one final report is sent with instance.leaving=true and message 'instance shutting down' within CS_REPORT_TIMEOUT (skipped if nothing was ever composed), then the status server shuts down within 2s and the process exits 0; no preStop hook or terminationGracePeriodSeconds is set in the snippets (defaults: 30s)",
+    "services": [
+      "SC",
+      "BE"
+    ],
+    "where": "main.go:46-54; agent.go:116-137,294-311",
+    "e2e_path": "CLI (kill -TERM) and pod",
+    "how_to_verify": "Run against the backend, kill -TERM, check log 'leaving report sent', GET instances shows left=true, exit code 0, elapsed < 3s. Existing: TestRunSendsLeavingReportOnShutdown"
+  },
+  {
+    "id": "F-77",
+    "feature": "Rediscovery: when an unpinned target becomes unreachable and its port is no longer listening, the target is dropped and discovery runs again next tick (the app restarted on another port)",
+    "services": [
+      "SC"
+    ],
+    "where": "agent.go:169-178",
+    "e2e_path": "CLI",
+    "how_to_verify": "Discover on 18080, stop it, start the app on 18081 → /status.target switches within two intervals. Existing: TestRediscoversWhenPortDisappears"
+  },
+  {
+    "id": "F-78",
+    "feature": "Sidecar's own endpoints on CS_LISTEN (:9465): GET /healthz → 200 'ok' text/plain (liveness); GET /status → JSON {version, service, tenant, instance, target?, upSeen, lastReport?, lastSendAt?, sendError?, reportsSent}; other methods/paths 404/405; ReadHeaderTimeout 5s",
+    "services": [
+      "SC"
+    ],
+    "where": "agent.go:313-361; main.go:39-44",
+    "e2e_path": "CLI / pod",
+    "how_to_verify": "curl both; confirm /status reflects a failed send. Existing: TestHandler"
+  },
+  {
+    "id": "F-79",
+    "feature": "TLS to the endpoint: TLS ≥1.2; CS_CA_FILE PEM appended to the system pool (startup error if unreadable or holds no certs); CS_INSECURE_SKIP_VERIFY opt-in; HTTP(S)_PROXY honoured from env for reports (never for localhost probes); localhost probes skip certificate verification by design",
+    "services": [
+      "SC"
+    ],
+    "where": "report/client.go:451-483; probe.go:198-216",
+    "e2e_path": "CLI (self-signed stub)",
+    "how_to_verify": "Stub https backend with a private CA: no CA file → send error 'x509'; CS_CA_FILE → ok; bad file → exit 2. Existing: TestNewClientRejectsBadCAFile"
+  },
+  {
+    "id": "F-80",
+    "feature": "Container image: multi-stage build registry.access.redhat.com/ubi9/go-toolset:1.24 → ubi9/ubi-micro:9.5, CGO disabled, -trimpath, -s -w, VERSION build arg → main.version, UBI CA bundle copied to /etc/pki/tls/certs/ca-bundle.crt, USER 1001 (numeric, so runAsNonRoot validates), EXPOSE 9465, ENTRYPOINT the binary; .dockerignore excludes deploy/, README, tests; README claims ~10 MB",
+    "services": [
+      "SC"
+    ],
+    "where": "sidecar/Dockerfile:7-28; sidecar/.dockerignore",
+    "e2e_path": "CLI (docker build; registry.access.redhat.com is blocked in this sandbox, so a substitute base may be needed and must be reported)",
+    "how_to_verify": "docker build with --build-arg VERSION; docker inspect → User 1001, ExposedPorts 9465, size; run `--read-only --user 1000660000 --cap-drop ALL --security-opt no-new-privileges` and confirm it reports"
+  },
+  {
+    "id": "F-81",
+    "feature": "Runs under restricted-v2 / non-root: binary needs no writable filesystem, no capabilities, no privilege escalation, works with an arbitrary UID (no /etc/passwd entry, HOME unset) and readOnlyRootFilesystem; reads only /proc/net/tcp* of its own netns",
+    "services": [
+      "SC"
+    ],
+    "where": "Dockerfile:26; add-sidecar.yaml:50-57; agent.go/probe.go (no file writes)",
+    "e2e_path": "CLI (docker run with the flags) or pod",
+    "how_to_verify": "Run the image as uid 1000660000 with --read-only, --cap-drop ALL, --security-opt no-new-privileges, seccomp default, and an app in the same network namespace (--network container:app) → reports UP; strace/`ls -la /proc/1/fd` shows no writes"
+  },
+  {
+    "id": "F-82",
+    "feature": "Kustomize component: `components: [<component>]` appends the health-sidecar container to every Deployment and StatefulSet (regex target) with envFrom ConfigMap cs-health-sidecar (CS_ENDPOINT, CS_TENANT, CS_CLUSTER), Downward API POD_NAME/POD_NAMESPACE/NODE_NAME, CS_SERVICE and CS_VERSION from app.kubernetes.io/name|version labels, port cs-status 9465, liveness /healthz every 30s, requests 10m/16Mi, limits 50m/32Mi, securityContext {allowPrivilegeEscalation:false, readOnlyRootFilesystem:true, runAsNonRoot:true, drop ALL, seccomp RuntimeDefault}; example overlay generates the ConfigMap without a hash suffix",
+    "services": [
+      "SC"
+    ],
+    "where": "kustomize/component/kustomization.yaml:13-16; add-sidecar.yaml:3-57; kustomize/example/kustomization.yaml:5-18",
+    "e2e_path": "CLI (kustomize build / kubectl kustomize)",
+    "how_to_verify": "`kustomize build sidecar/deploy/kustomize/example` → Deployment with two containers and the ConfigMap; a pod without the labels → CS_SERVICE empty and the sidecar derives it from POD_NAME (fieldRef to a missing label yields an empty value: confirm in a cluster or with kubeconform; cannot be fully proven without a cluster)"
+  },
+  {
+    "id": "F-83",
+    "feature": "Kustomize native-sidecar variant (OpenShift 4.16+/K8s 1.29+): add-native-sidecar.yaml creates /spec/template/spec/initContainers as [] and appends the container with restartPolicy: Always (starts before the app, stopped after it, does not block Jobs); swapped in by hand in kustomization.yaml",
+    "services": [
+      "SC"
+    ],
+    "where": "add-native-sidecar.yaml:4-13",
+    "e2e_path": "CLI (kustomize build)",
+    "how_to_verify": "Edit kustomization to use the native file, build, inspect; also build against a Deployment that ALREADY has an initContainer and check whether it survives (JSON Patch `add` on an existing member replaces it)"
+  },
+  {
+    "id": "F-84",
+    "feature": "Helm library chart cs-health-sidecar 1.0.0: templates cs-health-sidecar.container and .initContainer (restartPolicy Always) from .Values.csHealthSidecar: image repo/tag/pullPolicy, required endpoint and tenant (`required` → render error), optional cluster/clientId/probe/port/path/scheme/interval/heartbeat/service (literal or label fieldRef)/extraEnv/resources; same probes, port, securityContext as the Kustomize form; library charts render only from a consuming chart",
+    "services": [
+      "SC"
+    ],
+    "where": "helm/cs-health-sidecar/templates/_container.tpl:21-115; values.yaml; Chart.yaml:4",
+    "e2e_path": "CLI (helm template with a tiny consuming chart)",
+    "how_to_verify": "Write a consuming chart depending on the library (file://), `helm template` with and without endpoint/tenant (error), with port=8080 and extraEnv, then kubeconform the output; `helm lint` the library"
+  },
+  {
+    "id": "F-85",
+    "feature": "Plain-YAML snippet (deploy/manual/deployment.yaml): ConfigMap cs-health-sidecar + the same container block pasted into a Deployment; serves as the copy-paste path for teams without Kustomize/Helm",
+    "services": [
+      "SC"
+    ],
+    "where": "manual/deployment.yaml:3-10,35-82",
+    "e2e_path": "CLI (kubeconform / kubectl --dry-run)",
+    "how_to_verify": "kubeconform -strict both documents; diff the container block against add-sidecar.yaml to confirm the three paths are identical in security/probe/resource settings (manual lacks imagePullPolicy and protocol fields)"
+  },
+  {
+    "id": "F-86",
+    "feature": "Manifest validity: every rendered form (Kustomize plain, Kustomize native, Helm plain, Helm native, manual YAML) is valid apps/v1 Deployment YAML (kubeconform -strict with the 1.29+ schema; `oc apply --dry-run=server` when a cluster exists) and passes restricted-v2 expectations (no runAsUser, no privileged, no hostPath/hostNetwork)",
+    "services": [
+      "SC"
+    ],
+    "where": "sidecar/deploy/**",
+    "e2e_path": "CLI",
+    "how_to_verify": "Render all five, run kubeconform; grep for the securityContext keys; no cluster is available in this sandbox, so server-side dry-run must be reported as not exercised"
+  },
+  {
+    "id": "F-87",
+    "feature": "Probes and resources in the snippets: liveness httpGet /healthz on cs-status every 30s (no failureThreshold/timeouts set → defaults 3/1s); NO readiness probe (sidecar counts as ready immediately; the app's readiness governs the pod) and NO startup probe; requests 10m/16Mi, limits 50m/32Mi; no terminationGracePeriodSeconds/preStop (relies on the 2s+timeout internal shutdown and the pod default 30s)",
+    "services": [
+      "SC"
+    ],
+    "where": "add-sidecar.yaml:38-49; _container.tpl:91-97; manual/deployment.yaml:64-75",
+    "e2e_path": "static review + container run (measure RSS)",
+    "how_to_verify": "Run the image for 10 min against a stub and record RSS/CPU vs the 32Mi/50m limits; review whether the missing readiness/startup probes matter for the native-sidecar start ordering"
+  },
+  {
+    "id": "F-88",
+    "feature": "Startup ordering & restart behaviour: regular sidecar may start before/after the app and reports UNKNOWN until the app answers UP (no false outage during rolling deploys); native form starts first and is stopped after the app; app restart → DOWN (after retry delay) or rediscovery if the port changed; sidecar crash → liveness restart, the app is unaffected (no shared volume/socket, only the pod network namespace); backend unreachable → backoff, app unaffected; silence longer than 90s (sidecar and app both dead, or network cut) → backend declares the service DOWN naming the pod",
+    "services": [
+      "SC",
+      "BE"
+    ],
+    "where": "agent.go:147-235; HealthSweepUseCase.java:284-307; README.md (sidecar) 'What it reports and when'",
+    "e2e_path": "docker (two containers sharing a netns) + backend; cannot be done in a real pod here",
+    "how_to_verify": "Script: start sidecar, then app → UNKNOWN→UP; kill app → DOWN notice after 2 reports; restart app → recovered; kill sidecar → (simulated liveness) restart → UP, no new notice; stop backend → sidecar backoff logs, resume → next heartbeat accepted"
+  },
+  {
+    "id": "F-89",
+    "feature": "Logging & observability: sidecar logs JSON (slog) with version/service/tenant/instance/endpoint at start, 'health target found', 'reported' on change, 'report failed; will retry' with backoff, 'report rejected' on 4xx, 'leaving report sent'; backend logs client id at debug, rejected calls at info, sweep transitions at info, notice opens/retires at info, staleness pause at warn; no secrets logged",
+    "services": [
+      "SC",
+      "BE"
+    ],
+    "where": "agent.go:122-124,157,269,277,290,307-310; ClientIdWebFilter.java:72,93; HealthObservationUseCase.java:134,141; HealthSweepUseCase.java:259",
+    "e2e_path": "CLI (read logs during the E2E runs)",
+    "how_to_verify": "Capture both logs during F-91 and check each line exists and is parseable"
+  },
+  {
+    "id": "F-90",
+    "feature": "E2E human flow: publish an outage in the UI (with ticket and services) → it appears live in a second browser tab's feed without refresh and in `GET /v1/feed` for a consumer with the service filter → resolve from the UI → gone from both, permalink RETIRED with the note in history",
+    "services": [
+      "FE",
+      "BE"
+    ],
+    "where": "whole stack",
+    "e2e_path": "UI (Playwright) + HTTP",
+    "how_to_verify": "Playwright script with two pages + curl assertions; evidence: screenshots and the stream log"
+  },
+  {
+    "id": "F-91",
+    "feature": "E2E sidecar flow: app container + sidecar (shared netns) + backend + UI; app UP → monitor auto-registered with instance; app DOWN → after failureThreshold reports an OUTAGE '<service> is down' appears in the UI feed (type Outage) and `/v1/health/monitors/{id}/instances` names the pod; app UP → notice retired; sidecar SIGTERM → instance left=true; second pod keeps the service UP while one pod is DOWN (rollup '1 of 2 pods UP' → UP by default)",
+    "services": [
+      "FE",
+      "BE",
+      "SC"
+    ],
+    "where": "whole stack",
+    "e2e_path": "docker compose-style run + UI",
+    "how_to_verify": "Scripted run with timestamps; evidence: backend log, sidecar /status, feed JSON, UI screenshot"
+  },
+  {
+    "id": "F-92",
+    "feature": "E2E failure paths: backend down (UI error state + Try again; sidecar backoff and recovery), sidecar/app silent beyond the window (DOWN notice naming pods), slow backend (sidecar CS_REPORT_TIMEOUT fires, retries), bad input (400 text surfaced in UI; sidecar 400 logged as permanent), missing/invalid client id (401/400), expired/unknown Last-Event-ID (snapshot fallback), Mongo down (backend 5xx {error} / SSE keepalive continues; recovery without restart)",
+    "services": [
+      "FE",
+      "BE",
+      "SC"
+    ],
+    "where": "whole stack",
+    "e2e_path": "UI + CLI",
+    "how_to_verify": "Scripted fault injection with the compose-style environment; record each observed behaviour against the expected one"
+  }
+]

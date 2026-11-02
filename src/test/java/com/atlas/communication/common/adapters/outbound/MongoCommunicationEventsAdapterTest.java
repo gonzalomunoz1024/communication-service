@@ -2,6 +2,8 @@ package com.atlas.communication.common.adapters.outbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +13,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,17 +21,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.index.ReactiveIndexOperations;
 
+import com.atlas.communication.LogCapture;
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Severity;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 
 /** The log semantics without Mongo: sequence allocation, tailing, exactly-once resume, retention checks. */
 @ExtendWith(MockitoExtension.class)
@@ -41,7 +50,7 @@ class MongoCommunicationEventsAdapterTest {
     @Mock
     private EventSequence sequence;
     @Mock
-    private ReactiveMongoTemplate template; // only used by start(), which these tests never call
+    private ReactiveMongoTemplate template; // only used by start()
 
     private MongoCommunicationEventsAdapter adapter;
 
@@ -111,15 +120,90 @@ class MongoCommunicationEventsAdapterTest {
     }
 
     @Test
+    void aDatabaseOutageWhileTailingIsOneWarningWhenPollingStopsAndOneInfoWhenItWorksAgain() {
+        ReactiveIndexOperations indexes = mock(ReactiveIndexOperations.class);
+        when(template.indexOps(CommunicationEventDocument.class)).thenReturn(indexes);
+        when(indexes.createIndex(any())).thenReturn(Mono.just(MongoCommunicationEventsAdapter.TTL_INDEX));
+        when(sequence.current()).thenReturn(Mono.just(10L));
+        DataAccessResourceFailureException down = new DataAccessResourceFailureException(
+                "Timed out while waiting for a server that matches ReadPreferenceServerSelector");
+        when(repository.findBySeqGreaterThanOrderBySeqAsc(10))
+                .thenReturn(Flux.empty())
+                .thenReturn(Flux.error(down))
+                .thenReturn(Flux.error(down))
+                .thenReturn(Flux.error(down))
+                .thenReturn(Flux.empty());
+
+        VirtualTimeScheduler time = VirtualTimeScheduler.getOrSet();
+        try (LogCapture log = LogCapture.of(MongoCommunicationEventsAdapter.class)) {
+            adapter.start();
+            time.advanceTimeBy(Duration.ofMillis(600)); // six polls: fine, three failing, fine twice
+            adapter.stop();
+
+            verify(repository, times(6)).findBySeqGreaterThanOrderBySeqAsc(10);
+            assertThat(log.atLeast(Level.INFO))
+                    .extracting(e -> e.getLevel() + " " + e.getFormattedMessage())
+                    .containsExactly(
+                            "WARN event log poll skipped: database unavailable: Timed out while waiting for a server"
+                                    + " that matches ReadPreferenceServerSelector",
+                            "INFO event log poll resumed: database reachable again after 3 skipped poll(s)");
+            assertThat(log.events())
+                    .filteredOn(e -> e.getLevel() == Level.DEBUG)
+                    .extracting(ILoggingEvent::getFormattedMessage)
+                    .filteredOn(line -> line.startsWith("event log poll skipped: database unavailable: "))
+                    .as("the polls between the first failure and the recovery").hasSize(2);
+            assertThat(log.events()).extracting(ILoggingEvent::getThrowableProxy).containsOnlyNulls();
+        } finally {
+            VirtualTimeScheduler.reset();
+        }
+    }
+
+    @Test
+    void aPollThatFailsForAnotherReasonIsAWarningEachTime() {
+        ReactiveIndexOperations indexes = mock(ReactiveIndexOperations.class);
+        when(template.indexOps(CommunicationEventDocument.class)).thenReturn(indexes);
+        when(indexes.createIndex(any())).thenReturn(Mono.just(MongoCommunicationEventsAdapter.TTL_INDEX));
+        when(sequence.current()).thenReturn(Mono.just(10L));
+        when(repository.findBySeqGreaterThanOrderBySeqAsc(10))
+                .thenReturn(Flux.error(new IllegalStateException("cannot decode event 11")));
+
+        VirtualTimeScheduler time = VirtualTimeScheduler.getOrSet();
+        try (LogCapture log = LogCapture.of(MongoCommunicationEventsAdapter.class)) {
+            adapter.start();
+            time.advanceTimeBy(Duration.ofMillis(200));
+            adapter.stop();
+
+            // not an outage: nothing to wait out, so every occurrence is worth a line
+            assertThat(log.atLeast(Level.INFO))
+                    .extracting(e -> e.getLevel() + " " + e.getFormattedMessage())
+                    .containsExactly(
+                            "WARN event log poll failed: java.lang.IllegalStateException: cannot decode event 11",
+                            "WARN event log poll failed: java.lang.IllegalStateException: cannot decode event 11");
+        } finally {
+            VirtualTimeScheduler.reset();
+        }
+    }
+
+    @Test
     void positionIsZeroUntilTheLogHasBeenRead() {
         assertThat(adapter.position()).isZero();
+    }
+
+    @Test
+    void headIsTheEndOfTheLogEvenWhileTheCursorTrailsIt() {
+        when(sequence.current()).thenReturn(Mono.just(10L)).thenReturn(Mono.just(12L));
+        adapter.initialise().block();
+
+        // two events were appended since the last poll: the head knows, the cursor does not yet
+        StepVerifier.create(adapter.head()).expectNext(12L).verifyComplete();
+        assertThat(adapter.position()).isEqualTo(10);
     }
 
     @Test
     void streamAfterReplaysTheGapThenContinuesLiveExactlyOnce() {
         when(sequence.current()).thenReturn(Mono.just(12L));
         adapter.initialise().block();
-        when(repository.findByTenantIdAndSeqGreaterThanAndSeqLessThanEqualOrderBySeqAsc("vmforge", 9, 12))
+        when(repository.findTenantEventsInWindow("vmforge", 9, 12))
                 .thenReturn(Flux.just(doc(10, "a"), doc(12, "b")));
 
         List<CommunicationEvent> seen = new ArrayList<>();
@@ -140,13 +224,34 @@ class MongoCommunicationEventsAdapterTest {
     void streamAfterWithNothingMissedIsJustLive() {
         when(sequence.current()).thenReturn(Mono.just(5L));
         adapter.initialise().block();
-        when(repository.findByTenantIdAndSeqGreaterThanAndSeqLessThanEqualOrderBySeqAsc("vmforge", 5, 5))
+        when(repository.findTenantEventsInWindow("vmforge", 5, 5))
                 .thenReturn(Flux.empty());
 
         List<CommunicationEvent> seen = new ArrayList<>();
         adapter.streamAfter("vmforge", 5).subscribe(seen::add);
         adapter.fanOut(doc(6, "a"));
         assertThat(seen).extracting(CommunicationEvent::seq).containsExactly(6L);
+    }
+
+    @Test
+    void closingTheContextCompletesEveryLiveStream() {
+        when(sequence.current()).thenReturn(Mono.just(3L));
+        adapter.initialise().block();
+        when(repository.findTenantEventsInWindow("vmforge", 3, 3)).thenReturn(Flux.empty());
+
+        AtomicBoolean liveCompleted = new AtomicBoolean();
+        AtomicBoolean resumedCompleted = new AtomicBoolean();
+        adapter.stream().subscribe(e -> { }, ex -> { }, () -> liveCompleted.set(true));
+        adapter.streamAfter("vmforge", 3).subscribe(e -> { }, ex -> { }, () -> resumedCompleted.set(true));
+        assertThat(liveCompleted).isFalse();
+        assertThat(resumedCompleted).isFalse();
+
+        adapter.closeStreams(); // what the ContextClosedEvent triggers
+
+        assertThat(liveCompleted).as("live subscriber").isTrue();
+        assertThat(resumedCompleted).as("resumed subscriber").isTrue();
+        // whoever subscribes while the instance is going away is told so at once
+        StepVerifier.create(adapter.stream()).verifyComplete();
     }
 
     @Test

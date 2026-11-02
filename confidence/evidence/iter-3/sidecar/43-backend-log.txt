@@ -1,0 +1,49 @@
+### backend-19300: 1904 lines; INFO 1891, WARN 2, ERROR 0, DEBUG 0; stack-trace frames (lines starting with 'at '): 0
+  request lines (ClientIdWebFilter, INFO, with the client id) by method/path/status:
+       908 POST /v1/health/reports -> 202
+       574 GET /v1/health/monitors -> 200
+       287 GET /v1/feed -> 200
+        14 DELETE /v1/health/monitors/{id} -> 204
+        13 GET /v1/health/monitors/{id}/instances -> 200
+         8 POST /v1/health/reports -> 400
+         1 GET /v1/health/monitors/{id}/instances -> 404
+         1 GET /v1/health/monitors//instances -> 404
+  other INFO messages (grouped, ids masked):
+         7 INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: monitor deleted
+         3 INFO [ntLoopGroup-3-3] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: reclassified as DOWN: DOWN (1 pod has not reporte
+         2 INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened OUTAGE <id> for <vs3-…>/<vs3-…>
+         2 INFO [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: monitor deleted
+         2 INFO [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened OUTAGE <id> for <vs3-…>/<vs3-…>
+         2 INFO [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened HEALTH <id> for <vs3-…>/warn
+         2 INFO [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened HEALTH <id> for <vs3-…>/comp-error
+         2 INFO [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened HEALTH <id> for <vs3-…>/comp-down
+         2 INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: recovered: UP (1 of 1 pod UP)
+         2 INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: reclassified as DOWN: DOWN (1 pod has not reporte
+         1 INFO [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: reclassified as DOWN: DOWN (1 pod has not reporte
+         1 INFO [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened OUTAGE <id> for <vs3-…>/side-voc0
+         1 INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: recovered: UP (2 of 2 pods UP)
+         1 INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: recovered: UP (1 of 1 pod UP)
+         1 INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened OUTAGE <id> for <vs3-…>/up
+         1 INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened OUTAGE <id> for <vs3-…>/soak-fast
+  WARN messages (grouped):
+         1 WARN [ main] o.s.core.events.SpringDocAppInitializer : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the pro
+         1 WARN [ main] o.s.core.events.SpringDocAppInitializer : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the
+  secret-looking strings: 0 (the only 'password' text is the Mongo driver's settings dump 'password=null': 1 line(s))
+### backend-19302: 188 lines; INFO 43, WARN 134, ERROR 0, DEBUG 0; stack-trace frames (lines starting with 'at '): 0
+  request lines (ClientIdWebFilter, INFO, with the client id) by method/path/status:
+        24 POST /v1/health/reports -> 503
+         9 POST /v1/health/reports -> 202
+  other INFO messages (grouped, ids masked):
+         1 INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase : monitor <id> opened OUTAGE <id> for <vs3-…>/dbdown
+         1 INFO [ntLoopGroup-3-2] c.a.c.h.a.HealthObservationUseCase : retired notice <id>: recovered: UP (1 of 1 pod UP)
+  WARN messages (grouped):
+        54 WARN [49d878c8c9f7606] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: T
+        27 WARN [ scheduling-1] c.a.c.h.application.HealthSweepUseCase : health sweep skipped: database unavailable: Timed out while waiting for a server that ma
+        25 WARN [ scheduling-1] c.a.c.p.application.StatusSweepUseCase : status sweep skipped: database unavailable: Timed out while waiting for a server that ma
+        23 WARN [49d878c8c9f7606] c.a.c.config.GlobalExceptionHandler : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a serve
+         1 WARN [49d878c8c9f7606] c.a.c.config.GlobalExceptionHandler : POST /v1/health/reports -> 503, database unavailable: Timeout while receiving message
+         1 WARN [ scheduling-1] c.a.c.p.application.StatusSweepUseCase : status sweep skipped: database unavailable: Timeout while receiving message
+         1 WARN [ scheduling-1] c.a.c.h.application.HealthSweepUseCase : health sweep skipped: database unavailable: Timeout while receiving message
+         1 WARN [ main] o.s.core.events.SpringDocAppInitializer : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the pro
+         1 WARN [ main] o.s.core.events.SpringDocAppInitializer : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the
+  secret-looking strings: 0 (the only 'password' text is the Mongo driver's settings dump 'password=null': 1 line(s))

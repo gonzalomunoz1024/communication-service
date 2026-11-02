@@ -1,0 +1,5 @@
+### F-81: arbitrary UIDs other than 1000660000, read-only rootfs, no capabilities, no tmpfs; app in the same netns; reports reach the real backend (tenant sc-uid)
+  --user 4242:0           proc Uid/Gid: 4242 / 0 | target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=1
+  --user 1000700123:0     proc Uid/Gid: 1000700123 / 0 | target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=1
+  --user 65534:65534      proc Uid/Gid: 65534 / 65534 | target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=1
+  real backend monitor: uid-app UP 'UP (3 of 3 pods UP)'

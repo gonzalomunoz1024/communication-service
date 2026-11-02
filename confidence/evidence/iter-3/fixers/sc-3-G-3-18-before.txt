@@ -1,0 +1,21 @@
+== G-3-18 before: UNKNOWN counts as not UP, so it is sent after every probe (agent.go at bb826cc)
+312:	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
+313-		(notUp(rep) && !a.rejected)
+
+-- go test ./internal/agent -run 'TestUnknownIsSentAtTheHeartbeat|TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat' -count=1 -race -v
+--- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat (0.03s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe (0.01s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/WARN_app_(a_degraded_status):_one_report_per_probe (0.01s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat (0.01s)
+    agent_test.go:602: after tick 2: 2 reports sent, want 1 (running counts [1 1 2 2 3 3])
+    agent_test.go:602: after tick 2: 2 reports sent, want 1 (running counts [1 1 2 2 3 3])
+    agent_test.go:602: after tick 2: 2 reports sent, want 1 (running counts [1 1 2 2 3 3])
+    agent_test.go:602: after tick 2: 2 reports sent, want 1 (running counts [1 1 2 3 3 4])
+--- FAIL: TestUnknownIsSentAtTheHeartbeat (0.01s)
+    --- FAIL: TestUnknownIsSentAtTheHeartbeat/nothing_listens,_after_the_grace (0.00s)
+    --- FAIL: TestUnknownIsSentAtTheHeartbeat/nothing_listens,_during_the_grace (0.00s)
+    --- FAIL: TestUnknownIsSentAtTheHeartbeat/pinned_port_never_UP,_after_the_grace (0.00s)
+    --- FAIL: TestUnknownIsSentAtTheHeartbeat/the_grace_ends_at_45_s:_the_new_message_is_sent_on_the_first_probe_after_it (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent
+FAIL

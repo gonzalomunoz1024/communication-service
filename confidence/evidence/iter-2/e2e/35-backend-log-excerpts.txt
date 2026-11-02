@@ -1,0 +1,81 @@
+# Backend A (:19501) and B (:19502) log excerpts, produced by scripts/log-excerpts.sh at 2026-11-02T04:40:24Z from out/backendA.txt (1819 lines) and out/backendB.txt (222 lines)
+# backend A log (1819 lines; starts: 5)
+## startup / shutdown lines
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxy
+2026-11-02T04:06:38.119Z INFO o.s.b.web.embedded.netty.NettyWebServer: Netty started on port 19501 (http)
+2026-11-02T04:06:38.159Z INFO c.a.c.CommunicationServiceApplication: Started CommunicationServiceApplication in 10.289 seconds (process running for 11.199)
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxy
+2026-11-02T04:23:01.003Z INFO o.s.b.web.embedded.netty.NettyWebServer: Netty started on port 19501 (http)
+2026-11-02T04:23:01.029Z INFO c.a.c.CommunicationServiceApplication: Started CommunicationServiceApplication in 5.707 seconds (process running for 6.359)
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxy
+2026-11-02T04:23:18.984Z INFO o.s.b.web.embedded.netty.NettyWebServer: Netty started on port 19501 (http)
+## notices opened / retired / closed externally
+2026-11-02T04:10:42.885Z INFO c.a.c.h.a.HealthObservationUseCase: monitor ff13d241-b920-4acb-8387-f346e6a2b488 opened OUTAGE 41dbe1b3-3e57-4706-b3fa-be73d590f0d5 for ve2-health-041020/svc-silent
+2026-11-02T04:10:46.474Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 41dbe1b3-3e57-4706-b3fa-be73d590f0d5: monitor deleted
+2026-11-02T04:19:30.335Z INFO c.a.c.h.a.HealthObservationUseCase: monitor c2a39254-5b1d-4799-ae89-7ba4df4e22fe opened OUTAGE eb313640-6c8d-4e56-8310-d014cfada226 for ve2/ve2-app
+2026-11-02T04:19:46.647Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice eb313640-6c8d-4e56-8310-d014cfada226: recovered: UP (1 of 1 pod UP)
+2026-11-02T04:20:00.128Z INFO c.a.c.h.a.HealthObservationUseCase: monitor c2a39254-5b1d-4799-ae89-7ba4df4e22fe opened HEALTH 7d83fbf3-b26f-4e65-8621-7704d6fdc43e for ve2/ve2-app
+2026-11-02T04:20:21.494Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 7d83fbf3-b26f-4e65-8621-7704d6fdc43e: recovered: UP (1 of 1 pod UP)
+2026-11-02T04:20:34.835Z INFO c.a.c.h.a.HealthObservationUseCase: monitor c2a39254-5b1d-4799-ae89-7ba4df4e22fe opened OUTAGE 00e752da-53c4-4587-818b-03b19f178443 for ve2/ve2-app
+2026-11-02T04:20:50.988Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 00e752da-53c4-4587-818b-03b19f178443: recovered: UP (1 of 1 pod UP)
+2026-11-02T04:21:53.648Z INFO c.a.c.h.a.HealthObservationUseCase: monitor ea623827-9002-4093-aa72-85d4686fbaa6 opened HEALTH 506720d5-6916-4f37-8b36-6b4313123e7e for ve2/pull-svc
+2026-11-02T04:22:03.771Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 506720d5-6916-4f37-8b36-6b4313123e7e: reclassified as DOWN: DOWN (HTTP 503): db DOWN
+2026-11-02T04:22:03.775Z INFO c.a.c.h.a.HealthObservationUseCase: monitor ea623827-9002-4093-aa72-85d4686fbaa6 opened OUTAGE 10418982-cd3a-4da2-8c89-69b55765b1e7 for ve2/pull-svc
+2026-11-02T04:22:14.862Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 10418982-cd3a-4da2-8c89-69b55765b1e7: recovered: UP (HTTP 200)
+2026-11-02T04:25:57.665Z INFO c.a.c.h.a.HealthObservationUseCase: monitor c2a39254-5b1d-4799-ae89-7ba4df4e22fe opened OUTAGE 277804f1-1f31-4e75-b731-dcbf80fc6641 for ve2/ve2-app
+2026-11-02T04:26:11.967Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 277804f1-1f31-4e75-b731-dcbf80fc6641: recovered: UP (1 of 1 pod UP)
+2026-11-02T04:30:07.880Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 3a5c1ba4-7f1c-40cd-a45e-19a83bacbe8b: monitor deleted
+2026-11-02T04:30:16.105Z INFO c.a.c.h.a.HealthObservationUseCase: monitor c2a39254-5b1d-4799-ae89-7ba4df4e22fe opened OUTAGE 4cb011fb-c41e-44d5-bebb-87b4fd5fe77b for ve2/ve2-app
+2026-11-02T04:30:29.675Z INFO c.a.c.h.a.HealthObservationUseCase: retired notice 4cb011fb-c41e-44d5-bebb-87b4fd5fe77b: recovered: UP (1 of 1 pod UP)
+## staleness: silent services declared DOWN, valve
+2026-11-02T04:10:42.885Z INFO c.a.c.h.a.HealthObservationUseCase: monitor ff13d241-b920-4acb-8387-f346e6a2b488 opened OUTAGE 41dbe1b3-3e57-4706-b3fa-be73d590f0d5 for ve2-health-041020/svc-silent
+## Mongo outage: WARN lines (count by kind) and ERROR / stack traces
+      6 WARN c.a.c.h.application.HealthSweepUseCase: health sweep skipped: database unavailable: Timed out while waiting for a server that matches R
+      5 WARN c.a.c.p.application.StatusSweepUseCase: status sweep skipped: database unavailable: Timed out while waiting for a server that matches R
+      2 WARN c.a.c.config.GlobalExceptionHandler: GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadP
+      1 WARN c.a.c.config.GlobalExceptionHandler: POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that ma
+      1 WARN c.a.c.config.GlobalExceptionHandler: POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that ma
+      1 INFO c.a.c.config.ClientIdWebFilter: client=ve2-failure-checks POST /v1/health/reports -> 503 (<n> ms)
+      1 INFO c.a.c.config.ClientIdWebFilter: client=ve2-failure-checks POST /v1/communications -> 503 (<n> ms)
+      1 INFO c.a.c.config.ClientIdWebFilter: client=ve2-failure-checks GET /v1/feed -> 503 (<n> ms)
+      1 INFO c.a.c.config.ClientIdWebFilter: client=communication-frontend GET /v1/feed -> 503 (<n> ms)
+ERROR lines: 0; stack-trace lines: 89; 'Caused by' lines: 4
+## WARN kinds (whole log)
+     11 WARN .c.c.a.o.MongoCommunicationEventsAdapter: event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while wait
+      6 WARN c.a.c.h.application.HealthSweepUseCase: health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPrefere
+      5 WARN o.s.core.events.SpringDocAppInitializer: SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'sp
+      5 WARN o.s.core.events.SpringDocAppInitializer: SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property
+      5 WARN c.a.c.p.application.StatusSweepUseCase: status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPrefere
+      2 WARN c.a.c.config.GlobalExceptionHandler: GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceS
+      1 WARN o.s.b.a.d.m.MongoReactiveHealthIndicator: Mongo health check failed
+      1 WARN c.a.c.config.GlobalExceptionHandler: POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Read
+      1 WARN c.a.c.config.GlobalExceptionHandler: POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that matches Writ
+## access log samples (client ids seen)
+    737 client=ve2-pod-checks
+    420 client=ve2-http-checks
+    171 client=ve2-app-repo
+    105 client=communication-frontend
+     36 client=ve2-ui-checks
+     16 client=ve2-failure-checks
+      3 client=ve2-cap-repo
+      2 client=ve2-stream
+      1 client=ve2-stack
+      1 client=ve2-focus
+      1 client=ve2-bad-repo
+2026-11-02T04:39:48.479Z INFO c.a.c.config.ClientIdWebFilter: client=ve2-app-repo POST /v1/health/reports -> 202 (13 ms)
+2026-11-02T04:40:01.814Z INFO c.a.c.config.ClientIdWebFilter: client=ve2-app-repo POST /v1/health/reports -> 202 (11 ms)
+2026-11-02T04:40:11.871Z INFO c.a.c.config.ClientIdWebFilter: client=ve2-app-repo POST /v1/health/reports -> 202 (12 ms)
+## rejected calls (401/400 at the filter)
+2026-11-02T04:10:29.180Z INFO c.a.c.config.ClientIdWebFilter: rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its rep
+2026-11-02T04:10:29.184Z INFO c.a.c.config.ClientIdWebFilter: rejected GET /v1/feed with 400: X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '
+2026-11-02T04:10:29.186Z INFO c.a.c.config.ClientIdWebFilter: rejected POST /v1/communications with 401: missing X-Client-Id header: identify the calling system
+2026-11-02T04:10:30.212Z INFO c.a.c.config.ClientIdWebFilter: rejected GET /v1/feed/stream with 401: missing X-Client-Id header: identify the calling system by 
+2026-11-02T04:29:56.906Z INFO c.a.c.config.ClientIdWebFilter: rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its rep
+
+# backend B log (222 lines): WARN/ERROR
+     11 WARN .c.c.a.o.MongoCommunicationEventsAdapter: event log poll failed: org.springframework.dao.DataAccessResourceFailureE
+      6 WARN c.a.c.p.application.StatusSweepUseCase: status sweep skipped: database unavailable: Timed out while waiting for a s
+      5 WARN c.a.c.h.application.HealthSweepUseCase: health sweep skipped: database unavailable: Timed out while waiting for a s
+      3 WARN c.a.c.h.application.HealthSweepUseCase: skipping monitor ff13d241-b920-4acb-8387-f346e6a2b488 (ve2-health-041020/sv
+      1 WARN o.s.core.events.SpringDocAppInitializer: SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in pr
+      1 WARN o.s.core.events.SpringDocAppInitializer: SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it i

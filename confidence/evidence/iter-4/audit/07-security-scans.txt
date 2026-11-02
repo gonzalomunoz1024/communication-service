@@ -1,0 +1,148 @@
+# Security gate, every area (auditor, iteration 4). Trivy 0.58.1 (mirror.gcr.io/aquasec/trivy:0.58.1); govulncheck v1.9.0 with the go-vulndb mirror; npm audit.
+
+## 1. Trivy on the shared database (orch-trivy cache, UpdatedAt 2026-11-02T01:14:05Z), always under flock, --skip-db-update --skip-java-db-update
+### SBOMs (sbom --scanners vuln)
+build/reports/cyclonedx/bom.json: 113 components (spring-boot 4.0.9, spring-webflux 7.0.10, netty-handler 4.2.19.Final, reactor-netty-http 1.3.8, tools.jackson jackson-databind 3.1.7, and com.fasterxml jackson-databind/-core 2.21.7 via springdoc) -> 0 vulnerabilities of any severity
+META-INF/sbom/bom.json from the shipped jar (sha256 64e07ece...): 113 components, same versions -> 0
+control 1, the iteration-3 SBOM (87 components: Boot 3.5.16, webflux 6.2.19, netty 4.1.135, jackson 2.21.4) -> 29 (3 CRITICAL, 10 HIGH, 16 MEDIUM), ID for ID the iteration-3 audit's list:
+  iter3-bom-scan.json: OS=None total=29 {'HIGH': 10, 'MEDIUM': 16, 'CRITICAL': 3} with-fix=29
+     HIGH     CVE-2026-89407     com.fasterxml.jackson.core:jackson-core 2.21.4 fixed=2.18.11, 2.21.7, 2.22.3 status=fixed published=2026-09-22
+     HIGH     CVE-2026-89425     com.fasterxml.jackson.core:jackson-core 2.21.4 fixed=2.21.7, 2.22.3, 2.18.11 status=fixed published=2026-09-23
+     HIGH     CVE-2026-68497     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.18.10, 2.21.6, 2.22.2 status=fixed published=2026-09-11
+     HIGH     CVE-2026-91776     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.18.11, 2.21.7, 2.22.3 status=fixed published=2026-09-23
+     HIGH     CVE-2026-91777     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.21.7, 2.18.11, 2.22.3 status=fixed published=2026-09-23
+     HIGH     CVE-2026-59901     io.netty:netty-codec 4.1.135.Final fixed=4.1.136.Final status=fixed published=2026-07-29
+     HIGH     CVE-2026-55831     io.netty:netty-codec-http 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     HIGH     CVE-2026-55833     io.netty:netty-codec-http 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     HIGH     CVE-2026-56745     io.netty:netty-codec-http 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     HIGH     CVE-2026-56819     io.netty:netty-codec-http2 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     CRITICAL CVE-2026-75595     io.netty:netty-handler 4.1.135.Final fixed=4.2.17.Final, 4.1.137.Final status=fixed published=2026-08-19
+     CRITICAL CVE-2026-47890     org.springframework:spring-webflux 6.2.19 fixed=7.0.9 status=fixed published=2026-08-27
+     CRITICAL CVE-2026-47892     org.springframework:spring-webflux 6.2.19 fixed=7.0.9 status=fixed published=2026-08-27
+control 2, a crafted 3-component SBOM (netty-handler 4.1.135.Final, spring-webflux 6.2.19, jackson-databind 2.21.4) -> 13 (3 CRITICAL, 3 HIGH, 7 MEDIUM), the E2E verifier's control
+### images (CI's command: image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1; backend with --pkg-types os, the jar half through the SBOM)
+communication-service:e2e (debian 13.7) ======================================= Total: 0 (HIGH: 0, CRITICAL: 0) 
+health-sidecar:ci (debian 12.15) ================================ Total: 0 (HIGH: 0, CRITICAL: 0) 
+health-sidecar:e2e (debian 12.15) ================================= Total: 0 (HIGH: 0, CRITICAL: 0) 
+### images, every severity, fixed or not (--format json)
+  be-image-all.json: OS={'Family': 'debian', 'Name': '13.7'} total=77 {'MEDIUM': 50, 'LOW': 20, 'UNKNOWN': 3, 'HIGH': 4} with-fix=0
+     HIGH     CVE-2026-76642     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-03
+     HIGH     CVE-2026-78408     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-02
+     HIGH     CVE-2026-78409     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-02
+     HIGH     CVE-2026-78410     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-02
+  health-sidecar-ci-all.json: OS={'Family': 'debian', 'Name': '12.15'} total=4 {'UNKNOWN': 4} with-fix=4
+  health-sidecar-e2e-all.json: OS={'Family': 'debian', 'Name': '12.15'} total=4 {'UNKNOWN': 4} with-fix=4
+  health-sidecar:e2e/:ci gobinary usr/local/bin/health-sidecar: stdlib v1.27.3 -> 0; the 4 UNKNOWN are Debian LTS advisories with a fix (DLA-4845-1 ca-certificates, DLA-4792-1/-4854-1/-4867-1 tzdata) in the distroless static-debian12 stand-in base, not in the UBI micro base CI builds
+
+## 2. independent fresh database (downloaded into scratchpad audit4/trivy/fresh at 11:43:52Z: UpdatedAt 2026-11-02T07:17:05Z, 1.6 GB, no Java DB; deleted at 11:46Z after the scans)
+  be-image-all-fresh.json: OS={'Family': 'debian', 'Name': '13.7'} total=77 {'MEDIUM': 50, 'LOW': 20, 'UNKNOWN': 3, 'HIGH': 4} with-fix=0
+     HIGH     CVE-2026-76642     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-03
+     HIGH     CVE-2026-78408     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-02
+     HIGH     CVE-2026-78409     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-02
+     HIGH     CVE-2026-78410     libuuid1 2.41.5-0+deb13u1 fixed=- status=affected published=2026-09-02
+  build-bom-fresh.json: OS=None total=0 {} with-fix=0
+  control-bom-fresh.json: OS=None total=13 {'HIGH': 3, 'MEDIUM': 7, 'CRITICAL': 3} with-fix=13
+     HIGH     CVE-2026-68497     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.18.10, 2.21.6, 2.22.2 status=fixed published=2026-09-11
+     HIGH     CVE-2026-91776     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.18.11, 2.21.7, 2.22.3 status=fixed published=2026-09-23
+     HIGH     CVE-2026-91777     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.21.7, 2.18.11, 2.22.3 status=fixed published=2026-09-23
+     CRITICAL CVE-2026-75595     io.netty:netty-handler 4.1.135.Final fixed=4.2.17.Final, 4.1.137.Final status=fixed published=2026-08-19
+     CRITICAL CVE-2026-47890     org.springframework:spring-webflux 6.2.19 fixed=7.0.9 status=fixed published=2026-08-27
+     CRITICAL CVE-2026-47892     org.springframework:spring-webflux 6.2.19 fixed=7.0.9 status=fixed published=2026-08-27
+  health-sidecar-ci-all-fresh.json: OS={'Family': 'debian', 'Name': '12.15'} total=4 {'UNKNOWN': 4} with-fix=4
+  health-sidecar-e2e-all-fresh.json: OS={'Family': 'debian', 'Name': '12.15'} total=4 {'UNKNOWN': 4} with-fix=4
+  iter3-bom-fresh.json: OS=None total=29 {'HIGH': 10, 'MEDIUM': 16, 'CRITICAL': 3} with-fix=29
+     HIGH     CVE-2026-89407     com.fasterxml.jackson.core:jackson-core 2.21.4 fixed=2.18.11, 2.21.7, 2.22.3 status=fixed published=2026-09-22
+     HIGH     CVE-2026-89425     com.fasterxml.jackson.core:jackson-core 2.21.4 fixed=2.21.7, 2.22.3, 2.18.11 status=fixed published=2026-09-23
+     HIGH     CVE-2026-68497     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.18.10, 2.21.6, 2.22.2 status=fixed published=2026-09-11
+     HIGH     CVE-2026-91776     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.18.11, 2.21.7, 2.22.3 status=fixed published=2026-09-23
+     HIGH     CVE-2026-91777     com.fasterxml.jackson.core:jackson-databind 2.21.4 fixed=2.21.7, 2.18.11, 2.22.3 status=fixed published=2026-09-23
+     HIGH     CVE-2026-59901     io.netty:netty-codec 4.1.135.Final fixed=4.1.136.Final status=fixed published=2026-07-29
+     HIGH     CVE-2026-55831     io.netty:netty-codec-http 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     HIGH     CVE-2026-55833     io.netty:netty-codec-http 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     HIGH     CVE-2026-56745     io.netty:netty-codec-http 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     HIGH     CVE-2026-56819     io.netty:netty-codec-http2 4.1.135.Final fixed=4.2.16.Final, 4.1.136.Final status=fixed published=2026-07-21
+     CRITICAL CVE-2026-75595     io.netty:netty-handler 4.1.135.Final fixed=4.2.17.Final, 4.1.137.Final status=fixed published=2026-08-19
+     CRITICAL CVE-2026-47890     org.springframework:spring-webflux 6.2.19 fixed=7.0.9 status=fixed published=2026-08-27
+     CRITICAL CVE-2026-47892     org.springframework:spring-webflux 6.2.19 fixed=7.0.9 status=fixed published=2026-08-27
+  jar-bom-fresh.json: OS=None total=0 {} with-fix=0
+  rootfs-sc-control-fresh.json: OS=None total=14 {'HIGH': 4, 'MEDIUM': 9, 'LOW': 1} with-fix=14
+     HIGH     CVE-2026-111943    stdlib v1.25.14 fixed=1.26.10, 1.27.3 status=fixed published=2026-10-21
+     HIGH     CVE-2026-78667     stdlib v1.25.14 fixed=1.26.9, 1.27.2 status=fixed published=2026-10-08
+     HIGH     CVE-2026-78669     stdlib v1.25.14 fixed=1.26.9, 1.27.2 status=fixed published=2026-10-08
+     HIGH     CVE-2026-97031     stdlib v1.25.14 fixed=1.26.9, 1.27.2 status=fixed published=2026-10-08
+  rootfs-sc-e2e-fresh.json: OS=None total=0 {} with-fix=0
+  
+  --- ID sets: fresh DB vs shared DB ---
+  be-image-all.json shared=45 fresh=45 only-shared=[] only-fresh=[]
+  build-bom-scan.json shared=0 fresh=0 only-shared=[] only-fresh=[]
+  control-bom-scan.json shared=13 fresh=13 only-shared=[] only-fresh=[]
+  health-sidecar-ci-all.json shared=4 fresh=4 only-shared=[] only-fresh=[]
+  health-sidecar-e2e-all.json shared=4 fresh=4 only-shared=[] only-fresh=[]
+  iter3-bom-scan.json shared=29 fresh=29 only-shared=[] only-fresh=[]
+  jar-bom-scan.json shared=0 fresh=0 only-shared=[] only-fresh=[]
+  CI's command on the three images with the fresh database: Total 0 (HIGH 0, CRITICAL 0), exit 0 each (logs/fresh-scan.txt)
+  fs --include-dev-deps on copies of frontend/ and e2e/ package.json + package-lock.json: 0 and 0
+
+## 3. Go (sidecar) - govulncheck v1.9.0 -db https://storage.googleapis.com/go-vulndb
+  ### 1. source tree (sidecar/ at HEAD; code identical to 1cd3f13), Go go1.27.3
+  git diff 1cd3f13 HEAD -- sidecar | wc -l: 0
+  No vulnerabilities found.
+  exit=0
+  ### 2-e2e. -mode=binary on the binary copied out of health-sidecar:e2e (docker create + docker cp, no exec)
+  64b94ca8aa732c13497d2154935e99a09b15f19d53fa641d98476d7f70170cc0  <scratch>/audit4/sc/bin/health-sidecar-e2e
+  <scratch>/audit4/sc/bin/health-sidecar-e2e: go1.27.3
+  Govulncheck scanned the following 1 modules and the go1.27.3 standard library:
+  No vulnerabilities found.
+  exit=0
+  ### 2-ci. -mode=binary on the binary copied out of health-sidecar:ci (docker create + docker cp, no exec)
+  adaf2d0fca57c58dc54ff46e0126f9f109b324471dd272c09eefe82de63a03f6  <scratch>/audit4/sc/bin/health-sidecar-ci
+  <scratch>/audit4/sc/bin/health-sidecar-ci: go1.27.3
+  Govulncheck scanned the following 1 modules and the go1.27.3 standard library:
+  No vulnerabilities found.
+  exit=0
+  ### 3. control: the iteration-3 tree (6c15715) built with go1.25.14
+  control build exit=0
+  <scratch>/audit4/sc/bin/control-go12514: go1.25.14
+  Vulnerability #1: GO-2026-6809
+      Found in: crypto/x509@go1.25.14
+      Fixed in: crypto/x509@go1.26.10
+  Vulnerability #2: GO-2026-6617
+      Found in: net/http@go1.25.14
+      Fixed in: net/http@go1.26.9
+  Vulnerability #3: GO-2026-6613
+      Found in: net/http@go1.25.14
+      Fixed in: net/http@go1.26.9
+  Vulnerability #4: GO-2026-6612
+      Found in: net/http@go1.25.14
+      Fixed in: net/http@go1.26.9
+  Vulnerability #5: GO-2026-6611
+      Found in: net/http@go1.25.14
+      Fixed in: net/http@go1.26.9
+  Vulnerability #6: GO-2026-6610
+      Found in: net/http@go1.25.14
+      Fixed in: net/http@go1.26.9
+  Vulnerability #7: GO-2026-6609
+      Found in: net/http@go1.25.14
+      Fixed in: net/http@go1.26.9
+  Vulnerability #8: GO-2026-6608
+      Found in: net/textproto@go1.25.14
+      Fixed in: net/textproto@go1.26.9
+  Vulnerability #9: GO-2026-6607
+      Found in: crypto/tls@go1.25.14
+      Fixed in: crypto/tls@go1.26.9
+  Vulnerability #10: GO-2026-6605
+      Found in: net/http/httputil@go1.25.14
+      Fixed in: net/http/httputil@go1.26.9
+  exit=1
+  the list above is cut at 30 lines (10 entries). Run in full (scratchpad audit4/sc/out/govuln-control-full.txt): 13 entries, 'Your code is affected by 13 vulnerabilities from the Go standard library', exit 1. The sidecar report's cmd-46 says '8 vulnerabilities': its evidence (40 §4) is cut at 24 lines (8 entries), so 8 is the truncation, not the count. Trivy rootfs on the binary alone (fresh DB): health-sidecar:e2e binary 0; go1.25.14 control 14 (4 HIGH: CVE-2026-111943, -78667, -78669, -97031, fixed in 1.27.2/1.27.3).
+
+## 4. npm audit
+  frontend: npm audit --omit=dev --audit-level=high -> 'found 0 vulnerabilities' exit 0; npm audit --json metadata: 0 of every severity over 307 dependencies
+  e2e:      the same -> 0, exit 0; 113 dependencies
+
+## 5. UBI bases (sidecar CI default GO_IMAGE ubi9/go-toolset, BASE_IMAGE ubi9/ubi-micro)
+  curl https://registry.access.redhat.com/v2/ -> 000; https://registry.redhat.io/v2/ -> 000 (11:46Z). Not scannable here: 'not verified', as in iterations 2 and 3.
+
+## 6. reading for the gate (ruled in audit.md 4.3)
+  - Nothing a service ships has a CRITICAL or HIGH finding with a fix: SBOM 0 (two databases), sidecar binary 0 (Trivy and govulncheck), images 0 under CI's policy, npm 0.
+  - The only CRITICAL/HIGH entries are 4 HIGH in libuuid1 2.41.5-0+deb13u1 of the backend's distroless java21-debian13 base: status 'affected', no fixed version in Debian, published 2026-09-02/03; unchanged in the fresh database. The iteration-3 audit listed the same 4 (row 26: 'debian13: 77 entries, 4 HIGH (libuuid1, no fix)') and did not treat them as a gate item; its gate reasoning (4.1) rested on fixable versions that ship untriaged and fail the project's own CI. Here the project documents the policy (README.md:80-90 'A CRITICAL or HIGH vulnerability that has a fixed version fails the job'; ci.yml:63-67, :140 --ignore-unfixed) and records the 4 in fixes.md:26-30.

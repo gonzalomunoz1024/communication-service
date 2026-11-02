@@ -1,0 +1,15 @@
+  [10:56:36.535] app answers DOWN (db DOWN) before the sidecar starts
+  [10:56:36.742] sidecar started (grace 8 s)
+  [10:56:40.864 +4s] sidecar: {"upSeen":false,"last":"UNKNOWN","msg":"starting: waiting for the first healthy answer from http://127.0.0.1:8080/actuator/health"}
+            service:   boots-unhealthy id=1aa78ecc url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (boots-unhealthy-0: starting: waiting for the first healthy answer from http://127.0.0.1:8080/actuator/health))' unhealthy=0 healthy=0 notice=None
+  [10:56:43.803 +7s] sidecar: {"upSeen":false,"last":"UNKNOWN","msg":"starting: waiting for the first healthy answer from http://127.0.0.1:8080/actuator/health"}
+            service:   boots-unhealthy id=1aa78ecc url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (boots-unhealthy-0: starting: waiting for the first healthy answer from http://127.0.0.1:8080/actuator/health))' unhealthy=0 healthy=0 notice=None
+  [10:56:47.797 +11s] sidecar: {"upSeen":false,"last":"UNKNOWN","msg":"starting: waiting for the first healthy answer from http://127.0.0.1:8080/actuator/health"}
+            service:   boots-unhealthy id=1aa78ecc url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (boots-unhealthy-0: starting: waiting for the first healthy answer from http://127.0.0.1:8080/actuator/health))' unhealthy=0 healthy=0 notice=None
+  [10:56:51.768 +15s] sidecar: {"upSeen":false,"last":"DOWN","msg":"health document reports DOWN"}
+            service:   boots-unhealthy id=1aa78ecc url=None publisher=health-sidecar stale=90 last=DOWN summary='DOWN (0 of 1 pod UP (DOWN: boots-unhealthy-0)): db DOWN' unhealthy=1 healthy=0 notice=None
+  [10:56:55.930 +19s] sidecar: {"upSeen":false,"last":"DOWN","msg":"health document reports DOWN"}
+            service:   boots-unhealthy id=1aa78ecc url=None publisher=health-sidecar stale=90 last=DOWN summary='DOWN (0 of 1 pod UP (DOWN: boots-unhealthy-0)): db DOWN' unhealthy=2 healthy=0 notice=3ae06c62-5492-4e9b-b9d8-1f16b7b79385
+  feed:   3ae06c62 OUTAGE 'boots-unhealthy is down' status=ACTIVE sev=MAJOR publisher=health-sidecar ref=health:1aa78ecc-2b52-43ae-adf4-4ef506df6bf0:1 startsAt=10:56:53
+  sidecar log: {"t":"10:56:36.750","level":"INFO","status":"UNKNOWN","message":"starting: waiting for the first healthy answer from http://127.0.0.1:8080/actuator/health"} {"t":"10:56:49.744","level":"INFO","status":"DOWN","message":"health document reports DOWN"}
+end 10:56:56.382

@@ -1,0 +1,58 @@
+# G-4-12 after: every route documents its real success answer, the shared error answers, examples that pass
+
+## Regression test
+./gradlew integrationTest --tests '*OpenApiContractIT'
+  OpenApiContractIT: tests=6 failures=0 errors=0
+    PASSED theSecuritySchemeTellsTheUserWhatToPaste()
+    PASSED everyRequestExampleIsAcceptedByItsRouteAsItIs()
+    PASSED theIdempotencyKeyAndTheVersionCheckExplainThemselves()
+    PASSED everyRouteDocumentsTheSuccessAnswerItGives()
+    PASSED everyOperationDocumentsTheSharedErrorAnswersThatApplyToIt()
+    PASSED everyOperationDocumentsTheMissingIdAnswerAndEverySurfaceIsListed()
+
+## What /v3/api-docs documents per /v1 route now (jar on :18304, private Mongo; X->Name = $ref to components)
+GET    /v1/admin/communications                   200[application/json:PageCommunication] 400->BadRequest 401[application/json:Error] 503->ServiceUnavailable
+GET    /v1/admin/tenants                          200[application/json:array] 400->BadRequest 401[application/json:Error] 503->ServiceUnavailable
+GET    /v1/communications                         200[application/json:PageCommunication] 400->BadRequest 401[application/json:Error] 503->ServiceUnavailable
+GET    /v1/communications/{id}                    200[application/json:Communication] 400->BadRequest 401[application/json:Error] 404->NotFound 503->ServiceUnavailable
+PUT    /v1/communications/{id}                    200[application/json:Communication] 400->BadRequest 401[application/json:Error] 404->NotFound 409[application/json:Error] 503->ServiceUnavailable  body examples=1
+GET    /v1/feed                                   200[application/json:PageFeedItem] 400->BadRequest 401[application/json:Error] 503->ServiceUnavailable
+GET    /v1/feed/stream                            200[text/event-stream:array] 400->BadRequest 401[application/json:Error] 503->ServiceUnavailable
+GET    /v1/feed/{id}                              200[application/json:FeedItem] 400->BadRequest 401[application/json:Error] 404->NotFound 503->ServiceUnavailable
+GET    /v1/health/monitors                        200[application/json:array] 400->BadRequest 401[application/json:Error] 503->ServiceUnavailable
+GET    /v1/health/monitors/{id}                   200[application/json:HealthMonitor] 400->BadRequest 401[application/json:Error] 404->NotFound 503->ServiceUnavailable
+GET    /v1/health/monitors/{id}/instances         200[application/json:array] 400->BadRequest 401[application/json:Error] 404->NotFound 503->ServiceUnavailable
+POST   /v1/admin/communications/{id}/retire       200[application/json:Communication] 400->BadRequest 401[application/json:Error] 404->NotFound 409[application/json:Error] 503->ServiceUnavailable  body examples=1
+POST   /v1/communications                         201[application/json:Communication+Location] 400->BadRequest 401[application/json:Error] 409[application/json] 503->ServiceUnavailable  body examples=1
+POST   /v1/communications/{id}/publish            200[application/json:Communication] 400->BadRequest 401[application/json:Error] 404->NotFound 409[application/json:Error] 503->ServiceUnavailable
+POST   /v1/communications/{id}/retire             200[application/json:Communication] 400->BadRequest 401[application/json:Error] 404->NotFound 409[application/json:Error] 503->ServiceUnavailable  body examples=1
+POST   /v1/health/monitors                        201[application/json:HealthMonitor+Location] 400->BadRequest 401[application/json:Error] 409[application/json:Error] 503->ServiceUnavailable  body examples=2
+POST   /v1/health/monitors/{id}/probe             200[application/json:HealthMonitor] 400->BadRequest 401[application/json:Error] 404->NotFound 409[application/json:Error] 503->ServiceUnavailable
+POST   /v1/health/reports                         202[application/json:HealthMonitor] 400->BadRequest 401[application/json:Error] 503->ServiceUnavailable  body examples=1
+DELETE /v1/admin/communications/{id}              204[-] 400->BadRequest 401[application/json:Error] 404->NotFound 503->ServiceUnavailable
+DELETE /v1/health/monitors/{id}                   204[-] 400->BadRequest 401[application/json:Error] 404->NotFound 503->ServiceUnavailable
+components.schemas.Error: {"type":"object","properties":{"error":{"type":"string",…}},"required":["error"]}
+components.responses: BadRequest (malformed X-Client-Id, bad JSON, unknown field, validation), NotFound, ServiceUnavailable
+requestBody.required: true on POST/PUT communications, POST monitors, POST reports; optional on both retires
+
+## Every request example of the served document, sent as it is to that jar (examples.py)
+201  POST /v1/communications  example "incident"  Location: /v1/communications/912a311b-bb23-4d02-920d-9e9cc4fe7651  -> {"tenantId": "acme", "type": "INCIDENT", "severity": "MAJOR", "status": "ACTIVE", "version": 0, "ticket": {"system": "servicenow", "number": "INC0012345"}}
+200  PUT /v1/communications/{id}  example "downgrade"  -> {"tenantId": "acme", "type": "INCIDENT", "severity": "MINOR", "status": "ACTIVE", "version": 1, "ticket": {"system": "servicenow", "number": "INC0012345"}}
+200  POST /v1/communications/{id}/retire  example "resolved"  -> {"tenantId": "acme", "type": "INCIDENT", "severity": "MINOR", "status": "RETIRED", "version": 2, "ticket": {"system": "servicenow", "number": "INC0012345"}}
+200  POST /v1/admin/communications/{id}/retire  example "override"  -> {"tenantId": "acme", "type": "INCIDENT", "severity": "MINOR", "status": "RETIRED", "version": 2, "ticket": {"system": "servicenow", "number": "INC0012345"}}
+201  POST /v1/health/monitors  example "push-only"  Location: /v1/health/monitors/3aa85cf4-eb70-4feb-b7ff-f541344ff796  -> {"tenantId": "acme", "service": "payments", "version": 0}
+201  POST /v1/health/monitors  example "probed"  Location: /v1/health/monitors/3ef4faff-c708-43c6-93a3-c28950670d39  -> {"tenantId": "acme", "service": "checkout", "version": 0, "url": "http://checkout.acme.svc:8080/actuator/health"}
+202  POST /v1/health/reports  example "down"  -> {"tenantId": "acme", "service": "payments", "version": 1}
+
+POST /v1/communications' 409 keeps its body as it was (no schema): G-4-11 (BE-H) changes that answer.
+
+## Again on the rebased branch (int4 67f0d77 + G-4-1, G-4-3, G-4-12, G-4-13; HEAD 4eff8f4), from the full check
+OpenApiContractIT tests=6 failures=0 errors=0 skipped=0
+  PASSED theSecuritySchemeTellsTheUserWhatToPaste() (0.08s)
+  PASSED everyRequestExampleIsAcceptedByItsRouteAsItIs() (0.33s)
+  PASSED theIdempotencyKeyAndTheVersionCheckExplainThemselves() (0.02s)
+  PASSED everyRouteDocumentsTheSuccessAnswerItGives() (0.02s)
+  PASSED everyOperationDocumentsTheSharedErrorAnswersThatApplyToIt() (0.02s)
+  PASSED everyOperationDocumentsTheMissingIdAnswerAndEverySurfaceIsListed() (0.01s)
+BE-H's 409 for POST /v1/communications (G-4-11 text and suggestedExternalRef example) is kept as BE-H wrote it;
+OpenApiContractIT's assertion on that example passes.

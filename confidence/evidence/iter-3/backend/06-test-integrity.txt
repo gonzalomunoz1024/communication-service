@@ -1,0 +1,76 @@
+# 06 - test integrity: src/test between iteration 2 (908598a) and iteration 3 (4a0e84e)
+
+$ git diff --stat 908598a 4a0e84e -- src/test
+ .../communication/CommunicationServiceE2EIT.java   |  82 +++++++
+ .../java/com/atlas/communication/LogCapture.java   |  11 +-
+ .../atlas/communication/OperationsEndpointsIT.java | 103 ++++++++-
+ .../admin/application/AdminUseCaseTest.java        |  20 +-
+ .../common/domain/CommunicationTest.java           |  45 +++-
+ .../config/ClientIdWebFilterEdgeCasesTest.java     | 101 +++++++++
+ .../config/GlobalExceptionHandlerMessagesTest.java | 252 +++++++++++++++++++++
+ .../config/MongoClientConfigTest.java              |   3 +-
+ .../config/MongoOutageReadinessTest.java           | 141 ++++++++++++
+ .../config/MongoReadinessIndicatorTest.java        | 134 +++++++++++
+ .../inbound/RestControllerFeedAdapterTest.java     |  33 ++-
+ .../health/HealthMonitoringE2EIT.java              |   7 +-
+ .../inbound/RestControllerHealthAdapterTest.java   |  23 ++
+ .../application/HealthObservationUseCaseTest.java  |  44 +++-
+ .../health/application/HealthSweepUseCaseTest.java |  75 +++++-
+ .../health/domain/HealthMonitorTest.java           |  20 ++
+ .../health/domain/HealthNoticeTest.java            |  40 +++-
+ .../health/domain/HealthStatusTest.java            |  66 ++++++
+ .../RestControllerPublishingAdapterTest.java       | 124 ++++++++++
+ .../application/PublishingUseCaseTest.java         |  74 ++++++
+ 20 files changed, 1364 insertions(+), 34 deletions(-)
+
+@Test annotations: +47 / -0; test methods at 908598a: 250, at 4a0e84e: 297 (JUnit reports 297 cases per run, 02)
+Added @Disabled/@Ignore/assume*/@EnabledIf/@DisabledIf: 0
+
+Every removed line (34) with the file it left; each is paired below with what replaced it:
+LogCapture.java: -    private LogCapture(Class<?> type) {
+LogCapture.java: -        logger = (Logger) LoggerFactory.getLogger(type);
+LogCapture.java: -        return new LogCapture(type);
+OperationsEndpointsIT.java: - * indicator, and that indicator is the real reactive one answering from the running database.
+admin/application/AdminUseCaseTest.java: -        useCase = new AdminUseCase(repository, publishing);
+common/domain/CommunicationTest.java: -                .hasMessageContaining("endsAt must be after startsAt");
+config/MongoClientConfigTest.java: -            new MongoTimeoutProperties(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15)));
+feed/adapters/inbound/RestControllerFeedAdapterTest.java: -/** HTTP shape of the SSE stream around its lifetime: it ends when the event source ends. */
+health/HealthMonitoringE2EIT.java: -                        .contains("- db: DOWN - error=Connection refused")
+health/HealthMonitoringE2EIT.java: -                        .contains("reported by the service")
+health/HealthMonitoringE2EIT.java: -                        .contains("cache cluster unreachable")
+health/HealthMonitoringE2EIT.java: -                        .contains("- redis: DOWN"));
+health/application/HealthObservationUseCaseTest.java: -        assertThat(cmd.getValue().body()).contains("- db: DOWN");
+health/application/HealthObservationUseCaseTest.java: -        assertThat(request.getValue().actor()).isEqualTo(HealthObservationUseCase.ACTOR);
+health/application/HealthObservationUseCaseTest.java: -        assertThat(cmd.getValue().actor()).isEqualTo(HealthObservationUseCase.ACTOR);
+health/application/HealthObservationUseCaseTest.java: -        assertThat(cmd.getValue().body()).contains("- redis: DOWN");
+health/application/HealthSweepUseCaseTest.java: -        verify(observation).probe(due, NOW);
+health/application/HealthSweepUseCaseTest.java: -        verify(observation).probe(alsoDue, NOW);
+health/application/HealthSweepUseCaseTest.java: -        verify(observation, never()).probe(eq(recent), any());
+health/application/HealthSweepUseCaseTest.java: -        verify(observation, never()).probe(eq(pushOnly), any());
+health/application/HealthSweepUseCaseTest.java: -        assertThat(report.getValue().message()).contains(NOW.minusSeconds(120).toString());
+health/application/HealthSweepUseCaseTest.java: -        when(observation.probe(broken, NOW)).thenReturn(Mono.error(new IllegalStateException("conflict")));
+health/application/HealthSweepUseCaseTest.java: -        when(observation.probe(fine, NOW)).thenReturn(Mono.just(fine));
+health/application/HealthSweepUseCaseTest.java: -        StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+health/application/HealthSweepUseCaseTest.java: -        when(observation.probe(eq(due), any())).thenReturn(Mono.just(due)); // probes are not affected
+health/domain/HealthNoticeTest.java: -                .contains("**DOWN** at " + NOW)
+health/domain/HealthNoticeTest.java: -                .contains("probe of http://vm-api/actuator/health")
+health/domain/HealthNoticeTest.java: -                .contains("HTTP 503")
+health/domain/HealthNoticeTest.java: -                .contains("- db: DOWN - error=refused")
+health/domain/HealthNoticeTest.java: -        assertThat(notice.body()).contains("reported by the service").contains("cache cluster unreachable");
+health/domain/HealthNoticeTest.java: -                .contains("no health report received since " + NOW)
+health/domain/HealthNoticeTest.java: -                .contains("- c24: DOWN")
+health/domain/HealthNoticeTest.java: -                .doesNotContain("- c25: DOWN")
+health/domain/HealthNoticeTest.java: -                .contains("... and 15 more");
+
+Pairing (git diff -U0 908598a 4a0e84e, + lines), judged against the deliberate changes listed in iter-3/fixes.md:
+| removed | replaced by | verdict |
+|---|---|---|
+| LogCapture(Class) constructor/factory (3) | LogCapture gains a logger-name factory; the Class factory stays | refactor, no assertion lost |
+| OperationsEndpointsIT / RestControllerFeedAdapterTest javadoc (2) | rewritten javadoc | comments only |
+| AdminUseCaseTest.setUp, MongoClientConfigTest constructor calls (2) | the same calls with the new constructor argument (clock / readiness timeout) | wiring only |
+| CommunicationTest .hasMessageContaining("endsAt must be after startsAt") | .hasMessage("endsAt 2026-10-14T12:00:50Z must be after startsAt 2026-10-14T12:01:40Z") + 5 new exact-message cases | stronger (G-3-9/G-3-32) |
+| HealthSweepUseCaseTest verify(observation).probe(due, NOW) etc. (9) | verify(...).probe(due.withProbeClaimed(NOW), NOW), never().probe(withId(...)), verify(monitors, times(2)).save, exact stale message isEqualTo(...), WARN count hasSize(1) + new two-instance test verify(times(1)) | equal or stronger (G-3-2: the probe now runs on the claimed monitor) |
+| HealthNoticeTest Markdown-body .contains (9) | whole-body isEqualTo(""" ... """), no '*' and seconds-only assertions, the same components/overflow checks in the new format | stronger (G-3-25 format change) |
+| HealthMonitoringE2EIT body .contains (4) | the same facts in the new line format | equal (G-3-25) |
+| HealthObservationUseCaseTest actor isEqualTo(ACTOR) (2), body .contains (2) | actor isEqualTo the monitor's publisher (create/update/retire, +1 retire assertion), body lines in the new format | equal or stronger (G-3-25 actor change) |
+No test deleted, skipped or given a wider tolerance; the 47 added @Test methods all ran and passed 3/3 (02).

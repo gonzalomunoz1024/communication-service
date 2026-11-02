@@ -1,0 +1,186 @@
+# the 183 test names of the verbose run 1 (04-test-run1: 183 passed, 19 files, 22.9 s); 'src/test/' prefix and timings dropped
+PublishOutageForm.test.tsx > PublishOutageForm validation > moves focus to the first invalid field and lists every problem next to the button
+OutageFeed.test.tsx > OutageFeed > shows the connection state, including the reopen attempt
+OutageFeed.test.tsx > OutageFeed > announces the connection state in a live region of its own, which never repeats the resolve announcement
+PublishOutageForm.test.tsx > PublishOutageForm validation > opens the timing card and focuses the end time a maintenance window lacks
+OutageFeed.test.tsx > OutageFeed > says it is waiting for a tenant rather than paused when none is entered, and paused only when switched off
+OutageFeed.test.tsx > OutageFeed > makes the whole Live-updates row the click target of its switch, at least 24 px tall like the form
+App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list
+PublishOutageForm.test.tsx > PublishOutageForm validation > focuses the severity group when an outage is filed as Info
+OutageFeed.test.tsx > OutageFeed > keeps keyboard focus on the page after resolving the only notice
+OutageFeed.test.tsx > OutageFeed > resolves from the keyboard alone: focus follows the confirmation and lands on the list when the card leaves
+OutageFeed.test.tsx > OutageFeed > says when the service has more than the first page
+OutageFeed.test.tsx > OutageFeed > explains an empty feed in terms of what the feed lists
+OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line
+PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service is unreachable instead of quoting a proxy status
+App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs
+OutageFeed.test.tsx > OutageFeed > announces a failed load as an alert, a new one for every failed retry, and keeps keyboard focus on Try again
+OutageFeed.test.tsx > OutageFeed > says the service cannot reach its database for its own 503, and the badge does not say Live beside it
+OutageFeed.test.tsx > OutageFeed > keeps the error on screen through the reload after the stream comes back, then lists the notices and says Live
+PublishOutageForm.test.tsx > PublishOutageForm server errors > quotes the service's reason for a rejection
+PublishOutageForm.test.tsx > PublishOutageForm server errors > calls a 5xx a failure of the service, not a rejection
+PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service cannot reach its database for its own 503 and keeps the draft editable
+PublishOutageForm.test.tsx > PublishOutageForm server errors > moves focus to the banner and scrolls it into view, since it lands below the buttons
+PublishOutageForm.test.tsx > PublishOutageForm accessibility > names the Type and Severity groups by their visible labels and keeps headings in order
+PublishOutageForm.test.tsx > PublishOutageForm accessibility > promises a chip for the ServiceNow incident, and a link only when the service knows the instance
+PublishOutageForm.test.tsx > PublishOutageForm accessibility > makes the whole Save-as-draft row the click target of its switch
+App.test.tsx > App > the header tenant field > loads the feed and opens the stream once for a tenant typed, not once per keystroke
+PublishOutageForm.test.tsx > PublishOutageForm accessibility > moves focus to the outcome once published
+PublishOutageForm.test.tsx > PublishOutageForm accessibility > moves focus to the Title field on "Publish another"
+App.test.tsx > App > the header tenant field > follows at once on Enter and when the field loses focus
+App.test.tsx > App > the tenant the page opens on > is none on a first visit, with a prompt that goes once a tenant is typed and remembered
+App.test.tsx > App > the tenant the page opens on > is the tenant used last in this browser
+App.test.tsx > App > the tenant the page opens on > is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant
+OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation
+OutageCard.test.tsx > OutageCard > offers Withdraw instead of Resolve for a notice that has not started
+OutageCard.test.tsx > OutageCard > says who resolves and whose feed the notice leaves before asking to confirm
+OutageCard.test.tsx > OutageCard > names the tenant in the withdraw confirmation too, and leaves the actor out when none is known
+OutageCard.test.tsx > OutageCard > shows an upcoming notice as Scheduled, with its start once and in sentence case
+OutageCard.test.tsx > OutageCard > labels an automated notice "Automatic" instead of showing its internal health: reference
+PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains a 409 for a reused incident number: the reference is permanent, a follow-up needs a new one
+OutageCard.test.tsx > OutageCard > still shows a reference a person chose, once, and not when it is the ticket number
+OutageCard.test.tsx > OutageCard > hides the action when the page cannot resolve
+OutageCard.test.tsx > OutageCard > moves keyboard focus into the confirmation, under its question, and back to the action on Cancel
+OutageCard.test.tsx > OutageCard > cancels the confirmation on Escape as Cancel does, with focus back on the action, but not while the call runs
+OutageCard.test.tsx > OutageCard > does the same for Withdraw, and gives focus back to the confirming button when the service refuses
+PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > keeps the service's own words in a details element when its 409 explains the permanent key and names the notice
+PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains the service's current 409 sentence in the form's words, with that sentence one click away
+PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > suggests the service's free value for a third notice on one incident, whose next number is taken too
+PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > names the External reference that was typed and suggests the next follow-up number
+kit-layout.test.tsx > PageHeader > renders the eyebrow, the h1, the subtitle, the actions, the back link and the children
+kit-layout.test.tsx > PageHeader > is just the title when nothing else is given
+kit-layout.test.tsx > Card > titles itself at the heading level the page asks for, with subtitle and actions
+kit-layout.test.tsx > Card > has no header without a title, and takes the interactive and flush variants
+kit-layout.test.tsx > Card > lays out rows with a label, a description and a value, plain or stacked
+kit-layout.test.tsx > Checkbox > is a labelled native checkbox that reports its new state
+kit-layout.test.tsx > Checkbox > cannot be toggled while disabled
+kit-layout.test.tsx > Select > is a labelled native select with a placeholder, hints after the labels and disabled options
+kit-layout.test.tsx > Select > can be disabled as a whole and drawn small and monospaced
+kit-layout.test.tsx > StatusDot > is an image named by its kind when it stands alone
+kit-layout.test.tsx > StatusDot > is decoration next to its label, and can take any colour variable
+kit-layout.test.tsx > Badge > shows the count, caps it at the maximum and hides zero unless asked
+useOutageFeed.test.tsx > useOutageFeed > loads the page, then follows the stream state
+useOutageFeed.test.tsx > useOutageFeed > reloads the list once the stream is back after being down
+useOutageFeed.test.tsx > useOutageFeed > never says Live, reloads nothing and keeps its error while each stream it opens is ended within seconds
+useOutageFeed.test.tsx > useOutageFeed > does not report Live while the last load failed, and keeps that error while the same list reloads
+useOutageFeed.test.tsx > useOutageFeed > refresh reopens the stream right away while it is down, and only then
+useOutageFeed.test.tsx > useOutageFeed > retires a card at its expiry and starts a scheduled one on time, without a frame
+useOutageFeed.test.tsx > useOutageFeed > reports when the service has more than the first page
+useOutageFeed.test.tsx > useOutageFeed > applies frames, surfaces load errors and clears everything for a blank tenant
+useTheme.test.tsx > useTheme > follows the system setting while nothing is chosen, as it changes, and stops listening on unmount
+useTheme.test.tsx > useTheme > keeps an explicit choice from storage over the system setting, and stores a new one
+useTheme.test.tsx > useTheme > reads a value it does not know as the system setting
+useTheme.test.tsx > useTheme > toggles to the explicit opposite of what is on screen, and every caller agrees
+useTheme.test.tsx > useTheme > still applies a choice for the session when storage throws (private mode, quota, blocked site data)
+useTheme.test.tsx > useTheme > takes a browser without matchMedia for light
+useTheme.test.tsx > useTheme > renders system/light on the server, whatever the browser holds
+Segmented.test.tsx > Segmented > is a radiogroup with one checked, focusable segment and the rest out of the tab order
+Segmented.test.tsx > Segmented > can be named by a visible label instead
+Segmented.test.tsx > Segmented > selects on click
+Segmented.test.tsx > Segmented > moves the selection and focus with the arrow keys, skipping disabled segments and wrapping around
+Segmented.test.tsx > Segmented > leaves other keys alone
+Segmented.test.tsx > Segmented > does nothing on a key when every segment is disabled
+Segmented.test.tsx > Segmented > stretches to the container and shrinks its text when asked
+Tabs.test.tsx > Tabs > is a tablist with one selected, focusable tab; counts are badges, zero is hidden, disabled tabs are inert
+Tabs.test.tsx > Tabs > switches on click
+StateTag.test.tsx > StateTag > shows its text as written, in sentence case, instead of capitalising every word
+Tabs.test.tsx > Tabs > moves with the arrow keys, skipping disabled tabs and wrapping around
+Tabs.test.tsx > Tabs > leaves other keys alone
+Tabs.test.tsx > Tabs > does nothing on a key when every tab is disabled
+kit-colours.test.tsx > kit colour recipes > tinted capsules use the readable text hue
+api.test.ts > feedQuery > drops empty filters
+api.test.ts > createCommunicationClient > posts JSON, says who is calling and returns the body
+api.test.ts > createCommunicationClient > sends a custom client id on every call
+api.test.ts > createCommunicationClient > surfaces the service error text
+api.test.ts > createCommunicationClient > keeps the 409's suggestedExternalRef, the follow-up value the service says the tenant does not hold yet
+api.test.ts > createCommunicationClient > stream > identifies itself in the query because EventSource cannot set headers
+kit-colours.test.tsx > kit colour recipes > field errors are 12 px in the readable critical hue
+kit-colours.test.tsx > kit colour recipes > the warning outline button keeps its text readable
+errors.test.ts > explainError > says the service is unreachable for a failed connection or a proxy error
+errors.test.ts > explainError > passes the service's own words through for a rejection
+errors.test.ts > explainError > says the service failed, not that it rejected anything, for a 5xx
+errors.test.ts > explainError > treats the service's own 503 as a failure it explained, not as the service being unreachable
+errors.test.ts > explainPublishError > explains a bare duplicate-externalRef 409 in the form's terms: the key is permanent, so a follow-up needs a new reference
+errors.test.ts > explainPublishError > explains a duplicate reference in the form's terms whatever the service's sentence says around it
+errors.test.ts > explainPublishError > explains the service's current duplicate-reference sentence without its notice id or client-library terms
+errors.test.ts > explainPublishError > names the External reference the person typed, and suggests the next follow-up number, from the request that was sent
+errors.test.ts > explainPublishError > reads the reference and the tenant from the sentence when no request is at hand, with or without the holder
+errors.test.ts > explainPublishError > falls back to the service's own words when it cannot tell which reference is taken
+errors.test.ts > explainPublishError > prefers the follow-up value the service names, and counts on itself when the service names none
+errors.test.ts > explainPublishError > suggests no value, and gives the service's words, when the service says the follow-up values it checked are all taken
+errors.test.ts > explainPublishError > suggests the next follow-up number, and -2 for anything else
+errors.test.ts > explainPublishError > leaves every other error to explainError
+errors.test.ts > client with the service down > turns a failed connection into an ApiError with status 0
+errors.test.ts > client with the service down > tells a 5xx with an empty body from one the service explained
+errors.test.ts > client with the service down > keeps the reason of a 503 that carries the service's {"error"} body apart from a proxy's bare 503
+validation.test.ts > validate > accepts a minimal outage
+validation.test.ts > validate > requires tenant, publisher and title
+validation.test.ts > validate > enforces the severity floor for outages and incidents only
+validation.test.ts > validate > requires an end for maintenance and orders the times
+validation.test.ts > validate > takes an optional ServiceNow incident and checks its shape
+validation.test.ts > validate > caps the title at 200 characters and the service list at 20
+validation.test.ts > parseServices > splits on commas and newlines, trims, dedupes
+validation.test.ts > toRequest > leaves optional fields out and sends instants
+validation.test.ts > toRequest > sends draft only when set
+validation.test.ts > toRequest > sends the incident upper-cased as a ServiceNow ticket, or no ticket at all
+stream.test.ts > reconnectDelay > doubles from one second and caps at ten, which bounds how long a restart goes unnoticed
+stream.test.ts > stream liveness > reports open and the browser-side reconnects without reopening anything itself
+stream.test.ts > stream liveness > reopens with backoff and the last sequence number once the browser has given up
+stream.test.ts > stream liveness > starts the backoff again from one second once a reopened stream works
+stream.test.ts > stream liveness > keeps asking for the replay on every attempt while the service is away
+stream.test.ts > stream liveness > keeps resuming while a resumed connection does open
+stream.test.ts > stream liveness > starts from a fresh snapshot when no frame was ever received
+stream.test.ts > stream liveness > counts a stream as working once it has delivered a frame, or stayed open STREAM_SETTLE_MS without one
+stream.test.ts > stream liveness > treats a stream the service ends within seconds of opening as a failed attempt: growing delays, no reset, never open
+stream.test.ts > stream liveness > retries a stream the service refuses before any byte (its 503 while the database is away) with the same growing delays
+stream.test.ts > stream liveness > leaves a working stream that drops to the browser's own retry, and takes over with the backoff when that retry ends early
+stream.test.ts > stream liveness > stops reopening once unsubscribed
+stream.test.ts > stream liveness > delivers parsed frames and skips malformed ones
+format.test.ts > relativeTime > rounds to the nearest unit, in the past and in the future
+format.test.ts > relativeTime > treats a few seconds ahead as clock skew, not as the future
+format.test.ts > relativeTime > falls back to the short date beyond a month and to a dash for an unreadable input
+format.test.ts > relativeTime > accepts a Date, a number or an ISO string for both instants
+format.test.ts > duration > picks the unit by size and drops a zero remainder
+format.test.ts > duration > clamps negatives to zero and dashes out nothing and infinity
+format.test.ts > formatNumber > groups digits and picks the fraction digits from the magnitude
+format.test.ts > formatNumber > honours explicit digits, compact notation and a locale
+format.test.ts > formatNumber > dashes out nothing
+format.test.ts > percent > formats values and ratios, whole numbers without decimals
+format.test.ts > bytes > uses binary units and trims trailing zeros
+format.test.ts > bytes > keeps the sign and dashes out nothing
+format.test.ts > shortDate, dayLabel, longDate, isoDate > shows the time today, the day and time this year, and the date otherwise
+format.test.ts > shortDate, dayLabel, longDate, isoDate > labels a day with its year only when it is not this year
+format.test.ts > shortDate, dayLabel, longDate, isoDate > writes the full date and time, and the ISO calendar date in UTC
+format.test.ts > shortDate, dayLabel, longDate, isoDate > takes another locale for the date words
+format.test.ts > truncateMiddle and plural > keeps both ends of a long identifier and leaves short ones alone
+format.test.ts > truncateMiddle and plural > pluralises with the regular -s or the given plural, and groups the count
+contrast.test.ts > light theme contrast > every text role reads on every surface (4.5:1)
+contrast.test.ts > light theme contrast > white text reads on the accent and critical fills (primary/danger buttons, badges)
+contrast.test.ts > light theme contrast > each semantic text token reads on its tint and on the plain surfaces (4.5:1)
+contrast.test.ts > light theme contrast > the accent and critical hues work as 3:1 graphics (focus ring, dots, icons) on the main surfaces
+contrast.test.ts > light theme contrast > keeps the secondary/tertiary hierarchy
+contrast.test.ts > dark theme contrast > every text role reads on every surface (4.5:1)
+contrast.test.ts > dark theme contrast > white text reads on the accent and critical fills (primary/danger buttons, badges)
+contrast.test.ts > dark theme contrast > each semantic text token reads on its tint and on the plain surfaces (4.5:1)
+contrast.test.ts > dark theme contrast > the accent and critical hues work as 3:1 graphics (focus ring, dots, icons) on the main surfaces
+contrast.test.ts > dark theme contrast > keeps the secondary/tertiary hierarchy
+contrast.test.ts > semantic text utilities > maps a *-fg utility onto the *-text token of every hue and job state
+feed-state.test.ts > effectiveStatus > derives time-based states instead of trusting the stored one
+feed-state.test.ts > applyEvent > inserts, then updates by id
+feed-state.test.ts > applyEvent > ignores an update older than what is shown
+feed-state.test.ts > applyEvent > removes retired and expired items
+feed-state.test.ts > applyEvent > does not add a draft
+feed-state.test.ts > applyEvent > lists scheduled maintenance inside the upcoming window, like GET /v1/feed
+feed-state.test.ts > applyEvent > does not list a scheduled outage, incident or change until it starts
+feed-state.test.ts > applyEvent > keeps the ticket when projecting
+feed-state.test.ts > applyEvent > drops history when projecting
+feed-state.test.ts > inFeed > matches the service rule at the window boundary
+feed-state.test.ts > reconcile > takes the page and keeps items the stream touched after the request started
+feed-state.test.ts > reconcile > never carries another tenant over
+feed-state.test.ts > revise and nextChange > moves statuses across start and expiry boundaries and drops what left the feed
+feed-state.test.ts > sortFeed > orders active before scheduled, then by severity, then latest start
+job-state.test.ts > jobState > folds the API status words onto the six tinted states, whatever their case
+job-state.test.ts > stateTone > gives each state its capsule tone
+ Test Files  19 passed (19)
+      Tests  183 passed (183)

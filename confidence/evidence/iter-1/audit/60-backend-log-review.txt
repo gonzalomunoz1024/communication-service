@@ -1,0 +1,36 @@
+# cmd-19 replay: log review of the auditor's private instance A (:19800, FAST config; log /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit1/backend-A-19800.txt) and of the shared backend (:8080; log /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/logs/backend-iter1.log, read-only)
+# generated 2026-11-02T03:07:17Z
+
+## A: lines by level
+    620 INFO
+     10 WARN
+## A: total lines 641; access-log lines (ClientIdWebFilter, one per /v1 request with client id, method, path, status and latency): 605
+## A: distinct client ids seen: client=audit1-auditor client=audit1-verifier client=be1-verifier client=communication-frontend client=vmforge-tools 
+## A: access-log status mix:     196 -> 200;    161 -> 201;    181 -> 202;      6 -> 204;     32 -> 400;      5 -> 404;      2 -> 405;     13 -> 409;      2 -> 413;      2 -> 415;
+
+## A: WARN lines grouped by message (ids/tenants masked)
+      7 409 CONFLICT "monitor <id> was modified concurrently; reload and retry"
+      1 SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs
+      1 SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swag
+      1 2 of 3 push-only monitors are silent at once; not declaring them DOWN until some report again (<tenant/service>)
+
+## A: ERROR lines: 0
+
+## A: push-only valve lines ('silent at once'): 1
+2026-11-02T02:56:59.829Z  WARN 12202 --- [communication-service] [ntLoopGroup-3-6] c.a.c.h.application.HealthSweepUseCase   : 2 of 3 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this s
+
+## A: health notice lifecycle lines grouped
+      7 409 CONFLICT "monitor <id> was modified concurrently; reload and retry"
+      1 monitor deleted
+      1 monitor <id> opened OUTAGE <id> for vmforge/vm-api
+      1 monitor <id> opened OUTAGE <id> for <tenant>/fleet
+
+## shared backend (:8080) — lines by level
+   1456 INFO
+      3 WARN
+## shared backend — WARN/ERROR texts
+      1 o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+      1 o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+      1 c.a.c.h.application.HealthSweepUseCase   : 19 of 20 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+
+## verdict: no ERROR line on either instance; WARNs are the documented ones (springdoc defaults ×2, push-only valve, sweep/probe 409 skips = GAP-backend1-4 race, visible as WARN not ERROR)

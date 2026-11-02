@@ -1,0 +1,154 @@
+# Sidecar replays (auditor, iteration 4): 34 sampled claims of verifier-sidecar.md, replayed on my own resources
+# HEAD 42b38e8 (sidecar/ identical to 1cd3f13 and d10369b: `git diff 1cd3f13 HEAD -- sidecar` is empty), 12:05-12:34Z, idle machine
+
+## 1. Set-up
+- The verifier's own scripts (confidence/evidence/iter-4/sidecar/scripts) copied to scratchpad audit4/sc4/scripts and remapped
+  with sed only (no logic change): scratchpad/sidecar4 -> scratchpad/audit4/sc4; health-sidecar:vs4 -> health-sidecar:au4;
+  vs4- -> au4-s-; vs4_ -> au4s_; ports 193NN -> 197NN.
+- Image health-sidecar:au4 built from sidecar/Dockerfile (GO_IMAGE=local/go-toolset:1.27, BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot,
+  the same substitution the verifier used; the UBI bases cannot be pulled here). 17.5 MB, User=1001, go1.27.3.
+- Private backends from scratchpad/communication-service-iter4.jar: A :19700 -> mongodb://localhost:27017/au4s_main (own database on
+  the shared mongo7), B :19702 -> container au4-s-mongo (:19701, database au4s_db). Readiness A=200 B=200 after 9 s.
+  Containers: au4-s-* only. Nothing touched the shared app/sidecar pair except read-only GETs of its /status in 42 §H.
+- Run order (summary.txt): 05, 03, 01-subset, 04, 10, 11, 12, 15, 15c, 16, 17a, 18, 20, 30, 30b, 41, 42 (12:05:39-12:27:06, every exit 0),
+  then 11 again with a TLS certificate, 13b, 15b, 15d, 45 (12:27:08-12:32:04), then 45 and 42 again (12:33:35, 12:34:03).
+- 01-subset is my own cut of the verifier's 01-static-and-tests (gofmt, vet, the three test modes, MODE D without tools, the host-Go
+  toolchain rules): the sampled cmd-9 and cmd-13 rows live in its sections 7 and 12.
+
+## 2. File-by-file comparison with the verifier's evidence (scratchpad audit4/scripts/cmp_sc.sh)
+Normalised before diffing: timestamps, clock times, durations, ports 193xx/197xx, run prefixes vs4/au4s, ids and hashes.
+== 01-static-and-tests (auditor: 01-subset.txt): verifier 198 lines, auditor 110 lines; differing lines after normalising: 98
+== 03-image-build (auditor: 03-image-build.txt): verifier 110 lines, auditor 109 lines; differing lines after normalising: 29
+== 04-config-errors (auditor: 04-config-errors.txt): verifier 124 lines, auditor 123 lines; differing lines after normalising: 0
+== 05-backends (auditor: 05-backend.txt): verifier 11 lines, auditor 3 lines; differing lines after normalising: 14
+== 10-lifecycle (auditor: 10-lifecycle.txt): verifier 85 lines, auditor 85 lines; differing lines after normalising: 4
+== 11-ladder (auditor: 11-ladder.txt): verifier 44 lines, auditor 44 lines; differing lines after normalising: 4
+== 11-ladder (auditor: 11-ladder-rerun.txt): verifier 44 lines, auditor 44 lines; differing lines after normalising: 0
+== 12-send-policy (auditor: 12-send-policy.txt): verifier 38 lines, auditor 38 lines; differing lines after normalising: 12
+== 13b-own-endpoints (auditor: 13b-own-endpoints.txt): verifier 19 lines, auditor 19 lines; differing lines after normalising: 0
+== 15-backend-contract (auditor: 15-backend-contract.txt): verifier 71 lines, auditor 71 lines; differing lines after normalising: 4
+== 15b-vocabulary-edges (auditor: 15b-vocabulary-edges.txt): verifier 63 lines, auditor 63 lines; differing lines after normalising: 12
+== 15c-ttl-and-early-sigterm (auditor: 15c-ttl-and-early-sigterm.txt): verifier 11 lines, auditor 11 lines; differing lines after normalising: 2
+== 15d-overall-whitespace (auditor: 15d-overall-whitespace.txt): verifier 22 lines, auditor 22 lines; differing lines after normalising: 0
+== 16-failure-paths (auditor: 16-failure-paths.txt): verifier 79 lines, auditor 79 lines; differing lines after normalising: 16
+== 17a-backoff-503 (auditor: 17a-backoff-503.txt): verifier 46 lines, auditor 46 lines; differing lines after normalising: 0
+== 18-rejected-then-accepted (auditor: 18-rejected-then-accepted.txt): verifier 15 lines, auditor 15 lines; differing lines after normalising: 0
+== 20-manifests (auditor: 20-manifests.txt): verifier 193 lines, auditor 193 lines; differing lines after normalising: 0
+== 30-restricted-v2 (auditor: 30-restricted-v2.txt): verifier 37 lines, auditor 37 lines; differing lines after normalising: 14
+== 30b-strace-rediscovery (auditor: 30b-strace-rediscovery.txt): verifier 9 lines, auditor 9 lines; differing lines after normalising: 2
+== 41-test-diff (auditor: 41-test-diff.txt): verifier 59 lines, auditor 59 lines; differing lines after normalising: 2
+== 42-readme (auditor: 42-readme.txt): verifier 86 lines, auditor 95 lines; differing lines after normalising: 25
+== 42-readme (auditor: 42-readme-rerun.txt): verifier 86 lines, auditor 94 lines; differing lines after normalising: 36
+== 45-cs-host (auditor: 45-cs-host-rerun.txt): verifier 46 lines, auditor 37 lines; differing lines after normalising: 15
+
+What the remaining differences are (every one read):
+- 01: my file is a subset (110 of 198 lines); every section I ran has the verifier's result (gofmt 0 files, vet 0, MODE A/C pass,
+  MODE C tally PASS=59 FAIL=0 SKIP=0 top-level, MODE D: CI=true without tools exit 1 naming the tool, without CI exit 0 with 5 SKIP).
+- 03: BuildKit prints its parallel steps in a different order; build times; the revision label is HEAD at build time (42b38e8 for me,
+  d10369b for the verifier: the script uses `git rev-parse HEAD`; the code is the same); my script words two counts differently:
+  "setuid/setgid regular files: 0; setgid directories (distroless base): var/local/" for the verifier's "setuid/setgid files: 1"
+  (the same one entry), and "distroless doc files named README: 3" for "tests/deploy/README in image: 3" (the same three files).
+  Both control builds fail the same way: golang:1.25 -> "go.mod requires go >= 1.27.3 (running go 1.25.14; GOTOOLCHAIN=local)",
+  golang:1.24 -> "(running go 1.24.13 ...)".
+- 05: a different file layout (my 05 prints pids and URIs only); both backends ready (200, 200).
+- 10: counters read at a moment in time (sent=0 vs 1 in one /status line; unhealthy=3 vs 2 on the two-pod monitor): timing.
+- 11 (first run): STEP 8 (TLS port) failed: the script needs a CA and server certificate in scratchpad .../bin/tls, which the verifier
+  generated outside its scripts. I generated a throw-away CA + server certificate with openssl into audit4/sc4/bin/tls and re-ran:
+  11-ladder-rerun has 0 differing lines (TLS target found: https://127.0.0.1:9006/actuator/health, UP).
+- 12: DOWN sent 13 times in 60 s (verifier 14), component-degraded 18 (verifier 19): the same every-probe policy (3 s interval + jitter
+  + the 1 s retry probe); UP / UNKNOWN / pass rows 2 each (heartbeat only) in both; alert lines in another order.
+- 15: one line of round 3 of the concurrency test: the verifier's file reads "18 202  1 202202" (two answers printed on one line),
+  mine "20 202": 20 of 20 accepted in both; one body cut at a different width.
+- 15b: 14 sends in 40 s for U+00A0 / U+2003 component words (verifier 13); alert lines in another order.
+- 15c: the three indexes of the instance collection listed in another order (same names, keys and TTL 86400).
+- 16: the hung-database part answers 503 after 5006-5011 ms in both (10.0 s for the first, 200, in both); 7 vs 8 omitted 202 lines and
+  7 vs 8 accepted UP reports: timing of the same sequence.
+- 30: VmRSS a few kB apart; strace counts (2 vs 3 SIGURG, 5 vs 6 writes, fd 8 vs 7 for the eventfd): Go runtime timing.
+- 30b: 5 open() calls on /proc/net/tcp* in 19 s (verifier 3): one more discovery round in my window; the same files, O_RDONLY|O_CLOEXEC.
+- 41: the HEAD label (42b38e8 vs d10369b); the numstat and t.Skip lists are identical.
+- 42 (first run): sections A, B, C, E, F match; D (retry classification) matches line for line in status/WARN/ERROR content
+  (429/408/409 retried with 1, 2, 4, 8, 16 s; 400 and 401 rejected as permanent, ERROR, twice each; headers User-Agent
+  health-sidecar/1.0.0-au4s, X-Client-Id, Content-Type, Accept), with 4 vs 5 accepted 202s; the "live keys" line was empty because
+  13b had not run yet; G (README L155-156 arithmetic) needs 17c, which was not sampled and not run (two Python tracebacks).
+- 42 (re-run after 13b): the live-keys line now equals the verifier's ("instance lastReport lastSendAt lastTarget reportsSent
+  sendError service target tenant upSeen version"). Section D drifted on this run: the sidecar's backoff had reached its 30 s cap
+  ("in":"30s") when the stub switched to 500, so the 9-second 400 and 401 windows passed with no attempt; nothing contradicts the
+  first run, which matched. The zero-svc counter (healthy=2) and an extra ignore-default monitor come from my first run on the same
+  database. The shared pod's /status (read only) shows reportsSent 269 vs 79: that pod has been up longer.
+- 45 (first run): my scratch folder had no v6app binary (the verifier built it outside its scripts), so the four app containers did
+  not start and case D could not find a target. I built it from scratchpad audit4/sc4/scripts/v6app-main.go with the host Go
+  (CGO_ENABLED=0, GOTOOLCHAIN=local, its own go.mod) and re-ran: cases A-D are identical to the verifier's (A, B: no IPv6 in this
+  sandbox's container namespaces, the app cannot listen on [::1]; C: CS_HOST=::1 is honoured, no target; D: default CS_HOST finds
+  http://127.0.0.1:8080/actuator/health, UP). The service-side lines show last=DOWN / unhealthy=1-2 for v6a-v6c because the failed
+  first run's pods went stale on the same tenant; the verifier's "full list" block and two notes after "containers removed" were
+  appended outside the script (my run of the script does not print them).
+
+## 3. The 34 sampled claims (index in 00-claims-and-sample.txt; my evidence = scratchpad audit4/sc4/out/<file>)
+sidecar#01  closure G-4-16 (one trim rule; residual: overall made only of white space beyond U+0020 -> 400 @NotBlank)
+            15 (4 lines: print formatting), 15b (send counts 14 vs 13, alert order), 15d (0 differing lines): MATCH (nuance)
+sidecar#11  closure G-3-14 (CS_LOG_LEVEL spellings, exit 2 for loud/warning/trace/DEBUG+1)                 04: 0 differing lines. MATCH (exact)
+sidecar#17  closure G-3-29 (retries <= 30 s apart; first attempt <= 30 s after the return)
+            17a: 0 differing lines after normalising. Raw: gaps during the 240 s of 503 = 15.7-28.4 s (verifier 15.1-28.1 s), steps
+            1, 2, 4, 8, 16, 30, 30 s, first attempt 6.1 s after the service answered 202 again (verifier 9.7 s), "report delivered
+            again" failedAttempts=10. MATCH (nuance: timings, same bounds)
+sidecar#20  closure G-2-14 (Go line; labels)    03: go1.27.3; labels version 1.0.0-au4s / revision = HEAD at build (42b38e8; the
+            verifier's d10369b, same code); TestImageCarriesVersion... passes in 01 MODE A/C. MATCH (nuance: the label is the HEAD)
+sidecar#22  closure G-2-16 (not-UP every probe; first DOWN message; transitions logged)   12 + 10: DOWN 13 per 60 s (verifier 14),
+            UP 2; 10 D first DOWN message and transitions as the verifier's. MATCH (nuance: 13 vs 14)
+sidecar#37  cmd-9   (without CI: 0 with 5 SKIP; whole module 0)               01-subset section 7: exit 0, SKIP count 5; exit 0. MATCH (exact)
+sidecar#41  cmd-13  (host go1.24.7: auto 0 -> go1.27.3; local build 1; local test 1; empty GOMODCACHE + auto 0, downloads 1.27.3)
+            01-subset section 12: 0 / 1 / 1 / 0 with "go: downloading go1.27.3". MATCH (exact)
+sidecar#49  cmd-21  (05-backend.sh: 0; readiness 200, 200)                    05: A=200 B=200 after 9 s. MATCH
+sidecar#50  cmd-22  (10-lifecycle.sh: 0)                                      10: exit 0, 4 timing lines. MATCH
+sidecar#51  cmd-23  (11-ladder.sh: 0)                                         11 re-run (own TLS certificate): exit 0, 0 differing lines. MATCH
+sidecar#59  cmd-31  (15c: indexes via a throw-away mongosh container, SIGTERM in the first tick: 0)   15c: exit 0; index order only. MATCH
+sidecar#66  cmd-38  (18: 400, 401, then 202, default log level: 0)            18: 0 differing lines. MATCH (exact)
+sidecar#71  cmd-43  (30b strace across an app stop/start: 0)                  30b: exit 0; 5 vs 3 reads of /proc/net/tcp*. MATCH
+sidecar#73  cmd-45  (govulncheck source: 0, no vulnerabilities)              07-security-scans.txt section 3.1: "No vulnerabilities found", 0. MATCH (exact)
+sidecar#74  cmd-46  (-mode=binary on the image binary 0; go1.25.14 control 1, "8 vulnerabilities")
+            07 section 3.2 (binaries copied out of health-sidecar:e2e and :ci with docker create + cp): 0 and 0; control 1 with 13
+            vulnerabilities in full. The verifier's own 40 section 4 is cut at 24 lines (8 entries), so "8" is the truncation, not
+            the count. MATCH (nuance: 13, not 8; same verdict, exit 1, standard library fixed in 1.26.9/1.26.10)
+sidecar#76  cmd-48  (Trivy every severity: image 1 (4 UNKNOWN, base); binary 0; control 1 (14, 4 HIGH))
+            07 sections 1-2: health-sidecar:ci / :e2e 4 UNKNOWN (Debian LTS advisories, base); binary gobinary stdlib v1.27.3 -> 0;
+            go1.25.14 control 14 with 4 HIGH on the fresh database. MATCH (equivalent: the images CI and E2E built from the same
+            Dockerfile and code stand in for vs4, which was removed)
+sidecar#78  cmd-50  (imagetools inspect ghcr.io/aquasecurity/trivy:0.58.1 | head -3: 255 after the digest line)
+            cmd50-imagetools.txt: exit 255, Digest sha256:ab70a022...a22c7 (= the digest ci.yml pins). MATCH (exact)
+sidecar#79  cmd-51  (41-test-diff.sh: 0)                                      41: 0 differing lines but the HEAD label. MATCH (exact)
+sidecar#87  F-38 PASS (34 spellings overall and as a component; GAP-sidecar4-1/-2 corners)   15 section 3 + 15b: the same table. MATCH
+sidecar#105 F-81 PASS (5 UID/GID choices, --read-only without tmpfs, cap-drop ALL, no-new-privileges, default seccomp -> running,
+            /healthz 200)  30: 5 of 5 running, healthz 200, NoNewPrivs 1, Seccomp 2, CapEff 0, no shell (exit 127). MATCH
+sidecar#108 F-84 PASS (helm lint 0 via a consuming chart; README containers/initContainers lines render; pinned values)
+            20 sections 3-4, 9: 0 differing lines. MATCH (exact)
+sidecar#110 F-86 PARTIAL (no oc apply --dry-run=server)   20 section 6: kubeconform -strict valid on 1.29.0 for every form, native
+            forms invalid on 1.27.0 as expected; 0 differing lines. MATCH (exact; PARTIAL stands: no cluster here either)
+sidecar#112 F-88 PASS (emulated ordering and restarts)   10 D/E: app crash -> DOWN, rediscovery; sidecar SIGKILL -> restart and
+            reports again. MATCH
+sidecar#115 F-92 PASS (sidecar parts)   16 A: slow service cut at 10 s, retried, recovered; database hang -> 503 after ~5 s,
+            retried, 202 after the unpause. MATCH (nuance: 7 vs 8 accepted reports)
+sidecar#118 README L19 "about 10 MB on UBI micro": n/v   health-sidecar:au4 on distroless is 17.5 MB; UBI blocked here too. MATCH
+sidecar#120 README L20 (no Kubernetes API, no RBAC, no secrets; Downward API)   20: env fieldRefs only; 30/30b: the only files
+            opened are /proc/net/tcp and tcp6. MATCH
+sidecar#130 README L88-89 "admission webhook planned": n/a   the README text says planned; nothing to run. MATCH (text read)
+sidecar#132 README L118-127 (discovery steps 1-5)   11 re-run (0 lines), 42 section C, 30b. MATCH
+sidecar#136 README L144-153 (send on change; DOWN/degraded every probe; UP/UNKNOWN at the 30 s heartbeat)   12, 10 B. MATCH (nuance as #22)
+sidecar#140 README L168-169 (SIGTERM -> one leaving:true report; the pod drops out at once)   10 G, 15c, 42 section E. MATCH
+sidecar#146 README L203-226 (27 names = what config.go reads; CS_HOST override honoured; ::1 half not verified)
+            audit4/work/readme-names.txt vs config-names.txt: the table names 30 variables = the 27 that config.go reads plus
+            HTTPS_PROXY, HTTP_PROXY, NO_PROXY (row L225, read by Go's net/http, as the row says); 45 re-run C/D as the verifier's;
+            no IPv6 here either. MATCH
+sidecar#150 README L244-246 (/status fields) partial   13b (0 differing lines) and the 42 re-run's live-keys line; lastSendAt is the
+            tick's start (O-2). MATCH
+sidecar#153 README L266-272 (extraEnv snippet)   20 section 9 renders CS_LOG_LEVEL=debug. MATCH (exact)
+sidecar#160 README L317-322 (go test / go build / podman build)   42 section A (host go 1.24.7 -> go1.27.3; test 0; build 0) and 03
+            (docker build with the substituted bases). MATCH
+Tally: 34 of 34 MATCH: 10 exact, 7 with a timing or counting nuance spelled out above (#01, #17, #20, #22, #74, #115, #136),
+1 equivalent (#76, cmd-48), 16 plain.
+No sampled claim was contradicted.
+
+## 4. Teardown (12:37Z)
+Backend A (pid 3859, :19700) stopped; backend B and au4-s-mongo had been stopped and removed (docker rm -f -v) after the re-runs; all au4-s-* containers
+removed with their anonymous volumes (au4-s-sc2, app2, pod2, sc1, app1, pod1); image health-sidecar:au4 removed
+(sha256:c6054e24...). Scratch binaries, the TLS test CA and the v6app build are deleted in 90-cleanup.txt. Database au4s_main on mongo7
+is dropped in 90-cleanup.txt.

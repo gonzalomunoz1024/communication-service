@@ -1,0 +1,35 @@
+# 20 - auditor re-run of the backend build and tests (iteration 2), in the main checkout at HEAD 33451c3 (code identical to be19645: 0 non-confidence files differ)
+# command: ./gradlew --max-workers=2 --no-daemon test --rerun integrationTest --rerun   (no clean; pgrep GradleWrapperMain empty in the main checkout beforehand)
+
+START 2026-11-02T04:55:38Z HEAD 33451c3
+javac compiler args (build.gradle.kts:54):
+54:    options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:removal", "-Xlint:unchecked", "-Werror"))
+> Task :compileJava
+> Task :compileTestJava
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+javac 'warning:' lines in the compile output: 0  (the two 'warning' lines in the log are JVM CDS notices: 'OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes...')
+BUILD SUCCESSFUL in 1m 24s
+6 actionable tasks: 4 executed, 2 up-to-date
+EXIT 0 2026-11-02T04:57:03Z
+
+## JUnit XML results written by this run (build/test-results)
+test: files=22 tests=208 failures=0 errors=0 skipped=0 (timestamps 2026-11-02T04:56..2026-11-02T04:56)
+integrationTest: files=8 tests=42 failures=0 errors=0 skipped=0 (timestamps 2026-11-02T04:56..2026-11-02T04:56)
+
+## guard tests of the iteration-2 fixes present and passed in this run
+com.atlas.communication.CommunicationServiceE2EIT :: openApiSpecIsServed()
+com.atlas.communication.CommunicationServiceE2EIT :: reconnectingWithLastEventIdReplaysWhatWasMissed()
+com.atlas.communication.OpenApiContractIT :: theIdempotencyKeyAndTheVersionCheckExplainThemselves()
+com.atlas.communication.OperationsEndpointsIT :: theMongoClientGivesUpOnAnUnreachableDatabaseWithinSeconds()
+com.atlas.communication.common.adapters.outbound.MongoCommunicationRepositoryAdapterIT :: theExternalRefStaysTakenAfterItsHolderIsRetired()
+com.atlas.communication.feed.application.FeedUseCaseTest :: theSnapshotIsStampedWithTheLogHeadReadBeforeItIsQueried()
+com.atlas.communication.health.application.HealthObservationUseCaseTest :: afterAnOperatorsRetireTheNoticeReopensOnTheThresholdthFailingObservation()
+
+## -Werror gate (G-2-1): the four former ensureIndex(...) sites now call createIndex (src/main and the two ITs under src/test)
+src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthMonitorRepositoryAdapterIT.java:44
+src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapterIT.java:37
+src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapter.java:61
+src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:196
+ensureIndex( calls left (method name ensureIndexes() excluded): 0

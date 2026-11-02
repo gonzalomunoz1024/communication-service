@@ -1,0 +1,12 @@
+backend :19200 db=vf3_reconnect pid 941 extra: --communication.servicenow.instance-url=https://vf3.service-now.com --communication.sweep.interval-ms=2000 --communication.health.sweep-interval-ms=1000
+backend :19201 db=vf3_reconnect pid 958 extra: --communication.servicenow.instance-url=https://vf3.service-now.com --communication.sweep.interval-ms=2000 --communication.health.sweep-interval-ms=1000
+mongo vf3-mongo :19290
+backend :19202 uri=mongodb://localhost:19290/vf3_mongodown pid 1392
+vite :3200 -> http://127.0.0.1:19200
+vite :3201 -> http://127.0.0.1:19202
+vite :3206 -> http://127.0.0.1:19299
+rp :3202 -> :8080 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-default-tenant) 
+rp :3203 -> :8080 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-xorigin) 
+rp :3204 -> :8080 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-badclientid) 
+rp :3205 -> :19200 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist) 
+rp :3207 -> :19299 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist) EMPTY502=1

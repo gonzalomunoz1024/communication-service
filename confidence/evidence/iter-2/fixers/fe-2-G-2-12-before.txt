@@ -1,0 +1,142 @@
+# G-2-12, before the fix: the new usability tests (App, PublishOutageForm, OutageCard, StateTag, errors) against the iteration-1 code
+# cwd frontend/: npx vitest run src/test/App.test.tsx src/test/PublishOutageForm.test.tsx src/test/OutageCard.test.tsx src/test/StateTag.test.tsx src/test/errors.test.ts
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a8066b44d275a8a34/frontend
+ ❯ src/test/OutageCard.test.tsx (6 tests | 3 failed) 649ms
+   ❯ OutageCard (6)
+     × says who resolves and whose feed the notice leaves before asking to confirm 44ms
+     × names the tenant in the withdraw confirmation too, and leaves the actor out when none is known 34ms
+     × shows an upcoming notice as Scheduled, with its start once and in sentence case 13ms
+ ❯ src/test/errors.test.ts (8 tests | 2 failed) 40ms
+   ❯ explainError (3)
+     × says the service failed, not that it rejected anything, for a 5xx 8ms
+   ❯ client with the service down (2)
+     × tells a 5xx with an empty body from one the service explained 24ms
+ ❯ src/test/App.test.tsx (4 tests | 2 failed) 1198ms
+   ❯ App (4)
+     ❯ the tenant the page opens on (3)
+       × is none on a first visit, with a prompt that goes once a tenant is typed and remembered 21ms
+       × is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant 40ms
+ ❯ src/test/StateTag.test.tsx (1 test | 1 failed) 46ms
+   ❯ StateTag (1)
+     × shows its text as written, in sentence case, instead of capitalising every word 45ms
+ ❯ src/test/PublishOutageForm.test.tsx (14 tests | 3 failed) 3072ms
+   ❯ PublishOutageForm server errors (4)
+     × calls a 5xx a failure of the service, not a rejection 168ms
+   ❯ PublishOutageForm accessibility (5)
+     × promises a chip for the ServiceNow incident, and a link only when the service knows the instance 19ms
+     × makes the whole Save-as-draft row the click target of its switch 16ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/test/App.test.tsx > App > the tenant the page opens on > is none on a first visit, with a prompt that goes once a tenant is typed and remembered
+Error: expect(element).toHaveValue()
+Expected the element to have value:
+Received:
+  acme
+ ❯ src/test/App.test.tsx:100:22
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+ FAIL  src/test/App.test.tsx > App > the tenant the page opens on > is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant
+Error: expect(element).toHaveValue(acme)
+Expected the element to have value:
+  acme
+Received:
+  other
+ ❯ src/test/App.test.tsx:121:63
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+ FAIL  src/test/OutageCard.test.tsx > OutageCard > says who resolves and whose feed the notice leaves before asking to confirm
+TestingLibraryElementError: Unable to find an element with the text: Resolve as web-oncall? It leaves tenant acme's feed at once and cannot be reopened.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <article
+      class="animate-fade-in relative overflow-hidden rounded-lg border border-stroke-light bg-surface shadow-card"
+    >
+      <span
+        aria-hidden="true"
+        class="absolute inset-y-0 left-0 w-1 bg-warning"
+      />
+      <div
+        class="flex flex-col gap-3 py-4 pl-6 pr-5"
+      >
+        <div
+          class="flex flex-wrap items-center gap-1.5"
+        >
+          <span
+            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium capitalize px-2 py-0.5 text-caption bg-state-failed-tint text-state-failed-fg"
+          >
+            <span
+              class="h-1.5 w-1.5 shrink-0 rounded-full bg-state-failed"
+            />
+            Active
+          </span>
+          <span
+            class="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full font-medium px-2 py-0.5 text-caption bg-warning-tint text-warning-fg"
+          >
+            <span
+              class="truncate"
+            >
+              Major
+            </span>
+          </span>
+          <span
+            class="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full font-medium px-2 py-0.5 text-caption border border-stroke-light text-secondary"
+          >
+            <span
+              class="truncate"
+            >
+              Outage
+            </span>
+          </span>
+          <span
+            class="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full font-medium px-2 py-0.5 text-caption border border-stroke-light text-secondary font-mono"
+            title="ServiceNow INC0012345"
+          >
+            <span
+              class="truncate"
+            >
+              INC0012345
+            </span>
+          </span>
+          <span
+            class="ml-auto text-caption text-tertiary"
+            title="2 Nov 2026, 02:54:03"
+          >
+            Updated 
+            1m ago
+          </span>
+        </div>
+        <div>
+          <h3
+            class="text-subheadline font-semibold text-primary"
+          >
+            Payments API returning 503s
+          </h3>
+          <p
+            class="mt-1 whitespace-pre-line text-sm text-secondary"
+          >
+            Card payments fail for roughly 30% of requests.
+          </p>
+        </div>
+        <div
+          class="flex flex-wrap gap-1"
+        >
+          <span
+            class="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full font-medium px-1.5 py-px text-caption2 bg-surface-secondary text-secondary font-mono"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="10"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.7"
+              viewBox="0 0 24 24"
+              width="10"
+            >
+              <path
+                d="M3.5 12.5V4.5h8l9 9-8 8z"
+              />
+              <circle
+                cx="7.5"
+                cy="8.5"
+                fill="currentColor"
+                r="1"

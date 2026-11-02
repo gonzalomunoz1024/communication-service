@@ -1,0 +1,152 @@
+
+### A1 no X-Client-Id header (README: 401 with a hint)
+{"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}
+-> HTTP 401
+
+### A2 cookbook #1 literally (expiresAt 2026-10-14 is in the past today, 2026-11-01)
+{"error":"expiresAt must be after startsAt"}
+-> HTTP 400
+
+### A3 cookbook #2 maintenance literally (window 2026-10-15, in the past)
+{"id":"369e329f-9491-4238-89aa-4cf2bc8d9241","tenantId":"ux-api","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-10-15T01:00:00Z","endsAt":"2026-10-15T03:00:00Z","expiresAt":"2026-10-15T03:00:00Z","createdAt":"2026-11-01T23:38:04.192217175Z","updatedAt":"2026-11-01T23:38:04.192217175Z","version":0,"history":[{"at":"2026-11-01T23:38:04.192217175Z","actor":"vmforge-sre","action":"created (ACTIVE)"}]}
+-> HTTP 201
+
+### A4 cookbook #1 with a future expiry (what a developer tries next)
+HTTP/1.1 201 Created
+Location: /v1/communications/52a057a7-3450-4840-911b-b7acaaa36dbe
+Content-Type: application/json
+{"id":"52a057a7-3450-4840-911b-b7acaaa36dbe","tenantId":"ux-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:38:04.209956170Z","expiresAt":"2026-12-14T18:00:00Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-01T23:38:04.209956170Z","updatedAt":"2026-11-01T23:38:04.209956170Z","version":0,"history":[{"at":"2026-11-01T23:38:04.209956170Z","actor":"vmforge-sre","action":"created (ACTIVE)"}]}
+
+id=52a057a7-3450-4840-911b-b7acaaa36dbe
+
+### A5 the same publish again (409 text)
+{"error":"duplicate externalRef 'INC0012345' for tenant 'ux-api'"}
+-> HTTP 409
+
+### A6 cookbook: what VMForge shows right now
+{"items":[{"id":"52a057a7-3450-4840-911b-b7acaaa36dbe","tenantId":"ux-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:38:04.209Z","expiresAt":"2026-12-14T18:00:00Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"updatedAt":"2026-11-01T23:38:04.209Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+-> HTTP 200
+
+
+### A7 cookbook: live stream for 2s (-N)
+id:206
+event:snapshot
+data:{"seq":206,"type":"SNAPSHOT","at":"2026-11-01T23:38:04.293968395Z","communication":{"id":"52a057a7-3450-4840-911b-b7acaaa36dbe","tenantId":"ux-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:38:04.209Z","expiresAt":"2026-12-14T18:00:00Z","externalRef":"INC0012345","tick
+(stream closed by timeout)
+
+### A8 cookbook: resume after a disconnect with lastEventId=0
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+Content-Length: 191
+
+{"error":"Due to limitations of the org.bson.Document, you can't add a second 'seq' expression specified as 'seq : Document{{$lte=208}}'; Criteria already contains 'seq : Document{{$gt=0}}'"}
+
+### A9 cookbook: retire <id>
+{"id":"52a057a7-3450-4840-911b-b7acaaa36dbe","tenantId":"ux-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-01T23:38:04.209Z","expiresAt":"2026-12-14T18:00:00Z","externalRef":"INC0012345","ticket":{"sys
+
+### A10 cookbook: admin RETIRED across tenants (first 300 chars)
+{"items":[{"id":"a9a8866f-d297-40c8-b4cf-50fcf7c88d99","tenantId":"ux-sre","publisher":"api-sre","type":"OUTAGE","severity":"CRITICAL","title":"Live-pushed outage","affectedServices":["search-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-01T23:36:04.747Z","createdAt":"2026-11-0
+
+### A11 cookbook: health monitors for the tenant, then register a pull monitor as the README shows (url unreachable here)
+[]
+-> HTTP 200
+{"id":"7961d934-82a0-4c7d-8e65-dc106374c690","tenantId":"ux-api","service":"vm-api","url":"http://vm-api:8080/actuator/health","policy":{"publisher":"health-monitor","intervalSeconds":15,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-01T23:38:04.795836190Z","updatedAt":"2026-11-01T23:38:04.795836190Z","version":0}
+-> HTTP 201
+
+monitorId=7961d934-82a0-4c7d-8e65-dc106374c690 (README says 'force a probe' with <monitorId>: found via GET list)
+
+### A12 cookbook: force a probe (target unresolvable → what does the developer see?)
+{"id":"7961d934-82a0-4c7d-8e65-dc106374c690","tenantId":"ux-api","service":"vm-api","url":"http://vm-api:8080/actuator/health","policy":{"publisher":"health-monitor","intervalSeconds":15,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-01T23:38:04.842821886Z","lastProbeAt":"2026-11-01T23:38:04.842821886Z","lastSummary":"DOWN (probe failed: Failed to resolve 'vm-api' [A(1)] after 2 queries )","unhealthyStreak":1,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-01T23:38:04.795Z","updatedAt":"2026-11-01T23:38:04.842821886Z","versio
+
+### A13 push a report as the README shows
+{"id":"412da3e7-d859-4024-8ce6-77169ad23d8c","tenantId":"ux-api","service":"vm-api-push","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-01T23:38:05.003539666Z","lastSummary":"DOWN (primary database unreachable): db DOWN","unhealthyStreak":1,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-01T23:38:05.008126527Z","updatedAt":"2026-11-01T23:38:05.003539666Z","version":1}
+-> HTTP 202
+
+### --- error messages a developer meets ---
+
+### E1 PUT without expectedVersion
+{"error":"expectedVersion: must not be null"}
+-> HTTP 400
+
+### E2 PUT with a wrong expectedVersion (item is RETIRED now)
+{"error":"communication 52a057a7-3450-4840-911b-b7acaaa36dbe is RETIRED and can no longer be updated"}
+-> HTTP 409
+
+### E3 publish an item that is not a draft
+{"error":"only DRAFT communications can be published; 52a057a7-3450-4840-911b-b7acaaa36dbe is RETIRED"}
+-> HTTP 409
+
+### E4 unknown id
+{"error":"communication does-not-exist not found"}
+-> HTTP 404
+{"error":"communication does-not-exist not found"}
+-> HTTP 404
+
+### E5 invalid enum value (severity=HUGE) - Jackson text?
+{"error":"Failed to read HTTP message"}
+-> HTTP 400
+
+### E6 feed without tenantId
+{"error":"Required query parameter 'tenantId' is not present."}
+-> HTTP 400
+
+### E7 malformed ticket number
+{"error":"ticket.number 'INC-42' is not a ServiceNow incident number (like INC0012345)"}
+-> HTTP 400
+
+### E8 outage with INFO severity
+{"error":"OUTAGE requires severity MINOR or higher"}
+-> HTTP 400
+
+### E9 maintenance without endsAt
+{"error":"MAINTENANCE requires endsAt"}
+-> HTTP 400
+
+### E10 missing required fields (empty body object)
+{"error":"publisher: must not be blank; severity: must not be null; tenantId: must not be blank; title: must not be blank; type: must not be null"}
+-> HTTP 400
+
+### E11 malformed JSON
+{"error":"Failed to read HTTP message"}
+-> HTTP 400
+
+### E12 monitor with intervalSeconds=1
+{"error":"intervalSeconds: must be greater than or equal to 5"}
+-> HTTP 400
+
+### E13 probe a push-only monitor
+{"error":"monitor 412da3e7-d859-4024-8ce6-77169ad23d8c is push-only (no url) and cannot be probed"}
+-> HTTP 409
+
+### E14 report without status
+{"error":"status: must not be blank"}
+-> HTTP 400
+
+### E15 register the same monitor twice
+{"error":"a monitor already exists for service 'vm-api' in tenant 'ux-api'"}
+-> HTTP 409
+
+### E16 wrong content type
+{"error":"unexpected error"}
+-> HTTP 415
+
+### E17 unknown route under /v1
+{"error":"No static resource v1/nothing."}
+-> HTTP 404
+
+### E18 X-Client-Id present but empty
+{"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}
+-> HTTP 401
+
+### D1 README paths vs OpenAPI paths
+OpenAPI paths: 16
+README paths: 19
+in README not in OpenAPI: ['/v1/**', '/v1/admin/**', '/v1/health/**']
+in OpenAPI not in README: []
+security schemes: ['clientId'] global security: [{'clientId': []}]
+
+### cleanup: delete the two monitors
+
+-> HTTP 204
+
+-> HTTP 204

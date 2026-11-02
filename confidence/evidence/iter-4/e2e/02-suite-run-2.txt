@@ -1,0 +1,73 @@
+# In-repo suite, run 2 of 3 on a fresh stack (e2e/README.md: GO_IMAGE=local/go-toolset:1.27 BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up; npx playwright test; ./stack.sh down)
+# Trimmed: docker build steps and compose progress lines removed from 'up'; [WebServer] vite proxy traces removed from the Playwright output (they are the expected 'socket hang up' / ECONNRESET of the streams cut by specs 04 and 07).
+
+## stack.sh up
+== run 2 start 2026-11-02T10:23:14Z HEAD d10369b
+stack.sh down exit=0 took 203 ms
+10:23:15 stack: building the images (sidecar version d10369b, revision d10369b21d65e9500bbfae7de53013ce5f7b78cc)
+10:23:48 stack: the backend is ready (24 s)
+10:23:50 stack: the fake app answers UP (0 s)
+10:23:52 stack: the sidecar has reported (2 s)
+10:23:52 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+10:23:52 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+stack.sh up exit=0 took 37590 ms
+
+## container facts after up
+== container facts (run 2, after up) 2026-11-02T10:23:52Z
+e2e-sidecar image=health-sidecar:e2e user=1000660000:0 readonly=true capdrop=[ALL] secopt=[no-new-privileges:true] netmode=container:637226569e89d075ff5dbbf57b5c3ac06f43b457edd22e25395820b8be48850b started=2026-11-02T10:23:50.191303266Z
+e2e-backend image=communication-service:e2e user=65532:65532 readonly=false capdrop=[] secopt=[] netmode=e2e started=2026-11-02T10:23:23.976268197Z
+e2e-app image=fakeapp:e2e user=65532:65532 readonly=false capdrop=[] secopt=[] netmode=e2e started=2026-11-02T10:23:49.696559492Z
+e2e-mongo image=mongo:7.0 user= readonly=false capdrop=[] secopt=[] netmode=e2e started=2026-11-02T10:23:17.70688923Z
+sidecar host pid 18151: Uid: 1000660000 1000660000 1000660000 1000660000;Gid: 0 0 0 0;CapPrm: 0000000000000000;CapEff: 0000000000000000;NoNewPrivs: 1;Seccomp: 2
+backend host pid 16458: Uid: 65532 65532 65532 65532;Gid: 65532 65532 65532 65532
+health-sidecar:e2e id=sha256:7a8d8e7c2f1953fa005d23abd7c34e1dc80e54576787114e4d450646d155e229 labels version=d10369b revision=d10369b21d65e9500bbfae7de53013ce5f7b78cc user=1001
+communication-service:e2e id=sha256:5e6c112cfeb54b8c61ef57c3e8741f16567535b46cff90dadbd11739d786424f user=65532:65532 created=2026-11-02T09:51:54.598505992Z
+git describe: d10369b HEAD: d10369b21d65e9500bbfae7de53013ce5f7b78cc
+sidecar first log lines:
+{"time":"2026-11-02T10:23:50.435295825Z","level":"INFO","msg":"health sidecar starting","version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:8080","probe":"auto"}
+{"time":"2026-11-02T10:23:50.440196724Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:23:51.677507581Z","level":"INFO","msg":"reported","status":"UP","message":""}
+sidecar /status:
+{"version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"e2e","service":"fakeapp","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T10:23:50.435Z","publ
+
+
+## npx playwright test
+== playwright run 2 start 2026-11-02T10:23:53Z
+
+Running 9 tests using 1 worker
+
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (82ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body that suggests the first free follow-up value (502ms)
+  ✓  3 tests/01-api-contract.spec.ts:28:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (100ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (20.4s)
+F-91: the OUTAGE card appeared 6.6 s after the app went DOWN
+F-91: the card left 5.2 s after the app came back
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (20.2s)
+F-92: the badge showed Reconnecting 1.0 s into the restart
+F-92: a reopen carried lastEventId=7
+F-92: the backend was ready again 43.9 s after the restart began
+F-92: the page showed it 2.3 s after the backend was back
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (54.3s)
+F-76: the sidecar had stopped 1.1 s after SIGTERM
+  ✓  7 tests/05-f76-sidecar-sigterm.spec.ts:7:5 › F-76 F-48 F-91 SIGTERM to the sidecar → a leaving report and exit 0 → the pod is marked left and no notice opens → started again, the pod reports again (2.7s)
+F-39: HEALTH notice 10.1 s after the app turned DEGRADED
+F-41: OUTAGE in place of the HEALTH notice 10.0 s after the app went DOWN
+F-39: OUTAGE retired 10.0 s after the app came back
+  ✓  8 tests/06-f39-pull-monitor.spec.ts:37:5 › F-31 F-37 F-39 F-40 F-41 a pull monitor probes the fake app every 5 s: DEGRADED twice → HEALTH notice, DOWN twice → OUTAGE in its place, UP twice → retired (34.6s)
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+F-57: the late page showed the error state 11.3 s into the outage
+F-92: the late page while the database was down (3 stream requests, 1 list loads): +0.1 s (no badge), +0.2 s Connecting, +5.6 s Reconnecting (1), +5.7 s Reconnecting (1) | Couldn't load the feed (database unavailable), +11.7 s Reconnecting (2) | Couldn't load the feed (database unavailable)
+F-92: the backend was ready again 31.5 s after the database stopped
+F-92: the late page showed the feed 0.1 s after the backend was ready, then: +18.7 s Reconnecting (3) | Couldn't load the feed (database unavailable), +25.1 s Service degraded | Couldn't load the feed (database unavailable), +25.3 s Live
+F-92: the open page showed a new notice 1.1 s after the backend was ready
+  ✓  9 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves (42.7s)
+
+  9 passed (3.0m)
+npx playwright test exit=0 wall 182392 ms end 2026-11-02T10:26:55Z
+
+## stack.sh down
+stack.sh down exit=0 took 6931 ms
+no e2e-* container left
+no e2e network left
+no e2e volume left

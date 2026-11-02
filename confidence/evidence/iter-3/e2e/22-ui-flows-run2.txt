@@ -1,0 +1,36 @@
+## ui flows run mvywvwvx tenant ve3-ui-mvywvwvx at 2026-11-02T07:02:29.365Z
+PASS F-56 the tenant chosen in the header flows into the form :: ve3-ui-mvywvwvx
+PASS F-56 UI publish -> 201 with X-Client-Id communication-frontend; request body carries ticket + services :: 201 id=343c269f-3fc3-432b-9ba5-3b4a0f062168 ticket={"system":"servicenow","number":"INC0012345"} externalRef=INC0012345
+PASS F-56 confirmation card 'Outage published' with ticket chip, 'Publish another' and 'View in feed' :: h2#.text-title3 role= text=Outage published
+PASS F-90 second browser context shows the card live, without reload and without re-fetching /v1/feed :: card after 232 ms (from click 423 ms total); feed GETs before=1 after=1
+PASS F-09 the live card carries the services, the publisher and the ticket chip (F-09 UI) :: Active Major Outage INC0012345 Updated just now F-90 card payments failing mvywvwvx Card payments fail for about a third of requests; retries succeed. checkout-web payments-api Started just now ve3-oncall Resolve
+PASS F-90 consumer GET /v1/feed with the service filter lists it; another service does not :: payments-api=1 other=0
+PASS F-56 'View in feed' switches to the feed tab showing the item under Active now :: http://127.0.0.1:19530/#/feed
+PASS F-62 G-3-22: opening the inline confirmation moves focus into it (not to <body>) :: {"inCard":true,"tag":"input","placeholder":"Resolution note (optional)","text":""}
+PASS F-62 inline confirm names the actor and the tenant ('Resolve as ve3-oncall? … tenant …') :: Active Major Outage INC0012345 Updated just now F-90 card payments failing mvywvwvx Card payments fail for about a third of requests; retries succeed. checkout-web payments-api Started just now ve3-oncall Resolve as ve3-oncall? It leaves tenant ve3-ui-mvywvwvx
+PASS F-62 resolve posts {actor: publisher, note} -> 200 :: {"actor":"ve3-oncall","note":"fixed by ve3"}
+PASS F-62 card removed at once, resolution announced in the live region, focus not lost to <body> (G-2-10) :: gone after 2 ms announced=true focus=div#.outline-none role= text=All clearNo outage is active for ve3-ui-
+PASS F-90 the watcher loses the card through the retired frame (no reload, no re-fetch) :: gone after 526 ms feed GETs=1
+PASS F-90 API: feed no longer lists it, permalink RETIRED, history holds the note and the actor :: [{"at":"2026-11-02T07:02:32.863Z","actor":"ve3-oncall","action":"ACTIVE -> RETIRED: fixed by ve3"}]
+PASS F-57 G-3-21: duplicate externalRef via the UI -> 409; the banner explains it in the form's terms (INC0012345 is already the reference in this tenant, permanent, use INC0012345-2), the service's own sentence (naming the holder) kept under "What the service said" :: banner="The service rejected this. INC0012345 is already the reference of a notice in tenant ve3-ui-mvywvwvx (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2. What the service said" said="What the service saidexternalRef 'INC0012345' is already used by notice 343c269f-3fc3-432b-9ba5-3b4a0f062168 in tenant ve3-ui-mvywvwvx. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (f"
+PASS F-57 the form stays editable and focus moves to the banner (G-2-10); (focus after "Publish another" is ui_focus.js: here the confirmation had already left with the tab switch) :: focus now=div#.flex role=alert text=The service rejected this. INC0012345 is
+PASS F-07 malformed incident number: blocked inline before sending (UI mirrors the rule) or surfaced as the 400 text :: POSTs 3->3; form text: separated. Consumers filter the feed by these names. ServiceNow incident Not an incident number; expected INC0012345 Who and where Tenant* The tenant whose feed this lands in
+PASS F-58 default type Outage: 'Active now 2' with the CRITICAL first, no Upcoming section :: Beta outage | Alpha outage query=?tenantId=ve3-ui-mvywvwvx-feed&type=OUTAGE&page=0&size=100
+PASS F-16 All types: 'Active now 3' + 'Upcoming 1' with the maintenance ('Scheduled', 'Starts in 1d'), query without type= :: Scheduled Info Maintenance Updated just now Alpha maintenance alpha Starts in 24h Expected end in 1d ve3-api Withdraw query=?tenantId=ve3-ui-mvywvwvx-feed&page=0&size=100
+PASS F-58 Service filter -> only beta items, query carries service=beta :: Beta outage | Beta incident query=?tenantId=ve3-ui-mvywvwvx-feed&service=beta&page=0&size=100
+PASS F-58 Minimum severity Major -> only the CRITICAL outage, query carries severity=MAJOR :: Beta outage query=?tenantId=ve3-ui-mvywvwvx-feed&service=beta&severity=MAJOR&page=0&size=100
+PASS F-58 Refresh re-fetches the page :: GETs 5 -> 6
+PASS F-16 a not-started notice offers 'Withdraw', not 'Resolve' :: 
+PASS F-62 Withdraw explains itself and retires the scheduled notice (200, note recorded) :: Scheduled Info Maintenance Updated just now Alpha maintenance alpha Starts in 24h Expected end in 1d ve3-api Withdraw as ve3-oncall? Withdrawing retires it before it starts: tenant ve3-ui-mvywvwvx-fee
+PASS F-60 curl-publish -> card appears live :: after 458 ms (publish took 27 ms)
+PASS F-60 curl-update -> card text changes live (updated frame) :: after 219 ms
+PASS F-60 curl-retire -> card disappears live (retired frame) :: after 418 ms
+PASS F-60 Live switch off -> 'Paused', no updates arrive; on -> Live again and the missed item arrives through the fresh stream's snapshot :: paused=7ms seenWhilePaused=0 liveAgain=2ms snapshotCard=106ms
+PASS F-02 UI 'Save draft' -> DRAFT, 'Draft saved' without 'View in feed'; invisible in feed and permalink 404 :: status=DRAFT permalink=404
+PASS F-02 POST /publish makes the draft ACTIVE and it shows up in the feed :: 200 ACTIVE
+PASS F-60 G-3-23: with no tenant the badge says 'Waiting for a tenant' (not 'Paused') inside a role=status aria-live=polite region :: waiting=true paused=false region=status/polite
+PASS F-58 G-3-24: typing the tenant key by key (15 keys) -> one GET /v1/feed and one stream, for the whole name :: typing took 1800 ms; GETs=ve3-ui-mvywvwvx streams=ve3-ui-mvywvwvx
+PASS F-64 every /v1 fetch carried X-Client-Id communication-frontend; every stream carried ?clientId=; same origin (Vite preview proxy, no CORS) :: fetches=22 streams=15 bad=0/0
+PASS F-64 no failed requests besides the deliberate 409 :: 
+PASS F-90 no console errors or page errors across the flows (Chromium's own 409/aborted-stream lines excluded) :: 
+## summary: 34 pass, 0 fail at 2026-11-02T07:03:17.078Z

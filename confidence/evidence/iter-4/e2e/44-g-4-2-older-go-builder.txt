@@ -1,0 +1,17 @@
+== 2026-11-02T10:55:03Z G-4-2: the sidecar image built with an older Go builder must fail (GOTOOLCHAIN=local, go.mod: go 1.27.3); no image is tagged
+$ docker build --no-cache --build-arg GO_IMAGE=golang:1.25 --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot -f sidecar/Dockerfile sidecar   (no -t)
+#12 ERROR: process "/bin/sh -c go build -ldflags=\"-s -w -X main.version=${VERSION}\" -o /tmp/health-sidecar ./cmd/health-sidecar" did not complete successfully: exit code: 1
+------
+ > [build 6/6] RUN go build -ldflags="-s -w -X main.version=dev" -o /tmp/health-sidecar ./cmd/health-sidecar:
+0.179 go: go.mod requires go >= 1.27.3 (running go 1.25.14; GOTOOLCHAIN=local)
+------
+Dockerfile:22
+--------------------
+  20 |     COPY --chown=1001:0 cmd ./cmd
+  21 |     COPY --chown=1001:0 internal ./internal
+  22 | >>> RUN go build -ldflags="-s -w -X main.version=${VERSION}" -o /tmp/health-sidecar ./cmd/health-sidecar
+  23 |     
+  24 |     FROM ${BASE_IMAGE}
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c go build -ldflags=\"-s -w -X main.version=${VERSION}\" -o /tmp/health-sidecar ./cmd/health-sidecar" did not complete successfully: exit code: 1
+exit=1

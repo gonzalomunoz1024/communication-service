@@ -84,20 +84,26 @@ public class FeedUseCase implements FeedInboundPort {
                         : snapshotThenLive(query));
     }
 
+    @Override
+    public Mono<Long> head() {
+        return events.head();
+    }
+
     /**
      * The live bus is subscribed first, so nothing emitted during the snapshot query is lost;
      * clients upsert by communication id, so a snapshot/live overlap is harmless. Snapshot frames
-     * carry this node's log position, so a client that reconnects with it as Last-Event-ID resumes
-     * exactly where its snapshot left off.
+     * carry the log head read before the snapshot is queried (not this node's fan-out cursor,
+     * which can trail it by one poll), so a client that reconnects with it as Last-Event-ID
+     * misses nothing that happened after its snapshot; it may see an event again whose change
+     * the snapshot already showed, and dedupes on the communication's id and version.
      */
     private Flux<CommunicationEvent> snapshotThenLive(FeedQuery query) {
         Flux<CommunicationEvent> live = events.stream()
                 .filter(e -> matches(query, e.communication()));
         Flux<CommunicationEvent> snapshot = Flux.defer(() -> {
             Instant now = clock.instant();
-            long position = events.position();
-            return repository.query(toStoreQuery(withFirstPage(query), now))
-                    .map(c -> new CommunicationEvent(position, CommunicationEventType.SNAPSHOT, now, c));
+            return events.head().flatMapMany(head -> repository.query(toStoreQuery(withFirstPage(query), now))
+                    .map(c -> new CommunicationEvent(head, CommunicationEventType.SNAPSHOT, now, c)));
         });
         return Flux.merge(live, snapshot);
     }

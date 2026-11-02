@@ -5,7 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +49,7 @@ class AdminUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new AdminUseCase(repository, publishing);
+        useCase = new AdminUseCase(repository, publishing, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
@@ -68,6 +70,22 @@ class AdminUseCaseTest {
         assertThat(q.publisher()).isEqualTo("sre");
         assertThat(q.createdFrom()).isEqualTo(NOW.minusSeconds(3600));
         assertThat(q.activeAt()).isNull();
+    }
+
+    @Test
+    void searchReportsEachItemsEffectiveStatus() {
+        // stored ACTIVE until the sweeper converges it, EXPIRED for every reader
+        Communication lapsed = Communication.create("c1", "vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "t", null, List.of(), null, false, NOW.minusSeconds(7200), null,
+                NOW.minusSeconds(3600), null, NOW.minusSeconds(7200));
+        assertThat(lapsed.status()).isEqualTo(CommunicationStatus.ACTIVE);
+        when(repository.query(any())).thenReturn(Flux.just(lapsed));
+        when(repository.count(any())).thenReturn(Mono.just(1L));
+
+        StepVerifier.create(useCase.search(null, null, null, null, null, null, 0, 20))
+                .assertNext(page -> assertThat(page.items()).extracting(Communication::status)
+                        .containsExactly(CommunicationStatus.EXPIRED))
+                .verifyComplete();
     }
 
     @Test

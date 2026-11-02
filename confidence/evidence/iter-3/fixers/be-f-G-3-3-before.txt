@@ -1,0 +1,49 @@
+# G-3-3 before the fix (worktree at a8c4e4e + the new tests only)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*PublishingUseCaseTest' integrationTest --tests '*CommunicationServiceE2EIT' --continue
+
+PublishingUseCaseTest > getAfterExpiresAtButBeforeTheSweepReportsExpiredAndWritesNothing() FAILED
+    org.opentest4j.AssertionFailedError: 
+    expected: EXPIRED
+     but was: ACTIVE
+
+PublishingUseCaseTest > aNoticePublishedAfterItsWindowClosedIsAnsweredAsExpired() FAILED
+    org.opentest4j.AssertionFailedError: 
+    expected: EXPIRED
+     but was: ACTIVE
+
+PublishingUseCaseTest > anUpdateAnswersWithTheEffectiveStatusButSavesTheStoredOne() FAILED
+    org.opentest4j.AssertionFailedError: 
+    expected: ACTIVE
+     but was: SCHEDULED
+
+PublishingUseCaseTest > theListReportsEachItemsEffectiveStatus() FAILED
+    org.opentest4j.AssertionFailedError: 
+    Expecting actual:
+      [ACTIVE, SCHEDULED]
+    to contain exactly (and in same order):
+      [EXPIRED, ACTIVE]
+    but some elements were not found:
+      [EXPIRED]
+    and others were not expected:
+      [SCHEDULED]
+        at app//com.atlas.communication.publishing.application.PublishingUseCaseTest.lambda$theListReportsEachItemsEffectiveStatus$32(PublishingUseCaseTest.java:403)
+
+26 tests completed, 4 failed
+
+CommunicationServiceE2EIT > publisherAndAdminReadsReportTheEffectiveStatusBeforeTheSweeperRuns() FAILED
+    java.lang.AssertionError: JSON path "$.status" expected:<EXPIRED> but was:<ACTIVE>
+        at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+  (CommunicationServiceE2EIT.java:337 is the publisher GET's $.status, read right after the permalink /v1/feed/{id} said EXPIRED)
+7 tests completed, 1 failed
+BUILD FAILED in 1m 12s
+exit=1
+
+## HTTP, own backend :18200 on the iteration-2 jar, db fixbef_g33_before (scratchpad/bef/http-g33.sh)
+POST /v1/communications {"tenantId":"fixbef-g33-before-1793597128","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"over before it was published","startsAt":"2026-11-02T03:25:28Z","expiresAt":"2026-11-02T04:25:28Z"}
+  -> status=ACTIVE id=aeb7c21e-3dfa-4b04-83c4-20e76bded4b5
+GET /v1/feed/aeb7c21e-3dfa-4b04-83c4-20e76bded4b5 -> status=EXPIRED
+GET /v1/communications/aeb7c21e-3dfa-4b04-83c4-20e76bded4b5 -> status=ACTIVE version=0 history=1
+GET /v1/communications?tenantId=fixbef-g33-before-1793597128 -> statuses=['ACTIVE']
+GET /v1/admin/communications?tenantId=fixbef-g33-before-1793597128 -> statuses=['ACTIVE']
+POST /v1/communications/aeb7c21e-3dfa-4b04-83c4-20e76bded4b5/retire -> {"error":"communication aeb7c21e-3dfa-4b04-83c4-20e76bded4b5 already expired; retiring would rewrite history"}
+GET /v1/communications/aeb7c21e-3dfa-4b04-83c4-20e76bded4b5 -> status=ACTIVE version=0 (nothing written by the reads)

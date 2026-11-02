@@ -1,0 +1,42 @@
+== 02:39:22 UX-31 / F-82: README images: snippet appended to the shipped example
+kustomize build exit 0
+28:      - image: registry.example.com/retail/payments-api:1.4.2
+60:        image: registry.apps.example.com/platform/health-sidecar:1.0.0
+67:        name: health-sidecar
+80:          allowPrivilegeEscalation: false
+82:            drop:
+84:          readOnlyRootFilesystem: true
+85:          runAsNonRoot: true
+86:          seccompProfile:
+
+-- native component on the same example
+kustomize build (native) exit 0
+27:      containers:
+28:      - image: registry.example.com/retail/payments-api:1.4.2
+36:      initContainers:
+61:        image: registry.apps.example.com/platform/health-sidecar:1.0.0
+80:        restartPolicy: Always
+
+== UX-31 / F-84: Helm library chart through the verifier's consuming chart with image values
+apiVersion: v2
+name: payments-api
+version: 0.1.0
+dependencies:
+  - name: cs-health-sidecar
+    version: 1.0.0
+    repository: file://charts/cs-health-sidecar
+
+1 chart(s) linted, 0 chart(s) failed
+4:kind: Deployment
+17:          image: registry.example.com/retail/payments-api:1.4.2
+19:        - name: health-sidecar
+20:          image: registry.apps.example.com/platform/health-sidecar:1.0.0
+23:            - name: CS_ENDPOINT
+25:            - name: CS_TENANT
+helm template exit 0
+
+== README Image section present
+54:## Image
+55-
+56-`registry.example.com/platform/health-sidecar:1.0.0` in the snippets is a placeholder: there is no
+57-public image. The platform team builds it once from this directory (see [Build](#build)) and pushes

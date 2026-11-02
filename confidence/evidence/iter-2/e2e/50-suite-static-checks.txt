@@ -1,0 +1,20 @@
+## e2e/ npm audit (dev dependencies: @playwright/test, typescript, @types/node)
+found 0 vulnerabilities
+exit=0
+
+## e2e/ npm run typecheck
+> communication-service-e2e@0.1.0 typecheck
+> tsc --noEmit
+
+exit=0
+
+## e2e/fakeapp go vet + go test (host go go1.24.7)
+module fakeapp
+
+go 1.24
+ok  	fakeapp	0.012s
+exit=0
+
+## playwright versions
+@playwright/test 1.63.0
+chromium chromium-1243 chromium_headless_shell-1243 ffmpeg-1011 

@@ -1,8 +1,10 @@
 package com.atlas.communication.health.application;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,9 +30,12 @@ import reactor.util.retry.Retry;
  *
  * <p>A report that names its instance (one pod of a service) is stored per instance and the
  * service's status is rolled up from every live instance before the monitor's state machine
- * sees it; see {@link HealthRollup}. Pods of one service report independently, so two of them
- * can collide on the monitor's version check: a report is retried a couple of times on a
- * conflict before the caller hears about it.
+ * sees it; see {@link HealthRollup}. Pods of one service report independently, so a fleet of
+ * them can collide on the monitor's version check (a rolling restart has every pod reporting
+ * in the same second): a conflicting report is re-applied after a short, growing, randomised
+ * pause, so the herd spreads out, before the caller hears about it. An on-demand probe can lose
+ * the same check to the scheduler's own probe of that monitor; what it observed is applied again
+ * the same way, a few times, before the operator sees a conflict.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,7 +43,13 @@ import reactor.util.retry.Retry;
 public class HealthMonitorUseCase implements HealthInboundPort {
 
     /** How many times one report is applied before a persistent conflict is returned. */
-    static final int REPORT_ATTEMPTS = 3;
+    static final int REPORT_ATTEMPTS = 8;
+    /** How many times one on-demand probe is applied before a conflict with the scheduler is returned. */
+    static final int PROBE_ATTEMPTS = 3;
+    /** First pause before a conflicting report or probe is applied again; doubles each time (±75 % jitter). */
+    static final Duration CONFLICT_RETRY_FIRST_BACKOFF = Duration.ofMillis(25);
+    /** Longest pause between two attempts. */
+    static final Duration CONFLICT_RETRY_MAX_BACKOFF = Duration.ofSeconds(1);
 
     private final HealthMonitorRepositoryPort monitors;
     private final HealthInstanceRepositoryPort instances;
@@ -89,11 +100,7 @@ public class HealthMonitorUseCase implements HealthInboundPort {
                     .flatMap(monitor -> cmd.instance() == null
                             ? observation.observe(monitor, cmd.toReport(now), now)
                             : observeInstance(monitor, cmd, now));
-        }).retryWhen(Retry.max(REPORT_ATTEMPTS - 1L)
-                .filter(HealthMonitorUseCase::concurrentModification)
-                .doBeforeRetry(signal -> log.debug("report for {}/{} hit a concurrent update; retrying",
-                        cmd.tenantId(), cmd.service()))
-                .onRetryExhaustedThrow((spec, signal) -> signal.failure()));
+        }).retryWhen(onConflict(REPORT_ATTEMPTS, "report for " + cmd.tenantId() + "/" + cmd.service()));
     }
 
     @Override
@@ -103,7 +110,31 @@ public class HealthMonitorUseCase implements HealthInboundPort {
                 return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT,
                         "monitor " + id + " is push-only (no url) and cannot be probed"));
             }
-            return observation.probe(monitor, clock.instant());
+            return probeDespiteTheScheduler(monitor);
+        });
+    }
+
+    /**
+     * The scheduler saves the monitor twice around each probe of its own (it claims the probe slot,
+     * then records the result), so an on-demand probe that is in flight meanwhile loses the version
+     * check, and a target slower than the gap between two such saves would make every new probe
+     * lose it again. The target is therefore probed once: the first attempt applies the
+     * observation to the monitor already in hand, every retry to the monitor read again as the
+     * scheduler left it, and only a conflict that outlasts {@link #PROBE_ATTEMPTS} reaches the
+     * operator.
+     */
+    private Mono<HealthMonitor> probeDespiteTheScheduler(HealthMonitor monitor) {
+        return Mono.defer(() -> {
+            Instant now = clock.instant();
+            return observation.probeTarget(monitor, now)
+                    .flatMap(report -> {
+                        AtomicReference<HealthMonitor> inHand = new AtomicReference<>(monitor);
+                        return Mono.defer(() -> {
+                            HealthMonitor known = inHand.getAndSet(null);
+                            return (known == null ? get(monitor.id()) : Mono.just(known))
+                                    .flatMap(fresh -> observation.observe(fresh, report, now));
+                        }).retryWhen(onConflict(PROBE_ATTEMPTS, "probe of " + monitor.id()));
+                    });
         });
     }
 
@@ -124,6 +155,20 @@ public class HealthMonitorUseCase implements HealthInboundPort {
     private int staleWindow(HealthMonitor monitor) {
         Integer configured = monitor.policy().staleAfterSeconds();
         return configured == null ? properties.defaults().instanceStaleAfterSeconds() : configured;
+    }
+
+    /**
+     * Applies the work again after a lost version check: {@code attempts} in all, with a short,
+     * growing, randomised pause between two; a conflict that outlasts them is returned as it is.
+     */
+    private static Retry onConflict(int attempts, String what) {
+        return Retry.backoff(attempts - 1L, CONFLICT_RETRY_FIRST_BACKOFF)
+                .maxBackoff(CONFLICT_RETRY_MAX_BACKOFF)
+                .jitter(0.75)
+                .filter(HealthMonitorUseCase::concurrentModification)
+                .doBeforeRetry(signal -> log.debug("{} hit a concurrent update; retrying ({})",
+                        what, signal.totalRetries() + 1))
+                .onRetryExhaustedThrow((spec, signal) -> signal.failure());
     }
 
     private static boolean concurrentModification(Throwable ex) {

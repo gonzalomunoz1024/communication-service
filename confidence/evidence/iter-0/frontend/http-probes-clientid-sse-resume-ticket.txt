@@ -1,0 +1,62 @@
+# HTTP contract probes from the Frontend Verifier (shared backend :8080), tenant fe-http-1793576825, 2026-11-01T23:47:05Z
+
+## F-27 caller identification
+$ curl -i /v1/feed?tenantId=fe-http-1793576825   (no header)
+HTTP/1.1 401 Unauthorized
+{"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}$ curl -i -H 'X-Client-Id: bad id!' /v1/feed
+HTTP/1.1 400 Bad Request
+{"error":"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}$ curl -i /v1/feed/stream?tenantId=fe-http-1793576825&clientId=communication-frontend (3s)
+Terminated
+$ curl -o /dev/null -w '%{http_code}' /swagger-ui.html (no header)
+200
+$ curl -o /dev/null -w '%{http_code}' /v3/api-docs (no header)
+200
+$ curl -X OPTIONS -o /dev/null -w '%{http_code}' /v1/feed (no header)
+200
+
+## F-18 SSE frames: snapshot, then live created/updated/retired, ids monotonic, keepalive comment
+published f041f173-7934-4200-8d7d-188f63cc388c
+PUT 200
+retire 200
+[1]+  Exit 124                ( timeout 20 curl -s -N -H "$H" "$B/v1/feed/stream?tenantId=$T" > $S/frontend/sse-capture.txt )
+--- captured frames (event/id lines and comments):
+id:302
+event:snapshot
+id:303
+event:created
+id:304
+event:updated
+id:305
+event:retired
+:keepalive
+--- data lines count: 4
+
+## F-20 resume with Last-Event-ID / ?lastEventId
+$ curl -i -N -H 'Last-Event-ID: 302' /v1/feed/stream?tenantId=fe-http-1793576825 (3s)
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+Content-Length: 193
+
+{"error":"Due to limitations of the org.bson.Document, you can't add a second 'seq' expression specified as 'seq : Document{{$lte=305}}'; Criteria already contains 'seq : Document{{$gt=302}}'"}$ curl -i -N '/v1/feed/stream?tenantId=fe-http-1793576825&lastEventId=302' (3s)
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+Content-Length: 193
+
+{"error":"Due to limitations of the org.bson.Document, you can't add a second 'seq' expression specified as 'seq : Document{{$lte=305}}'; Criteria already contains 'seq : Document{{$gt=302}}'"}$ curl -i -N '/v1/feed/stream?tenantId=fe-http-1793576825&lastEventId=999999999' (3s) → expected: fresh snapshot
+Terminated
+$ curl -i -N -H 'Last-Event-ID: not-a-number' (3s) → expected: ignored, snapshot
+Terminated
+$ curl -i -N -H 'Last-Event-ID: 0' (3s)
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+Content-Length: 191
+
+
+## F-09 ticket contract via HTTP
+$ POST ticket ' inc0077001 '
+{'status': 'ACTIVE', 'ticket': {'system': 'servicenow', 'number': 'INC0077001'}, 'externalRef': 'INC0077001'}
+$ POST ticket 'INC12' (bad pattern)
+HTTP/1.1 400 Bad Request
+{"error":"ticket.number 'INC12' is not a ServiceNow incident number (like INC0012345)"}$ POST ticket url 'ftp://x' (not http)
+HTTP/1.1 400 Bad Request
+{"error":"ticket.url must be an http(s) link"}

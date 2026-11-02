@@ -1,0 +1,52 @@
+# G-2-4 addendum: streams and reports during the outage (private :19110)
+
+Checks: 4/4 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| G24-l | stream opened during the outage | PASS | HTTP 200; comments=[':connected']; frames=[]; connection lasted <= 5.0s (the reader was given 12 s) |
+| G24-m | resume requested during the outage | PASS | HTTP 200; comments=[':connected']; frames=[] |
+| G24-n | sidecar report during the outage | PASS | POST /v1/health/reports -> 503 {'error': 'database unavailable'} |
+| G24-o | stream after recovery | PASS | frames=['snapshot'] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:19110/v1/communications body={"tenantId": "vb2-down2-5c0471", "publisher": "p", "type": "OUTAGE", "severity": "MAJOR", "title": "x"} -> 201 {"id":"29c536cc-ad57-4b7b-84e5-74c203117747","tenantId":"vb2-down2-5c0471","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"x","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:22:19.289980400Z","createdAt":"2026-11-02T04:22:19.289980400Z","updatedAt":"2026-11-02T04:22:19.289980400Z","version":0,"history":[{"at":"2026-11-02T04:22:19.289980400Z","ac
+SSE http://localhost:19110/v1/feed/stream?tenantId=vb2-down2-5c0471 hdr=None -> 200, 0 frames, 1 comments
+  [PASS] G24-l (stream opened during the outage): HTTP 200; comments=[':connected']; frames=[]; connection lasted <= 5.0s (the reader was given 12 s)
+SSE http://localhost:19110/v1/feed/stream?tenantId=vb2-down2-5c0471&lastEventId=1 hdr=None -> 200, 0 frames, 1 comments
+  [PASS] G24-m (resume requested during the outage): HTTP 200; comments=[':connected']; frames=[]
+POST http://localhost:19110/v1/health/reports body={"tenantId": "vb2-down2-5c0471", "service": "s", "status": "UP"} -> 503 {"error":"database unavailable"}
+  [PASS] G24-n (sidecar report during the outage): POST /v1/health/reports -> 503 {'error': 'database unavailable'}
+GET http://localhost:19110/actuator/health/readiness body= -> 200 {"status":"UP"}
+SSE http://localhost:19110/v1/feed/stream?tenantId=vb2-down2-5c0471 hdr=None -> 200, 1 frames, 1 comments
+  [PASS] G24-o (stream after recovery): frames=['snapshot']
+```
+
+## Addendum (verifier, 2026-11-02T04:24:25Z): what the server logged for the streams opened during the outage (private-19110.txt)
+ERROR lines in the log between 04:22:15 and 04:22:40:
+2026-11-02T04:22:24.617Z ERROR 12788 --- [communication-service] [or-http-epoll-4] o.s.w.s.adapter.HttpWebHandlerAdapter    : [7a68c0ae-14] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=vb2-down2-5c0471", but ServerHttp
+2026-11-02T04:22:24.619Z ERROR 12788 --- [communication-service] [or-http-epoll-4] r.n.http.server.HttpServerOperations     : [7a68c0ae-1, L:/127.0.0.1:19110 - R:/127.0.0.1:36184] Error finishing response. Closing connection
+2026-11-02T04:22:29.631Z ERROR 12788 --- [communication-service] [or-http-epoll-1] o.s.w.s.adapter.HttpWebHandlerAdapter    : [4cb475a7-15] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=vb2-down2-5c0471&lastEventId=1", 
+2026-11-02T04:22:29.631Z ERROR 12788 --- [communication-service] [or-http-epoll-1] r.n.http.server.HttpServerOperations     : [4cb475a7-1, L:/127.0.0.1:19110 - R:/127.0.0.1:60208] Error finishing response. Closing connection
+
+first ERROR block, first 14 lines:
+2026-11-02T04:22:24.617Z ERROR 12788 --- [communication-service] [or-http-epoll-4] o.s.w.s.adapter.HttpWebHandlerAdapter    : [7a68c0ae-14] Error [java.lang.UnsupportedOperationException] for HTTP GET
+2026-11-02T04:22:24.619Z ERROR 12788 --- [communication-service] [or-http-epoll-4] r.n.http.server.HttpServerOperations     : [7a68c0ae-1, L:/127.0.0.1:19110 - R:/127.0.0.1:36184] Error finishing resp
+
+java.lang.UnsupportedOperationException
+	at org.springframework.http.ReadOnlyHttpHeaders.set(ReadOnlyHttpHeaders.java:112) ~[spring-web-6.2.19.jar!/:6.2.19]
+	Suppressed: The stacktrace has been enhanced by Reactor, refer to additional information below: 
+Error has been observed at the following site(s):
+	*__checkpoint ⇢ Exception handler com.atlas.communication.config.GlobalExceptionHandler#handleDatabaseUnavailable(RuntimeException, ServerWebExchange), error="Timed out while waiting for a server t
+	*__checkpoint ⇢ com.atlas.communication.config.ClientIdWebFilter [DefaultWebFilterChain]
+	*__checkpoint ⇢ HTTP GET "/v1/feed/stream?tenantId=vb2-down2-5c0471" [ExceptionHandlingWebHandler]
+Original Stack Trace:
+		at org.springframework.http.ReadOnlyHttpHeaders.set(ReadOnlyHttpHeaders.java:112) ~[spring-web-6.2.19.jar!/:6.2.19]
+		at org.springframework.http.HttpHeaders.setContentType(HttpHeaders.java:1032) ~[spring-web-6.2.19.jar!/:6.2.19]
+		at org.springframework.http.codec.ServerSentEventHttpMessageWriter.write(ServerSentEventHttpMessageWriter.java:111) ~[spring-web-6.2.19.jar!/:6.2.19]
+
+'Caused by' lines of that block:
+	Suppressed: The stacktrace has been enhanced by Reactor, refer to additional information below: 
+	Suppressed: The stacktrace has been enhanced by Reactor, refer to additional information below: 

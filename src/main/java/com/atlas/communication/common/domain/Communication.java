@@ -1,6 +1,7 @@
 package com.atlas.communication.common.domain;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public record Communication(
                 affectedServices, audience == null ? Audience.CUSTOMERS : audience, initial,
                 effectiveStart, endsAt, effectiveExpiry, externalRef, ticket, now, now, null,
                 List.of(new AuditEntry(now, publisher, "created (" + initial + ")")));
-        created.validateInvariants();
+        created.validateInvariants(startsAt == null);
         return created;
     }
 
@@ -148,12 +149,36 @@ public record Communication(
         return CommunicationStatus.ACTIVE;
     }
 
+    /**
+     * This communication as a reader sees it at {@code now}: every stored field as it is, with
+     * {@link #effectiveStatus(Instant)} as its status. For answers only, never saved: nothing is
+     * added to the history, and the stored status is left to the sweeper, which announces the
+     * change.
+     */
+    public Communication asSeenAt(Instant now) {
+        CommunicationStatus effective = effectiveStatus(now);
+        if (effective == status) {
+            return this;
+        }
+        return new Communication(id, tenantId, publisher, type, severity, title, body, affectedServices,
+                audience, effective, startsAt, endsAt, expiresAt, externalRef, ticket, createdAt, updatedAt,
+                version, history);
+    }
+
     /** Whether the communication is visible as ACTIVE at instant {@code t}. */
     public boolean activeAt(Instant t) {
         return effectiveStatus(t) == CommunicationStatus.ACTIVE;
     }
 
     public void validateInvariants() {
+        validateInvariants(false);
+    }
+
+    /**
+     * As {@link #validateInvariants()}; {@code startsAtDefaulted} says that {@code startsAt} is the
+     * creation time because the publisher sent none, which a message about it then says.
+     */
+    private void validateInvariants(boolean startsAtDefaulted) {
         require(tenantId != null && !tenantId.isBlank(), "tenantId is required");
         require(publisher != null && !publisher.isBlank(), "publisher is required");
         require(type != null, "type is required");
@@ -166,13 +191,23 @@ public record Communication(
         if (type == CommunicationType.MAINTENANCE) {
             require(endsAt != null, "MAINTENANCE requires endsAt");
         }
-        require(endsAt == null || endsAt.isAfter(startsAt), "endsAt must be after startsAt");
-        require(expiresAt == null || expiresAt.isAfter(startsAt), "expiresAt must be after startsAt");
+        requireAfterStart("endsAt", endsAt, startsAtDefaulted);
+        requireAfterStart("expiresAt", expiresAt, startsAtDefaulted);
         if (type == CommunicationType.INCIDENT || type == CommunicationType.OUTAGE) {
             require(severity.atLeast(Severity.MINOR), type + " requires severity MINOR or higher");
         }
         require(ticket == null || (ticket.number() != null && !ticket.number().isBlank()),
                 "ticket.number is required");
+    }
+
+    /** A time that must follow {@code startsAt}: the message names both values and a start nobody sent. */
+    private void requireAfterStart(String field, Instant value, boolean startsAtDefaulted) {
+        if (value != null && !value.isAfter(startsAt)) {
+            // a defaulted start is shown to the millisecond, as it is stored
+            throw new IllegalArgumentException(field + " " + value + " must be after startsAt"
+                    + (startsAtDefaulted ? ", which defaulted to now (" + startsAt.truncatedTo(ChronoUnit.MILLIS) + ")"
+                            : " " + startsAt));
+        }
     }
 
     private List<AuditEntry> appended(Instant at, String actor, String action) {

@@ -1,0 +1,27 @@
+# HTTP contract during a Mongo outage on the private stack (scripts/http_checks.py mongo_down, then mongo_back): docker stop e2e4-mongo, the checks, docker start e2e4-mongo; neither backend restarted
+# exit code = number of FAILs
+
+## 2026-11-02T10:54:04Z docker stop e2e4-mongo
+e2e4-mongo
+exit=0
+## mongo_down phase (Mongo is expected to be stopped) at 2026-11-02T10:54:05.094Z
+PASS F-92 GET /v1/feed with Mongo down -> 503 {"error":"database unavailable"} within ~5 s (G-2-4) :: 503 {"error":"database unavailable"} after 5.01 s
+PASS F-92 POST with Mongo down -> 503 database unavailable, no driver cluster description leaked :: 503 {"error":"database unavailable"} after 5.01 s
+PASS F-92 G-4-6: readiness reports DOWN (503) while Mongo is down within a kubelet's default 1 s probe timeout (5 probes) :: probes (status, body, seconds)=[(503, 'DOWN', 0.808), (503, 'DOWN', 0.807), (503, 'DOWN', 0.807), (503, 'DOWN', 0.807), (503, 'DOWN', 0.806)]; max 0.808 s against the configured readiness-timeout of 0.8 s
+PASS F-92 liveness stays UP (no restart loop) :: 200 {"status":"UP"} after 0.01 s
+PASS F-92 health API with Mongo down -> 503 database unavailable :: 503 {"error":"database unavailable"} after 5.01 s
+PASS F-92 G-4-10: on A, a stream opened while Mongo is down (EventSource request (?clientId=, Accept: text/event-stream)) is answered 503 JSON {"error":"database unavailable"} before any stream byte (no :connected, not text/event-stream) :: status=503 ct=application/json body='{"error":"database unavailable"}' answered in 5.01 s
+PASS F-92 G-4-10: on A, a stream opened while Mongo is down (header client id + Last-Event-ID) is answered 503 JSON {"error":"database unavailable"} before any stream byte (no :connected, not text/event-stream) :: status=503 ct=application/json body='{"error":"database unavailable"}' answered in 5.01 s
+PASS F-92 G-4-10: on B, a stream opened while Mongo is down (EventSource request (?clientId=, Accept: text/event-stream)) is answered 503 JSON {"error":"database unavailable"} before any stream byte (no :connected, not text/event-stream) :: status=503 ct=application/json body='{"error":"database unavailable"}' answered in 5.01 s
+PASS F-92 G-4-10: on B, a stream opened while Mongo is down (header client id + Last-Event-ID) is answered 503 JSON {"error":"database unavailable"} before any stream byte (no :connected, not text/event-stream) :: status=503 ct=application/json body='{"error":"database unavailable"}' answered in 5.01 s
+## summary: 9 pass, 0 fail at 2026-11-02T10:54:45.702Z
+http_checks mongo_down exit=0
+## 2026-11-02T10:54:45Z docker start e2e4-mongo
+e2e4-mongo
+exit=0
+## mongo_back phase (Mongo started again, backend NOT restarted) at 2026-11-02T10:54:45.973Z
+PASS F-92 GET /v1/feed answers 200 again without a backend restart :: after 2.0 s
+PASS F-92 readiness UP again :: 200 {'status': 'UP'}
+PASS F-92 publish + read work after recovery :: 200
+## summary: 3 pass, 0 fail at 2026-11-02T10:54:47.984Z
+http_checks mongo_back exit=0

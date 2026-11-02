@@ -1,0 +1,55 @@
+# Backend image (root Dockerfile) built from build/libs (sha256 64e07ece…), run on :19180 (SPRING_MONGODB_URI) and :19181 (SPRING_DATA_MONGODB_URI) against mongo7 (dbs vb4_image, vb4_image2)
+
+$ docker build --pull=false -t vb4-backend:test .   (from the repository root)
+#4 [1/2] FROM gcr.io/distroless/java21-debian13:nonroot@sha256:b22857e939bd95abd69d9d747f0421a274f9f70855ecfc335f7d97f6eeef578d
+#6 [2/2] COPY --chown=65532:65532 build/libs/communication-service-*.jar /app/app.jar
+#7 naming to docker.io/library/vb4-backend:test done
+exit 0
+image: Id=sha256:b0f0e76ae943ef2b2a1d5a61836c7091281e3244d98bf74ae4fa96311ffe8fcb User=65532:65532 Ports={"8080/tcp":{}} Entrypoint=["java","-jar","/app/app.jar"] Size=364613533
+jar inside the image: sha256 64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9; build/libs jar: 64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9
+base image digest in the Dockerfile: sha256:b22857e939bd95abd69d9d747f0421a274f9f70855ecfc335f7d97f6eeef578d
+base layers shared with the image (the build resolved FROM by that digest): 35 layers
+
+$ docker run -d --name vb4-backend -p 127.0.0.1:19180:8080 --add-host=host.docker.internal:host-gateway -e SPRING_MONGODB_URI=mongodb://host.docker.internal:27017/vb4_image vb4-backend:test -> 0
+$ docker run -d --name vb4-backend-b -p 127.0.0.1:19181:8080 --add-host=host.docker.internal:host-gateway -e SPRING_DATA_MONGODB_URI=mongodb://host.docker.internal:27017/vb4_image2 vb4-backend:test -> 0
+http://127.0.0.1:19181/actuator/health/readiness -> 200
+http://127.0.0.1:19180/actuator/health/readiness -> 200
+$ docker top vb4-backend -o uid,pid,comm (distroless: no shell for id)
+UID                 PID                 COMMAND
+65532               30977               java
+$ docker inspect vb4-backend: Config.User=65532:65532 Privileged=false
+$ docker top vb4-backend-b -o uid,pid,comm (distroless: no shell for id)
+UID                 PID                 COMMAND
+65532               31071               java
+$ docker inspect vb4-backend-b: Config.User=65532:65532 Privileged=false
+GET :19180/actuator/health/liveness -> 200 0.011846s
+GET :19180/actuator/health/readiness -> 200 0.012272s
+GET :19180/v1/feed?tenantId=vb4-img without X-Client-Id -> {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"} 401
+POST :19180/v1/communications -> 201
+GET :19181/actuator/health/liveness -> 200 0.016678s
+GET :19181/actuator/health/readiness -> 200 0.011816s
+GET :19181/v1/feed?tenantId=vb4-img without X-Client-Id -> {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"} 401
+POST :19181/v1/communications -> 201
+$ mongosh (read-only) on mongo7: where did each container write?
+vb4_image: vb4-img-19180=1 vb4-img-19181=0
+vb4_image2: vb4-img-19180=0 vb4-img-19181=1
+communication: vb4-img-19180=0 vb4-img-19181=0
+docker stop vb4-backend took 4.423 s; exit code 143
+2026-11-02T10:59:24.392Z  INFO 1 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 10.306 seconds (process running for 11.187)
+2026-11-02T10:59:24.400Z  WARN 1 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'spring
+2026-11-02T10:59:24.401Z  WARN 1 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'sp
+2026-11-02T10:59:39.275Z  INFO 1 --- [communication-service] [ionShutdownHook] o.s.boot.reactor.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T10:59:39.278Z  INFO 1 --- [communication-service] [ netty-shutdown] o.s.boot.reactor.netty.GracefulShutdown  : Graceful shutdown complete
+docker stop vb4-backend-b took 4.387 s; exit code 143
+2026-11-02T10:59:24.494Z  INFO 1 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 9.731 seconds (process running for 10.989)
+2026-11-02T10:59:24.497Z  WARN 1 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'spring
+2026-11-02T10:59:24.498Z  WARN 1 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'sp
+2026-11-02T10:59:43.843Z  INFO 1 --- [communication-service] [ionShutdownHook] o.s.boot.reactor.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T10:59:43.847Z  INFO 1 --- [communication-service] [ netty-shutdown] o.s.boot.reactor.netty.GracefulShutdown  : Graceful shutdown complete
+
+$ docker buildx imagetools inspect gcr.io/distroless/java21-debian13:nonroot   (G-4-3: the pinned digest against the live tag, 2026-11-02)
+Name:      gcr.io/distroless/java21-debian13:nonroot
+MediaType: application/vnd.oci.image.index.v1+json
+Digest:    sha256:b22857e939bd95abd69d9d747f0421a274f9f70855ecfc335f7d97f6eeef578d
+Dockerfile:1 pins sha256:b22857e939bd95abd69d9d747f0421a274f9f70855ecfc335f7d97f6eeef578d -> the tag currently resolves to the same index digest
+OS-package scan of this image: 07-dependency-scan.txt §4 (77 entries, 4 HIGH libuuid1 status affected, 0 with a fix).

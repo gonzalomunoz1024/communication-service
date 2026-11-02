@@ -1,0 +1,6 @@
+### S5(b) redone: the include without | nindent 8, on its own line at column 8 (the column of the list's '-')
+16:        {{ include "cs-health-sidecar.container" . }}$
+   helm template exit 0
+1 chart(s) linted, 0 chart(s) failed
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/usability/iter4/sidecar-work/helm-noindent.yaml - Deployment my-app is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.29.0-standalone-strict/deployment-apps-v1.json#/propertie
+Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0

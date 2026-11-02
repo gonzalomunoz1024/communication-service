@@ -1,0 +1,7 @@
+backend :19200 db=vf4_reconnect pid 4230 extra: --communication.servicenow.instance-url=https://vf4.service-now.com --communication.sweep.interval-ms=2000 --communication.health.sweep-interval-ms=1000
+backend :19201 db=vf4_reconnect pid 4243 extra: --communication.servicenow.instance-url=https://vf4.service-now.com --communication.sweep.interval-ms=2000 --communication.health.sweep-interval-ms=1000
+mongo vf4-mongo :19290
+backend :19202 uri=mongodb://localhost:19290/vf4_mongodown pid 4547
+vite :3200 -> http://127.0.0.1:19200
+vite :3201 -> http://127.0.0.1:19202
+vite :3206 -> http://127.0.0.1:19299

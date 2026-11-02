@@ -1,0 +1,21 @@
+# G-2-1 after: the four ensureIndex calls replaced by createIndex; gate -Xlint:deprecation -Xlint:removal -Xlint:unchecked -Werror on
+# Command: ./gradlew --max-workers=2 --no-daemon --continue compileJava compileTestJava test --tests HealthMonitorUseCaseTest integrationTest --tests *OpenApiContractIT --tests *MongoHealthMonitorRepositoryAdapterIT --tests *MongoHealthInstanceRepositoryAdapterIT --tests *MongoCommunicationRepositoryAdapterIT --tests *MongoCommunicationEventsAdapterIT
+# (there is no separate integrationTest source set: the *IT classes compile in compileTestJava)
+
+> Task :compileJava
+> Task :processResources UP-TO-DATE
+> Task :classes
+> Task :compileTestJava
+> Task :processTestResources
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+BUILD SUCCESSFUL in 41s
+6 actionable tasks: 5 executed, 1 up-to-date
+RC=0
+
+## JUnit XML of that run (build/test-results)
+build/test-results/test: tests=17 failures=0 errors=0 skipped=0 classes=['HealthMonitorUseCaseTest']
+build/test-results/integrationTest: tests=22 failures=0 errors=0 skipped=0 classes=['MongoCommunicationEventsAdapterIT', 'MongoCommunicationRepositoryAdapterIT', 'MongoHealthInstanceRepositoryAdapterIT', 'MongoHealthMonitorRepositoryAdapterIT', 'OpenApiContractIT']
+
+## grep -rn "ensureIndex(" src -> no call sites left (only the method name ensureIndexes() of the adapter)

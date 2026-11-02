@@ -1,0 +1,21 @@
+# Accidental G-3-29 data point (failure_flows.js run 1 crashed on a missing helper after SIGKILLing backend A; A was restarted by hand 60 s later)
+# A killed 07:09:47.4Z (pod's last accepted report 07:09:47.038Z), A restarted 07:10:38Z, ready 07:10:47.8Z; B (stale grace 0, health sweep 1 s) up throughout
+## backend A access log, sidecar reports (client=ve3-app-repo):
+2026-11-02T07:09:23.998Z  INFO 25947 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (84 ms)
+2026-11-02T07:09:34.324Z  INFO 25947 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (16 ms)
+2026-11-02T07:09:47.038Z  INFO 25947 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (14 ms)
+2026-11-02T07:11:09.368Z  INFO 28846 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (313 ms)
+2026-11-02T07:11:19.663Z  INFO 28846 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (24 ms)
+## sidecar log (time, level, msg, retry step):
+07:09:59.666 WARN report failed; will retry in=1s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:10:02.815 WARN report failed; will retry in=2s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:10:06.132 WARN report failed; will retry in=4s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:10:12.752 WARN report failed; will retry in=8s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:10:22.210 WARN report failed; will retry in=16s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:10:39.220 WARN report failed; will retry in=30s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+## notices opened by A or B (last two, both before this window):
+2026-11-02T07:07:41.971Z ve3/pull-svc 7d59b85b-a9f3-432d-b309-58f66a07cf6a
+2026-11-02T07:09:22.908Z ve3/ve3-app c9d82ccc-208f-4ab4-ab21-c995cd8409d7
+## notices of tenant ve3 created at or after 07:09:40Z (B's admin search): none listed below means none
+0 notice(s) created in the window; 7 items of tenant ve3 checked
+## arithmetic: accepted 07:11:09.37 - ready 07:10:47.8 = 21.5 s after readiness; silence 07:09:47.04 -> 07:11:09.37 = 82.3 s < 90 s window; last retry step 30 s (1,2,4,8,16,30)

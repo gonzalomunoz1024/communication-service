@@ -2,6 +2,7 @@ package com.atlas.communication.health.adapters.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -12,7 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -103,6 +104,26 @@ class RestControllerHealthAdapterTest {
     }
 
     @Test
+    void registerRejectsAMisspelledPolicyFieldNamingIt() {
+        // a push-only service that misspells staleAfterSeconds would otherwise get a monitor that
+        // never notices a crash, with nothing said; reports stay lenient (see below), registration is not
+        when(useCase.register(any())).thenReturn(Mono.just(monitor()));
+
+        client.post().uri("/v1/health/monitors")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "service", "billing", "staleAfterSecond", 60))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .contains("'staleAfterSecond'")
+                        .contains("known fields: ")
+                        .contains("staleAfterSeconds")
+                        .contains("intervalSeconds"));
+        verify(useCase, never()).register(any());
+    }
+
+    @Test
     void reportBindsActuatorShapedComponentsAndReturns202() {
         when(useCase.report(any())).thenReturn(Mono.just(monitor()));
 
@@ -130,6 +151,56 @@ class RestControllerHealthAdapterTest {
         assertThat(value.components().get("db").details()).containsEntry("error", "Connection refused");
         assertThat(value.components().get("groups").components()).containsKey("a");
         assertThat(value.toReport(NOW).failing()).hasSize(1);
+    }
+
+    @Test
+    void aReportMayCarryKeysTheServiceDoesNotKnow() {
+        // a forwarded /actuator/health document lists its groups at the top level, and producers
+        // add keys of their own: publishing commands reject unknown fields, reports must not
+        when(useCase.report(any())).thenReturn(Mono.just(monitor()));
+
+        client.post().uri("/v1/health/reports")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"tenantId":"vmforge","service":"vm-api","status":"UP","groups":["liveness","readiness"],
+                         "components":{"ping":{"status":"UP","since":"boot"}},
+                         "instance":{"id":"vm-api-7f9c6d5b4-x2k4q","zone":"eu-west-1a"},
+                         "sentBy":"a forwarder"}
+                        """)
+                .exchange()
+                .expectStatus().isAccepted();
+
+        ArgumentCaptor<HealthReportCommand> cmd = ArgumentCaptor.forClass(HealthReportCommand.class);
+        verify(useCase).report(cmd.capture());
+        assertThat(cmd.getValue().instance().id()).isEqualTo("vm-api-7f9c6d5b4-x2k4q");
+        assertThat(cmd.getValue().components()).containsKey("ping");
+    }
+
+    @Test
+    void reportAcceptsALegacyDocumentThatNestsComponentsUnderDetails() {
+        when(useCase.report(any())).thenReturn(Mono.just(monitor()));
+
+        // Spring Boot 2.0/2.1 wrote components under a top-level "details" map
+        String legacyJson = """
+                {"tenantId":"vmforge","service":"vm-api","status":"DOWN",
+                 "details":{"db":{"status":"DOWN","details":{"error":"Connection refused"}},
+                            "ping":{"status":"UP"},
+                            "hello":"world"}}
+                """;
+        client.post().uri("/v1/health/reports")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(legacyJson)
+                .exchange()
+                .expectStatus().isAccepted();
+
+        ArgumentCaptor<HealthReportCommand> cmd = ArgumentCaptor.forClass(HealthReportCommand.class);
+        verify(useCase).report(cmd.capture());
+        assertThat(cmd.getValue().toReport(NOW).components()).hasSize(2);
+        assertThat(cmd.getValue().toReport(NOW).failing()).singleElement().satisfies(db -> {
+            assertThat(db.name()).isEqualTo("db");
+            assertThat(db.detail()).isEqualTo("error=Connection refused");
+        });
+        assertThat(cmd.getValue().toReport(NOW).summary()).isEqualTo("DOWN: db DOWN");
     }
 
     @Test

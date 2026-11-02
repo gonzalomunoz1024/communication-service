@@ -1,0 +1,29 @@
+01:45:08.418 === F-91 sidecar flow
+01:45:08.441 F-91 PASS monitor auto-registered by the sidecar (push-only, publisher health-sidecar, staleAfterSeconds 90) :: id=66df9823-f0d5-47f4-b7e6-b11ae1660947 state=UP "UP (1 of 1 pod UP)"
+01:45:08.461 F-91 PASS instance recorded with pod identity from the Downward-API env (id, namespace, node, cluster, version, sidecar version) :: {"monitorId":"66df9823-f0d5-47f4-b7e6-b11ae1660947","instanceId":"e2e1-app-6d4f8b7c9-ab12c","status":"UP","components":[],"namespace":"e2e1-ns","node":"worker-7","cluster":"sandbox","version":"2.1.0","sidecar":"ci-iter1","left":false,"lastSeenAt":"2026-11-02T01:45:06.662Z"}
+01:45:08.465 F-78 PASS sidecar /status shows the discovered target and the last report :: {"version":"ci-iter1","service":"e2e1-app","tenant":"e2e1-pod","instance":"e2e1-app-6d4f8b7c9-ab12c","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"e2e1-pod","service":"e2e1-app","status":"UP","components"
+01:45:10.302 F-91 PASS UI feed for tenant e2e-pod is empty before the fault :: 
+01:45:10.810 flip app DOWN (status=DOWN, db=DOWN) {"db":"DOWN","status":"DOWN"}
+
+01:45:27.992 F-91 PASS OUTAGE notice opens after the debounce (failureThreshold 2: change report + next heartbeat) :: after 17.2s title="e2e1-app is down" severity=MAJOR body="Automated health check reported **DOWN** at 2026-11-02T01:45:27.541013102Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: e2e1-app-6d4f8b7c9-ab12c) |  | Failing components: | - db: DOWN - database=PostgreSQL |  | This notice is managed automati"
+01:45:28.006 F-91 PASS instances endpoint names the pod as DOWN with its failing component :: {"monitorId":"66df9823-f0d5-47f4-b7e6-b11ae1660947","instanceId":"e2e1-app-6d4f8b7c9-ab12c","status":"DOWN","components":[{"name":"db","status":"DOWN","detail":"database=PostgreSQL"}],"message":"health document reports DOWN","namespace":"e2e1-ns","node":"worker-7","cluster":"sandbox","version":"2.1.
+01:45:28.012 F-91 PASS the OUTAGE card appears live in the UI feed (tenant e2e-pod) :: 
+01:45:28.068 F-91 PASS SSE created frame for the automated notice :: id=29 at 01:45:27.608
+01:45:28.098 F-89 PASS sidecar logged "reported" with status DOWN :: 01:45:14 DOWN
+01:45:28.100 flip app to UP with db DOWN {"db":"DOWN","status":"UP"}
+
+01:45:44.272 F-91 PASS UP-with-failing-component -> DEGRADED: OUTAGE retired, HEALTH notice at MINOR opened :: after 16.2s health="e2e1-app is degraded"/MINOR outage=RETIRED body="Automated health check reported **DEGRADED** at 2026-11-02T01:45:43.591609780Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DEGRADED: e2e1-app-6d4f8b7c9-ab12c) |  | Failing components: | -"
+01:45:44.287 F-91 PASS UI (All types) swaps the Outage card for the Health card live :: health=true outageGone=true
+01:45:44.345 flip app UP {"db":"UP","status":"UP"}
+
+01:45:59.477 F-91 PASS two UP reports retire the notice with audit note "recovered: …" :: after 15.1s last history: "ACTIVE -> RETIRED: recovered: UP (1 of 1 pod UP)"
+01:45:59.986 F-91 PASS UI feed returns to All clear :: 
+01:45:59.995 F-91 PASS monitor state: UP, incidents counted :: incidents=2 "UP (1 of 1 pod UP)"
+01:46:00.199 F-76 PASS docker stop (SIGTERM): leaving report sent, exit 0, within 3 s :: exit=0 stop took 128ms msgs=leaving report sent / health sidecar stopped
+01:46:00.199 F-48 PASS instance left=true at once; service treated as scaled to zero (no notice) :: left=true summary="UNKNOWN (no live pod reports)" lastStatus=UP
+01:46:00.362 F-91 PASS sidecar restart: instance back (left=false) and reporting UP :: after 0.0s {"monitorId":"66df9823-f0d5-47f4-b7e6-b11ae1660947","instanceId":"e2e1-app-6d4f8b7c9-ab12c","status":"UP","components":[],"namespace":"e2e1-ns","node":"worker-7
+01:46:00.368 F-88 PASS no new notice after the sidecar restart :: items=0
+01:46:00.369 F-91 PASS no browser console errors during the sidecar flow :: 
+
+SUMMARY: 19 checks, 19 pass, 0 fail
+EXIT=0

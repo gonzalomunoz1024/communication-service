@@ -1,0 +1,17 @@
++0.0s started aux backend
++5.1s aux backend up: true
++5.7s indicator → Paused
++5.7s stream REQUEST last-event-id=(none)
++5.7s stream REQUEST FAILED net::ERR_ABORTED
++5.8s stream REQUEST last-event-id=(none)
++5.8s stream REQUEST FAILED net::ERR_ABORTED
++5.8s stream REQUEST last-event-id=(none)
++5.9s stream RESPONSE 200
++5.9s indicator → Live
++5.9s feed is Live; SIGKILL backend pid 22851
++6.0s backend is down (GET refused)
++18.0s after 12 s down; es log: ["00:06:40.539 es#4 open"]
++23.6s backend is back (GET 200)
++23.9s published after restart → 201
++54.2s card 'published after restart' shown after >30s; indicator=Live
++54.2s final es log: ["00:06:40.539 es#4 open"]

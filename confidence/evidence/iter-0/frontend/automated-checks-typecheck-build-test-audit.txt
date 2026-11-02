@@ -1,0 +1,155 @@
+== typecheck run 1 (23:32:39)
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+TYPECHECK_RC_1=0
+== typecheck run 2 (23:32:46)
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+TYPECHECK_RC_2=0
+== typecheck run 3 (23:32:51)
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+TYPECHECK_RC_3=0
+== build run 1 (23:32:56)
+
+> @atlas/communication-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 45 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-Dw58ipR3.css   30.08 kB │ gzip:  6.84 kB
+dist/assets/index-DP1NYcNq.js   260.49 kB │ gzip: 81.12 kB
+
+✓ built in 1.80s
+BUILD_RC_1=0
+== build run 2 (23:33:07)
+
+> @atlas/communication-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 45 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-Dw58ipR3.css   30.08 kB │ gzip:  6.84 kB
+dist/assets/index-DP1NYcNq.js   260.49 kB │ gzip: 81.12 kB
+
+✓ built in 914ms
+BUILD_RC_2=0
+== build run 3 (23:33:17)
+
+> @atlas/communication-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 45 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-Dw58ipR3.css   30.08 kB │ gzip:  6.84 kB
+dist/assets/index-DP1NYcNq.js   260.49 kB │ gzip: 81.12 kB
+
+✓ built in 1.10s
+BUILD_RC_3=0
+== test run 1 (23:33:26)
+
+> @atlas/communication-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  23 passed (23)
+   Start at  23:33:28
+   Duration  830ms (tests 74%, import 16%, transform 6%, worker 4%)
+
+TEST_RC_1=0
+== test run 2 (23:33:28)
+
+> @atlas/communication-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  23 passed (23)
+   Start at  23:33:30
+   Duration  583ms (import 38%, transform 30%, tests 22%, worker 10%)
+
+TEST_RC_2=0
+== test run 3 (23:33:31)
+
+> @atlas/communication-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  23 passed (23)
+   Start at  23:33:31
+   Duration  557ms (import 40%, tests 32%, transform 20%, worker 8%)
+
+TEST_RC_3=0
+== npm audit --omit=dev
+found 0 vulnerabilities
+AUDIT_PROD_RC=0
+== npm audit
+found 0 vulnerabilities
+AUDIT_ALL_RC=0
+== npm audit --json
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {},
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "dependencies": {
+      "prod": 4,
+      "dev": 103,
+      "optional": 50,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 106
+    }
+  }
+}
+== ls -la dist
+dist:
+total 16
+drwxr-xr-x 3 root root 4096 Nov  1 23:33 .
+drwxr-xr-x 5 root root 4096 Nov  1 23:15 ..
+drwxr-xr-x 2 root root 4096 Nov  1 23:33 assets
+-rw-r--r-- 1 root root 1257 Nov  1 23:33 index.html
+
+dist/assets:
+total 296
+drwxr-xr-x 2 root root   4096 Nov  1 23:33 .
+drwxr-xr-x 3 root root   4096 Nov  1 23:33 ..
+-rw-r--r-- 1 root root 260498 Nov  1 23:33 index-DP1NYcNq.js
+-rw-r--r-- 1 root root  30087 Nov  1 23:33 index-Dw58ipR3.css
+ALL_DONE

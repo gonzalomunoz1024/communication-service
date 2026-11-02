@@ -1,0 +1,14 @@
+[
+  {
+    "feature": "F-64",
+    "name": "static build with VITE_API_BASE=http://127.0.0.1:8080 served from http://127.0.0.1:3027: requests go to the API origin and are blocked by the browser (no CORS on the backend) → feed error state (documented limitation, Q2)",
+    "ok": true,
+    "evidence": "{\"errorStateShown\":true,\"corsConsole\":[\"Access to fetch at 'http://127.0.0.1:8080/v1/feed?tenantId=acme&type=OUTAGE&page=0&size=100' from origin 'http://127.0.0.1:3027' has been blocked by CORS policy\",\"Access to fetch at 'http://127.0.0.1:8080/v1/feed?tenantId=fe-xorigin-mvyhg15v&type=OUTAGE&page=0&size=100' from origin 'http://127.0.0.1:3027' has been blocked\"],\"apiTargets\":[\"http://127.0.0.1:8080\"],\"preflightStatus\":403,\"acao\":null}"
+  },
+  {
+    "feature": "F-64",
+    "name": "every fetch carries X-Client-Id: communication-frontend and Accept: application/json; the EventSource carries ?clientId=; all same-origin through the dev proxy",
+    "ok": true,
+    "evidence": "{\"fetches\":[{\"url\":\"/v1/feed?tenantId=acme&type=OUTAGE&page=0&size=100\",\"clientId\":\"communication-frontend\",\"accept\":\"application/json\"},{\"url\":\"/v1/feed?tenantId=acme&type=OUTAGE&page=0&size=100\",\"clientId\":\"communication-frontend\",\"accept\":\"application/json\"},{\"url\":\"/v1/feed?tenantId=fe-xorigin-mvyhg15v&type=OUTAGE&page=0&size=100\",\"clientId\":\"communication-frontend\",\"accept\":\"application/json\"}],\"stream\":\"/v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communication-frontend\",\"statuses\":[200,200,200,200]}"
+  }
+]

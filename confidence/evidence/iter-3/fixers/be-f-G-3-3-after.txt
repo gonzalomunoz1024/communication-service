@@ -1,0 +1,26 @@
+# G-3-3 after the fix (Communication.asSeenAt; PublishingUseCase answers and AdminUseCase.search carry the effective status; commands load the stored aggregate)
+# command: ./gradlew --max-workers=2 --no-daemon test integrationTest --tests '*CommunicationServiceE2EIT' --tests '*HealthMonitoringE2EIT' bootJar
+
+<testsuite name="com.atlas.communication.publishing.application.PublishingUseCaseTest" tests="26" skipped="0" failures="0" errors="0"
+<testsuite name="com.atlas.communication.admin.application.AdminUseCaseTest" tests="6" skipped="0" failures="0" errors="0"
+<testsuite name="com.atlas.communication.CommunicationServiceE2EIT" tests="7" skipped="0" failures="0" errors="0"
+<testsuite name="com.atlas.communication.health.HealthMonitoringE2EIT" tests="6" skipped="0" failures="0" errors="0"
+<testcase name="getAfterExpiresAtButBeforeTheSweepReportsExpiredAndWritesNothing()" classname="com.atlas.communication.publishing.application.PublishingUseCaseTest" time="0.191"/>
+<testcase name="theListReportsEachItemsEffectiveStatus()" classname="com.atlas.communication.publishing.application.PublishingUseCaseTest" time="0.01"/>
+<testcase name="aNoticePublishedAfterItsWindowClosedIsAnsweredAsExpired()" classname="com.atlas.communication.publishing.application.PublishingUseCaseTest" time="0.134"/>
+<testcase name="anUpdateAnswersWithTheEffectiveStatusButSavesTheStoredOne()" classname="com.atlas.communication.publishing.application.PublishingUseCaseTest" time="0.032"/>
+<testcase name="searchReportsEachItemsEffectiveStatus()" classname="com.atlas.communication.admin.application.AdminUseCaseTest" time="0.009"/>
+<testcase name="publisherAndAdminReadsReportTheEffectiveStatusBeforeTheSweeperRuns()" classname="com.atlas.communication.CommunicationServiceE2EIT" time="0.21"/>
+whole unit suite: tests=213 failures=0 errors=0
+BUILD SUCCESSFUL in 1m 17s
+exit=0
+
+## HTTP, own backend :18200 on the jar built from this commit, db fixbef_g33_after (scratchpad/bef/http-g33.sh)
+POST /v1/communications {"tenantId":"fixbef-g33-after-1793597409","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"over before it was published","startsAt":"2026-11-02T03:30:09Z","expiresAt":"2026-11-02T04:30:09Z"}
+  -> status=EXPIRED id=596b32b8-44a9-48f1-bbdc-0da7cb0ad78b
+GET /v1/feed/596b32b8-44a9-48f1-bbdc-0da7cb0ad78b -> status=EXPIRED
+GET /v1/communications/596b32b8-44a9-48f1-bbdc-0da7cb0ad78b -> status=EXPIRED version=0 history=1
+GET /v1/communications?tenantId=fixbef-g33-after-1793597409 -> statuses=['EXPIRED']
+GET /v1/admin/communications?tenantId=fixbef-g33-after-1793597409 -> statuses=['EXPIRED']
+POST /v1/communications/596b32b8-44a9-48f1-bbdc-0da7cb0ad78b/retire -> {"error":"communication 596b32b8-44a9-48f1-bbdc-0da7cb0ad78b already expired; retiring would rewrite history"}
+GET /v1/communications/596b32b8-44a9-48f1-bbdc-0da7cb0ad78b -> status=EXPIRED version=0 (nothing written by the reads)

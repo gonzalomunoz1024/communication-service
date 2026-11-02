@@ -1,0 +1,62 @@
+Iteration-3 audit: clean-up of the auditor's own resources (log of the commands' output; the shared stack was only read)
+
+== 2026-11-02T09:31:11Z removing the auditor's images (au3-* / :au3 tags only)
+-- au3-backend:test sha256:e6b40a75d605
+   lines untagged-or-deleted: 2
+-- health-sidecar:au3 sha256:ed6006018df0
+   lines untagged-or-deleted: 2
+-- au3-go-toolset:readme sha256:2a1225599286
+   lines untagged-or-deleted: 2
+-- au3-sidecar:readme-probe sha256:5ac44c261cac
+   lines untagged-or-deleted: 2
+== dropping the auditor's databases on mongo7 (prefix au3)
+au3-dropped dropped=1
+au3-eff dropped=1
+au3-freconnect dropped=1
+au3-g27d dropped=1
+au3-g27d2 dropped=1
+au3-gaps dropped=1
+au3-image dropped=1
+au3-iter2ab dropped=1
+au3-pair dropped=1
+au3-shared dropped=1
+au3-smain dropped=1
+au3-uxcook dropped=1
+count=12
+== scratch: keeping the Trivy result JSON (small), removing the 1.6 GB Trivy DB cache and the scan inputs
+fs-fe.json fs-sc.json image-os-debian12.json image-os-debian13.json rootfs-sc.json sbom-freshdb.json 
+removed trivy-fresh trivy-sc trivy-fe trivy-in trivy-img
+scratch now: 74M	/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit3
+== 2026-11-02T09:31:26Z end-state checks
+au3 containers: 0
+au3 images: 0
+au3 networks: 0  au3 volumes: 0
+compose projects: none
+listeners on 19700-19799 (from /proc/net/tcp*, ss is not installed): 0 []; method check, shared listeners seen: [8080, 3000, 27017, 19465, 18080]
+processes naming au3 or 197xx: 0
+au3 databases left on mongo7: 0
+-- shared stack (read only)
+backend :8080 readiness: 200  liveness: 200
+backend process: pid=23778 up=10630s
+frontend :3000: 200
+sidecar Up 3 hours
+app Up 3 hours
+mongo7 Up 10 hours
+sidecar status (pod port 19465): {"version":"ci-iter3","service":"fake-app","tenant":"podtest","instance":"fake-app-7f9c6d5b4-x2k4q","target":"http://127.0.0.1:8080/actuator/health","lastTarget
+-- git
+6c15715
+?? confidence/evidence/iter-3/audit/
+?? confidence/evidence/iter-4/
+
+Earlier teardowns (each recorded where it happened): the private backends, Mongo containers, pods and the au3-e E2E stack were stopped in 21-24, 40, 50 and 60; the in-repo suite run in 50 ended with ./stack.sh down.
+Not removed (not the auditor's): health-sidecar:ci/:e2e, fakeapp:*, communication-service:e2e, go-toolset:e2e, local/go-toolset:*, e2e3-sidecar:readme-probe, the beu-mongo container (iteration-4 fixer), mirror images; databases without the au3 prefix.
+Kept in the session scratchpad (outside the repository): audit3/trivy-results/*.json (the Trivy JSON behind 07 and 08), audit3/logs, audit3/sc/logs, audit3/e2e/out, audit3/ux.
+
+== 2026-11-02T09:51:10Z final state, after the closed-gap static checks (71) and the report
+git status --short:
+    ?? confidence/evidence/iter-3/audit/
+    ?? confidence/iter-3/audit.md
+(the untracked confidence/evidence/iter-4/ listed above at 09:31 was removed by someone else in the meantime; HEAD still 6c15715)
+e2e/playwright-report/index.html (git-ignored, generated) was rewritten at 09:35 by the auditor's 'npx playwright test --list' (71); nothing tracked changed.
+shared stack: :8080 readiness 200, :3000 200; sidecar=Up 3 hours app=Up 3 hours mongo7=Up 11 hours 
+au3 containers: 0; au3 images: 0; au3 databases: 0

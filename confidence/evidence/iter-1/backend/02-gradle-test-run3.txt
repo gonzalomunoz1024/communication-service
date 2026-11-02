@@ -1,0 +1,41 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44417 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Task :compileJava
+/home/claude/communication-service/src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapter.java:61: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        template.indexOps(CommunicationDocument.class).ensureIndex(externalRefIndex).block();
+                                                      ^
+/home/claude/communication-service/src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:191: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        return template.indexOps(CommunicationEventDocument.class).ensureIndex(ttl)
+                                                                  ^
+2 warnings
+
+> Task :processResources
+> Task :classes
+
+> Task :compileTestJava
+/home/claude/communication-service/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthMonitorRepositoryAdapterIT.java:44: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        template.indexOps(HealthMonitorDocument.class).ensureIndex(new CompoundIndexDefinition(
+                                                      ^
+/home/claude/communication-service/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapterIT.java:37: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        template.indexOps(HealthInstanceDocument.class).ensureIndex(new Index()
+                                                       ^
+Note: /home/claude/communication-service/src/test/java/com/atlas/communication/OpenApiContractIT.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/claude/communication-service/src/test/java/com/atlas/communication/health/application/HealthMonitorUseCaseTest.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+2 warnings
+
+> Task :processTestResources
+> Task :testClasses
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :test
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44417 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+
+[Incubating] Problems report is available at: file:///home/claude/communication-service/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 24s
+5 actionable tasks: 5 executed
+RC=0

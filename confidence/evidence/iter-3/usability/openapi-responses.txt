@@ -1,0 +1,25 @@
+# documented responses per operation in /v3/api-docs (shared backend, code 4a0e84e) vs what the service answers (api-walk3.txt)
+GET    /v1/communications/{id}                  documented=['200', '401']  answers=200
+PUT    /v1/communications/{id}                  documented=['401', '409']  answers=200 (400)
+POST   /v1/health/reports                       documented=['200', '401']  answers=202 (400)
+GET    /v1/health/monitors                      documented=['200', '401']  answers=200
+POST   /v1/health/monitors                      documented=['200', '401']  answers=201 (400)
+POST   /v1/health/monitors/{id}/probe           documented=['200', '401']  answers=200
+GET    /v1/communications                       documented=['200', '401']  answers=200
+POST   /v1/communications                       documented=['401', '409']  answers=201 (400 on input errors)
+POST   /v1/communications/{id}/retire           documented=['200', '401']  answers=200
+POST   /v1/communications/{id}/publish          documented=['200', '401']  answers=200
+POST   /v1/admin/communications/{id}/retire     documented=['200', '401']  answers=200
+GET    /v1/health/monitors/{id}                 documented=['200', '401']  answers=200
+DELETE /v1/health/monitors/{id}                 documented=['200', '401']  answers=204
+GET    /v1/health/monitors/{id}/instances       documented=['200', '401']  answers=200
+GET    /v1/feed                                 documented=['200', '401']  answers=200
+GET    /v1/feed/{id}                            documented=['200', '401']  answers=200
+GET    /v1/feed/stream                          documented=['200', '401']  answers=200
+GET    /v1/admin/tenants                        documented=['200', '401']  answers=200
+GET    /v1/admin/communications                 documented=['200', '401']  answers=200
+DELETE /v1/admin/communications/{id}            documented=['200', '401']  answers=204
+
+externalRef (CreateCommunicationCommand): Permanent idempotency key, usable once per tenant for the life of the store (retired and expired notices included). Repeat it only to retry the same publish: the 409 names the notice that already holds it. A follow-up notice needs a new value, for example INC0012345-2. Defaults to ticket.number when a ticket is given.
+expectedVersion (UpdateCommunicationCommand): The version you last read: every answer and GET /v1/communications/{id} carry it. A 409 'expectedVersion N does not match current version M' means someone saved in between: re-read, re-apply your change and send the new version.
+any operation mentioning unknown fields: False

@@ -1,0 +1,151 @@
+# B: health monitoring (shared :8080 + stub :19160)
+
+Checks: 80/80 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| B-31a | F-31 | PASS | 201 Location=/v1/health/monitors/5695cb95-d134-4b08-88dc-41cc2871dd73 policy={'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'minHealthyPercent': 50 |
+| B-31b | F-31 shape | PASS | monitor keys=['createdAt', 'id', 'policy', 'service', 'state', 'tenantId', 'updatedAt', 'url', 'version'] state={'lastStatus': 'UNKNOWN', 'unhealthyStreak': 0, 'healthyStreak': 0, 'incidents': 0} |
+| B-31c | F-31 | PASS | duplicate (tenant, service) -> 409 {'error': "a monitor already exists for service 'pull-svc' in tenant 'vb3-h-e71024'"} |
+| B-31d | F-31 | PASS | url 'not a url' -> 400 {'error': 'url must be an absolute http(s) URL: not a url'} |
+| B-31e | F-31 | PASS | ftp url -> 400 {'error': 'url must be an absolute http(s) URL: ftp://host/x'} |
+| B-31f | F-31 | PASS | overrides -> 201 policy={'publisher': 'my-pub', 'intervalSeconds': 5, 'timeoutMs': 200, 'failureThreshold': 1, 'recoveryThreshold': 3, 'downSeverity': 'CRITICAL', 'degradedSeverity': 'MAJOR', 'audience': 'INTERNAL', 'staleAfterSeconds': 120, 'minHealthyPercent': 80} url=None |
+| B-32 | F-32 intervalSeconds=4 | PASS | 400 {'error': 'intervalSeconds: must be greater than or equal to 5'} |
+| B-32 | F-32 timeoutMs=99 | PASS | 400 {'error': 'timeoutMs: must be greater than or equal to 100'} |
+| B-32 | F-32 failureThreshold=0 | PASS | 400 {'error': 'failureThreshold: must be greater than or equal to 1'} |
+| B-32 | F-32 recoveryThreshold=0 | PASS | 400 {'error': 'recoveryThreshold: must be greater than or equal to 1'} |
+| B-32 | F-32 staleAfterSeconds=0 | PASS | 400 {'error': 'staleAfterSeconds: must be greater than or equal to 1'} |
+| B-32 | F-32 minHealthyPercent=101 | PASS | 400 {'error': 'minHealthyPercent: must be less than or equal to 100'} |
+| B-32 | F-32 downSeverity=INFO | PASS | 400 {'error': 'downSeverity must be MINOR or higher (it publishes an OUTAGE)'} |
+| B-32 | F-32 timeoutMs=60001 | PASS | 400 {'error': 'timeoutMs must be between 100 and 60000'} |
+| B-32 | F-32 audience=NOBODY | PASS | 400 {'error': "audience: 'NOBODY' is not one of [PUBLIC, CUSTOMERS, INTERNAL]"} |
+| B-32 | F-32 service missing | PASS | 400 {'error': 'service: must not be blank'} |
+| B-32 | F-32 tenantId missing | PASS | 400 {'error': 'tenantId: must not be blank'} |
+| B-33a | F-33 | PASS | tenant list -> ['overrides', 'pull-svc'] |
+| B-33b | F-33 | PASS | all monitors -> 136 |
+| B-33c | F-33 | PASS | get one -> 200 |
+| B-33d | F-33 | PASS | unknown -> 404 {'error': 'monitor 40fda111-ca5c-46d9-ba70-a2d13d5587f6 not found'} |
+| B-34a | F-34/F-37 | PASS | probe UP -> 200 state={'lastStatus': 'UP', 'lastReportAt': '2026-11-02T06:53:52.452016668Z', 'lastProbeAt': '2026-11-02T06:53:52.452016668Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 1, 'incidents': 0} |
+| B-34b | F-34 | PASS | probe push-only -> 409 {'error': 'monitor 501c2b83-9c75-4734-9080-b4b444ff840c is push-only (no url) and cannot be probed'} |
+| B-39a | F-39 | PASS | 1st DOWN: streak=1 open=None feed=0 |
+| B-39b | F-39 | PASS | 2nd DOWN: streak=2 open=9155495a-3542-49b6-9486-6d5b3987d14b incidents=1 feed=1 |
+| B-40a | F-40 | PASS | notice: type=OUTAGE sev=MAJOR title='pull-svc is down' affected=['pull-svc'] publisher=health-monitor audience=CUSTOMERS |
+| B-40b | F-40 | PASS | externalRef=health:5695cb95-d134-4b08-88dc-41cc2871dd73:1 body='pull-svc is DOWN as of 2026-11-02 06:53:52 UTC.\nHealth check of http://127.0.0.1:19160/health: HTTP 503.\n\nFailing components:\ndb: DOWN (error=Connection refused)\n\nThis notice is managed automatically and is retired once the servic |
+| B-41a | F-41 | PASS | same failing set -> notice untouched (version 0->0) |
+| B-41b | F-41 | PASS | redis added -> same id, body has redis=True, version 0->1, stream=['snapshot', 'created', 'updated'] |
+| B-39c | F-39 | PASS | 1st UP keeps notice open: {'lastStatus': 'UP', 'lastReportAt': '2026-11-02T06:53:56.556438461Z', 'lastProbeAt': '2026-11-02T06:53:56.556438461Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 1, 'openCommunicationId': '9155495a-3542-49b6-9486-6d5b3987d14b', 'openStatus': 'DO |
+| B-41c | F-41/F-39 | PASS | 2nd UP -> retired: state={'lastStatus': 'UP', 'lastReportAt': '2026-11-02T06:53:57.578860902Z', 'lastProbeAt': '2026-11-02T06:53:57.578860902Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 2, 'incidents': 1} last history={'at': '2026-11-02T06:53:57.582Z', 'actor': 'health- |
+| B-39d | F-39/F-38 | PASS | DEGRADED #1 after DOWN notice: {'lastStatus': 'DEGRADED', 'lastReportAt': '2026-11-02T06:54:00.658464499Z', 'lastProbeAt': '2026-11-02T06:54:00.658464499Z', 'lastSummary': 'DEGRADED (HTTP 200): db DOWN', 'unhealthyStreak': 1, 'healthyStreak': 0, 'openCommunicationId': '641f5f38-dafc-442b-b7d6-4ab684 |
+| B-41d | F-41 | PASS | kind change -> old RETIRED (ACTIVE -> RETIRED: reclassified as DEGRADED: DEGRADED (HTTP 200): db DOWN), new type=HEALTH sev=MINOR title='pull-svc is degraded' ref=health:5695cb95-d134-4b08-88dc-41cc2871dd73:3 |
+| B-41e | F-41 | PASS | after manual retire, next DEGRADED probe: {'lastStatus': 'DEGRADED', 'lastReportAt': '2026-11-02T06:54:00.729440533Z', 'lastProbeAt': '2026-11-02T06:54:00.729440533Z', 'lastSummary': 'DEGRADED (HTTP 200): db DOWN', 'unhealthyStreak': 1, 'healthyStreak': 0, 'incidents': 3} |
+| B-41f | F-41 | PASS | re-opened after threshold: bf85c78c-ccf3-4227-a878-1c6b1ebf4286 |
+| B-37a | F-37 | PASS | timeout 200ms -> DOWN summary='DOWN (probe failed: no response within 200ms)' took 0.24s |
+| B-37b | F-37 | PASS | plain 200 html -> UP 'UP (HTTP 200)' |
+| B-37c | F-37 | PASS | plain 500 -> DOWN 'DOWN (HTTP 500)' |
+| B-37d | F-37 | PASS | closed port -> DOWN 'DOWN (probe failed: finishConnect(..) failed with error(-111): Connection refused: /127.0.0.1:1)' |
+| B-37e | F-37/F-38 | PASS | 200 UP with DOWN component -> DEGRADED 'DEGRADED (HTTP 200): cache DOWN' |
+| B-38a | F-38 | PASS | nested composite flattened -> 'DEGRADED (HTTP 200): db.primary DOWN' |
+| B-38b | F-38 | PASS | status WARN -> DEGRADED |
+| B-37f | F-37 probe request | PASS | stub saw 67 probes; last UA=Python-urllib/3.13 cid=None |
+| B-36a | F-36 | PASS | first push -> 202 url=None publisher=push-app policy={'publisher': 'push-app', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'minHealthyPercent': 50} |
+| B-36b | F-36 | PASS | no status -> 400 {'error': 'status: must not be blank'} |
+| B-36c | F-36 | PASS | no tenant -> 400 {'error': 'tenantId: must not be blank'} |
+| B-36d | F-36 | PASS | no service -> 400 {'error': 'service: must not be blank'} |
+| B-38 | F-38 blank status rejected by bean validation (API contract) | PASS | -> 400 {'error': 'status: must not be blank'} |
+| B-38 | F-38 status=OK | PASS | -> UP |
+| B-38 | F-38 status=HEALTHY | PASS | -> UP |
+| B-38 | F-38 status=OUT_OF_SERVICE | PASS | -> DOWN |
+| B-38 | F-38 status=FATAL | PASS | -> DOWN |
+| B-38 | F-38 status=UNHEALTHY | PASS | -> DOWN |
+| B-38 | F-38 status=WARN | PASS | -> DEGRADED |
+| B-38 | F-38 status=WEIRD | PASS | -> DEGRADED |
+| B-38 | F-38 status='UNKNOWN' carries no information | PASS | -> UNKNOWN streaks={'lastStatus': 'UNKNOWN', 'lastReportAt': '2026-11-02T06:54:01.325868309Z', 'lastSummary': 'UNKNOWN', 'unhealthyStreak': 0, 'healthyStreak': 0, 'incidents': 0} |
+| B-38c | F-38 top-level legacy `details` map on a PUSH report (Boot 2.0/2.1 shape) | PASS | -> DEGRADED summary len=17 |
+| B-40c | F-40 push notice | PASS | body='push-svc is DOWN as of 2026-11-02 06:54:01 UTC.\nReported by the service: primary database unreachable.\n\nFailing components:\ndb: DOWN (error=Connection refused)\n\nThis notice is managed automatically and is retired once the service reports healthy agai' publisher=push-app |
+| B-35a | F-35 | PASS | delete -> 204; get -> 404; notice RETIRED last='ACTIVE -> RETIRED: monitor deleted' stream=['snapshot', 'snapshot', 'created', 'retired'] |
+| B-35b | F-35 | PASS | delete again -> 404 {'error': 'monitor 94c78e0a-b7a7-41b4-a589-6a4731a725f4 not found'} |
+| B-49a | F-49 | PASS | first instance report -> staleAfterSeconds=90 summary='UP (1 of 1 pod UP)' |
+| B-46a | F-46 | PASS | instances=[('pod-a', 'UP', False), ('pod-b', 'UP', False)] keys=['cluster', 'components', 'instanceId', 'lastSeenAt', 'left', 'monitorId', 'namespace', 'node', 'sidecar', 'status', 'version'] |
+| B-46b | F-46 | PASS | repeat for pod-a -> still 2 |
+| B-46c | F-46 | PASS | instances of unknown monitor -> 404 |
+| B-47a | F-47 | PASS | 4 UP + 1 DOWN -> UP 'UP (4 of 5 pods UP (DOWN: pod-e))' |
+| B-47b | F-47 | PASS | 2 UP + 3 DOWN (<50%) -> DEGRADED 'DEGRADED (2 of 5 pods UP (DOWN: pod-c, pod-d, pod-e))' |
+| B-47c | F-47 (a DOWN pod naming a component is DOWN, not a 'failing dependency' of a serving pod; HealthRollup.java:61-63) | PASS | 4 UP + 1 DOWN pod that names component db DOWN -> UP 'UP (4 of 5 pods UP (DOWN: pod-e))' |
+| B-47c2 | F-47 | PASS | 4 UP + 1 pod UP-with-failing-component (DEGRADED pod) -> DEGRADED 'DEGRADED (4 of 5 pods UP (DEGRADED: pod-e)): db DOWN' |
+| B-47d | F-47 | PASS | all DOWN -> DOWN 'DOWN (0 of 5 pods UP (DOWN: pod-a, pod-b, pod-c, pod-d, pod-e))' open=7ba9602f-8427-4159-971a-c64a4dbb6396 |
+| B-47e | F-47 | PASS | UNKNOWN pod live but not tallied -> 'DOWN (0 of 6 pods UP (DOWN: pod-a, pod-b, pod-c, pod-d, pod-e; 1 starting))' |
+| B-47f | F-47 | PASS | none UP, one DEGRADED -> DEGRADED 'DEGRADED (0 of 6 pods UP (DOWN: pod-b, pod-c, pod-d, pod-e; DEGRADED: pod-a; 1 starting))' |
+| B-47g | F-47 | PASS | all UP again -> 'UP (5 of 6 pods UP (1 starting))' |
+| B-48a | F-48 | PASS | leaving -> left=True summary='UP (4 of 5 pods UP (1 starting))' |
+| B-48b | F-48 | PASS | pod comes back -> left=False summary='UP (5 of 6 pods UP (1 starting))' |
+| B-47h | F-47/F-49 | PASS | minHealthyPercent=100 at 4/5 -> DEGRADED staleAfterSeconds=20 |
+| B-75a | F-75 instance.id 254 chars | PASS | -> 400 {'error': 'instance.id: size must be between 0 and 253'} |
+| B-75b | F-75 instance.id 253 chars | PASS | -> 202 |
+| B-75c | F-75 instance without id | PASS | -> 400 {'error': 'instance.id: must not be blank'} |
+| B-50 | F-50 | PASS | 20 parallel first-contact instance reports -> [202] 202s=20 409s=0 monitors=1 instances recorded=20 |
+| B-50b | F-50 | PASS | 20 parallel reports on an existing monitor -> 202s=20 409s=0 |
+
+## Transcript (first 60 of 255 lines; the full transcript is /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/backend3/full-evidence/21-http-health.txt)
+
+```
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "pull-svc", "url": "http://127.0.0.1:19160/health"} -> 201 {"id":"5695cb95-d134-4b08-88dc-41cc2871dd73","tenantId":"vb3-h-e71024","service":"pull-svc","url":"http://127.0.0.1:19160/health","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"
+  [PASS] B-31a (F-31): 201 Location=/v1/health/monitors/5695cb95-d134-4b08-88dc-41cc2871dd73 policy={'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'minHealthyPercent': 50}
+  [PASS] B-31b (F-31 shape): monitor keys=['createdAt', 'id', 'policy', 'service', 'state', 'tenantId', 'updatedAt', 'url', 'version'] state={'lastStatus': 'UNKNOWN', 'unhealthyStreak': 0, 'healthyStreak': 0, 'incidents': 0}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "pull-svc", "url": "http://127.0.0.1:19160/health"} -> 409 {"error":"a monitor already exists for service 'pull-svc' in tenant 'vb3-h-e71024'"}
+  [PASS] B-31c (F-31): duplicate (tenant, service) -> 409 {'error': "a monitor already exists for service 'pull-svc' in tenant 'vb3-h-e71024'"}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "bad-url", "url": "not a url"} -> 400 {"error":"url must be an absolute http(s) URL: not a url"}
+  [PASS] B-31d (F-31): url 'not a url' -> 400 {'error': 'url must be an absolute http(s) URL: not a url'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "bad-url2", "url": "ftp://host/x"} -> 400 {"error":"url must be an absolute http(s) URL: ftp://host/x"}
+  [PASS] B-31e (F-31): ftp url -> 400 {'error': 'url must be an absolute http(s) URL: ftp://host/x'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "overrides", "intervalSeconds": 5, "timeoutMs": 200, "failureThreshold": 1, "recoveryThreshold": 3, "downSeverity": "CRITICAL", "degradedSeverity": "MAJOR", "audience": "INTERNAL", "staleAfterSeconds": 120, "minHealthyPercent": 80, "publisher": "my-pub"} -> 201 {"id":"501c2b83-9c75-4734-9080-b4b444ff840c","tenantId":"vb3-h-e71024","service":"overrides","policy":{"publisher":"my-pub","intervalSeconds":5,"timeoutMs":200,"failureThreshold":1,"recoveryThreshold":3,"downSeverity":"CRITICAL","degradedSeverity":"MAJOR","audience":"INTERNAL","staleAfterSeconds":120,"minHealthyPercent":80},"state":{"lastStatus"
+  [PASS] B-31f (F-31): overrides -> 201 policy={'publisher': 'my-pub', 'intervalSeconds': 5, 'timeoutMs': 200, 'failureThreshold': 1, 'recoveryThreshold': 3, 'downSeverity': 'CRITICAL', 'degradedSeverity': 'MAJOR', 'audience': 'INTERNAL', 'staleAfterSeconds': 120, 'minHealthyPercent': 80} url=None
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-intervalSeconds", "intervalSeconds": 4} -> 400 {"error":"intervalSeconds: must be greater than or equal to 5"}
+  [PASS] B-32 (F-32 intervalSeconds=4): 400 {'error': 'intervalSeconds: must be greater than or equal to 5'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-timeoutMs", "timeoutMs": 99} -> 400 {"error":"timeoutMs: must be greater than or equal to 100"}
+  [PASS] B-32 (F-32 timeoutMs=99): 400 {'error': 'timeoutMs: must be greater than or equal to 100'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-failureThreshold", "failureThreshold": 0} -> 400 {"error":"failureThreshold: must be greater than or equal to 1"}
+  [PASS] B-32 (F-32 failureThreshold=0): 400 {'error': 'failureThreshold: must be greater than or equal to 1'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-recoveryThreshold", "recoveryThreshold": 0} -> 400 {"error":"recoveryThreshold: must be greater than or equal to 1"}
+  [PASS] B-32 (F-32 recoveryThreshold=0): 400 {'error': 'recoveryThreshold: must be greater than or equal to 1'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-staleAfterSeconds", "staleAfterSeconds": 0} -> 400 {"error":"staleAfterSeconds: must be greater than or equal to 1"}
+  [PASS] B-32 (F-32 staleAfterSeconds=0): 400 {'error': 'staleAfterSeconds: must be greater than or equal to 1'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-minHealthyPercent", "minHealthyPercent": 101} -> 400 {"error":"minHealthyPercent: must be less than or equal to 100"}
+  [PASS] B-32 (F-32 minHealthyPercent=101): 400 {'error': 'minHealthyPercent: must be less than or equal to 100'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-downSeverity", "downSeverity": "INFO"} -> 400 {"error":"downSeverity must be MINOR or higher (it publishes an OUTAGE)"}
+  [PASS] B-32 (F-32 downSeverity=INFO): 400 {'error': 'downSeverity must be MINOR or higher (it publishes an OUTAGE)'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-timeout-high", "timeoutMs": 60001} -> 400 {"error":"timeoutMs must be between 100 and 60000"}
+  [PASS] B-32 (F-32 timeoutMs=60001): 400 {'error': 'timeoutMs must be between 100 and 60000'}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024", "service": "v-audience", "audience": "NOBODY"} -> 400 {"error":"audience: 'NOBODY' is not one of [PUBLIC, CUSTOMERS, INTERNAL]"}
+  [PASS] B-32 (F-32 audience=NOBODY): 400 {'error': "audience: 'NOBODY' is not one of [PUBLIC, CUSTOMERS, INTERNAL]"}
+POST http://localhost:8080/v1/health/monitors body={"tenantId": "vb3-h-e71024"} -> 400 {"error":"service: must not be blank"}
+  [PASS] B-32 (F-32 service missing): 400 {'error': 'service: must not be blank'}
+POST http://localhost:8080/v1/health/monitors body={"service": "x"} -> 400 {"error":"tenantId: must not be blank"}
+  [PASS] B-32 (F-32 tenantId missing): 400 {'error': 'tenantId: must not be blank'}
+GET http://localhost:8080/v1/health/monitors?tenantId=vb3-h-e71024 body= -> 200 [{"id":"501c2b83-9c75-4734-9080-b4b444ff840c","tenantId":"vb3-h-e71024","service":"overrides","policy":{"publisher":"my-pub","intervalSeconds":5,"timeoutMs":200,"failureThreshold":1,"recoveryThreshold":3,"downSeverity":"CRITICAL","degradedSeverity":"MAJOR","audience":"INTERNAL","staleAfterSeconds":120,"minHealthyPercent":80},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"in
+  [PASS] B-33a (F-33): tenant list -> ['overrides', 'pull-svc']
+GET http://localhost:8080/v1/health/monitors body= -> 200 [{"id":"f203b3fe-ed18-4af2-ad7b-4bc32217c6d4","tenantId":"podtest","service":"fake-app","policy":{"publisher":"health-sidecar","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":90,"minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02T06:53:31.871Z","la
+  [PASS] B-33b (F-33): all monitors -> 136
+GET http://localhost:8080/v1/health/monitors/5695cb95-d134-4b08-88dc-41cc2871dd73 body= -> 200 {"id":"5695cb95-d134-4b08-88dc-41cc2871dd73","tenantId":"vb3-h-e71024","service":"pull-svc","url":"http://127.0.0.1:19160/health","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"
+  [PASS] B-33c (F-33): get one -> 200
+GET http://localhost:8080/v1/health/monitors/40fda111-ca5c-46d9-ba70-a2d13d5587f6 body= -> 404 {"error":"monitor 40fda111-ca5c-46d9-ba70-a2d13d5587f6 not found"}
+  [PASS] B-33d (F-33): unknown -> 404 {'error': 'monitor 40fda111-ca5c-46d9-ba70-a2d13d5587f6 not found'}
+POST http://127.0.0.1:19160/__set?status=UP&db=UP&redis=none body= -> 200 {"status": "UP", "db": "UP", "redis": null}
+POST http://localhost:8080/v1/health/monitors/5695cb95-d134-4b08-88dc-41cc2871dd73/probe body= -> 200 {"id":"5695cb95-d134-4b08-88dc-41cc2871dd73","tenantId":"vb3-h-e71024","service":"pull-svc","url":"http://127.0.0.1:19160/health","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02
+  [PASS] B-34a (F-34/F-37): probe UP -> 200 state={'lastStatus': 'UP', 'lastReportAt': '2026-11-02T06:53:52.452016668Z', 'lastProbeAt': '2026-11-02T06:53:52.452016668Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 1, 'incidents': 0}
+POST http://localhost:8080/v1/health/monitors/501c2b83-9c75-4734-9080-b4b444ff840c/probe body= -> 409 {"error":"monitor 501c2b83-9c75-4734-9080-b4b444ff840c is push-only (no url) and cannot be probed"}
+  [PASS] B-34b (F-34): probe push-only -> 409 {'error': 'monitor 501c2b83-9c75-4734-9080-b4b444ff840c is push-only (no url) and cannot be probed'}
+POST http://127.0.0.1:19160/__set?status=DOWN&db=DOWN body= -> 200 {"status": "DOWN", "db": "DOWN", "redis": null}
+POST http://localhost:8080/v1/health/monitors/5695cb95-d134-4b08-88dc-41cc2871dd73/probe body= -> 200 {"id":"5695cb95-d134-4b08-88dc-41cc2871dd73","tenantId":"vb3-h-e71024","service":"pull-svc","url":"http://127.0.0.1:19160/health","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-
+GET http://localhost:8080/v1/feed?tenantId=vb3-h-e71024& body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+GET http://localhost:8080/v1/feed?tenantId=vb3-h-e71024& body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+  [PASS] B-39a (F-39): 1st DOWN: streak=1 open=None feed=0
+POST http://localhost:8080/v1/health/monitors/5695cb95-d134-4b08-88dc-41cc2871dd73/probe body= -> 200 {"id":"5695cb95-d134-4b08-88dc-41cc2871dd73","tenantId":"vb3-h-e71024","service":"pull-svc","url":"http://127.0.0.1:19160/health","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-
+GET http://localhost:8080/v1/feed?tenantId=vb3-h-e71024& body= -> 200 {"items":[{"id":"9155495a-3542-49b6-9486-6d5b3987d14b","tenantId":"vb3-h-e71024","publisher":"health-monitor","type":"OUTAGE","severity":"MAJOR","title":"pull-svc is down","body":"pull-svc is DOWN as of 2026-11-02 06:53:52 UTC.\nHealth check of http://127.0.0.1:19160/health: HTTP 503.\n\nFailing components:\ndb: DOWN (error=Connection refused)\n\nThis notice is managed automatically and is retired
+  [PASS] B-39b (F-39): 2nd DOWN: streak=2 open=9155495a-3542-49b6-9486-6d5b3987d14b incidents=1 feed=1
+  [PASS] B-40a (F-40): notice: type=OUTAGE sev=MAJOR title='pull-svc is down' affected=['pull-svc'] publisher=health-monitor audience=CUSTOMERS
+GET http://localhost:8080/v1/communications/9155495a-3542-49b6-9486-6d5b3987d14b body= -> 200 {"id":"9155495a-3542-49b6-9486-6d5b3987d14b","tenantId":"vb3-h-e71024","publisher":"health-monitor","type":"OUTAGE","severity":"MAJOR","title":"pull-svc is down","body":"pull-svc is DOWN as of 2026-11-02 06:53:52 UTC.\nHealth check of http://127.0.0.1:19160/health: HTTP 503.\n\nFailing components:\ndb: DOWN (error=Connection refused)\n\nThis notice is managed automatically and is retired once the 
+  [PASS] B-40b (F-40): externalRef=health:5695cb95-d134-4b08-88dc-41cc2871dd73:1 body='pull-svc is DOWN as of 2026-11-02 06:53:52 UTC.\nHealth check of http://127.0.0.1:19160/health: HTTP 503.\n\nFailing components:\ndb: DOWN (error=Connection refused)\n\nThis notice is managed automatically and is retired once the service reports healthy again.'
+POST http://localhost:8080/v1/health/monitors/5695cb95-d134-4b08-88dc-41cc2871dd73/probe body= -> 200 {"id":"5695cb95-d134-4b08-88dc-41cc2871dd73","tenantId":"vb3-h-e71024","service":"pull-svc","url":"http://127.0.0.1:19160/health","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-
+GET http://localhost:8080/v1/communications/9155495a-3542-49b6-9486-6d5b3987d14b body= -> 200 {"id":"9155495a-3542-49b6-9486-6d5b3987d14b","tenantId":"vb3-h-e71024","publisher":"health-monitor","type":"OUTAGE","severity":"MAJOR","title":"pull-svc is down","body":"pull-svc is DOWN as of 2026-11-02 06:53:52 UTC.\nHealth check of http://127.0.0.1:19160/health: HTTP 503.\n\nFailing components:\ndb: DOWN (error=Connection refused)\n\nThis notice is managed automatically and is retired once the 
+  [PASS] B-41a (F-41): same failing set -> notice untouched (version 0->0)
+```

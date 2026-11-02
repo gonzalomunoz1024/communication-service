@@ -1,0 +1,59 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.78kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for gcr.io/distroless/static-debian12:nonroot
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/local/go-toolset:1.25
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 71B done
+#4 DONE 0.0s
+
+#5 [stage-1 1/3] FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+#5 resolve gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab 0.0s done
+#5 DONE 0.0s
+
+#6 [build 1/6] FROM docker.io/local/go-toolset:1.25@sha256:2a192339db1a915e4145899b2fa83e5b509e8430abcc130f26bca7cd556a6526
+#6 resolve docker.io/local/go-toolset:1.25@sha256:2a192339db1a915e4145899b2fa83e5b509e8430abcc130f26bca7cd556a6526 0.0s done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 560B 0.0s done
+#7 DONE 0.0s
+
+#8 [build 2/6] WORKDIR /opt/app-root/src
+#8 CACHED
+
+#9 [build 3/6] COPY --chown=1001:0 go.mod ./
+#9 CACHED
+
+#10 [build 4/6] COPY --chown=1001:0 cmd ./cmd
+#10 CACHED
+
+#11 [build 5/6] COPY --chown=1001:0 internal ./internal
+#11 CACHED
+
+#12 [build 6/6] RUN go build -ldflags="-s -w -X main.version=1.0.0-vs3" -o /tmp/health-sidecar ./cmd/health-sidecar
+#12 DONE 28.5s
+
+#13 [stage-1 2/3] COPY --from=build /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt
+#13 CACHED
+
+#14 [stage-1 3/3] COPY --from=build /tmp/health-sidecar /usr/local/bin/health-sidecar
+#14 DONE 0.1s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 0.5s done
+#15 exporting manifest sha256:e197393b8ebaf1fbac918c8eeb91b56991088dccaa7fe0c017c3448a38e0a2a5 done
+#15 exporting config sha256:a5e9d023d995df879634cb6fe71386517eeeea136696641e57a9055009719f31 done
+#15 exporting attestation manifest sha256:16da57a4b9e81b506df0f10244311b2fd8873398d57f2471a4569b045d3ebb55 0.0s done
+#15 exporting manifest list sha256:122cc103c11f264c8a5430404f8b18d04728d6b0d5d472d9e1e85fc849e8b4b4 done
+#15 naming to docker.io/library/health-sidecar:vs3 done
+#15 unpacking to docker.io/library/health-sidecar:vs3 0.1s done
+#15 DONE 0.7s

@@ -1,0 +1,27 @@
+G-4-8 after: worktree /home/claude/wt4-beh at fcfd473 (all eleven be-h fixes committed on 6c15715). Command: ./gradlew --max-workers=2 --no-daemon check, 2026-11-02: BUILD SUCCESSFUL; test 264 tests, 0 failures, 0 skipped; integrationTest 50 tests, 0 failures, 0 skipped; jacocoTestCoverageVerification passed (LINE 0.9699, minimum 0.92; BRANCH 0.8564, minimum 0.84); spotbugsMain passed.
+
+PASSED  ClientIdWebFilterEdgeCasesTest > withTheCheckSwitchedOffEveryRequestIsStillLoggedUnidentifiedOnesAsADash()  (0.354 s)
+PASSED  ClientIdWebFilterEdgeCasesTest > aBlankClientIdParameterIsNoId()  (0.176 s)
+PASSED  ClientIdWebFilterEdgeCasesTest > aRequestTheCallerAbandonsBeforeAStatusIsSetIsLoggedAsCancelled()  (0.008 s)
+PASSED  ClientIdWebFilterEdgeCasesTest > anErrorBodyThatCannotBeSerialisedFallsBackToAFixedJsonError()  (0.006 s)
+PASSED  ClientIdWebFilterEdgeCasesTest > aRequestWhoseHandlerFailsBeforeSettingAStatusIsLoggedAsError()  (0.004 s)
+PASSED  ClientIdWebFilterTest > rejectsApiCallsThatDoNotSayWhoIsCalling()  (1.796 s)
+PASSED  ClientIdWebFilterTest > letsProbesReachTheHealthEndpointWithoutAnId()  (0.117 s)
+PASSED  ClientIdWebFilterTest > logsEveryIdentifiedRequestWithItsOutcome(CapturedOutput)  (0.119 s)
+PASSED  ClientIdWebFilterTest > acceptsTheHeaderAndExposesItToHandlers()  (0.054 s)
+PASSED  ClientIdWebFilterTest > leavesNonApiPathsAndPreflightAlone()  (0.091 s)
+PASSED  ClientIdWebFilterTest > canBeSwitchedOffForLocalExperiments()  (0.069 s)
+PASSED  ClientIdWebFilterTest > rejectsIdsThatAreNotRepositoryNames()  (0.121 s)
+PASSED  ClientIdWebFilterTest > acceptsTheQueryParameterForEventSourceClients()  (0.081 s)
+
+Live runs below used scratchpad/beh/communication-service-beh.jar; its BOOT-INF/classes are byte-identical to the class files the check compiled from fcfd473 (diff -r, only application.yml extra, and that equals build/resources/main/application.yml).
+Live: fixed jar on :18319 with --communication.client-id.required=false, three /v1 requests (script clientid_off.sh):
+beh: no id -> 200
+beh: X-Client-Id fixbeh-tools -> 200
+beh: X-Client-Id 'not a repo!' -> 200
+beh: ClientIdWebFilter lines in the backend log: 3
+INFO 1149 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=- GET /v1/feed -> 200 (233 ms)
+INFO 1149 --- [communication-service] [ntLoopGroup-3-6] c.a.c.config.ClientIdWebFilter           : client=fixbeh-tools GET /v1/feed -> 200 (33 ms)
+INFO 1149 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=- GET /v1/communications -> 200 (48 ms)
+
+Before (iteration-3 jar, same script): ClientIdWebFilter lines in the backend log: 0

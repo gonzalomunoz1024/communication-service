@@ -1,0 +1,44 @@
+[
+  {
+    "feature": "F-61",
+    "name": "a dropped stream puts the EventSource into CONNECTING (readyState 0) and the UI shows 'Reconnecting'",
+    "ok": false,
+    "evidence": "{\"dropped\":false,\"indicator\":\"Live\"}"
+  },
+  {
+    "feature": "F-61",
+    "name": "the browser reconnects on its own and sends Last-Event-ID = the last id it saw",
+    "ok": false,
+    "evidence": "{\"lastEventIds\":[\"(none)\",\"(none)\",\"(none)\"]}"
+  },
+  {
+    "feature": "F-20",
+    "name": "the service answers the resumed stream (Last-Event-ID) with 200 and replays",
+    "ok": false,
+    "evidence": "{\"statuses\":[200,200]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "after the reconnect the UI shows 'Live' again and the new item appears without a manual refresh",
+    "ok": true,
+    "evidence": "{\"shownAt\":0.5,\"indicator\":\"Live\",\"esLog\":[\"00:12:56.044 es#3 open\",\"00:12:56.097 es#4 open\"]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "the UI retries by itself after the EventSource gave up (new stream request within 20 s)",
+    "ok": false,
+    "evidence": "{\"streamRequests\":3}"
+  },
+  {
+    "feature": "F-61",
+    "name": "diagnostic: a manual Live-updates off/on (fresh EventSource without Last-Event-ID) restores Live and shows the missed item",
+    "ok": true,
+    "evidence": "{\"healed\":true,\"nowShown\":true}"
+  },
+  {
+    "feature": "F-61",
+    "name": "console/page errors during the scenario",
+    "ok": true,
+    "evidence": "{\"pageErrors\":[],\"console\":[]}"
+  }
+]

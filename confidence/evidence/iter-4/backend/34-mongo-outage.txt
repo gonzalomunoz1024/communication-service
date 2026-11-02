@@ -1,0 +1,122 @@
+# Database outage, iteration 4 (:19110) with the iteration-3 jar (:19111) as A/B: stopped, then frozen
+
+Checks: 21/22 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| O-0a | baseline | PASS | GET feed -> 200 in 0.074s |
+| O-0b | baseline | PASS | POST -> 201 |
+| O-1a | F-28/G-2-4/G-3-31 read while stopped | PASS | GET feed -> 503 '{"error":"database unavailable"}' after 5.022s |
+| O-1a-ab | G-4-1 the 503 on the wire, iteration 3 vs 4 | PASS | iteration 3 503 '{"error":"database unavailable"}' application/json / iteration 4 503 '{"error":"database unavailable"}' application/json |
+| O-1b | F-28/G-2-4 write while stopped | PASS | POST -> 503 '{"error":"database unavailable"}' after 5.014s |
+| O-1c | F-30/G-4-6 readiness answers 503 in < 1 s during the outage | PASS | iteration 4: [(503, 0.809), (503, 0.814), (503, 0.808), (503, 0.811), (503, 0.807), (503, 0.808), (503, 0.807), (503, 0.808)] max 0.814s / iteration 3 (A/B): [(503, 1.01), (503, 1.007), (503, 1.008), (503, 1.011), (503, 1.007), (503, 1.011), (503, 1.008), (503, 1.01)] max 1.011s |
+| O-1d | F-30 liveness unaffected | PASS | liveness -> 200 after 0.007s |
+| O-1f | F-18/F-60/G-4-10 stream opened during the outage: JSON 503 before any byte | PASS | first bytes after 5.01s: HTTP/1.1 503 Service Unavailable; headers ['Content-Type: application/json', 'Content-Length: 32']; body '{"error":"database unavailable"}' |
+| O-1h | F-20/G-4-10 the ?clientId= and the resume forms get the same 503 | PASS | ?clientId= -> HTTP/1.1 503 Service Unavailable '{"error":"database unavailable"}' after 5.009s; resume -> HTTP/1.1 503 Service Unavailable '{"error":"database unavailable"}' after 5.008s |
+| O-1g | F-89/G-4-10 one WARN per refused stream, no ERROR, no stack trace | PASS | stream 503 WARN lines 3: ['ce] [e7cea5e22f1d4f7] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadP']; stream-closed 0; ERROR 0 |
+| O-1m | F-28/F-74/G-4-12 every documented operation answers 503 {error} while the database is down (19 + the stream above) | PASS | 19 operations; not 503 database unavailable: []; slowest 5.095s |
+| O-1i | F-89/G-2-4/G-3-6 outage log hygiene | PASS | 59s down: ERROR 0, stack 0, driver INFO 0, readiness DOWN 1, sweep lines 11 |
+| O-1n | F-89/G-4-9 the event-log poller: one WARN for the outage, not one per poll | PASS | poll WARN 1: ['ce] [e7cea5e22f1d4f7] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServe']; 'poll failed' 0 |
+| O-1j | F-30/G-2-4 recovery without restart | PASS | readiness 200 2.0s after docker start; GET 200 in 0.026s; POST 201 in 0.034s |
+| O-1o | F-18 a stream opened after recovery is 200 with ':connected' | PASS | HTTP/1.1 200 OK first bytes after 0.007s 'c\r\n:connected\n\n\r\n19\r\nid:2\nevent:snapshot\ndata:\r\n20e\r\n{"seq":' |
+| O-1k | F-89/G-3-6 two readiness lines per outage | PASS | DOWN ['ce] [     parallel-1] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 800 ms']; UP ['ce] [ntLoopGroup-3-6] c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again'] |
+| O-1p | F-89/G-4-9 one INFO when polling works again | PASS | poll WARN 1, INFO 1: ['ce] [ntLoopGroup-3-4] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll resumed: database reachable again after 12 skipped poll(s)'] |
+| O-1l | F-18/F-60/G-4-10 a stream already open when the database went away survives it | PASS | frames [('snapshot', 'before'), ('created', 'before'), ('created', 'after recovery')]; keepalive comments 6 |
+| O-2a | F-30/G-4-6 readiness < 1 s while mongod is frozen | PASS | [(503, 0.808), (503, 0.809), (503, 0.807), (503, 0.808)] |
+| O-2b | F-28/G-3-31 frozen: first read ~20 s, first write ~15 s, later calls 5 s, each a 503 {error} | PASS | first read 503 after 20.027s; first write 503 after 15.019s; later read 503 after 5.008s |
+| O-2c | F-18/G-4-10 a stream opened while mongod is frozen: JSON 503 before any byte | FAIL | HTTP/1.1 500 Internal Server Error first bytes after 7.509s '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'' |
+| O-2d | F-30/F-89 frozen phase: recovery, log hygiene, one poller WARN and one INFO | PASS | GET 200 0.0s after CONT; ERROR 0, stack 0; poll WARN 1 INFO 1; readiness DOWN/UP 1/0 |
+
+## Transcript (request -> status body, trimmed)
+
+```
+GET http://localhost:19110/v1/feed?tenantId=vb4-down-2ad239 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+  [PASS] O-0a (baseline): GET feed -> 200 in 0.074s
+POST http://localhost:19110/v1/communications body={"tenantId": "vb4-down-2ad239", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "before", "affectedServices": ["svc"]} -> 201 {"id":"e696ae64-c46e-4cd3-88a2-e9c22cfb40c7","tenantId":"vb4-down-2ad239","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"before","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:46:17.756709169Z","createdAt":"2026-11-02T10:46:17.756709169Z","updatedAt":"2026-11-02T10:46:17.756709169Z","version":0,"history":[{"at":"2026-11-02T10:46:17.
+  [PASS] O-0b (baseline): POST -> 201
+POST http://localhost:19110/v1/health/monitors body={"tenantId": "vb4-down-2ad239", "service": "m", "url": "http://127.0.0.1:19160/up", "intervalSeconds": 3600} -> 201 {"id":"9c1eb5b3-641f-4210-a4b3-de7666ee7b74","tenantId":"vb4-down-2ad239","service":"m","url":"http://127.0.0.1:19160/up","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"health
+docker stop vb4-mongo -> 0
+GET http://localhost:19110/v1/feed?tenantId=vb4-down-2ad239 body= -> 503 {"error":"database unavailable"}
+  [PASS] O-1a (F-28/G-2-4/G-3-31 read while stopped): GET feed -> 503 '{"error":"database unavailable"}' after 5.022s
+GET http://localhost:19111/v1/feed?tenantId=vb4-down-2ad239 body= -> 503 {"error":"database unavailable"}
+  [PASS] O-1a-ab (G-4-1 the 503 on the wire, iteration 3 vs 4): iteration 3 503 '{"error":"database unavailable"}' application/json | iteration 4 503 '{"error":"database unavailable"}' application/json
+POST http://localhost:19110/v1/communications body={"tenantId": "vb4-down-2ad239", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "during", "affectedServices": ["svc"]} -> 503 {"error":"database unavailable"}
+  [PASS] O-1b (F-28/G-2-4 write while stopped): POST -> 503 '{"error":"database unavailable"}' after 5.014s
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19111/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+  [PASS] O-1c (F-30/G-4-6 readiness answers 503 in < 1 s during the outage): iteration 4: [(503, 0.809), (503, 0.814), (503, 0.808), (503, 0.811), (503, 0.807), (503, 0.808), (503, 0.807), (503, 0.808)] max 0.814s | iteration 3 (A/B): [(503, 1.01), (503, 1.007), (503, 1.008), (503, 1.011), (503, 1.007), (503, 1.011), (503, 1.008), (503, 1.01)] max 1.011s
+GET http://localhost:19110/actuator/health/liveness body= -> 200 {"status":"UP"}
+  [PASS] O-1d (F-30 liveness unaffected): liveness -> 200 after 0.007s
+  [PASS] O-1f (F-18/F-60/G-4-10 stream opened during the outage: JSON 503 before any byte): first bytes after 5.01s: HTTP/1.1 503 Service Unavailable; headers ['Content-Type: application/json', 'Content-Length: 32']; body '{"error":"database unavailable"}'
+  [PASS] O-1h (F-20/G-4-10 the ?clientId= and the resume forms get the same 503): ?clientId= -> HTTP/1.1 503 Service Unavailable '{"error":"database unavailable"}' after 5.009s; resume -> HTTP/1.1 503 Service Unavailable '{"error":"database unavailable"}' after 5.008s
+A/B iteration-3 jar, stream opened during the outage: HTTP/1.1 200 OK first bytes after 0.015s body 'c\r\n:connected\n\n\r\n0'
+  [PASS] O-1g (F-89/G-4-10 one WARN per refused stream, no ERROR, no stack trace): stream 503 WARN lines 3: ['ce] [e7cea5e22f1d4f7] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadP']; stream-closed 0; ERROR 0
+POST http://localhost:19110/v1/communications body={"tenantId": "vb4-down-2ad239", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "before", "affectedServices": ["svc"]} -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/communications/e696ae64-c46e-4cd3-88a2-e9c22cfb40c7 body= -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/communications?tenantId=vb4-down-2ad239 body= -> 503 {"error":"database unavailable"}
+POST http://localhost:19110/v1/communications/e696ae64-c46e-4cd3-88a2-e9c22cfb40c7/publish body= -> 503 {"error":"database unavailable"}
+POST http://localhost:19110/v1/admin/communications/e696ae64-c46e-4cd3-88a2-e9c22cfb40c7/retire body={} -> 503 {"error":"database unavailable"}
+PUT http://localhost:19110/v1/communications/e696ae64-c46e-4cd3-88a2-e9c22cfb40c7 body={"title": "x", "expectedVersion": 0} -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/admin/communications?tenantId=vb4-down-2ad239 body= -> 503 {"error":"database unavailable"}
+POST http://localhost:19110/v1/communications/e696ae64-c46e-4cd3-88a2-e9c22cfb40c7/retire body={} -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/admin/tenants body= -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/feed?tenantId=vb4-down-2ad239 body= -> 503 {"error":"database unavailable"}
+POST http://localhost:19110/v1/health/monitors body={"tenantId": "vb4-down-2ad239", "service": "n"} -> 503 {"error":"database unavailable"}
+DELETE http://localhost:19110/v1/admin/communications/e696ae64-c46e-4cd3-88a2-e9c22cfb40c7 body= -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/feed/e696ae64-c46e-4cd3-88a2-e9c22cfb40c7 body= -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/health/monitors?tenantId=vb4-down-2ad239 body= -> 503 {"error":"database unavailable"}
+POST http://localhost:19110/v1/health/monitors/9c1eb5b3-641f-4210-a4b3-de7666ee7b74/probe body= -> 503 {"error":"database unavailable"}
+DELETE http://localhost:19110/v1/health/monitors/9c1eb5b3-641f-4210-a4b3-de7666ee7b74 body= -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/health/monitors/9c1eb5b3-641f-4210-a4b3-de7666ee7b74/instances body= -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/health/monitors/9c1eb5b3-641f-4210-a4b3-de7666ee7b74 body= -> 503 {"error":"database unavailable"}
+POST http://localhost:19110/v1/health/reports body={"tenantId": "vb4-down-2ad239", "service": "s", "status": "UP"} -> 503 {"error":"database unavailable"}
+  [PASS] O-1m (F-28/F-74/G-4-12 every documented operation answers 503 {error} while the database is down (19 + the stream above)): 19 operations; not 503 database unavailable: []; slowest 5.095s
+  [PASS] O-1i (F-89/G-2-4/G-3-6 outage log hygiene): 59s down: ERROR 0, stack 0, driver INFO 0, readiness DOWN 1, sweep lines 11
+  [PASS] O-1n (F-89/G-4-9 the event-log poller: one WARN for the outage, not one per poll): poll WARN 1: ['ce] [e7cea5e22f1d4f7] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServe']; 'poll failed' 0
+A/B iteration-3 jar during the same outage: 'event log poll failed' lines 11, readiness DOWN 1, ERROR 0
+phase 1 other WARN kinds: ["ce] [eNceaNeNfNdNfN] c.a.c.config.GlobalExceptionHandler      : DELETE /vN/admin/communications/eN", "ce] [eNceaNeNfNdNfN] c.a.c.config.GlobalExceptionHandler      : DELETE /vN/health/monitors/NcNebNbN", "ce] [eNceaNeNfNdNfN] c.a.c.config.GlobalExceptionHandler      : GET /vN/admin/communications -> N", "ce] [eNceaNeNfNdNfN] c.a.c.config.GlobalExceptionHandler      : GET /vN/admin/tenants -> N, datab", "ce] [eNceaNeNfNdNfN] c.a.c.config.GlobalExceptionHandler      : GET /vN/communications -> N, data", "ce] [eNceaNeNfNdNfN] c.a.c.config.GlobalExceptionHandler      : GET /vN/communications/eNaeN-cN", "ce] [eNceaNeNfNdNfN] c.a.c.config.GlobalExceptionHandler      : G
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 200 {"status":"UP"}
+GET http://localhost:19110/v1/feed?tenantId=vb4-down-2ad239 body= -> 200 {"items":[{"id":"e696ae64-c46e-4cd3-88a2-e9c22cfb40c7","tenantId":"vb4-down-2ad239","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"before","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:46:17.756Z","updatedAt":"2026-11-02T10:46:17.756Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+POST http://localhost:19110/v1/communications body={"tenantId": "vb4-down-2ad239", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "after recovery", "affectedServices": ["svc"]} -> 201 {"id":"0eabcdea-3466-431b-9843-01e1422f3914","tenantId":"vb4-down-2ad239","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"after recovery","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:47:21.372740562Z","createdAt":"2026-11-02T10:47:21.372740562Z","updatedAt":"2026-11-02T10:47:21.372740562Z","version":0,"history":[{"at":"2026-11-02T1
+  [PASS] O-1j (F-30/G-2-4 recovery without restart): readiness 200 2.0s after docker start; GET 200 in 0.026s; POST 201 in 0.034s
+  [PASS] O-1o (F-18 a stream opened after recovery is 200 with ':connected'): HTTP/1.1 200 OK first bytes after 0.007s 'c\r\n:connected\n\n\r\n19\r\nid:2\nevent:snapshot\ndata:\r\n20e\r\n{"seq":'
+  [PASS] O-1k (F-89/G-3-6 two readiness lines per outage): DOWN ['ce] [     parallel-1] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 800 ms']; UP ['ce] [ntLoopGroup-3-6] c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again']
+  [PASS] O-1p (F-89/G-4-9 one INFO when polling works again): poll WARN 1, INFO 1: ['ce] [ntLoopGroup-3-4] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll resumed: database reachable again after 12 skipped poll(s)']
+SSE http://localhost:19110/v1/feed/stream?tenantId=vb4-down-2ad239 hdr=None -> 200, 3 frames, 7 comments
+  [PASS] O-1l (F-18/F-60/G-4-10 a stream already open when the database went away survives it): frames [('snapshot', 'before'), ('created', 'before'), ('created', 'after recovery')]; keepalive comments 6
+docker kill -s STOP vb4-mongo -> 0
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+POST http://localhost:19110/v1/communications body={"tenantId": "vb4-down-2ad239", "publisher": "vb4-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "frozen", "affectedServices": ["svc"]} -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/feed?tenantId=vb4-down-2ad239&x=1 body= -> 503 {"error":"database unavailable"}
+GET http://localhost:19110/v1/feed?tenantId=vb4-down-2ad239 body= -> 503 {"error":"database unavailable"}
+  [PASS] O-2a (F-30/G-4-6 readiness < 1 s while mongod is frozen): [(503, 0.808), (503, 0.809), (503, 0.807), (503, 0.808)]
+  [PASS] O-2b (F-28/G-3-31 frozen: first read ~20 s, first write ~15 s, later calls 5 s, each a 503 {error}): first read 503 after 20.027s; first write 503 after 15.019s; later read 503 after 5.008s
+  [FAIL] O-2c (F-18/G-4-10 a stream opened while mongod is frozen: JSON 503 before any byte): HTTP/1.1 500 Internal Server Error first bytes after 7.509s '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\''
+GET http://localhost:19110/v1/feed?tenantId=vb4-down-2ad239 body= -> 200 {"items":[{"id":"0eabcdea-3466-431b-9843-01e1422f3914","tenantId":"vb4-down-2ad239","publisher":"vb4-sre","type":"OUTAGE","severity":"MAJOR","title":"after recovery","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:47:21.372Z","updatedAt":"2026-11-02T10:47:21.372Z"},{"id":"e696ae64-c46e-4cd3-88a2-e9c22cfb40c7","tenantId":"vb4-down-2ad239","publisher":"v
+  [PASS] O-2d (F-30/F-89 frozen phase: recovery, log hygiene, one poller WARN and one INFO): GET 200 0.0s after CONT; ERROR 0, stack 0; poll WARN 1 INFO 1; readiness DOWN/UP 1/0
+```
+
+## Addendum: O-2c
+Not a script artefact. Reproduced and measured in 35-frozen-db-ab.txt (three freeze rounds, 108 calls per jar): with
+mongod frozen and more than one call in flight, the driver pauses its pool (MongoConnectionPoolClearedException, which
+Spring Data MongoDB 5.0.8 translates to UncategorizedMongoDbException); GlobalExceptionHandler.isDatabaseUnavailable
+(GlobalExceptionHandler.java:70-72) does not recognise it, so handleGeneric (:184-188) answers 500 with the driver's
+message, which names the server address. Iteration 3 answers the same 500s on the plain endpoints (A/B). GAP-backend4-1.

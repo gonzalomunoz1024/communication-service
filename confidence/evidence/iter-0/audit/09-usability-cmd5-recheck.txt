@@ -1,0 +1,4 @@
+no config -> {"time":"2026-11-02T00:36:02.951199981Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit code (docker run, no env) = 2
+helm template on the library chart alone -> Error: library charts are not installable
+kustomize example image ->       - image: registry.example.com/retail/payments-api:1.4.2

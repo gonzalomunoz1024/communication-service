@@ -1,0 +1,52 @@
+== F-38: raw reports with each vocabulary code to the private backend (tenant sc1-vocab), then monitor state
+  POST status=OK              -> HTTP 202
+  POST status=HEALTHY         -> HTTP 202
+  POST status=UP              -> HTTP 202
+  POST status=WARN            -> HTTP 202
+  POST status=DEGRADED        -> HTTP 202
+  POST status=DOWN            -> HTTP 202
+  POST status=OUT_OF_SERVICE  -> HTTP 202
+  POST status=FATAL           -> HTTP 202
+  POST status=UNHEALTHY       -> HTTP 202
+  POST status=UNKNOWN         -> HTTP 202
+  POST status=BLANK           -> HTTP 400
+  POST status=MISSING         -> HTTP 400
+  POST nested composite (db DOWN{primary DOWN, replica UP}, cache UP) -> HTTP 202
+  monitors (service -> state.lastStatus, lastSummary):
+   svc-degraded         DEGRADED  'DEGRADED (0 of 1 pod UP (DEGRADED: svc-degraded-0))'
+   svc-down             DOWN      'DOWN (0 of 1 pod UP (DOWN: svc-down-0))'
+   svc-fatal            DOWN      'DOWN (0 of 1 pod UP (DOWN: svc-fatal-0))'
+   svc-healthy          UP        'UP (1 of 1 pod UP)'
+   svc-nested           DOWN      'DOWN (0 of 1 pod UP (DOWN: n-0)): db.primary DOWN'
+   svc-ok               UP        'UP (1 of 1 pod UP)'
+   svc-out-of-service   DOWN      'DOWN (0 of 1 pod UP (DOWN: svc-out-of-service-0))'
+   svc-unhealthy        DOWN      'DOWN (0 of 1 pod UP (DOWN: svc-unhealthy-0))'
+   svc-unknown          UNKNOWN   'UNKNOWN (1 pod starting, none reporting yet)'
+   svc-up               UP        'UP (1 of 1 pod UP)'
+   svc-warn             DEGRADED  'DEGRADED (0 of 1 pod UP (DEGRADED: svc-warn-0))'
+   state keys: ['healthyStreak', 'incidents', 'lastReportAt', 'lastStatus', 'lastSummary', 'unhealthyStreak']
+  nested instance record:
+  instances: 1
+    {"monitorId":"086e8ceb-62cb-4622-b0bc-0bbdad807f11","instanceId":"n-0","status":"DOWN","components":[{"name":"db.primary","status":"DOWN"}],"left":false,"lastSeenAt":"2026-11-02T01:57:43.027Z"}
+
+== F-70: WARN AFTER the first UP (fakeapp __set?status=WARN) -> sidecar report status, backend DEGRADED?
+  before: status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  __set -> 200 {"db":"WARN","status":"WARN"}
+  after:  status=WARN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports WARN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"WARN"},"ping":{"status":"UP"}} sent=3 sendErr=None
+   backend monitor warn-app -> DEGRADED 'DEGRADED (0 of 1 pod UP (DEGRADED: warn-app-0)): db DEGRADED'
+  feed sc1-warn: 1 item(s)
+  __set OUT_OF_SERVICE -> 200 {"db":"UP","status":"OUT_OF_SERVICE"}
+  after:  status=DOWN target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg='health document reports OUT_OF_SERVICE' comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=5 sendErr=None
+   backend monitor warn-app -> DOWN 'DOWN (0 of 1 pod UP (DOWN: warn-app-0))'
+
+== F-50/F-46: 20 parallel instance reports for ONE service, three rounds (tenant sc1-burst)
+  round 1:  20 202 
+  round 2:  20 202 
+  round 3:  20 202 
+  instances: 20 sorted by id: True first/last: ['burst-app-01', 'burst-app-02'] ['burst-app-20']
+  monitor state: UP 'UP (20 of 20 pods UP)' version 60
+
+== F-48: rollup state of the sc1-app monitor after its only pod sent leaving (10-g12 STEP E), and the never-up/pinned monitors
+  sc1-app        lastStatus=UP summary='UNKNOWN (no live pod reports)' openNotice=[]
+  sc1-never-up   lastStatus=DOWN summary='DOWN (1 pod has not reported since 2026-11-02T01:45:52.357Z (sc1-never-up-0))' openNotice=ecfea869-4db8-4aa6-9353-6dbf11a260a6
+  sc1-pinned     lastStatus=DOWN summary='DOWN (1 pod has not reported since 2026-11-02T01:45:52.165Z (sc1-pinned-0))' openNotice=e91f6092-57a7-4c3a-947a-24089adbca12

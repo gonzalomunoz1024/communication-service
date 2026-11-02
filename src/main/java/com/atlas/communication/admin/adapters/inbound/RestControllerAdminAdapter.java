@@ -23,6 +23,10 @@ import com.atlas.communication.common.domain.TenantSummary;
 import com.atlas.communication.publishing.domain.RetireRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -33,6 +37,11 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/v1/admin")
 @Tag(name = "Admin", description = "Cross-tenant oversight (path-segregated for future auth)")
 public class RestControllerAdminAdapter implements AdminInboundPort {
+
+    /** The request example Swagger UI fills in; accepted as it is (OpenApiContractIT sends it). */
+    static final String RETIRE_EXAMPLE = """
+            {"actor": "ops-desk", "note": "Retired by the operations desk: a duplicate of another notice."}""";
+    private static final String ERROR_SCHEMA = "#/components/schemas/Error";
 
     private final AdminUseCase useCase;
 
@@ -60,6 +69,16 @@ public class RestControllerAdminAdapter implements AdminInboundPort {
     @Override
     @PostMapping("/communications/{id}/retire")
     @Operation(summary = "Retire any tenant's communication (admin override)")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
+            mediaType = "application/json", schema = @Schema(implementation = RetireRequest.class),
+            examples = @ExampleObject(name = "override", summary = "Who retires it and why (both optional)",
+                    value = RETIRE_EXAMPLE)))
+    @ApiResponse(responseCode = "200", description = "Retired, or already retired: the notice as it is now",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Communication.class)))
+    @ApiResponse(responseCode = "409", description = "The notice already EXPIRED: retiring it would rewrite history",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = ERROR_SCHEMA),
+                    examples = @ExampleObject(value = "{\"error\":\"communication 3f0c2a1e-7d4b-4a4e-9c2b-5e1f0a6d8b21 "
+                            + "already expired; retiring would rewrite history\"}")))
     public Mono<Communication> retire(@PathVariable String id,
             @RequestBody(required = false) RetireRequest request) {
         return useCase.retire(id, request);
@@ -67,6 +86,7 @@ public class RestControllerAdminAdapter implements AdminInboundPort {
 
     @DeleteMapping("/communications/{id}")
     @Operation(summary = "Hard-delete a communication (destroys audit history)")
+    @ApiResponse(responseCode = "204", description = "Deleted, with its audit history")
     public Mono<ResponseEntity<Void>> purgeHttp(@PathVariable String id) {
         return purge(id).thenReturn(ResponseEntity.noContent().<Void>build());
     }

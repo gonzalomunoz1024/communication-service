@@ -1,0 +1,53 @@
+# sc-4 G-4-28 BEFORE: the CI sidecar job at 6c15715 (no gofmt gate, tests without -race, govulncheck@latest)
+# date: 2026-11-02T08:28:22Z
+# How the job was run here: /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sc4/scripts/ci_sidecar_steps.py reads the job from the workflow file and
+# runs its run-steps in order as Actions does (bash --noprofile --norc -eo pipefail, working-directory
+# sidecar, CI=true, stop at the first failure), with go1.27.3's bin first on PATH as setup-go would put it
+# and kustomize 5.5.0 / helm 3.16.3 / kubeconform 0.6.7 on PATH. Skipped here: the kubeconform download
+# (github.com releases are blocked) and the image build (UBI registry blocked; built under G-4-2).
+# govulncheck gets -db https://storage.googleapis.com/go-vulndb because vuln.go.dev is blocked.
+
+## the job's steps at 6c15715 (git show 6c15715:.github/workflows/ci.yml)
+2:    name: Sidecar (vet, tests, manifests, govulncheck, image)
+6:      run:
+24:        run: |
+28:      - run: go vet ./...
+30:      - run: CI=true go test ./...
+31:      - name: govulncheck
+32:        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+34:        run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
+
+## the tree: git archive HEAD (sidecar/, src/main/resources/application.yml) plus one planted file
+$ cat sidecar/internal/probe/zz_planted.go
+package probe
+
+// plantedUnformatted compiles, vets and tests clean; only its layout differs from gofmt.
+func plantedUnformatted( ) int { return  1 }
+
+## the old job on that tree: every step passes, the unformatted file goes unnoticed
+--- step 4 'Install kubeconform': skipped here (see header)
+--- step 5 '': go vet ./...
+    exit=0
+--- step 6 '': CI=true go test ./...
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.236s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	5.150s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.137s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.005s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.004s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.441s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.023s
+    exit=0
+--- step 7: sandbox substitution: -db https://storage.googleapis.com/go-vulndb
+--- step 7 'govulncheck': go run golang.org/x/vuln/cmd/govulncheck@latest -db https://storage.googleapis.com/go-vulndb ./...
+    No vulnerabilities found.
+    exit=0
+--- step 8 'Build the image': skipped here (see header)
+JOB PASSED (every step run here exited 0)
+
+## @latest floats: what it resolves to today
+$ go list -m golang.org/x/vuln@latest
+golang.org/x/vuln v1.9.0
+$ curl -s https://proxy.golang.org/golang.org/x/vuln/@v/list | sort -V | tail -3
+v1.7.0
+v1.8.0
+v1.9.0

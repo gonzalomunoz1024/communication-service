@@ -1,0 +1,116 @@
+# Backend replays: the verifier's check scripts, re-pointed to the auditor's private instances (iteration-3 jar b63ffd4e..., databases au3-*), compared id by id with the verifier's evidence
+# port map: 8080->19711 (default config, db au3-shared), 19100/19101->19712/19713 (pair, db au3-pair; 19713 at DEBUG), 19105->19715 (sweeper off, au3-eff), 19110->19714 (au3-mongo :19798, outage), 19120/19121->19720 (iter-3 jar, au3-gaps)/19721 (iter-2 jar sha256 491438c7..., au3-iter2ab), 19125/19126->19725 (iter-3, au3-g27d)/19726 (iter-2, au3-g27d2), 19195->19795 (au3-dropped), stub 19160->19760; client id au3-verifier
+# cmpchecks.py: verdict per check id (auditor vs verifier); 'DIFF' lines are shown with both details
+
+## be-20-check-a.txt (Checks: 109/113 passed) vs ev/20-http-publishing-feed-admin.txt (Checks: 110/113 passed)
+A-24         verifier=['PASS'] auditor=['FAIL']
+    V: tenant summary [{'tenantId': 'vb3-a-0ace26', 'counts': {'SCHEDULED': 1, 'ACTIVE': 6, 'EXPIRED': 1, 'RETIRED': 6}, 'total': 14}] vs stored statuses in Mongo {'EXPIRED': 1, 'SCHEDULED': 1, 'ACTIVE': 6, 'RETIRED': 6}; listing total=1
+    A: tenant summary [{'tenantId': 'au3-a-b5a436', 'counts': {'SCHEDULED': 1, 'ACTIVE': 6, 'EXPIRED': 1, 'RETIRED': 6}, 'total': 14}] vs stored statuses in Mongo {}; listing total=14 effective={'RETIRED': 6, 'EXPIRED': 1, 'ACTIVE': 6, '
+== 103 ids compared: 102 same verdict, 1 different; ids only in auditor run: []
+
+## be-20b-check-a18-recheck.txt (Checks: 9/9 passed) vs ev/20b-sse-recheck.txt (Checks: 9/9 passed)
+== 9 ids compared: 9 same verdict, 0 different; ids only in auditor run: []
+
+## be-21-check-b.txt (Checks: 80/80 passed) vs ev/21-http-health.txt (Checks: 80/80 passed)
+== 62 ids compared: 62 same verdict, 0 different; ids only in auditor run: []
+
+## be-22-check-g3.txt (Checks: 51/51 passed) vs ev/22-http-iter3-contracts.txt (Checks: 51/51 passed)
+== 51 ids compared: 51 same verdict, 0 different; ids only in auditor run: []
+
+## be-23-check-g33.txt (Checks: 11/11 passed) vs ev/23-g33-effective-status.txt (Checks: 11/11 passed)
+== 11 ids compared: 11 same verdict, 0 different; ids only in auditor run: []
+
+## be-24-check-g32.txt (Checks: 3/3 passed) vs ev/24-g32-probe-claim.txt (Checks: 3/3 passed)
+== 3 ids compared: 3 same verdict, 0 different; ids only in auditor run: []
+
+## be-25-check-c.txt (Checks: 19/19 passed) vs ev/25-http-private-pair-19100-19101.txt (Checks: 19/19 passed)
+== 18 ids compared: 18 same verdict, 0 different; ids only in auditor run: []
+
+## be-27-check-g28.txt (Checks: 4/4 passed) vs ev/27-g28-snapshot-head.txt (Checks: 4/4 passed)
+== 4 ids compared: 4 same verdict, 0 different; ids only in auditor run: []
+
+## be-28-check-g26.txt (Checks: 10/10 passed) vs ev/28-g26-reopen-threshold.txt (Checks: 10/10 passed)
+== 10 ids compared: 10 same verdict, 0 different; ids only in auditor run: []
+
+## be-29-check-d.txt (Checks: 42/42 passed) vs ev/29-http-gap-rechecks-iter1-2.txt (Checks: 42/42 passed)
+== 42 ids compared: 42 same verdict, 0 different; ids only in auditor run: []
+
+## be-31-check-g29.txt (Checks: 17/17 passed) vs ev/31-g29-externalref-openapi.txt (Checks: 17/17 passed)
+== 17 ids compared: 17 same verdict, 0 different; ids only in auditor run: []
+
+## be-32-check-nuances.txt (Checks: 11/11 passed) vs ev/32-audit-nuances.txt (Checks: 11/11 passed)
+== 11 ids compared: 11 same verdict, 0 different; ids only in auditor run: []
+
+## be-33-check-outage.txt (Checks: 19/22 passed) vs ev/33-mongo-outage-stopped-and-frozen.txt (Checks: 19/22 passed)
+== 22 ids compared: 22 same verdict, 0 different; ids only in auditor run: []
+
+## be-33b-check-outage-rerun.txt (Checks: 14/14 passed) vs ev/33b-mongo-outage-phase1-rerun.txt (Checks: 14/14 passed)
+== 14 ids compared: 14 same verdict, 0 different; ids only in auditor run: []
+
+## A-24 re-check after fixing the auditor's harness (it had queried database 'communication' instead of au3-shared)
+A-24 re-check (auditor harness fixed: the Mongo query now reads au3-shared, the database behind :19711): PASS
+  summary [{'tenantId': 'au3-a-b5a436', 'counts': {'SCHEDULED': 1, 'ACTIVE': 6, 'EXPIRED': 1, 'RETIRED': 6}, 'total': 14}] | stored statuses in Mongo {'EXPIRED': 1, 'SCHEDULED': 1, 'ACTIVE': 6, 'RETIRED': 6} | listing total=14 effective={'RETIRED': 6, 'EXPIRED': 1, 'ACTIVE': 6, 'SCHEDULED': 1} | tenants sorted=True
+
+## check_a's other 3 FAILs (A-18b, A-20b, A-20c) are the verifier's own frame-order artefacts (ev/20, re-verified 9/9 in ev/20b); the auditor's A-18 recheck: 9/9 (above).
+| A-18b | F-18 | FAIL | live frame names in order: ['snapshot', 'created', 'created', 'updated', 'retired'] |
+| A-20b | F-20 | FAIL | replayed frames: ['created', 'updated', 'retired'] |
+| A-20c | F-20 | FAIL | ?lastEventId= -> 200 ['created', 'updated', 'retired'] |
+
+## sampled details (auditor run)
+| A-03a | F-03 | PASS | history=['created (DRAFT)', 'DRAFT -> ACTIVE'] |
+| A-03b | F-03 | PASS | unknown -> 404 {'error': 'communication 37b22017-cb25-4295-9a8f-496095dd8954 not found'} |
+| A-06a | F-06 | PASS | retire -> 200 RETIRED last={'at': '2026-11-02T08:01:57.654847492Z', 'actor': 'au3-admin', 'action': 'ACTIVE -> RETIRED: resolved by test'} |
+| A-06b | F-06 | PASS | idempotent -> 200 history len 3->3 |
+| A-06c | F-06 | PASS | retire without body: actor defaults to publisher -> {'at': '2026-11-02T08:01:57.706084645Z', 'actor': 'au3-sre', 'action': 'ACTIVE -> RETIRED'} |
+| A-07 | F-07 tenantId missing | PASS | 400 {"error": "tenantId: must not be blank"} |
+| A-12 | F-12 | PASS | 8 parallel PUTs same expectedVersion -> [200, 409, 409, 409, 409, 409, 409, 409] |
+| A-13a | F-13 | PASS | DRAFT -> RETIRED: 200 RETIRED |
+| A-13b | F-13 | PASS | SCHEDULED -> RETIRED: 200 |
+| A-13c | F-13/F-06 | PASS | retire an expired item -> 409 {'error': 'communication a27c06fa-141a-4f57-8664-6d2ece35af39 already expired; retiring would rewrite history'} (stored status was EXPIRED) |
+| A-15a | F-15 | PASS | permalink status after expiry (before sweep) = EXPIRED |
+| A-17a | F-17 | PASS | retired permalink -> 200 RETIRED |
+| A-17b | F-17 | PASS | unknown -> 404 {'error': 'communication e89864e4-215d-41a6-a63c-cdcd72b487ef not found'} |
+| A-20a | F-20 | PASS | reconnect with Last-Event-ID=92 -> HTTP 200 [{'id': '93', 'event': 'created', 'data': '{"seq":93,"type":"CREATED","at":"2026-11-02T08:02:03.832Z","communication":{"id":"4c751087-38f7-45b3-a003-e9eaeded2637"
+| A-20d | F-20 | PASS | unknown id falls back to snapshot: 200 ['snapshot', 'snapshot'] |
+| A-20e | F-20 | PASS | non-numeric header ignored -> 200 ['snapshot', 'snapshot'] |
+| A-23a | F-23 | PASS | admin search retired in au3-a-b5a436: 6 items, history present |
+| A-23b | F-23 | PASS | cross-tenant by publisher: tenants=['au3-a-b5a436', 'au3-a2-b5a436'] |
+| A-23c | F-23 | PASS | from=2030 -> 0 |
+| A-23d | F-23 | PASS | status set filter -> ['RETIRED'] total=6 |
+| B-37a | F-37 | PASS | timeout 200ms -> DOWN summary='DOWN (probe failed: no response within 200ms)' took 0.21s |
+| B-37b | F-37 | PASS | plain 200 html -> UP 'UP (HTTP 200)' |
+| B-37c | F-37 | PASS | plain 500 -> DOWN 'DOWN (HTTP 500)' |
+| B-37d | F-37 | PASS | closed port -> DOWN 'DOWN (probe failed: finishConnect(..) failed with error(-111): Connection refused: /127.0.0.1:1)' |
+| B-37e | F-37/F-38 | PASS | 200 UP with DOWN component -> DEGRADED 'DEGRADED (HTTP 200): cache DOWN' |
+| B-37f | F-37 probe request | PASS | stub saw 32 probes; last UA=Python-urllib/3.13 cid=None |
+| B-38 | F-38 blank status rejected by bean validation (API contract) | PASS | -> 400 {'error': 'status: must not be blank'} |
+| B-47e | F-47 | PASS | UNKNOWN pod live but not tallied -> 'DOWN (0 of 6 pods UP (DOWN: pod-a, pod-b, pod-c, pod-d, pod-e; 1 starting))' |
+| B-50 | F-50 | PASS | 20 parallel first-contact instance reports -> [202] 202s=20 409s=0 monitors=1 instances recorded=20 |
+| B-50b | F-50 | PASS | 20 parallel reports on an existing monitor -> 202s=20 409s=0 |
+| G3-8-l | observation: monitor registration with misspelled policy fields | PASS | -> 201; policy={'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSever
+| G3-25-a | F-40/G-3-25 body in plain words | PASS | body='push-svc is DOWN as of 2026-11-02 08:03:14 UTC.\nReported by the service: primary database unreachable.\n\nFailing components:\ndb: DOWN (error=Connection refused)\n\nThis
+| G3-25-b | F-40/G-3-25 published under the monitor's publisher | PASS | publisher=push-app history=[('push-app', 'created (ACTIVE)')] |
+| G3-25-i | F-35 default publisher retires as health-monitor | PASS | last={'at': '2026-11-02T08:03:15.206Z', 'actor': 'health-monitor', 'action': 'ACTIVE -> RETIRED: monitor deleted'} |
+| G3-30-d-UNKNOWN | F-38 other words | PASS | UNKNOWN -> UNKNOWN streaks 0/0 |
+| G3-30-e | F-37/G-3-30 pull documents use the same words | PASS | pass/green -> UP; FAIL with HTTP 200 -> DOWN; PASS with component red -> DEGRADED ('DEGRADED (HTTP 200): db DOWN'); SERVING with HTTP 503 -> UP (document wins) |
+be-23-check-g33.txt:| G33-a | F-03/G-3-3 GET by id after expiresAt | PASS | 3 reads: [(200, 'EXPIRED', 0, 1), (200, 'EXPIRED', 0, 1), (200, 'EXPIRED', 0, 1)] |
+be-23-check-g33.txt:| G33-b | F-03/G-3-3 GET by id after a scheduled start | PASS | 200 ACTIVE v0 |
+be-23-check-g33.txt:| G33-d | F-23/G-3-3 admin search | PASS | {'starts': 'ACTIVE', 'expires': 'EXPIRED'} |
+be-23-check-g33.txt:| G33-g | F-13 commands agree with the reads | PASS | PUT 409 {'error': 'communication 43ec4691-ba0f-4fad-ad56-94f704fe75fb is EXPIRED and can no longer be updated'}; retire 409 {'error': 'communication 43ec469
+be-25-check-c.txt:| C-13a | F-13/F-06 | PASS | retire a stored-EXPIRED item -> 409 {'error': 'communication d64f42b0-05b4-433d-b0d7-faf7372090c5 already expired; retiring would rewrite history'} |
+be-25-check-c.txt:| C-13b | F-13/F-05 | PASS | update a stored-EXPIRED item -> 409 {'error': 'communication d64f42b0-05b4-433d-b0d7-faf7372090c5 is EXPIRED and can no longer be updated'} |
+be-25-check-c.txt:| C-17 | F-17 | PASS | expired permalink -> 200 EXPIRED |
+be-25-check-c.txt:| C-44a | F-44 | PASS | silent 9s with staleAfterSeconds=5 -> state=DOWN summary='DOWN (no health report received since 2026-11-02 08:03:03 UTC)' notice body='stale-1 is DOWN as of 2026-11-02 08:03:09 UTC.\nNo he
+be-27-check-g28.txt:| G28-b | F-20 resume from the snapshot id | PASS | resume after 20: [('created', 'item 3 (on B)')] |
+be-27-check-g28.txt:| G28-c | F-20/G-2-8 never skips | PASS | 15 rounds: misses=0, rounds where the item came both in the snapshot and in the replay (allowed duplicate)=7; details (round, sid, snap, live, replay, bad)=[(0, 21, Tru
+be-29-check-d.txt:| D-1-a | F-20 | PASS | first connection: 2 frames, ids ['160', '160'] |
+be-29-check-d.txt:| D-1-b | F-20/G-1-1 | PASS | Last-Event-ID: 160 -> 200, frames [('retired', 'a8cb53cb'), ('created', 'b20b3273')] |
+be-29-check-d.txt:| D-1-c | F-20/G-1-1 | PASS | ?lastEventId=160 -> 200, frames [('retired', 'a8cb53cb'), ('created', 'b20b3273')] |
+be-29-check-d.txt:| D-1-d | F-20 | PASS | replayed ids [161, 162] all > 160 and ordered |
+be-29-check-d.txt:| D-1-e | F-20 | PASS | future id -> 200, events ['snapshot'] |
+be-29-check-d.txt:| D-7-a | F-50/G-1-7 | PASS | 20 parallel reports (fresh service): 20 x 202, 0 x 409; codes=[202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202] |
+be-29-check-d.txt:| D-7-c | F-50/G-1-7 | PASS | second burst on the existing monitor: 20 x 202, 0 x 409 |
+be-32-check-nuances.txt:| N-1 | audit §6.1 / G-3-3: GET by id reports the effective status | PASS | after expiresAt, before the 30 s sweep: GET by id status=EXPIRED version=0 history=['created (ACTIVE)'], permalink status=EXPIRED
+| G32-a | F-43/G-3-2 one probe per interval across two instances | PASS | 7 probes of the 3 s endpoint in 31 s with interval 5 s on 2 instances sweeping every 1 s (uncoordinated would be ~12); min gap 5.03 s, max gap 5.1 s |
+| G32-b | F-89/G-3-2 the losing instance stays quiet | PASS | 'skipping monitor'/CONFLICT WARN lines: :19712 0, :19713 0; ERROR lines 0/0; all WARN lines in the window: [] |
+| G32-c | F-43 the monitor keeps its state | PASS | state {'lastStatus': 'UP', 'lastReportAt': '2026-11-02T08:02:18.643Z', 'lastProbeAt': '2026-11-02T08:02:23.675Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 6, 'incidents': 0} vers

@@ -1,0 +1,21 @@
+# G-1-23: SIGTERM with two open SSE streams (private :18910, iteration-1 jar)
+SIGTERM -> process exit: 5417 ms
+## stream1 (tenant with one item)
+:connected
+
+id:0
+event:snapshot
+data:{"seq":0,"type":"SNAPSHOT","at":"2026-11-02T01:39:44.365492247Z","communication":{"id":"638e6272-3dcf-4959-b03e-ee425068f5ee","tenantId":"be1-sd","publishe
+
+id:1
+event:created
+data:{"seq":1,"type":"CREATED","at":"2026-11-02T01:39:44.300Z","communication":{"id":"638e6272-3dcf-4959-b03e-ee425068f5ee","tenantId":"be1-sd","publisher":"p",
+
+stream1 curl exit=0 at 01:39:47.364180002
+## stream2 (empty tenant)
+:connected
+
+stream2 curl exit=0 at 01:39:47.356404238
+## backend log (shutdown lines)
+2026-11-02T01:39:47.354Z  INFO 5156 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T01:39:47.363Z  INFO 5156 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete

@@ -1,0 +1,30 @@
+== sidecar module dependencies
+go.mod:
+    module github.com/gonzalomunoz1024/communication-service/sidecar
+    
+    go 1.24
+go list -m all:
+    github.com/gonzalomunoz1024/communication-service/sidecar
+go.sum: ls: cannot access 'go.sum': No such file or directory
+third-party imports in the code: "github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent" "github.com/gonzalomunoz1024/communication-service/sidecar/internal/config" "github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover" "github.com/gonzalomunoz1024/communication-service/sidecar/internal/pro
+
+== govulncheck attempt (needs proxy.golang.org for the tool and vuln.go.dev for the database)
+rc=1
+go: golang.org/x/vuln/cmd/govulncheck@latest: golang.org/x/vuln@v1.9.0 requires go >= 1.26.0 (running go 1.24.7; GOTOOLCHAIN=local)
+
+== reachability
+  https://proxy.golang.org/golang.org/x/vuln/@v/list      200
+  https://vuln.go.dev/index/db.json                       000
+  https://pkg.go.dev/                                     200
+
+== toolchain / stdlib version baked into the image binary
+    /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar1/health-sidecar-sc1: go1.24.13
+    	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+    	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+    	build	-buildmode=exe
+    	build	-compiler=gc
+    	build	-trimpath=true
+    	build	CGO_ENABLED=0
+    	build	GOARCH=amd64
+host go: go version go1.24.7 linux/amd64
+Dockerfile GO_IMAGE default: ARG GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.24

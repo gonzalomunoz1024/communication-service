@@ -1,0 +1,42 @@
+# 39 - CI backend job (.github/workflows/ci.yml:19-46) vs what ran here
+
+$ sed -n 19,46p .github/workflows/ci.yml
+  backend:
+    name: Backend (Gradle check, SBOM scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      # compile with -Werror, unit tests, *IT tests on embedded MongoDB, SpotBugs, JaCoCo threshold, SBOM
+      - name: Gradle check
+        run: ./gradlew check --no-daemon
+      - name: Upload build reports (tests, SpotBugs, JaCoCo, SBOM)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: build/reports/**
+          if-no-files-found: ignore
+      # a critical or high finding in a runtime dependency fails the job
+      - name: Scan the SBOM for known vulnerabilities
+        uses: anchore/scan-action@v6
+        with:
+          sbom: build/reports/cyclonedx/bom.json
+          fail-build: true
+          severity-cutoff: high
+
+Changes to .github since iteration 2 (git diff 908598a 4a0e84e -- .github/): only the sidecar job's tool pins (kustomize 5.5.0, helm v3.16.3) and the e2e workflow (stack.sh build, npm run lint); the backend job is unchanged.
+
+| CI step | local equivalent | result here |
+|---|---|---|
+| actions/setup-java 21 temurin | /usr/bin/java 21.0.12 (Ubuntu build) | same major version |
+| ./gradlew check --no-daemon | ./gradlew --max-workers=2 --no-daemon check --rerun-tasks (01) | exit 0, 12 tasks, 297 tests, gates pass |
+| upload build/reports/** | reports copied to the scratchpad (run1/reports) | present: tests, jacoco, spotbugs, cyclonedx |
+| anchore/scan-action@v6, sbom build/reports/cyclonedx/bom.json, fail-build true, severity-cutoff high | grype cannot get its database here (07); Trivy 0.58.1 with today's trivy-db scanned the same bom.json (07) | 3 CRITICAL + 10 HIGH at or above the cutoff -> by the job's own rule ('a critical or high finding in a runtime dependency fails the job', ci.yml:40) this step would fail; inference, Actions not run |
+
+Not exercised: a GitHub Actions run (no runner in this sandbox, and the session token is repository-bound: api.github.com /advisories 403).

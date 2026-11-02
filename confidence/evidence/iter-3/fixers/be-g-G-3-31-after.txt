@@ -1,0 +1,61 @@
+# G-3-31 after: the paragraph gives both timings and the setting behind each; the measurement each number comes from
+
+## README.md (worktree), lines 99-103 and 113-121
+**When Mongo is down.** The service needs its database to start (it creates its indexes first;
+when Mongo cannot be reached it gives up after `communication.mongo.server-selection-timeout`,
+5 s, exits, and the pod is restarted until it can). Once running it survives losing the database: every call
+that needs it answers `503 {"error":"database unavailable"}` after that timeout (about 20 s for a database
+that hangs instead, see the end of this paragraph), readiness reports
+Calls succeed again within one server selection of Mongo coming back. The waits are
+`communication.mongo.server-selection-timeout` (5 s), `connect-timeout` (5 s) and `read-timeout`
+(15 s per socket read); they win over the same options given on the URI. How long a call waits for
+its 503 depends on how the database fails. One that refuses connections (stopped, nothing listening
+on its port) costs one `server-selection-timeout`: 5 s. One that stops answering on connections
+already open (a frozen process, `docker pause`, a network black hole) holds a call for `read-timeout`,
+15 s, and the driver retries a read once, which waits one more `server-selection-timeout`: about 20 s
+(15 s for a write, which a standalone server does not retry). Once the driver has given up on such a
+server (within 15 s with a paused mongod) later calls get their 503 after 5 s again.
+
+## Which measured number backs which sentence (run below)
+refuses connections -> one server-selection-timeout, 5 s ........ A1 5.01 s, A2 5.01 s (read), A3 5.01 s (write): 'Timed out while waiting for a server'
+stops answering, first read -> read-timeout 15 s + one retry's server selection 5 s ... B1 20.03 s: 'Timeout while receiving message'
+stops answering, first write -> read-timeout 15 s, no retry on a standalone server ..... C1 15.03 s: 'Timeout while receiving message'
+later calls while it stays frozen -> server-selection-timeout, 5 s ..................... B2 5.02 s, B3 5.02 s, B5 5.01 s, C2 5.02 s (C2 sent 15 s after the freeze)
+readiness DOWN within readiness-timeout, 1 s ............................................. A4 1.01 s, B4 1.01 s, C3 1.01 s
+calls succeed again within one server selection of Mongo coming back ................... A5 0.0 s, B6 0.1 s, C4 0.1 s
+
+## Measurement
+# mongod 7.0.14 standalone on 127.0.0.1:18211 (private), the boot jar of af7b5f0 on :18212, db fixbeg_g331, application.yml defaults
+# A = mongod stopped (SIGTERM, connections refused); B, C = mongod frozen with SIGSTOP (what docker pause does), SIGCONT after
+06:08:29 app ready on :18212 (pid 18404), mongod pid 18349; settings: application.yml defaults (server-selection-timeout 5 s, connect-timeout 5 s, read-timeout 15 s, readiness-timeout 1 s)
+06:08:29 warm-up GET /v1/communications/{unknown id}: HTTP 404 after 0.057637 s
+06:08:29 warm-up POST /v1/communications: HTTP 201 after 0.288279 s
+06:08:29 warm-up readiness: HTTP 200 after 0.010762 s
+== A. mongod stopped (SIGTERM): connections are refused
+06:08:38 A1 GET /v1/communications/{unknown id}: HTTP 503 after 5.011808 s
+06:08:43 A2 GET /v1/communications/{unknown id}: HTTP 503 after 5.010986 s
+06:08:48 A3 POST /v1/communications: HTTP 503 after 5.011626 s
+06:08:49 A4 readiness: HTTP 503 after 1.010959 s
+06:08:50 A5: reads answer again (404) 0.0 s after the database is back
+== B. mongod frozen (SIGSTOP, as docker pause): open connections stay up, nothing answers
+06:09:22 B1 GET /v1/communications/{unknown id}: HTTP 503 after 20.029024 s
+06:09:27 B2 GET /v1/communications/{unknown id}: HTTP 503 after 5.020165 s
+06:09:32 B3 POST /v1/communications: HTTP 503 after 5.016329 s
+06:09:33 B4 readiness: HTTP 503 after 1.012305 s
+06:09:38 B5 GET /v1/communications/{unknown id}: HTTP 503 after 5.014595 s
+06:09:38 B6: reads answer again (404) 0.1 s after the database is back
+== C. frozen again, a write first
+06:10:05 C1 POST /v1/communications: HTTP 503 after 15.027859 s
+06:10:10 C2 GET /v1/communications/{unknown id}: HTTP 503 after 5.016387 s
+06:10:12 C3 readiness: HTTP 503 after 1.009226 s
+06:10:12 C4: reads answer again (404) 0.1 s after the database is back
+== the service's 503 lines (GlobalExceptionHandler, one WARN per answered call):
+2026-11-02T06:08:38.049  GET /v1/communications/0123456789abcdef01234567 -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster 
+2026-11-02T06:08:43.072  GET /v1/communications/0123456789abcdef01234567 -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster 
+2026-11-02T06:08:48.096  POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that matches WritableServerSelector. Client view of cluster state is {type=UNKNOWN, servers=[{address=127.0.0.1:18
+2026-11-02T06:09:22.726  GET /v1/communications/0123456789abcdef01234567 -> 503, database unavailable: Timeout while receiving message
+2026-11-02T06:09:27.758  GET /v1/communications/0123456789abcdef01234567 -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster 
+2026-11-02T06:09:32.778  POST /v1/communications -> 503, database unavailable: Timed out while waiting for a server that matches WritableServerSelector. Client view of cluster state is {type=UNKNOWN, servers=[{address=127.0.0.1:18
+2026-11-02T06:09:38.842  GET /v1/communications/0123456789abcdef01234567 -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster 
+2026-11-02T06:10:05.959  POST /v1/communications -> 503, database unavailable: Timeout while receiving message
+2026-11-02T06:10:10.983  GET /v1/communications/0123456789abcdef01234567 -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster 

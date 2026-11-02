@@ -1,0 +1,46 @@
+[23:40:24] F-73 CASE 1: default CS_RETRY_DELAY=2s; app fails exactly ONE health request -> report stays UP (no DOWN sent)
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='' sent=1
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='' sent=1
+  stub backend saw 1 reports: ['UP']
+  DOWN lines in sidecar log: 0
+[23:40:38] F-73 CASE 2: CS_RETRY_DELAY=0; app fails exactly one request -> DOWN is reported
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='' sent=1
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='' sent=3
+  stub backend saw 3 reports: ['UP', 'DOWN', 'UP']
+[23:40:51] F-71 CASE 3: pinned CS_PORT=9003 + CS_PATH=/ping (auto) -> http target http://127.0.0.1:9003/ping; '/ping' answers 200 'app' (root handler) -> UP
+  /status: target=http://127.0.0.1:9003/ping upSeen=True last=UP msg='' sendError='' sent=1
+[23:40:56] F-71 CASE 4: CS_PROBE=tcp CS_PORT=9003 (CS_PATH ignored) -> tcp://127.0.0.1:9003 UP
+  /status: target=tcp://127.0.0.1:9003 upSeen=True last=UP msg='' sendError='' sent=1
+[23:41:00] F-71 CASE 5: CS_PROBE=actuator CS_PORT=9003 -> http://127.0.0.1:9003/actuator/health
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='' sent=1
+[23:41:04] F-68 CASE 6: CS_IGNORE_PORTS=9100,9003 with CS_STARTUP_GRACE=6s -> UNKNOWN 'starting' then after grace UNKNOWN 'no health target found after 6s ... set CS_PORT and CS_PATH'
+  /status: target=None upSeen=False last=UNKNOWN msg='starting: waiting for the app to listen' sendError='' sent=1
+  /status: target=None upSeen=False last=UNKNOWN msg='no health target found after 6s: no listening port answered; set CS_PORT and CS_PATH' sendError='' sent=1
+[23:41:15] F-72 CASE 7: pinned port that never answers UP (app set DOWN) with CS_STARTUP_GRACE=6s -> UNKNOWN 'waiting for first healthy answer', then after grace UNKNOWN 'never answered UP since start; check CS_PORT...'
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=False last=UNKNOWN msg='starting: waiting for the first healthy answer from http://127.0.0.1:9003/actuator/health' sendError='' sent=1
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=False last=UNKNOWN msg='health target http://127.0.0.1:9003/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME' sendError='' sent=1
+[23:41:25]   then the app comes UP -> UP; then DOWN again -> DOWN is now reported (upSeen)
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='' sent=2
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=DOWN msg='health document reports DOWN' sendError='' sent=3
+[23:41:35] F-70 CASE 8: app says {status:WARN} (stub 'warn' on 9005) -> report status WARN -> REAL backend monitor lastStatus DEGRADED (tenant sc-warn)
+  /status: target=http://127.0.0.1:9005/actuator/health upSeen=False last=UNKNOWN msg='starting: waiting for the first healthy answer from http://127.0.0.1:9005/actuator/health' sendError='' sent=1
+  real backend monitor: warn-app UNKNOWN 'UNKNOWN (1 pod starting, none reporting yet)'
+[23:41:43] F-75 CASE 9: instance id of 253 chars accepted by the real backend; 254 chars -> 400 permanent 'report rejected' (tenant sc-len)
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='' sent=1
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg='' sendError='report rejected: HTTP 400 {"error":"instance.id: size must be between 0 and 253"}' sent=0
+{"time":"2026-11-01T23:41:48.591019435Z","level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"error\":\"instance.id: size must be between 0 and 253\"}"}
+  sc-len monitors: [('len-app', 'UP (1 of 1 pod UP)')]
+[23:41:53] F-78 CASE 10: /healthz, /status, unknown path, wrong method
+  GET /healthz -> 200 text/plain
+  GET /status -> 200 application/json
+  GET /nope -> 404 text/plain; charset=utf-8
+  POST /status -> 405
+  /healthz body: ok
+[23:41:57] DONE
+
+### F-70 CASE 8b (corrected: the app must have been UP once, otherwise the startup rule hides WARN): actuator stub UP, then {status:WARN} -> sidecar reports WARN -> real backend DEGRADED (tenant sc-warn2)
+  /status: last=WARN msg='health document reports WARN' comps={"db": {"details": {"database": "PostgreSQL"}, "status": "WARN"}, "ping": {"status": "UP"}}
+  real backend monitor: warn-app lastStatus= DEGRADED 'DEGRADED (0 of 1 pod UP (DEGRADED: warn-app-1)): db DEGRADED'
+  then DEGRADED word:
+  /status: last=DEGRADED
+  real backend monitor: warn-app lastStatus= DEGRADED 'DEGRADED (0 of 1 pod UP (DEGRADED: warn-app-1))'

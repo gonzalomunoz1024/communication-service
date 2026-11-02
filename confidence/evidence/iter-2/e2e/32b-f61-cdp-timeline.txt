@@ -1,0 +1,33 @@
+# F-61 / F-20 / G-2-11: Chrome DevTools Protocol capture of the streaming page during 'kill -9' of backend A (run 2, 2026-11-02 04:27:59Z)
+# Source: out/f61-cdp-capture-run2.json written by scripts/failure_flows.js kill (Network.requestWillBeSent / responseReceived / loadingFailed / eventSourceMessageReceived, filtered to /v1/feed/stream and GET /v1/feed).
+# Times are seconds relative to the moment the kill was issued (t=0). Readiness of the restarted A: +45.803 s. Second kill: +49.306 s.
+
+## /v1/feed/stream requests
+t(s)      gap(s)    status  lastEventId    origin   note
+3.043               502     (none)         browser  
+4.050     1.0       502     84             client   
+6.054     2.0       502     84             client   
+10.059    4.0       502     84             client   
+18.065    8.0       502     84             client   
+28.068    10.0      502     84             client   
+38.075    10.0      502     84             client   
+48.079    10.0      200     84             client   ended: net::ERR_INCOMPLETE_CHUNKED_ENCODING; frames: created#85
+52.343    4.3       502     84             client   (second outage)
+53.350    1.0       502     85             client   (second outage)
+55.354    2.0       502     85             client   (second outage)
+59.364    4.0       502     85             client   ended: net::ERR_ABORTED; (second outage)
+67.363    8.0       200     85             client   (second outage)
+
+## SSE frames received by the page (event name # id) and when
++-0.222 s  request 22913.9  created#84  {"seq":84,"type":"CREATED","at":"2026-11-02T04:27:58.818Z","communication":{"id":"56642430-ae5b-4b57-9d98-8ef7ae8607ce","tenantId":"ve2-kill-mvyrd7h4","publishe
++48.287 s  request 22913.17  created#85  {"seq":85,"type":"CREATED","at":"2026-11-02T04:27:59.744Z","communication":{"id":"e7a9d583-efbd-4067-92b3-8750326c72b4","tenantId":"ve2-kill-mvyrd7h4","publishe
+
+## GET /v1/feed (the page's own snapshot loads)
++48.117 s  {"url": "http://127.0.0.1:19530/v1/feed?tenantId=ve2-kill-mvyrd7h4&page=0&size=100"}
++67.402 s  {"url": "http://127.0.0.1:19530/v1/feed?tenantId=ve2-kill-mvyrd7h4&page=0&size=100"}
+
+## Reading
+- The browser's own EventSource retry (no query id; Chrome's default 3 s) came first at +3.0 s and got a 502 from the preview proxy; the page's client then reopened 7 times, every attempt with ?lastEventId=84, at gaps of 1.0, 2.0, 4.0, 8.0, 10.0, 10.0, 10.0 s (1, 2, 4, 8 then capped at 10 — G-2-11).
+- The attempt at +48.1 s (2.3 s after readiness) was answered 200 and carried the replay: frames created#85 — the notice published via node B during the outage arrived once over the resumed stream, with no snapshot frame.
+- The one GET /v1/feed after readiness is the hook's reload-once-after-reconnect (frontend/src/outages/useOutageFeed.ts:98-103), not a page reload: the window marker survived and the card from before the kill stayed.
+- The Last-Event-ID header Chrome adds to its own retry is not part of Network.requestWillBeSent's header map, so the script printed 'undefined' for it; the claim that matters (every client reopen carries the last seq as ?lastEventId=) is proven by the URLs above.

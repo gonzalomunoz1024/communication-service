@@ -1,0 +1,20 @@
+# sc-4 G-4-24 BEFORE: the README never mentions the proxy variables the report client honours (commit 5566130 + the new test)
+# date: 2026-11-02T08:21:24Z
+
+$ grep -c 'PROXY' README.md
+0
+$ grep -n 'Proxy:' internal/report/client.go internal/probe/probe.go
+internal/report/client.go:84:		Proxy:               http.ProxyFromEnvironment,
+internal/probe/probe.go:137:		Proxy:               nil, // never proxy a localhost probe
+
+$ go test -count=1 -run 'TestProxyVariablesAreDocumented' -v ./internal/config/
+=== RUN   TestProxyVariablesAreDocumented
+    docs_test.go:70: the README configuration table needs a row for the proxy variables the reports honour and the probes ignore; its row "" lacks `HTTPS_PROXY`
+    docs_test.go:70: the README configuration table needs a row for the proxy variables the reports honour and the probes ignore; its row "" lacks `HTTP_PROXY`
+    docs_test.go:70: the README configuration table needs a row for the proxy variables the reports honour and the probes ignore; its row "" lacks `NO_PROXY`
+    docs_test.go:70: the README configuration table needs a row for the proxy variables the reports honour and the probes ignore; its row "" lacks probes
+--- FAIL: TestProxyVariablesAreDocumented (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.004s
+FAIL
+exit=1

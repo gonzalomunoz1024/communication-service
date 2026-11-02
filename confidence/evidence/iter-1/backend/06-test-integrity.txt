@@ -1,0 +1,25 @@
+# Test integrity: branch HEAD (0e14838) vs origin/main (191a0c5), 2026-11-02T01:49:41Z
+## diffstat of src/test + src/integrationTest
+ 16 files changed, 865 insertions(+), 14 deletions(-)
+origin/main: @Test annotations = 190
+HEAD: @Test annotations = 227
+## skip/disable markers in src (HEAD)
+none
+## test files changed
+M	src/test/java/com/atlas/communication/CommunicationServiceE2EIT.java
+A	src/test/java/com/atlas/communication/OpenApiContractIT.java
+A	src/test/java/com/atlas/communication/OperationsEndpointsIT.java
+A	src/test/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapterIT.java
+M	src/test/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapterTest.java
+M	src/test/java/com/atlas/communication/config/ClientIdWebFilterTest.java
+A	src/test/java/com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapterTest.java
+M	src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java
+M	src/test/java/com/atlas/communication/health/adapters/inbound/RestControllerHealthAdapterTest.java
+M	src/test/java/com/atlas/communication/health/application/HealthMonitorUseCaseTest.java
+M	src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java
+M	src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java
+M	src/test/java/com/atlas/communication/health/domain/HealthReportTest.java
+M	src/test/java/com/atlas/communication/publishing/adapters/inbound/RestControllerPublishingAdapterTest.java
+M	src/test/java/com/atlas/communication/publishing/application/PublishingUseCaseTest.java
+M	src/test/resources/application.yml
+## removed lines that were tests, assertions or verifications

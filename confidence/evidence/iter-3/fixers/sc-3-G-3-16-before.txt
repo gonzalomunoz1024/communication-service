@@ -1,0 +1,23 @@
+== G-3-16 before: send() keys the every-probe rule on the overall status only (agent.go at 1f92571)
+311:	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
+312-		(rep.Status != probe.UP && !a.rejected)
+
+-- go test ./internal/agent -run TestUpWithAFailingComponentIsSentEveryProbe -count=1 -race -v
+    agent_test.go:602: after tick 2: 1 reports sent, want 2 (running counts [1 2 3 4 5 6])
+    agent_test.go:602: after tick 2: 1 reports sent, want 2 (running counts [1 2 3 4 5 6])
+    agent_test.go:602: after tick 2: 1 reports sent, want 2 (running counts [1 2 3 4 5 6])
+--- FAIL: TestUpWithAFailingComponentIsSentEveryProbe (0.03s)
+    --- FAIL: TestUpWithAFailingComponentIsSentEveryProbe/db_DOWN:_every_probe (0.01s)
+    --- FAIL: TestUpWithAFailingComponentIsSentEveryProbe/nested_db.replica_DOWN:_every_probe (0.00s)
+    --- FAIL: TestUpWithAFailingComponentIsSentEveryProbe/cache_WARN,_a_word_the_service_counts_as_DEGRADED:_every_probe (0.00s)
+    --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/discovery_UNKNOWN,_not_failing_on_the_service:_heartbeat (0.01s)
+    --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/every_component_UP:_heartbeat (0.01s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.047s
+FAIL
+
+-- the new probe unit test against probe.go before the fix (no Failing yet):
+# github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe [github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe.test]
+internal/probe/probe_test.go:144:13: undefined: Failing
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe [build failed]
+FAIL

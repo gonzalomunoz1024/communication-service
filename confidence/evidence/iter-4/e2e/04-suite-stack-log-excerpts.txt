@@ -1,0 +1,142 @@
+# Excerpts of './stack.sh logs' (e2e/stack.sh) taken after each of the three suite runs, before './stack.sh down' (full logs: 1800-1950 lines each, kept in the scratchpad).
+# Backend: every WARN/ERROR (SpringDoc start-up notices dropped), notice open/retire, readiness changes, start-up. Sidecar: start, WARN, 'report delivered again' (G-4-25), leaving/stop.
+
+## run 1: backend (e2e-backend)
+2026-11-02T10:19:41.241649683Z 2026-11-02T10:19:41.230Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Starting CommunicationServiceApplication v0.0.1-SNAPSHOT using Java 21.0.13 with PID 1 (/app/app.jar starte
+2026-11-02T10:19:51.979069199Z 2026-11-02T10:19:51.978Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 11.885 seconds (process running for 12.848)
+2026-11-02T10:20:29.626788897Z 2026-11-02T10:20:29.614Z  INFO [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : monitor 44f6f05d-6df5-4f52-870b-503997bdf288 opened OUTAGE 630086b4-15fe-4e2d-9ffc-2843940a51d8 for e2e/fak
+2026-11-02T10:20:36.470081094Z 2026-11-02T10:20:36.466Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 630086b4-15fe-4e2d-9ffc-2843940a51d8: recovered: UP (1 of 1 pod UP)
+2026-11-02T10:20:58.625007521Z 2026-11-02T10:20:58.621Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Starting CommunicationServiceApplication v0.0.1-SNAPSHOT using Java 21.0.13 with PID 1 (/app/app.jar starte
+2026-11-02T10:21:45.882969912Z 2026-11-02T10:21:45.879Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 51.258 seconds (process running for 55.139)
+2026-11-02T10:22:06.974100973Z 2026-11-02T10:22:06.953Z  INFO [ntLoopGroup-3-2] c.a.c.h.a.HealthObservationUseCase       : monitor 44f6f05d-6df5-4f52-870b-503997bdf288 opened HEALTH 6bce85cb-b5e1-4238-ae55-f27ca0632d34 for e2e/fak
+2026-11-02T10:22:12.786083322Z 2026-11-02T10:22:12.780Z  INFO [ntLoopGroup-3-2] c.a.c.h.a.HealthObservationUseCase       : monitor 760c25f9-bcaa-4d4e-81fc-e319e2498415 opened HEALTH 2a2b0a42-2877-40ed-99a5-409dab0a2f0f for e2e-pul
+2026-11-02T10:22:17.256309379Z 2026-11-02T10:22:17.254Z  INFO [ntLoopGroup-3-3] c.a.c.h.a.HealthObservationUseCase       : retired notice 6bce85cb-b5e1-4238-ae55-f27ca0632d34: reclassified as DOWN: DOWN (0 of 1 pod UP (DOWN: fakea
+2026-11-02T10:22:17.277609439Z 2026-11-02T10:22:17.262Z  INFO [ntLoopGroup-3-3] c.a.c.h.a.HealthObservationUseCase       : monitor 44f6f05d-6df5-4f52-870b-503997bdf288 opened OUTAGE 64674133-ac4d-42e8-add8-ee7c63d5986d for e2e/fak
+2026-11-02T10:22:22.923986935Z 2026-11-02T10:22:22.923Z  INFO [ntLoopGroup-3-3] c.a.c.h.a.HealthObservationUseCase       : retired notice 2a2b0a42-2877-40ed-99a5-409dab0a2f0f: reclassified as DOWN: DOWN (HTTP 503): db DOWN
+2026-11-02T10:22:22.942009723Z 2026-11-02T10:22:22.932Z  INFO [ntLoopGroup-3-3] c.a.c.h.a.HealthObservationUseCase       : monitor 760c25f9-bcaa-4d4e-81fc-e319e2498415 opened OUTAGE 9ba0eee8-edef-419e-aa0c-ee40dc5d2639 for e2e-pul
+2026-11-02T10:22:29.769370896Z 2026-11-02T10:22:29.768Z  INFO [ntLoopGroup-3-2] c.a.c.h.a.HealthObservationUseCase       : retired notice 64674133-ac4d-42e8-add8-ee7c63d5986d: recovered: UP (1 of 1 pod UP)
+2026-11-02T10:22:33.212032816Z 2026-11-02T10:22:33.208Z  INFO [ntLoopGroup-3-2] c.a.c.h.a.HealthObservationUseCase       : retired notice 9ba0eee8-edef-419e-aa0c-ee40dc5d2639: recovered: UP (HTTP 200)
+2026-11-02T10:22:47.197770295Z 2026-11-02T10:22:47.197Z  WARN [54c281aa19b62a5] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPrefere
+2026-11-02T10:22:47.714051573Z 2026-11-02T10:22:47.699Z  WARN [54c281aa19b62a5] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreference
+2026-11-02T10:22:48.227510607Z 2026-11-02T10:22:48.227Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:22:48.757956790Z 2026-11-02T10:22:48.753Z  WARN [54c281aa19b62a5] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:22:53.231058046Z 2026-11-02T10:22:53.230Z  WARN [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:22:53.232557413Z 2026-11-02T10:22:53.232Z  WARN [54c281aa19b62a5] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreference
+2026-11-02T10:22:53.260416236Z 2026-11-02T10:22:53.260Z  WARN [54c281aa19b62a5] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPre
+2026-11-02T10:22:56.028800582Z 2026-11-02T10:22:56.027Z  WARN [54c281aa19b62a5] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:22:58.236723717Z 2026-11-02T10:22:58.236Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:22:59.298023376Z 2026-11-02T10:22:59.296Z  WARN [54c281aa19b62a5] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPre
+2026-11-02T10:23:03.082739374Z 2026-11-02T10:23:03.081Z  WARN [54c281aa19b62a5] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:23:03.911370092Z 2026-11-02T10:23:03.885Z  WARN [     parallel-1] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 800 ms
+2026-11-02T10:23:05.383748764Z 2026-11-02T10:23:05.377Z  INFO [ntLoopGroup-3-2] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll resumed: database reachable again after 4 skipped poll(s)
+2026-11-02T10:23:05.393053797Z 2026-11-02T10:23:05.389Z  INFO [ntLoopGroup-3-5] c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again
+
+## run 1: sidecar (e2e-sidecar)
+2026-11-02T10:19:53.958883231Z {"time":"2026-11-02T10:19:53.956548511Z","level":"INFO","msg":"health sidecar starting","version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:80
+2026-11-02T10:20:49.641909053Z {"time":"2026-11-02T10:20:49.636140588Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"1s"}
+2026-11-02T10:20:52.017923957Z {"time":"2026-11-02T10:20:51.994728938Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"2s"}
+2026-11-02T10:20:54.014572524Z {"time":"2026-11-02T10:20:54.014369484Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"4s"}
+2026-11-02T10:20:58.418117953Z {"time":"2026-11-02T10:20:58.417934021Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"8s"}
+2026-11-02T10:21:06.820919873Z {"time":"2026-11-02T10:21:06.820686505Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"16s"}
+2026-11-02T10:21:22.461968302Z {"time":"2026-11-02T10:21:22.449507496Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"30s"}
+2026-11-02T10:21:54.716054618Z {"time":"2026-11-02T10:21:54.715831314Z","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":6,"failingFor":"1m2.895s"}
+2026-11-02T10:21:57.981957575Z {"time":"2026-11-02T10:21:57.981715494Z","level":"INFO","msg":"leaving report sent"}
+2026-11-02T10:21:57.982034698Z {"time":"2026-11-02T10:21:57.981856963Z","level":"INFO","msg":"health sidecar stopped"}
+2026-11-02T10:21:59.898248389Z {"time":"2026-11-02T10:21:59.89798645Z","level":"INFO","msg":"health sidecar starting","version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:808
+2026-11-02T10:22:48.757918534Z {"time":"2026-11-02T10:22:48.756054333Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:22:56.030801563Z {"time":"2026-11-02T10:22:56.030428971Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:23:03.097851953Z {"time":"2026-11-02T10:23:03.094000833Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:23:05.407815839Z {"time":"2026-11-02T10:23:05.407345705Z","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":3,"failingFor":"21.401s"}
+
+## run 2: backend (e2e-backend)
+2026-11-02T10:23:29.178351091Z 2026-11-02T10:23:29.148Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Starting CommunicationServiceApplication v0.0.1-SNAPSHOT using Java 21.0.13 with PID 1 (/app/app.jar starte
+2026-11-02T10:23:47.973708245Z 2026-11-02T10:23:47.968Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 21.006 seconds (process running for 23.642)
+2026-11-02T10:24:33.578391823Z 2026-11-02T10:24:33.572Z  INFO [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : monitor c0350d87-275f-49d4-8d6f-1f58097d9eb2 opened OUTAGE 1947f6fb-506d-4158-9cc9-a5d339a05b12 for e2e/fak
+2026-11-02T10:24:40.260808031Z 2026-11-02T10:24:40.260Z  INFO [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : retired notice 1947f6fb-506d-4158-9cc9-a5d339a05b12: recovered: UP (1 of 1 pod UP)
+2026-11-02T10:25:01.938417431Z 2026-11-02T10:25:01.897Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Starting CommunicationServiceApplication v0.0.1-SNAPSHOT using Java 21.0.13 with PID 1 (/app/app.jar starte
+2026-11-02T10:25:31.547761110Z 2026-11-02T10:25:31.524Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 33.837 seconds (process running for 37.176)
+2026-11-02T10:25:44.777048309Z 2026-11-02T10:25:44.776Z  INFO [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor c0350d87-275f-49d4-8d6f-1f58097d9eb2 opened HEALTH f3d5179a-b0a6-4a9b-867e-af379161e453 for e2e/fak
+2026-11-02T10:25:52.063608414Z 2026-11-02T10:25:52.063Z  INFO [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor cc14235c-ba01-44c7-8516-e48da5e4a5db opened HEALTH 5d79c250-781b-4436-ab60-999a0abc14da for e2e-pul
+2026-11-02T10:25:57.815923422Z 2026-11-02T10:25:57.806Z  INFO [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : retired notice f3d5179a-b0a6-4a9b-867e-af379161e453: reclassified as DOWN: DOWN (0 of 1 pod UP (DOWN: fakea
+2026-11-02T10:25:57.815925987Z 2026-11-02T10:25:57.815Z  INFO [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor c0350d87-275f-49d4-8d6f-1f58097d9eb2 opened OUTAGE 99a36187-9c57-42d3-ab68-098d8a2e2375 for e2e/fak
+2026-11-02T10:26:02.165996520Z 2026-11-02T10:26:02.162Z  INFO [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : retired notice 5d79c250-781b-4436-ab60-999a0abc14da: reclassified as DOWN: DOWN (HTTP 503): db DOWN
+2026-11-02T10:26:02.215970274Z 2026-11-02T10:26:02.186Z  INFO [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor cc14235c-ba01-44c7-8516-e48da5e4a5db opened OUTAGE b9a459ac-6188-4f9b-9881-3866ef464853 for e2e-pul
+2026-11-02T10:26:07.179138148Z 2026-11-02T10:26:07.173Z  INFO [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : retired notice 99a36187-9c57-42d3-ab68-098d8a2e2375: recovered: UP (1 of 1 pod UP)
+2026-11-02T10:26:12.293997800Z 2026-11-02T10:26:12.290Z  INFO [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase       : retired notice b9a459ac-6188-4f9b-9881-3866ef464853: recovered: UP (HTTP 200)
+2026-11-02T10:26:26.223650151Z 2026-11-02T10:26:26.223Z  WARN [b8bca09cadd5345] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPrefere
+2026-11-02T10:26:26.681573440Z 2026-11-02T10:26:26.672Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreference
+2026-11-02T10:26:27.319888457Z 2026-11-02T10:26:27.316Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:26:30.604720266Z 2026-11-02T10:26:30.603Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:26:32.289393361Z 2026-11-02T10:26:32.282Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPre
+2026-11-02T10:26:32.292314416Z 2026-11-02T10:26:32.290Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreference
+2026-11-02T10:26:36.601158136Z 2026-11-02T10:26:36.598Z  WARN [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:26:37.780908544Z 2026-11-02T10:26:37.776Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:26:38.363844223Z 2026-11-02T10:26:38.363Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPre
+2026-11-02T10:26:41.604442109Z 2026-11-02T10:26:41.604Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:26:43.166306779Z 2026-11-02T10:26:43.154Z  WARN [     parallel-1] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 800 ms
+2026-11-02T10:26:44.899561437Z 2026-11-02T10:26:44.899Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:26:45.444468565Z 2026-11-02T10:26:45.438Z  WARN [b8bca09cadd5345] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPre
+2026-11-02T10:26:51.607528917Z 2026-11-02T10:26:51.607Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:26:51.862919741Z 2026-11-02T10:26:51.856Z  INFO [ntLoopGroup-3-8] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll resumed: database reachable again after 6 skipped poll(s)
+2026-11-02T10:26:53.106550849Z 2026-11-02T10:26:53.077Z  INFO [ntLoopGroup-3-8] c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again
+
+## run 2: sidecar (e2e-sidecar)
+2026-11-02T10:23:50.441424400Z {"time":"2026-11-02T10:23:50.435295825Z","level":"INFO","msg":"health sidecar starting","version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:80
+2026-11-02T10:24:53.742860473Z {"time":"2026-11-02T10:24:53.741598021Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"1s"}
+2026-11-02T10:24:55.820643176Z {"time":"2026-11-02T10:24:55.820477179Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"2s"}
+2026-11-02T10:24:58.219514702Z {"time":"2026-11-02T10:24:58.219262397Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"4s"}
+2026-11-02T10:25:02.508678399Z {"time":"2026-11-02T10:25:02.508544717Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"8s"}
+2026-11-02T10:25:11.378161268Z {"time":"2026-11-02T10:25:11.377989638Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"16s"}
+2026-11-02T10:25:29.174162395Z {"time":"2026-11-02T10:25:29.173908953Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"30s"}
+2026-11-02T10:25:35.859809466Z {"time":"2026-11-02T10:25:35.859546669Z","level":"INFO","msg":"leaving report sent"}
+2026-11-02T10:25:35.859834955Z {"time":"2026-11-02T10:25:35.859633807Z","level":"INFO","msg":"health sidecar stopped"}
+2026-11-02T10:25:37.479779283Z {"time":"2026-11-02T10:25:37.476129893Z","level":"INFO","msg":"health sidecar starting","version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:80
+2026-11-02T10:26:30.630003575Z {"time":"2026-11-02T10:26:30.606603029Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:26:37.785215249Z {"time":"2026-11-02T10:26:37.783348904Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:26:44.901087412Z {"time":"2026-11-02T10:26:44.900923884Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:26:51.829249549Z {"time":"2026-11-02T10:26:51.829127689Z","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":3,"failingFor":"21.632s"}
+
+## run 3: backend (e2e-backend)
+2026-11-02T10:27:17.062865769Z 2026-11-02T10:27:17.058Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Starting CommunicationServiceApplication v0.0.1-SNAPSHOT using Java 21.0.13 with PID 1 (/app/app.jar starte
+2026-11-02T10:27:32.294004644Z 2026-11-02T10:27:32.275Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 17.64 seconds (process running for 19.959)
+2026-11-02T10:28:10.087260723Z 2026-11-02T10:28:10.069Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor c9773ee0-b89c-4791-9358-22507000c28f opened OUTAGE 8ac1ac23-cdc0-47e8-ab6a-fb5d28403e6e for e2e/fak
+2026-11-02T10:28:16.546811984Z 2026-11-02T10:28:16.546Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 8ac1ac23-cdc0-47e8-ab6a-fb5d28403e6e: recovered: UP (1 of 1 pod UP)
+2026-11-02T10:28:32.240613068Z 2026-11-02T10:28:32.230Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Starting CommunicationServiceApplication v0.0.1-SNAPSHOT using Java 21.0.13 with PID 1 (/app/app.jar starte
+2026-11-02T10:28:44.991026756Z 2026-11-02T10:28:44.990Z  INFO [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 13.857 seconds (process running for 15.348)
+2026-11-02T10:28:58.169895403Z 2026-11-02T10:28:58.169Z  INFO [ntLoopGroup-3-6] c.a.c.h.a.HealthObservationUseCase       : monitor c9773ee0-b89c-4791-9358-22507000c28f opened HEALTH 2c52b24f-fee0-4e11-a731-637089873d3b for e2e/fak
+2026-11-02T10:29:05.393979622Z 2026-11-02T10:29:05.390Z  INFO [ntLoopGroup-3-6] c.a.c.h.a.HealthObservationUseCase       : monitor af4c0df0-45a4-4fb0-97e5-b0dbe1e7a6ae opened HEALTH 929fd103-3031-4a5f-901f-b41faf70ab81 for e2e-pul
+2026-11-02T10:29:10.222026455Z 2026-11-02T10:29:10.211Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 2c52b24f-fee0-4e11-a731-637089873d3b: reclassified as DOWN: DOWN (0 of 1 pod UP (DOWN: fakea
+2026-11-02T10:29:10.230868839Z 2026-11-02T10:29:10.230Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor c9773ee0-b89c-4791-9358-22507000c28f opened OUTAGE 41238913-a681-4c3e-a222-6ee031c2a7c6 for e2e/fak
+2026-11-02T10:29:15.451369179Z 2026-11-02T10:29:15.450Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 929fd103-3031-4a5f-901f-b41faf70ab81: reclassified as DOWN: DOWN (HTTP 503): db DOWN
+2026-11-02T10:29:15.459556194Z 2026-11-02T10:29:15.459Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor af4c0df0-45a4-4fb0-97e5-b0dbe1e7a6ae opened OUTAGE 358a489e-2491-4c63-b128-4240919427cb for e2e-pul
+2026-11-02T10:29:20.281437489Z 2026-11-02T10:29:20.280Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 41238913-a681-4c3e-a222-6ee031c2a7c6: recovered: UP (1 of 1 pod UP)
+2026-11-02T10:29:25.507242708Z 2026-11-02T10:29:25.506Z  INFO [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 358a489e-2491-4c63-b128-4240919427cb: recovered: UP (HTTP 200)
+2026-11-02T10:29:38.694571330Z 2026-11-02T10:29:38.686Z  WARN [baba5e247a60c37] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPrefere
+2026-11-02T10:29:38.743674000Z 2026-11-02T10:29:38.743Z  WARN [baba5e247a60c37] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreference
+2026-11-02T10:29:39.002076255Z 2026-11-02T10:29:38.999Z  WARN [baba5e247a60c37] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:29:40.521685476Z 2026-11-02T10:29:40.520Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:29:44.128321639Z 2026-11-02T10:29:44.124Z  WARN [baba5e247a60c37] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreference
+2026-11-02T10:29:44.145362261Z 2026-11-02T10:29:44.144Z  WARN [baba5e247a60c37] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPre
+2026-11-02T10:29:46.197382253Z 2026-11-02T10:29:46.194Z  WARN [baba5e247a60c37] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:29:50.096363418Z 2026-11-02T10:29:50.091Z  WARN [   scheduling-1] c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:29:50.177295384Z 2026-11-02T10:29:50.175Z  WARN [baba5e247a60c37] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPre
+2026-11-02T10:29:53.411425367Z 2026-11-02T10:29:53.407Z  WARN [baba5e247a60c37] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches Rea
+2026-11-02T10:29:53.935049035Z 2026-11-02T10:29:53.934Z  WARN [     parallel-1] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 800 ms
+2026-11-02T10:29:55.097625984Z 2026-11-02T10:29:55.094Z  WARN [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenc
+2026-11-02T10:29:55.612018252Z 2026-11-02T10:29:55.611Z  INFO [ntLoopGroup-3-1] c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again
+2026-11-02T10:29:55.614120282Z 2026-11-02T10:29:55.613Z  INFO [ntLoopGroup-3-8] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll resumed: database reachable again after 4 skipped poll(s)
+
+## run 3: sidecar (e2e-sidecar)
+2026-11-02T10:27:34.559879551Z {"time":"2026-11-02T10:27:34.557035287Z","level":"INFO","msg":"health sidecar starting","version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:80
+2026-11-02T10:28:25.182418709Z {"time":"2026-11-02T10:28:25.182175644Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"1s"}
+2026-11-02T10:28:27.415518183Z {"time":"2026-11-02T10:28:27.415333007Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"2s"}
+2026-11-02T10:28:29.772043181Z {"time":"2026-11-02T10:28:29.771916119Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"4s"}
+2026-11-02T10:28:34.217282715Z {"time":"2026-11-02T10:28:34.217113741Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"8s"}
+2026-11-02T10:28:43.385504047Z {"time":"2026-11-02T10:28:43.371110646Z","level":"WARN","msg":"report failed; will retry","error":"post …: dial tcp 172.19.0.3:8080: connect: connection refused","in":"16s"}
+2026-11-02T10:28:49.352761202Z {"time":"2026-11-02T10:28:49.350704005Z","level":"INFO","msg":"leaving report sent"}
+2026-11-02T10:28:49.352781549Z {"time":"2026-11-02T10:28:49.350985676Z","level":"INFO","msg":"health sidecar stopped"}
+2026-11-02T10:28:51.069988559Z {"time":"2026-11-02T10:28:51.0670112Z","level":"INFO","msg":"health sidecar starting","version":"d10369b","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:8080
+2026-11-02T10:29:39.002736792Z {"time":"2026-11-02T10:29:39.002572885Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:29:46.197430718Z {"time":"2026-11-02T10:29:46.19718509Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"
+2026-11-02T10:29:53.417113149Z {"time":"2026-11-02T10:29:53.416951918Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":
+2026-11-02T10:29:55.788891642Z {"time":"2026-11-02T10:29:55.7821924Z","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":3,"failingFor":"21.765s"}

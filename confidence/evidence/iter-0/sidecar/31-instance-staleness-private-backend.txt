@@ -1,0 +1,48 @@
+2026-11-01T23:46:18.467Z  INFO 14230 --- [communication-service] [           main] o.s.b.web.embedded.netty.NettyWebServ
+2026-11-01T23:46:18.482Z  INFO 14230 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication
+[23:46:19] private backend (pid 14230) up on :18790 (sweep 2 s, stale grace after start 10 s, instance staleness default 90 s)
+  silent-1 UP -> 202  (no further reports)
+  zero-1 UP -> 202
+  zero-2 UP -> 202
+  zero-1 leaving -> 202
+  zero-2 leaving -> 202
+  partial: two pods UP, one of them then goes silent (the other keeps reporting every 20 s) -> expect DEGRADED or DOWN? (minHealthyPercent 50: 1 of 2 live... the silent one is not live after 90 s, so UP 1 of 1)
+  part-a UP -> 202  part-b UP -> 202
+[23:46:39] +20 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (2 of 2 pods UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:47:00] +41 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (2 of 2 pods UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:47:20] +61 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (2 of 2 pods UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:47:40] +81 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (2 of 2 pods UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:48:00] +101 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:48:20] +121 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:48:40] +141 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:48:40] backend log lines about staleness:
+2026-11-01T23:47:50.774Z  WARN 14230 --- [communication-service] [ntLoopGroup-3-7] c.a.c.h.application.HealthSweepUseCase   : 2 of 3 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+[23:48:40] DONE

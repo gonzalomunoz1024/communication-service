@@ -1,0 +1,32 @@
+# sc-4 G-4-22 BEFORE: config.FromEnv accepts zero/negative timeouts, heartbeat, retry delay and grace (commit e744b57 + the new tests)
+# date: 2026-11-02T08:19:03Z
+
+$ go test -count=1 -run 'TestDurationsTheSidecarCannotUseAreRejected|TestRunRejectsAnUnusableValueWithExit2' -v ./internal/config/ ./cmd/health-sidecar/
+=== RUN   TestDurationsTheSidecarCannotUseAreRejected
+    config_test.go:179: CS_PROBE_TIMEOUT=0s: error <nil>, want one saying "CS_PROBE_TIMEOUT must be more than 0 (got 0s)"
+    config_test.go:179: CS_PROBE_TIMEOUT=-1s: error <nil>, want one saying "CS_PROBE_TIMEOUT must be more than 0 (got -1s)"
+    config_test.go:179: CS_REPORT_TIMEOUT=0s: error <nil>, want one saying "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"
+    config_test.go:179: CS_REPORT_TIMEOUT=-5s: error <nil>, want one saying "CS_REPORT_TIMEOUT must be more than 0 (got -5s)"
+    config_test.go:179: CS_HEARTBEAT=0s: error <nil>, want one saying "CS_HEARTBEAT must be more than 0 (got 0s)"
+    config_test.go:179: CS_HEARTBEAT=-30s: error <nil>, want one saying "CS_HEARTBEAT must be more than 0 (got -30s)"
+    config_test.go:179: CS_RETRY_DELAY=-2s: error <nil>, want one saying "CS_RETRY_DELAY must not be negative (got -2s)"
+    config_test.go:179: CS_STARTUP_GRACE=-1m: error <nil>, want one saying "CS_STARTUP_GRACE must not be negative (got -1m0s)"
+--- FAIL: TestDurationsTheSidecarCannotUseAreRejected (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.012s
+=== RUN   TestRunRejectsAnUnusableValueWithExit2
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_REPORT_TIMEOUT
+    main_test.go:113: CS_REPORT_TIMEOUT=0s: exit code 0, want 2
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_PROBE_TIMEOUT
+    main_test.go:113: CS_PROBE_TIMEOUT=-1s: exit code 0, want 2
+--- FAIL: TestRunRejectsAnUnusableValueWithExit2 (4.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY (0.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL (0.00s)
+    --- FAIL: TestRunRejectsAnUnusableValueWithExit2/CS_REPORT_TIMEOUT (2.00s)
+    --- FAIL: TestRunRejectsAnUnusableValueWithExit2/CS_PROBE_TIMEOUT (2.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	4.010s
+FAIL
+exit=1

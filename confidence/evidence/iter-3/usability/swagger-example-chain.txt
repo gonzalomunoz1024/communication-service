@@ -1,0 +1,19 @@
+# Swagger UI's own 'Example Value' for POST /v1/communications, fixed one error at a time
+## run 1 — 2026-11-02T07:01:24Z, private backend A :19600 (torn down since); command and output copied verbatim from the session transcript
+ex='{"tenantId":"string","publisher":"string","type":"INCIDENT","severity":"INFO","title":"string","body":"string","affectedServices":["string"],"audience":"PUBLIC","draft":true,"startsAt":"2026-11-02T07:00:53.640Z","endsAt":"2026-11-02T07:00:53.640Z","expiresAt":"2026-11-02T07:00:53.640Z","externalRef":"INC0012345","ticket":{"system":"string","number":"string","url":"string"}}'
+for fix in 'none' 'del(.ticket.url)' 'del(.endsAt)' 'del(.expiresAt)'; do ex=$(jq -c "$fix"); curl -s -w ' %{http_code}\n' -X POST $A/v1/communications -H 'X-Client-Id: ux3-swagger' -H "$CT" -d "$ex"; done
+none               -> {"error":"ticket.url must be an http(s) link"} 400
+del(.ticket.url)   -> {"error":"endsAt 2026-11-02T07:00:53.640Z must be after startsAt 2026-11-02T07:00:53.640Z"} 400
+del(.endsAt)       -> {"error":"expiresAt 2026-11-02T07:00:53.640Z must be after startsAt 2026-11-02T07:00:53.640Z"} 400
+del(.expiresAt)    -> {"error":"INCIDENT requires severity MINOR or higher"} 400
+
+## run 2 — 2026-11-02T07:35:37Z, shared backend :8080, same body with tenantId ux3-swagger (own prefix), carried through to the pass; the draft it creates is deleted afterwards
+none                 -> {"error":"ticket.url must be an http(s) link"} 400
+del(.ticket.url)     -> {"error":"endsAt 2026-11-02T07:36:37Z must be after startsAt 2026-11-02T07:36:37Z"} 400
+del(.endsAt)         -> {"error":"expiresAt 2026-11-02T07:36:37Z must be after startsAt 2026-11-02T07:36:37Z"} 400
+del(.expiresAt)      -> {"error":"INCIDENT requires severity MINOR or higher"} 400
+.severity="MINOR"    -> {"id":"b7edd0bf-ac23-4a62-ab69-b83ba384d7c5","tenantId":"ux3-swagger","publisher":"string","type":"INCIDENT","severity":"MINOR","title":"string","body":"string","affectedServices":["string"],"audience
+(fifth answer: the created notice; its status code was cut off by `cut -c1-200` above, a successful POST answers 201 as in api-walk3.txt; the GET below shows a DRAFT because the example sends draft:true)
+GET  /v1/communications/b7edd0bf-ac23-4a62-ab69-b83ba384d7c5 -> "status":"DRAFT" 200 
+DELETE /v1/admin/communications/b7edd0bf-ac23-4a62-ab69-b83ba384d7c5 -> 204
+GET after delete -> 404

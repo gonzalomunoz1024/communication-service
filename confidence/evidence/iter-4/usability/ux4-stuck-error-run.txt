@@ -1,0 +1,10 @@
+[page1-before] {"badge":"Live","error":false,"skeleton":0,"titles":["Open before the outage"],"cards":1}
+[mongo-stopped] {}
+[fresh-page-timelines] {"timeline":{"dev":["0.8s Connecting skeleton","6.0s Reconnecting (1) skeleton","10.6s Reconnecting (1) ERROR","11.6s Reconnecting (2) ERROR"],"prod":["0.6s Connecting skeleton","5.7s Reconnecting (1) ERROR","11.8s Reconnecting (2) ERROR"]},"requests":{"dev":["0.4s -> GET","0.4s -> GET","0.5s -> stream","5.4s <- GET 503","5.5s <- stream 503","6.5s -> stream","10.4s <- GET 503","11.5s <- stream 503","13.5s -> stream"],"prod":["0.6s -> GET","0.6s -> stream","5.5s <- GET 503","5.6s <- stream 503","6.6s -> stream","11.6s <- stream 503","13.6s -> stream"]}}
+[page1-refresh-during-outage] {"badge":"Service degraded","error":true,"skeleton":0,"titles":[],"cards":0}
+[ready-again] {"afterMs":1916}
+[published-after-recovery] {"status":201}
+[page1-20s-after-the-new-notice] {"badge":"Service degraded","error":true,"skeleton":0,"titles":[],"cards":0,"announced":["status:","status:","status:Live","status:","status:Service degraded","alert:Couldn't load the feedThe service cannot reach its database right now "]}
+[fresh-pages-20s-after] {"dev":{"badge":"Live","error":false,"skeleton":0,"titles":["Published after recovery","Open before the outage"],"cards":2},"prod":{"badge":"Live","error":false,"skeleton":0,"titles":["Published after recovery","Open before the outage"],"cards":2}}
+[page1-after-try-again] {"badge":"Live","error":false,"skeleton":0,"titles":["Published after recovery","Open before the outage"],"cards":2}
+exit 0

@@ -1,0 +1,10 @@
+- article:
+  - text: Active Major Outage Updated just now
+  - heading "Feed check notice" [level=3]
+  - paragraph: Card payments fail for roughly 30% of requests. Retries succeed.
+  - text: payments-api checkout-web Started just now ux3-oncall
+  - group "Resolve as ux3-oncall? It leaves tenant ux3-sre's feed at once and cannot be reopened.":
+    - paragraph: Resolve as ux3-oncall? It leaves tenant ux3-sre's feed at once and cannot be reopened.
+    - textbox "Resolution note (optional)"
+    - button "Cancel"
+    - button "Resolve"

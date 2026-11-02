@@ -1,0 +1,13 @@
+# G-3-25 (frontend half), before the fix: automated-notice chip tests against 1b197a1 (OutageCard.tsx shows any externalRef that is not the ticket number as a mono chip)
+# usability evidence it reproduces: sidecar-pod.txt P6 card text '... Active Major Outage health:2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27:1 Updated just now ...' (UX-47, 20-auto-notice-feed.png)
+# cwd frontend/: npx vitest run src/test/OutageCard.test.tsx
+ RUN  v5.0.5 /home/claude/wt-fe-3/frontend
+ ❯ src/test/OutageCard.test.tsx (10 tests | 1 failed) 1559ms
+     × labels an automated notice "Automatic" instead of showing its internal health: reference 44ms
+AssertionError: expected <span class="truncate"></span> to be null
+- Expected:
++ Received:
+  health:2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27:1
+ ❯ src/test/OutageCard.test.tsx:88:43
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)

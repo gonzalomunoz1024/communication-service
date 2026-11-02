@@ -1,0 +1,26 @@
+# e2e-s G-2-17 before: the loop head 3b18b1d has no in-repo end-to-end test
+# (fixer E2E-S, worktree of /home/claude/communication-service, 2026-11-02 02:5x UTC)
+
+$ git log --oneline -1
+3b18b1d Add the iteration-1 verification reports, their evidence and the iteration-2 gap analysis
+
+$ git ls-tree -r 3b18b1d --name-only -- e2e Dockerfile .dockerignore .github
+(no output: there is no e2e/ directory, no backend Dockerfile, no .dockerignore and no .github/ workflow)
+
+$ ls e2e
+ls: cannot access 'e2e': No such file or directory
+
+$ git grep -l -i playwright 3b18b1d -- ':!confidence'
+3b18b1d:frontend/package-lock.json
+(the only mention of Playwright outside the verifiers' evidence is a transitive entry of the
+frontend lockfile; nothing in the build drives a browser against the backend, and nothing drives
+the sidecar against the backend: confidence/iter-1/verifier-e2e.md section 1, "Automated test
+health": "there is still no automated test in the build that drives browser<->backend or
+sidecar<->backend together (only these verifier scripts do)")
+
+$ git ls-tree -r 3b18b1d --name-only | grep -c -E '\.spec\.(ts|js)$'
+0
+
+There is therefore no failing run to record: the test that should have caught the gap did not
+exist. The after file is the first full run of the suite added for G-2-17, from a freshly created
+stack.

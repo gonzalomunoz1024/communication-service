@@ -1,0 +1,9 @@
+01:54:57.931 === F-92/F-48 sidecar silent (docker pause) -> stale -> DOWN naming the pod
+01:54:57.966 monitors in db e2e1 now: e2e1-pod/e2e1-app:UP
+01:54:58.031 docker pause e2e1-sidecar e2e1-sidecar
+01:56:26.602 F-48 PASS pod silent (paused, no leaving report) -> after staleAfterSeconds=90 an OUTAGE naming the pod :: after 89s title="e2e1-app is down" body="Automated health check reported **DOWN** at 2026-11-02T01:56:25.251302272Z (no health report received since 2026-11-02T01:54:54.565Z). |  | 1 pod has not reported since 2026-11-02T01:54:54.565Z (e2e1-app-6d4f8b7c9-ab12c) |  | This notice is managed automatical"
+01:56:26.651 docker unpause e2e1-sidecar
+01:56:36.765 F-48 PASS pod reports again -> notice retired (recovered) :: after 10s last="ACTIVE -> RETIRED: recovered: UP (1 of 1 pod UP)" (pause-valve warnings so far in A's log: ERR(1): 0)
+
+SUMMARY: 2 checks, 2 pass, 0 fail
+EXIT=0

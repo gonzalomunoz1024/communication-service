@@ -1,0 +1,20 @@
+# Mongo indexes (F-51), read-only mongosh on mongo7 (docker exec mongo7 mongosh --quiet --eval getIndexes), 2026-11-02
+communication = the shared :8080's database; vb4_cookbook = a fresh database created by the iteration-4 jar on :19150 (later served by :19190 with retention PT2H, hence events_ttl_idx 7200); vb4_image = fresh, created by the image on :19180
+
+communication.communication_events: [{"name":"events_tenant_seq_idx","key":{"tenantId":1,"_id":1}},{"name":"events_ttl_idx","key":{"at":1},"ttl":86400}]
+communication.communications: [{"name":"sweep_activation_idx","key":{"status":1,"startsAt":1}},{"name":"feed_idx","key":{"tenantId":1,"status":1,"startsAt":-1}},{"name":"sweep_expiry_idx","key":{"status":1,"expiresAt":1}},{"name":"affectedServices","key":{"affectedServices":1}},{"name":"external_ref_idx","key":{"tenantId":1,"externalRef":1},"unique":true,"partial":{"externalRef":{"$exists":true}}}]
+communication.counters: []
+communication.health_instances: [{"name":"instance_monitor_idx","key":{"monitorId":1,"instanceId":1}},{"name":"instance_ttl_idx","key":{"lastSeenAt":1},"ttl":86400}]
+communication.health_monitors: [{"name":"monitor_tenant_service_idx","key":{"tenantId":1,"service":1},"unique":true}]
+vb4_cookbook.communication_events: [{"name":"events_tenant_seq_idx","key":{"tenantId":1,"_id":1}},{"name":"events_ttl_idx","key":{"at":1},"ttl":7200}]
+vb4_cookbook.communications: [{"name":"affectedServices","key":{"affectedServices":1}},{"name":"sweep_activation_idx","key":{"status":1,"startsAt":1}},{"name":"sweep_expiry_idx","key":{"status":1,"expiresAt":1}},{"name":"feed_idx","key":{"tenantId":1,"status":1,"startsAt":-1}},{"name":"external_ref_idx","key":{"tenantId":1,"externalRef":1},"unique":true,"partial":{"externalRef":{"$exists":true}}}]
+vb4_cookbook.counters: []
+vb4_cookbook.health_instances: [{"name":"instance_monitor_idx","key":{"monitorId":1,"instanceId":1}},{"name":"instance_ttl_idx","key":{"lastSeenAt":1},"ttl":86400}]
+vb4_cookbook.health_monitors: [{"name":"monitor_tenant_service_idx","key":{"tenantId":1,"service":1},"unique":true}]
+vb4_image.communication_events: [{"name":"events_tenant_seq_idx","key":{"tenantId":1,"_id":1}},{"name":"events_ttl_idx","key":{"at":1},"ttl":86400}]
+vb4_image.communications: [{"name":"feed_idx","key":{"tenantId":1,"status":1,"startsAt":-1}},{"name":"sweep_activation_idx","key":{"status":1,"startsAt":1}},{"name":"sweep_expiry_idx","key":{"status":1,"expiresAt":1}},{"name":"affectedServices","key":{"affectedServices":1}},{"name":"external_ref_idx","key":{"tenantId":1,"externalRef":1},"unique":true,"partial":{"externalRef":{"$exists":true}}}]
+vb4_image.counters: []
+vb4_image.health_instances: [{"name":"instance_ttl_idx","key":{"lastSeenAt":1},"ttl":86400},{"name":"instance_monitor_idx","key":{"monitorId":1,"instanceId":1}}]
+vb4_image.health_monitors: [{"name":"monitor_tenant_service_idx","key":{"tenantId":1,"service":1},"unique":true}]
+
+Matches F-51: communications feed_idx, sweep_expiry_idx, sweep_activation_idx, affectedServices, partial unique external_ref_idx; health_monitors unique monitor_tenant_service_idx; health_instances instance_monitor_idx + instance_ttl_idx 86400; communication_events events_tenant_seq_idx + events_ttl_idx (86400 by default, 7200 with retention PT2H, changed in place: 38-config-driven.txt E-51-a).

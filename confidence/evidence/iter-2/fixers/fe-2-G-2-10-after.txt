@@ -1,0 +1,7 @@
+# G-2-10, after the fix (OutageFeed.tsx results wrapper, PublishOutageForm.tsx banner focus and Publish-another focus)
+# cwd frontend/: npx vitest run src/test/OutageFeed.test.tsx src/test/PublishOutageForm.test.tsx
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a8066b44d275a8a34/frontend
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  02:48:26
+   Duration  5.54s (tests 53%, environment 32%, setup 8%, transform 4%, import 3%)

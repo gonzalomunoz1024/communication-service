@@ -10,7 +10,8 @@ import reactor.core.publisher.Mono;
 /**
  * Lifecycle event log feeding SSE subscribers on every instance. Events carry a global,
  * monotonic sequence number that doubles as the SSE event id, so a subscriber that remembers
- * the last id it saw can resume exactly where it left off.
+ * the last id it saw can resume where it left off: live events come exactly once, a snapshot's
+ * id (the {@link #head()} when it was taken) may replay what the snapshot already showed.
  */
 public interface CommunicationEventsPort {
 
@@ -37,8 +38,11 @@ public interface CommunicationEventsPort {
     Mono<Boolean> canResumeAfter(long seq);
 
     /**
-     * Sequence number of the last event this instance has fanned out. A subscriber that
-     * remembers it misses nothing when it later calls {@link #streamAfter}.
+     * Sequence number of the last event in the log (0 while it is empty), read from the store
+     * rather than from this instance's fan-out cursor, which can trail it by one poll. A snapshot
+     * taken after this read and stamped with it can be resumed from with {@link #streamAfter}
+     * without skipping anything: at worst an event whose change the snapshot already showed
+     * comes again.
      */
-    long position();
+    Mono<Long> head();
 }

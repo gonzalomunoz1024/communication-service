@@ -1,0 +1,25 @@
+# 31 - configuration-driven behaviours on a private instance :19190 (db vb2_cookbook, which already holds events_ttl_idx at 86400 s): events.retention=PT2H (F-21 collMod), client-id.required=false (F-27), servicenow.instance-url (F-09), 2026-11-02T04:24:26Z
+
+before: [
+  [
+    'events_ttl_idx',
+    86400
+  ]
+]
+http://127.0.0.1:19190/actuator/health/readiness -> 200 at +1793593474
+after start with retention PT2H: [
+  [
+    'events_ttl_idx',
+    7200
+  ]
+]
+2026-11-02T04:24:32.473Z  INFO 21453 --- [communication-service] [ntLoopGroup-3-2] .c.c.a.o.MongoCommunicationEventsAdapter : events_ttl_idx now expires events after PT2H
+
+client-id.required=false: GET /v1/feed without X-Client-Id -> 200  (shared :8080 with the default true -> 401)
+
+servicenow.instance-url set: publish with ticket INC0000777 ->
+{"status":"ACTIVE","externalRef":"INC0000777","ticket":{"system":"servicenow","number":"INC0000777","url":"https://acme.service-now.com/nav_to.do?uri=incident.do%3Fsysparm_query%3Dnumber%3DINC0000777"}}
+expected url pattern: <instance>/nav_to.do?uri=incident.do%3Fsysparm_query%3Dnumber%3DINC0000777 (README/TicketPolicy)
+bad number -> {"error":"ticket.number 'INC12' is not a ServiceNow incident number (like INC0012345)"}
+
+instance :19190 stopped

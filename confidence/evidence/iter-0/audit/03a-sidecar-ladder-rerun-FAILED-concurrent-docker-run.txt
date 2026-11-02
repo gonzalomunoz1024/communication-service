@@ -1,0 +1,4 @@
+docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint sc-pod-ladder (c51786deadec00d945a34b2d57c8b0e82709250eaead8013fe0615202c61e86a): failed to bind host port 127.0.0.1:39100/tcp: address already in use
+
+Run 'docker run --help' for more information
+LADDER_RC=125

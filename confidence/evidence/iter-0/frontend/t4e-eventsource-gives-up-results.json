@@ -1,0 +1,32 @@
+[
+  {
+    "feature": "F-61",
+    "name": "after a dropped stream the browser reconnects by itself and sends Last-Event-ID = last id seen (41)",
+    "ok": false,
+    "evidence": "[{\"n\":1,\"lastEventId\":\"(none)\"},{\"n\":2,\"lastEventId\":\"(none)\"},{\"n\":3,\"lastEventId\":\"(none)\"}]"
+  },
+  {
+    "feature": "F-61",
+    "name": "after a non-200 answer to the reconnect the EventSource is CLOSED (readyState 2) and the UI shows Reconnecting",
+    "ok": false,
+    "evidence": "{\"esLog\":[\"00:10:20.916 es#2 open\",\"00:10:20.917 es#2 error readyState=0\",\"00:10:20.957 es#3 error readyState=2\",\"00:10:35.992 es#4 open\"],\"indicator\":\"Live\"}"
+  },
+  {
+    "feature": "F-61",
+    "name": "the UI recovers on its own once the stream would succeed again (a new EventSource within 15 s)",
+    "ok": true,
+    "evidence": "{\"totalStreamRequests\":3,\"indicator\":\"Live\"}"
+  },
+  {
+    "feature": "F-61",
+    "name": "diagnostic: only a manual Live-updates off/on (or a reload) creates a new EventSource and restores Live",
+    "ok": true,
+    "evidence": "{\"totalStreamRequests\":3}"
+  },
+  {
+    "feature": "F-61",
+    "name": "console/page errors during the scenario",
+    "ok": true,
+    "evidence": "{\"pageErrors\":[],\"console\":[{\"type\":\"error\",\"text\":\"Failed to load resource: the server responded with a status of 500 (Internal Server Error)\"}]}"
+  }
+]

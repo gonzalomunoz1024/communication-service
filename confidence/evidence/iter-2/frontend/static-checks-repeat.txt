@@ -1,0 +1,12 @@
+Frontend Verifier iteration 2 - repeat runs of the F-66 commands (run-static.sh ran lint, typecheck and the build once; the rubric row asks for 3x). 2026-11-02T04:37:16Z, HEAD be19645
+
+lint run 2 | exit 0 | 3.7s | tail: 
+lint run 3 | exit 0 | 3.7s | tail: 
+typecheck run 2 | exit 0 | 3.4s | tail: 
+typecheck run 3 | exit 0 | 3.2s | tail: 
+tsc -b (the first half of npm run build; emits only tsbuildinfo under node_modules/.tmp) | exit 0 | 3.6s | output lines: 0
+vite build run 2 (--outDir scratch, frontend/dist untouched) | exit 0 | 1.3s | dist-run2/assets/index-CATUeeII.js 268.29 kB │ gzip: 83.73 kB
+vite build run 3 (--outDir scratch, frontend/dist untouched) | exit 0 | 1.1s | dist-run3/assets/index-CATUeeII.js 268.29 kB │ gzip: 83.73 kB
+
+git status --short frontend/ after the runs (must be empty):
+(end)

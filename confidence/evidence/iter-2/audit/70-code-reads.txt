@@ -1,0 +1,129 @@
+# 70 - code reads behind the sampled gap and finding claims (HEAD 33451c3; these files are identical at be19645)
+
+## GAP-sidecar-3 and GAP-e2e2-1: which reports are due (every non-UP report each probe; UP with a failing component only at the heartbeat)
+--- sidecar/internal/agent/agent.go:305-314
+  305  	a.mu.Lock()
+  306  	sig := signature(rep)
+  307  	if a.dirty && now.Before(a.nextSend) {
+  308  		a.mu.Unlock()
+  309  		return
+  310  	}
+  311  	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
+  312  		(rep.Status != probe.UP && !a.rejected)
+  313  	changed := sig != a.lastSig || rep.Message != a.lastMessage
+  314  	a.mu.Unlock()
+
+## GAP-sidecar-4: the wall-clock agent test
+573:func TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat(t *testing.T) {
+586:			h.agent.Now = time.Now // Run's timers are real, so the heartbeat clock must be too
+593:			time.Sleep(300 * time.Millisecond)
+
+## UX-51: no log-level switch
+--- sidecar/cmd/health-sidecar/main.go:34-38
+   34  // (the error names the variable), 0 after a clean stop with the leaving report sent.
+   35  func run(ctx context.Context, getenv func(string) string, stdout io.Writer) int {
+   36  	log := slog.New(slog.NewJSONHandler(stdout, nil))
+   37  	cfg, err := config.FromEnv(getenv)
+   38  	if err != nil {
+grep -niE 'LOG|level' sidecar/internal/config/config.go: 0 hits
+--- sidecar/README.md:178-182
+  178  
+  179  A `reported` line is logged at INFO when the status, the failing components or the message
+  180  change (UP → DOWN, DOWN → UP, a new cause); the sends in between (heartbeats, the repeated
+  181  probes of an app that is not UP) are logged at DEBUG, below the default level, so a dead app
+  182  shows as one DOWN line and then its recovery.
+
+## UX-48: the connection badge is a label part, not a live region
+--- frontend/src/outages/OutageFeed.tsx:113-125
+  113          <div className="ml-auto flex items-center gap-3 pb-1">
+  114            <label className="flex items-center gap-2 text-caption text-secondary">
+  115              <Switch size="sm" label="Live updates" checked={live} onChange={setLive} />
+  116              <StatusDot kind={conn.kind} pulse={conn.pulse} label={connLabel} />
+  117            </label>
+  118            <Button size="sm" variant="ghost" icon="refresh" onClick={feed.refresh} loading={feed.loading}>
+  119              Refresh
+  120            </Button>
+  121          </div>
+  122        </div>
+  123  
+  124        <p role="status" aria-live="polite" className={cx('flex items-center gap-1.5 text-caption text-secondary', !resolved && 'sr-only')}>
+  125          {resolved && (
+--- frontend/src/ui/StatusDot.tsx:28-34
+   28        className={cx('shrink-0 rounded-full', size === 'sm' ? 'h-1.5 w-1.5' : 'h-2 w-2', pulse && 'animate-pulse-subtle', !label && className)}
+   29        style={{ background: `var(${varName ?? KIND_VAR[kind]})` }}
+   30        aria-hidden={label ? 'true' : undefined}
+   31        role={label ? undefined : 'img'}
+   32        aria-label={label ? undefined : kind}
+   33      />
+   34    )
+
+## GAP-e2e2-4: README builder vs go.mod
+e2e/README.md:37:`GO_IMAGE=local/go-toolset:1.24 BASE_IMAGE=gcr.io/distroless/static-debian12:latest ./stack.sh up`
+e2e/docker-compose.yml:54:      # the UBI registry is unreachable: GO_IMAGE=local/go-toolset:1.24 BASE_IMAGE=gcr.io/distroless/static-debian12:latest
+3:go 1.25
+13:ENV GOTOOLCHAIN=local CGO_ENABLED=0 GOFLAGS=-trimpath
+
+## GAP-backend2-1: the stream is committed before its first query; the 503 handler then runs on a committed response
+--- src/main/java/com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapter.java:68-90
+   68      @GetMapping(value = "/feed/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+   69      @Operation(summary = "SSE: snapshot of visible items, then live lifecycle events; "
+   70              + "send Last-Event-ID (or ?lastEventId=) to resume where you left off instead")
+   71      public Flux<ServerSentEvent<CommunicationEvent>> stream(
+   72              @RequestParam String tenantId,
+   73              @RequestParam(required = false) String service,
+   74              @RequestParam(required = false) CommunicationType type,
+   75              @RequestParam(required = false) Severity severity,
+   76              @RequestParam(required = false) Audience audience,
+   77              @RequestParam(required = false) Long lastEventId,
+   78              @RequestHeader(name = "Last-Event-ID", required = false) String lastEventIdHeader) {
+   79          FeedQuery query = new FeedQuery(tenantId, service, type, severity, audience,
+   80                  null, true, 0, Page.MAX_SIZE);
+   81          Long resumeAfter = lastEventId != null ? lastEventId : parseEventId(lastEventIdHeader);
+   82          return Flux.defer(() -> {
+   83              // The keepalive must stop with the data: when the event source completes (this
+   84              // instance is shutting down) the response has to end too, or it would live on
+   85              // through comments alone until the graceful-shutdown timeout cuts it.
+   86              Sinks.Empty<Void> ended = Sinks.empty();
+   87              Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query, resumeAfter)
+   88                      .map(e -> ServerSentEvent.<CommunicationEvent>builder()
+   89                              .id(Long.toString(e.seq()))
+   90                              .event(e.type().name().toLowerCase(Locale.ROOT))
+--- src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:63-74
+   63       * driver's message names the cluster's addresses, so it goes to the log, not to the caller.
+   64       */
+   65      @ExceptionHandler({DataAccessResourceFailureException.class, MongoTimeoutException.class,
+   66              MongoSocketException.class})
+   67      public Mono<ResponseEntity<Map<String, String>>> handleDatabaseUnavailable(RuntimeException ex,
+   68              ServerWebExchange exchange) {
+   69          ServerHttpRequest request = exchange.getRequest();
+   70          log.warn("{} {} -> 503, {}: {}", request.getMethod(), request.getPath().value(),
+   71                  DATABASE_UNAVAILABLE, ex.getMessage());
+   72          log.debug(DATABASE_UNAVAILABLE, ex);
+   73          return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+   74                  .body(Map.of("error", DATABASE_UNAVAILABLE)));
+
+## AUD-2-1 (auditor observation): sidecar retry backoff vs the instance staleness window
+--- sidecar/internal/agent/agent.go:23-28
+   23  // Backoff bounds for failed sends.
+   24  const (
+   25  	minBackoff = time.Second
+   26  	maxBackoff = 60 * time.Second
+   27  	// jitter is the share of an interval added at random so a fleet never ticks in lockstep.
+   28  	jitter = 0.2
+--- sidecar/internal/agent/agent.go:338-349
+  338  		// Shutting down mid-tick: the leaving report follows and says everything needed.
+  339  	default:
+  340  		if a.backoff == 0 {
+  341  			a.backoff = minBackoff
+  342  		} else {
+  343  			a.backoff = min(a.backoff*2, maxBackoff)
+  344  		}
+  345  		a.dirty = true
+  346  		a.sendErr = err.Error()
+  347  		a.nextSend = now.Add(a.backoff + time.Duration(rand.Float64()*jitter*float64(a.backoff)))
+  348  		a.log.Warn("report failed; will retry", "error", err, "in", a.backoff.String())
+  349  	}
+77:    stale-grace-after-start-ms: 300000
+80:    stale-pause-fraction: 0.3
+83:    stale-pause-min-silent: 2
+102:      instance-stale-after-seconds: 90

@@ -1,6 +1,8 @@
 package com.atlas.communication.publishing.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -18,9 +20,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.atlas.communication.LogCapture;
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
@@ -30,6 +34,8 @@ import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.ports.outbound.CommunicationEventsPort;
 import com.atlas.communication.common.ports.outbound.CommunicationRepositoryPort;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -102,5 +108,36 @@ class StatusSweepUseCaseTest {
         when(repository.dueForActivation(NOW)).thenReturn(Flux.empty());
         when(repository.dueForExpiry(NOW)).thenReturn(Flux.empty());
         StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
+    }
+
+    // --- the database is unreachable ---
+
+    @Test
+    void aSweepThatCannotReachTheDatabaseLogsOneWarningWithoutAStackTraceAndCarriesOn() {
+        String timeout = "Timed out while waiting for a server that matches ReadPreferenceServerSelector"
+                + "{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[]}";
+        when(repository.dueForActivation(NOW)).thenReturn(Flux.error(new DataAccessResourceFailureException(timeout)));
+        when(repository.dueForExpiry(NOW)).thenReturn(Flux.empty());
+
+        try (LogCapture log = LogCapture.of(StatusSweepUseCase.class)) {
+            assertThatCode(() -> useCase.sweepScheduled()).doesNotThrowAnyException();
+
+            List<ILoggingEvent> warnings = log.atLeast(Level.WARN);
+            assertThat(warnings).hasSize(1);
+            assertThat(warnings.get(0).getLevel()).isEqualTo(Level.WARN);
+            assertThat(warnings.get(0).getFormattedMessage())
+                    .isEqualTo("status sweep skipped: database unavailable: " + timeout);
+            assertThat(warnings.get(0).getThrowableProxy()).as("stack trace stays at DEBUG").isNull();
+            assertThat(log.events()).filteredOn(e -> e.getLevel() == Level.DEBUG && e.getThrowableProxy() != null)
+                    .as("the stack trace is available at DEBUG").hasSize(1);
+        }
+    }
+
+    @Test
+    void aSweepFailingForAnotherReasonStillSurfaces() {
+        when(repository.dueForActivation(NOW)).thenReturn(Flux.error(new IllegalStateException("a bug")));
+        when(repository.dueForExpiry(NOW)).thenReturn(Flux.empty());
+        assertThatThrownBy(() -> useCase.sweepScheduled())
+                .isInstanceOf(IllegalStateException.class).hasMessage("a bug");
     }
 }

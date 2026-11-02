@@ -1,0 +1,109 @@
+G-4-31 after: commit 9f39b81 (.github/workflows/ci.yml, README.md).
+
+$ git show --stat --format=%s 9f39b81
+Fix G-4-31: scan the backend and sidecar images in CI
+
+ .github/workflows/ci.yml | 25 +++++++++++++++++++++++++
+ README.md                | 20 ++++++++++++++++++++
+ 2 files changed, 45 insertions(+)
+$ git diff 6c15715 9f39b81 -- .github/workflows/ci.yml | grep '^[+-]' | grep -v '^+++\|^---'
++# The scanner for the images the backend and sidecar jobs build, pinned by digest (docker.io/aquasec/trivy
++# and mirror.gcr.io/aquasec/trivy serve the same digest). Change the tag and the digest together.
++env:
++  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7
++
++        id: check
++      # The image that ships: the root Dockerfile puts the jar on its base image. Built and scanned even
++      # when the SBOM scan failed, so one run reports both; a critical or high finding that has a fix, in
++      # the base image's packages or in the jar, fails the job.
++      - name: Build the image
++        id: image
++        if: ${{ !cancelled() && steps.check.outcome == 'success' }}
++        run: |
++          ./gradlew bootJar --no-daemon
++          docker build -t communication-service:ci .
++      - name: Scan the image for fixable critical or high vulnerabilities
++        if: ${{ !cancelled() && steps.image.outcome == 'success' }}
++        run: >-
++          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
++          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:ci
++      # the image that ships, UBI micro and the binary: a critical or high finding that has a fix fails the job
++      - name: Scan the image for fixable critical or high vulnerabilities
++        run: >-
++          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
++          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:ci
+
+== validation (GitHub Actions cannot run here; installing actionlint through the Go proxy was refused by this
+   session's permission policy, so: a YAML parse plus structural checks, scratchpad e2e4/check_workflow.py: top-level
+   keys, runs-on/steps per job, exactly one of uses/run per step, unique step ids, every steps.<id> an expression names
+   defined earlier in its job, balanced expressions, uses: pinned, every $VAR a run step reads defined in an env block)
+$ python3 check_workflow.py .github/workflows/ci.yml
+.github/workflows/ci.yml: parsed; top-level keys ['name', 'on', 'permissions', 'concurrency', 'env', 'jobs']; jobs ['backend', 'frontend', 'sidecar']
+workflow env: {'TRIVY_IMAGE': 'ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7'}
+-- backend: Gradle check
+   id: 'check'
+   run: './gradlew check --no-daemon'
+-- backend: Scan the SBOM for known vulnerabilities
+   uses: 'anchore/scan-action@v6'
+-- backend: Build the image
+   id: 'image'
+   if: "${{ !cancelled() && steps.check.outcome == 'success' }}"
+   run: './gradlew bootJar --no-daemon\ndocker build -t communication-service:ci .\n'
+-- backend: Scan the image for fixable critical or high vulnerabilities
+   if: "${{ !cancelled() && steps.image.outcome == 'success' }}"
+   run: 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:ci'
+-- sidecar: Scan the image for fixable critical or high vulnerabilities
+   run: 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:ci'
+no structural errors
+$ python3 check_workflow.py .github/workflows/e2e.yml | tail -n 1
+no structural errors
+$ git merge-file, 3-way in the scratchpad: mine 9f39b81, base 6c15715, SC-4's branch wt4-sc at 7a67abd
+  (Fix G-4-28: check gofmt, run the race detector and pin govulncheck in CI); files both branches change:
+  .github/workflows/ci.yml
+  README.md
+  ci.yml: 0 conflicts
+  README.md: 0 conflicts
+$ python3 check_workflow.py <merged ci.yml> | tail -n 1
+no structural errors
+  merged sidecar job steps: actions/checkout@v4, actions/setup-go@v5, imranismail/setup-kustomize@v2, azure/setup-helm@v4, Install kubeconform, gofmt, go vet ./..., CI=true go test -race ./..., govulncheck, Build the image, Scan the image for fixable critical or high vulnerabilities
+  (wt4-fe shares no file with this branch; wt4-beh and wt4-beu had no commit when this ran.)
+
+== the gate on what the iteration-4 fixes build (same command and setup as the before file)
+1. sidecar from SC-4's 080765b (go.mod go 1.27.3; git archive into the scratchpad), built with the Go 1.27.3 stand-in
+   (GO_IMAGE=local/go-toolset:1.27, binary go1.27.3; distroless static base), tag e2e4-sidecar:go1.27
+    e2e4-sidecar:go1.27 (debian 12.15)
+    Total: 0 (HIGH: 0, CRITICAL: 0)
+    exit=0
+   (no row: the binary target has no finding, so the table prints only the OS target)
+2. backend: the same iteration-3 jar on G-4-3's base, --build-arg BASE_IMAGE=gcr.io/distroless/java21-debian13:nonroot
+   (tag e2e4-backend:debian13), OS packages:
+    e2e4-backend:debian13 (debian 13.7)
+    Total: 0 (HIGH: 0, CRITICAL: 0)
+    exit=0
+3. not run here: the backend image's jar after G-4-1 (BE-U had not committed when this ran) and any full image scan of
+   the backend (the Java DB did not fit on this disk). The 13 library findings of the before file are what the
+   backend step stops on until G-4-1 lands. For the after run on the combined build:
+     ./gradlew bootJar && docker build -t communication-service:ci . && docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7 image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:ci
+
+== README
+$ sed -n '72,86p;98,102p' README.md
+CI also scans what ships, which no Gradle task does: the SBOM above with `anchore/scan-action` (a
+known vulnerability rated high or critical fails the job), and each image a job builds, this one
+(`communication-service:ci`, the root `Dockerfile` over the jar) and the sidecar's (`health-sidecar:ci`),
+with Trivy 0.58.1, pinned by digest in `ci.yml`. A CRITICAL or HIGH vulnerability that has a fixed
+version fails the job wherever it is: in the base image's packages, the jar's libraries or the sidecar
+binary's Go standard library. The same scan on a laptop (the first run downloads Trivy's database and,
+for a jar, its Java index, about 1 GB together, into the `trivy-cache` volume):
+
+```bash
+./gradlew bootJar && docker build -t communication-service:local .
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+  ghcr.io/aquasecurity/trivy:0.58.1 \
+  image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:local
+```
+
+
+The `backend` and `sidecar` jobs end by scanning the image they built with Trivy and fail when it has
+a critical or high vulnerability that has a fix ([Build gates](#build-gates)). The `backend` job builds
+its image (`./gradlew bootJar`, `docker build`) once `check` has passed and scans it also when the SBOM
+scan failed, so one run reports both.

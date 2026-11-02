@@ -1,0 +1,111 @@
+# Test integrity: src/test diff from the iteration-1 head 0e14838 to HEAD be19645 (2026-11-02T03:56:14Z)
+
+## git diff --stat 0e14838..HEAD -- src/test
+ .../communication/CommunicationServiceE2EIT.java   |   9 +-
+ .../java/com/atlas/communication/LogCapture.java   |  49 +++++++
+ .../com/atlas/communication/OpenApiContractIT.java |  35 ++++-
+ .../atlas/communication/OperationsEndpointsIT.java |  24 ++++
+ .../MongoCommunicationEventsAdapterTest.java       |  10 ++
+ .../MongoCommunicationRepositoryAdapterIT.java     |  20 ++-
+ .../config/GlobalExceptionHandlerTest.java         | 150 +++++++++++++++++++++
+ .../config/MongoClientConfigTest.java              |  41 ++++++
+ .../inbound/RestControllerFeedAdapterTest.java     |  32 +++++
+ .../feed/application/FeedUseCaseTest.java          |  32 ++++-
+ .../health/HealthMonitoringE2EIT.java              |   9 +-
+ .../MongoHealthInstanceRepositoryAdapterIT.java    |   2 +-
+ .../MongoHealthMonitorRepositoryAdapterIT.java     |   2 +-
+ .../application/HealthMonitorUseCaseTest.java      |  61 ++++++++-
+ .../application/HealthObservationUseCaseTest.java  |  42 +++++-
+ .../health/application/HealthSweepUseCaseTest.java | 114 +++++++++++++++-
+ .../health/domain/HealthMonitorTest.java           |  22 ++-
+ .../application/StatusSweepUseCaseTest.java        |  37 +++++
+ 18 files changed, 663 insertions(+), 28 deletions(-)
+
+## @Test counts (grep -c '@Test' over src/test)
+at 0e14838: 227
+at HEAD:    250
+unit (*Test.java) at HEAD: 208
+integration (*IT.java) at HEAD: 42
+
+## removed lines that were @Test / assertions / verifications / expectations (git diff, '-' lines only)
+-                .expectStatus().isEqualTo(409);
+-                .assertNext(e -> assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT))
+-        assertThat(noticed.state().unhealthyStreak()).isZero();
+-        assertThat(probe(monitor.id()).state().openCommunicationId()).isNull();
+-                    assertThat(m.state().unhealthyStreak()).isZero();
+-        assertThat(cleared.state().unhealthyStreak()).isZero();
+-        assertThat(byOperator.state().unhealthyStreak()).isZero();
+(end of removed lines; count: 7)
+
+## skip markers in src/test at HEAD
+none
+
+## exclusions / filters in build.gradle.kts
+68:    exclude("**/*IT.class")
+76:    include("**/*IT.class")
+82:// config/spotbugs/exclude.xml; test classes are not analysed.
+86:    excludeFilter = file("config/spotbugs/exclude.xml")
+108:    enabled = false
+122:    classDirectories.setFrom(files(classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } }))
+
+## The seven removed assertion lines, in context (git diff 0e14838..HEAD -- src/test), judged
+
+### CommunicationServiceE2EIT: '.expectStatus().isEqualTo(409);' removed -> replaced by a stronger chain asserting the body (G-2-9)
+-        // duplicate externalRef -> 409
+-        publishOutage("INC-e2e-dup");
++        // duplicate externalRef -> 409 whose body names the notice holding it and says the key is permanent
++        Communication dupHolder = publishOutage("INC-e2e-dup");
+-                .expectStatus().isEqualTo(409);
++                .expectStatus().isEqualTo(409)
++                .expectBody()
++                .jsonPath("$.error").value(msg -> assertThat((String) msg)
++                        .contains("permanent").contains(dupHolder.id()).contains("INC-e2e-dup-2"));
+
+### HealthObservationUseCaseTest / HealthMonitorTest / HealthMonitoringE2EIT: unhealthyStreak 0 -> 1 after an operator retire and the fresh notice on the threshold-th probe (G-2-6; the old expectations encoded the off-by-one the README contradicted)
+-        assertThat(noticed.state().unhealthyStreak()).isZero();
+-        assertThat(probe(monitor.id()).state().openCommunicationId()).isNull();
++        assertThat(noticed.state().unhealthyStreak()).isEqualTo(1);
+-                    assertThat(m.state().unhealthyStreak()).isZero();
++                    assertThat(m.state().unhealthyStreak()).isEqualTo(1);
+-        assertThat(cleared.state().unhealthyStreak()).isZero();
++        assertThat(cleared.state().unhealthyStreak()).isEqualTo(1); // this failing observation is the first of the new count
++    @Test
++    void afterAnOperatorsRetireTheNoticeReopensOnTheThresholdthFailingObservation() {
++        assertThat(first.state().unhealthyStreak()).isEqualTo(1);
++        assertThat(second.state().unhealthyStreak()).isEqualTo(2);
+-        assertThat(byOperator.state().unhealthyStreak()).isZero();
++        assertThat(byOperator.state().unhealthyStreak()).isEqualTo(1);
++    @Test
++    void anOperatorsRetireStartsTheCountAgainWithTheObservationThatNoticedIt() {
++        assertThat(noticedWhileFailing.state().unhealthyStreak()).isEqualTo(1);
++        assertThat(next.monitor().state().unhealthyStreak()).isEqualTo(2);
++        HealthMonitor noticedWhileUp = open.evaluate(probe(HealthStatus.UP, NOW.plusSeconds(60)), NOW.plusSeconds(60))
++        assertThat(noticedWhileUp.state().unhealthyStreak()).isZero();
+
+### FeedUseCaseTest: snapshot tests stub head() instead of position() (API change, G-2-8); the removed assertNext on SNAPSHOT type is re-asserted with the id
++import org.mockito.InOrder;
+-    void streamEmitsMatchingLiveEventsAndASnapshotStampedWithThePosition() {
++    void streamEmitsMatchingLiveEventsAndASnapshotStampedWithTheLogHead() {
+-        when(events.position()).thenReturn(42L);
++        when(events.head()).thenReturn(Mono.just(42L));
++    @Test
++    void theSnapshotIsStampedWithTheLogHeadReadBeforeItIsQueried() {
++        Communication visible = outage("c1", NOW.minusSeconds(60), null);
++        when(repository.query(any())).thenReturn(Flux.just(visible));
++        // the log holds 43 events, whatever this node's fan-out cursor has got to
++        when(events.head()).thenReturn(Mono.just(43L));
++        when(events.stream()).thenReturn(Flux.never());
++
++        StepVerifier.create(useCase.stream(query(0, 100)).take(1))
++                .assertNext(e -> {
++                    assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT);
++                    assertThat(e.seq()).as("a resume from the snapshot id may repeat 43, never skip it")
++                            .isEqualTo(43);
++                })
++                .verifyComplete();
++        // read before the query, so nothing appended while the snapshot was built is skipped by a resume
++        InOrder inOrder = Mockito.inOrder(events, repository);
++        inOrder.verify(events).head();
++        inOrder.verify(repository).query(any());
+
+Judgement: every removed line is replaced by an assertion of the new, documented behaviour (README 'Debounced…reopened on the third one', 'at-least-once', '409 … names the notice'); none is a loosening without justification; no test deleted, skipped or disabled (skip-marker grep above: none).

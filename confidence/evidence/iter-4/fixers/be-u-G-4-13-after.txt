@@ -1,0 +1,30 @@
+# G-4-13 after: commit 4eff8f4 (on int4 67f0d77 + G-4-1 b70c458, G-4-3 a45e04c, G-4-12 eefec53)
+# ./gradlew --max-workers=2 --no-daemon check -> BUILD SUCCESSFUL (results below are from that run)
+# test: tests=270 failures=0 errors=0 skipped=0; integrationTest: tests=55 failures=0 errors=0 skipped=0
+# JaCoCo LINE 1545/1590 = 0.9717, BRANCH 825/954 = 0.8648; SpotBugs main: 0 bugs; SBOM scope: 113 components
+
+GlobalExceptionHandlerMessagesTest tests=17 failures=0 errors=0 skipped=0
+  PASSED everyUnknownFieldOfABodyIsNamedSortedWithTheFieldsOfEachObjectHoldingOne() (0.03s)
+  PASSED theAnswerAboutUnknownFieldsComesOnceTheRestOfTheBodyBindsSoItNamesThemAll() (0.01s)
+  PASSED anUnknownFieldIsNamedWithTheKnownOnesWhenThereAreAny() (0.00s)
+RestControllerPublishingAdapterTest tests=18 failures=0 errors=0 skipped=0
+  PASSED aMisspelledFieldIs400NamingItAndListingTheKnownOnes() (0.06s)
+  PASSED everyUnknownFieldOfABodyIsNamedInOneAnswerSorted() (0.03s)
+RestControllerHealthAdapterTest tests=9 failures=0 errors=0 skipped=0
+  PASSED registerRejectsAMisspelledPolicyFieldNamingIt() (0.02s)
+CommunicationServiceE2EIT tests=10 failures=0 errors=0 skipped=0
+  PASSED publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem() (0.09s)
+  PASSED aNoticePutBackWholeNamesEveryFieldAnUpdateDoesNotTakeInOneAnswer() (0.13s)
+(the unchanged single-field tests pass as they are: "unknown field 'sevrity'; known fields: ...",
+ "unknown field 'ticket.ulr'; known fields: number, system, url"; BE-H's G-4-5 test still finds
+ "'staleAfterSecond'" and "known fields: ")
+
+## Live, the boot jar of this commit on :18304 against the private Mongo beu-mongo (database fixbeu_smoke)
+== 2. GET the notice, change the body, PUT the whole document back
+  GET -> 200 keys ['affectedServices', 'audience', 'body', 'createdAt', 'externalRef', 'history', 'id', 'publisher', 'severity', 'startsAt', 'status', 'tenantId', 'title', 'type', 'updatedAt', 'version']
+  PUT whole document -> 400 {"error":"unknown fields 'createdAt', 'externalRef', 'history', 'id', 'publisher', 'status', 'tenantId', 'type', 'updatedAt', 'version'; known fields: actor, affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, ticket, title"}
+  PUT without the named fields, expectedVersion 0 -> 200 version=1 body='Mitigation in progress.'
+  POST with sevrity and ticket.ulr -> 400 {"error":"unknown fields 'sevrity', 'ticket.ulr'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type; known fields of ticket: number, system, url"}
+-> one 400 names the ten read-only fields of a notice's GET document; without them, and with
+   expectedVersion, the same document saves. A nested and a top-level unknown field come in one answer,
+   each object's known fields once.

@@ -1,0 +1,68 @@
+== 2026-11-02T04:23:18Z head be19645 branch confidence-loop/2026-11-01; working tree (sidecar): 0 modified files
+## 1. sidecar commits since the iteration-1 head 0e14838
+7006692 Fix G-2-16: send every probe while the app is not UP, log transitions at INFO, one "not listening" message
+e54fe6a Fix G-2-15: fail the manifest tests in CI without the tools, pin the /status contract, test main's wiring
+a5b1ea1 Fix G-2-14: build with Go 1.25 and label the image with version and revision
+## 2. test files changed
+ sidecar/cmd/health-sidecar/main_test.go | 216 ++++++++++++++++++++++++++
+ sidecar/deploy/deploy_test.go           |  38 +++--
+ sidecar/deploy/dockerfile_test.go       | 187 +++++++++++++++++++++++
+ sidecar/internal/agent/agent_test.go    | 260 ++++++++++++++++++++++++++++++++
+ 4 files changed, 691 insertions(+), 10 deletions(-)
+   removed lines in *_test.go (all of them):
+     -// Package deploy holds tests for the Kustomize snippets under deploy/kustomize. They need the
+     -// kustomize binary (and use kubeconform when it is installed) and skip otherwise, so
+     -// `go test ./...` stays green on a plain checkout and runs the checks wherever the tools exist.
+     -// kustomizeBuild renders a kustomization directory, skipping the test when kustomize is absent.
+     -	bin, err := exec.LookPath("kustomize")
+     -	if err != nil {
+     -// kubeconform validates rendered manifests against the given Kubernetes version when the tool
+     -// is installed; a missing tool only logs, because the structural assertions already ran.
+     -	bin, err := exec.LookPath("kubeconform")
+     -	if err != nil {
+   removed assertion lines (t.Error|t.Fatal|Errorf|Fatalf): 0
+   t.Skip sites now:
+     sidecar/deploy/deploy_test.go:37:		t.Skip("kustomize not on PATH")
+   TestAppThatStopsListeningStaysDownUntilItIsBack: assertions added (+) / removed (-):
+     +		!strings.Contains(last.Message, "not listening") || !strings.Contains(last.Message, target) {
+     +		t.Errorf("the probe that finds the port gone should already say the app is not listening, got %+v", last)
+     +		t.Fatal(err)
+     +		t.Fatalf("GET /status: %d %s %s", resp.StatusCode, resp.Header.Get("Content-Type"), body)
+     +		t.Fatalf("/status is not a JSON object: %v\n%s", err, body)
+     +			t.Errorf("the README documents /status field %q but the body has no such key:\n%s", name, body)
+     +			t.Errorf("/status key %q is not in the README's /status table", name)
+     +		t.Fatalf("decode /status: %v\n%s", err, body)
+## 3. README /status table vs the live keys
+   README table: ['instance', 'lastReport', 'lastSendAt', 'lastTarget', 'reportsSent', 'sendError', 'service', 'target', 'tenant', 'upSeen', 'version']
+   live keys (10: no error, 11: with sendError): ['instance', 'lastReport', 'lastSendAt', 'lastTarget', 'reportsSent', 'sendError', 'service', 'target', 'tenant', 'upSeen', 'version']
+   documented but never seen: none | seen but undocumented: none
+## 4. README configuration table vs the variables config.go reads
+   code reads: ['CS_CA_FILE', 'CS_CLIENT_ID', 'CS_CLUSTER', 'CS_ENDPOINT', 'CS_HEARTBEAT', 'CS_HOST', 'CS_IGNORE_PORTS', 'CS_INSECURE_SKIP_VERIFY', 'CS_INSTANCE_ID', 'CS_INTERVAL', 'CS_LISTEN', 'CS_PATH', 'CS_PORT', 'CS_PROBE', 'CS_PROBE_TIMEOUT', 'CS_PUBLISHER', 'CS_REPORT_TIMEOUT', 'CS_RETRY_DELAY', 'CS_SCHEME', 'CS_SERVICE', 'CS_STARTUP_GRACE', 'CS_TENANT', 'CS_VERSION', 'NODE_NAME', 'POD_NAME', 'POD_NAMESPACE']
+   in code, not in README table: none | in README table, not in code: none
+## 5. README build command on the host (go 1.24.7 host, toolchain switch): go build -ldflags="-s -w -X main.version=1.0.0" -o health-sidecar ./cmd/health-sidecar
+   exit=0 size=6906148 bytes, go1.25.0
+   /status.version = 1.0.0 (README: VERSION becomes the binary's version)
+   exit after SIGTERM: 0
+## 6. README 'Build' section claims
+   8:  --build-arg VERSION=1.0.0 --build-arg REVISION=$(git rev-parse HEAD) .
+   11:`VERSION` becomes the binary's version (the `sidecar` field of every report, the `User-Agent`,
+   12:`/status`) and the image's `org.opencontainers.image.version` label; `REVISION` becomes
+   15:No dependencies outside the Go standard library. The module needs Go 1.25 (`go.mod`), the line
+   16:the default builder image `ubi9/go-toolset:1.25` ships; `go test ./...` on a laptop with an older
+   20:with `kubeconform`. Without the two tools on `PATH` they skip on a laptop; when `CI` is set (as
+   21:GitHub Actions does) a missing tool fails the test naming it, so the CI image must install both.
+   go.mod: go 1.25 | Dockerfile: go-toolset:1.25 GOTOOLCHAIN=GOTOOLCHAIN=local
+## 7. README send-policy and log claims vs measured (file refs)
+   L105-106 'probed once more after 2 s before it counts'           -> 13-variants CASE 1/2 (one failed request: UP kept; RETRY_DELAY=0: DOWN sent)
+   L107-112 'while UP: change + heartbeat 30 s; not UP: every probe' -> 12-send-policy PHASE 1 (1 report/30 s UP) PHASE 2 (5 reports/30 s DOWN, gaps 5.0-5.6 s) PHASE 5 (UNKNOWN every probe); 10-lifecycle A2/B0 (+1 vs +7 per 30 s)
+   L113-118 startup grace / pinned never-UP                        -> 10-lifecycle STEP F, 13-variants CASE 6/7
+   L119-123 'app is not listening (last target …) from the probe that finds its port gone' -> 10-lifecycle STEP B (+3.6 s), 11-ladder log, 12-send-policy
+   L124-125 SIGTERM leaving                                          -> 10-lifecycle STEP E/G, 11-ladder STEP 7
+   L126-127 backoff up to 60 s                                       -> 16-failure-paths CASE 1/2 (1,2,4 s); shared pod log 03:43-03:50 'in':'1m0s' (docker logs sidecar, read-only)
+   L179-182 INFO on change, DEBUG in between                         -> 10-lifecycle STEP B/H, 12-send-policy PHASE 2/3
+   L184-196 /status table + pinned by TestStatusJSONMatchesTheDocumentedContract -> §3 above; agent_test.go:463
+   L19 'about 10 MB image on UBI micro'                               -> NOT VERIFIABLE here (UBI registry blocked; distroless stand-in 16.3 MB, binary 6.8 MB)
+   L166-167 '/status shows … the last probe result, the last report sent' vs table L192 'the last report composed' -> wording: lastReport is the last report COMPOSED (10-lifecycle: lastReport changes while reportsSent does not, e.g. STEP B +3.6 s sent=13 then +4.2 s sent=14)
+## 8. the shared pod (health-sidecar:ci = ci-iter2, read-only): version ci-iter2 target http://127.0.0.1:8080/actuator/health upSeen True reportsSent 60 sendError None
+   log levels since start: {('INFO', 'health sidecar starting'): 1, ('INFO', 'health target found'): 1, ('WARN', 'report failed; will retry'): 10, ('INFO', 'reported'): 1}
+## DONE

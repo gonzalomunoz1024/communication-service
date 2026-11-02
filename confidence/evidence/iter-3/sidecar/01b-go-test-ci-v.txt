@@ -1,0 +1,180 @@
+=== RUN   TestRunRejectsMissingEndpointWithAClearError
+--- PASS: TestRunRejectsMissingEndpointWithAClearError (0.00s)
+=== RUN   TestRunRejectsAnUnusableValueWithExit2
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY
+=== RUN   TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL
+--- PASS: TestRunRejectsAnUnusableValueWithExit2 (0.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY (0.00s)
+    --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL (0.00s)
+=== RUN   TestRunRejectsAnUnreadableCAFile
+--- PASS: TestRunRejectsAnUnreadableCAFile (0.02s)
+=== RUN   TestRunReportsWithTheBuildVersionAndStopsCleanly
+--- PASS: TestRunReportsWithTheBuildVersionAndStopsCleanly (0.02s)
+=== RUN   TestRunLogsAtTheConfiguredLevel
+=== RUN   TestRunLogsAtTheConfiguredLevel/debug
+=== PAUSE TestRunLogsAtTheConfiguredLevel/debug
+=== RUN   TestRunLogsAtTheConfiguredLevel/info
+=== PAUSE TestRunLogsAtTheConfiguredLevel/info
+=== RUN   TestRunLogsAtTheConfiguredLevel/warn
+=== PAUSE TestRunLogsAtTheConfiguredLevel/warn
+=== CONT  TestRunLogsAtTheConfiguredLevel/debug
+=== CONT  TestRunLogsAtTheConfiguredLevel/warn
+=== CONT  TestRunLogsAtTheConfiguredLevel/info
+--- PASS: TestRunLogsAtTheConfiguredLevel (0.00s)
+    --- PASS: TestRunLogsAtTheConfiguredLevel/info (1.03s)
+    --- PASS: TestRunLogsAtTheConfiguredLevel/debug (1.05s)
+    --- PASS: TestRunLogsAtTheConfiguredLevel/warn (1.06s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.120s
+=== RUN   TestNativeComponentKeepsExistingInitContainers
+    deploy_test.go:217: kubeconform 1.29.0: Summary: 3 resources found parsing stdin - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestNativeComponentKeepsExistingInitContainers (0.92s)
+=== RUN   TestClassicComponentAppendsTheContainer
+    deploy_test.go:231: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+    deploy_test.go:232: kubeconform 1.29.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestClassicComponentAppendsTheContainer (0.90s)
+=== RUN   TestBothComponentsShareTheContainerContract
+--- PASS: TestBothComponentsShareTheContainerContract (0.19s)
+=== RUN   TestManualSnippetSharesTheContainerContract
+    deploy_test.go:286: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestManualSnippetSharesTheContainerContract (0.40s)
+=== RUN   TestGoModAndDockerfileAgreeOnTheGoLine
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+=== RUN   TestImageCarriesVersionAndRevisionLabels
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container
+    helm_test.go:73: kubeconform 1.27.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+    helm_test.go:73: kubeconform 1.29.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer
+    helm_test.go:73: kubeconform 1.29.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment (1.92s)
+    --- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container (1.19s)
+    --- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer (0.73s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	4.330s
+=== RUN   TestReportsChangesAndHeartbeats
+--- PASS: TestReportsChangesAndHeartbeats (0.01s)
+=== RUN   TestStartupGraceReportsUnknownUntilFirstUp
+--- PASS: TestStartupGraceReportsUnknownUntilFirstUp (0.00s)
+=== RUN   TestNoListeningPortStaysUnknown
+--- PASS: TestNoListeningPortStaysUnknown (0.00s)
+=== RUN   TestPinnedTargetThatNeverAnswersUpStaysUnknown
+--- PASS: TestPinnedTargetThatNeverAnswersUpStaysUnknown (0.00s)
+=== RUN   TestSendFailuresBackOffAndKeepLatest
+--- PASS: TestSendFailuresBackOffAndKeepLatest (0.00s)
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app
+    agent_test.go:405: waits after a refused attempt: [16.6s 15.4s 15.6s 15.2s 17.1s 26.8s 25.6s 25.8s 25.9s 24.5s 27.4s 25.6s 25.7s 27s 17.9s]
+    agent_test.go:412: the first attempt after the service was back came 14.218s after it
+=== RUN   TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app
+    agent_test.go:405: waits after a refused attempt: [16.2s 16.6s 15.6s 17s 16s 24.9s 25.1s 28.9s 25.7s 24.7s 25.4s 25.6s 28.5s 28.5s 15.9s]
+    agent_test.go:412: the first attempt after the service was back came 18.815s after it
+--- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap (0.03s)
+    --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap/UP_app (0.01s)
+    --- PASS: TestRetriesAreNeverFurtherApartThanTheBackoffCap/DOWN_app (0.02s)
+=== RUN   TestRunSendsLeavingReportOnShutdown
+--- PASS: TestRunSendsLeavingReportOnShutdown (0.01s)
+=== RUN   TestRediscoversWhenPortDisappears
+--- PASS: TestRediscoversWhenPortDisappears (0.00s)
+=== RUN   TestAppThatStopsListeningStaysDownUntilItIsBack
+--- PASS: TestAppThatStopsListeningStaysDownUntilItIsBack (0.01s)
+=== RUN   TestAppNeverSeenUpIsUnknownWhileNothingListens
+--- PASS: TestAppNeverSeenUpIsUnknownWhileNothingListens (0.00s)
+=== RUN   TestUnreadablePortTableIsUnknownNotDown
+--- PASS: TestUnreadablePortTableIsUnknownNotDown (0.00s)
+=== RUN   TestHandler
+--- PASS: TestHandler (0.00s)
+=== RUN   TestStatusJSONMatchesTheDocumentedContract
+--- PASS: TestStatusJSONMatchesTheDocumentedContract (0.00s)
+=== RUN   TestStatusShowsTheLastReportComposedSentOrNot
+--- PASS: TestStatusShowsTheLastReportComposedSentOrNot (0.00s)
+=== RUN   TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat
+=== RUN   TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+=== RUN   TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/WARN_app_(a_degraded_status):_one_report_per_probe
+=== RUN   TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+--- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat (0.01s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe (0.00s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/WARN_app_(a_degraded_status):_one_report_per_probe (0.00s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat (0.00s)
+=== RUN   TestUpWithAFailingComponentIsSentEveryProbe
+=== RUN   TestUpWithAFailingComponentIsSentEveryProbe/db_DOWN:_every_probe
+=== RUN   TestUpWithAFailingComponentIsSentEveryProbe/nested_db.replica_DOWN:_every_probe
+=== RUN   TestUpWithAFailingComponentIsSentEveryProbe/cache_WARN,_a_word_the_service_counts_as_DEGRADED:_every_probe
+=== RUN   TestUpWithAFailingComponentIsSentEveryProbe/discovery_UNKNOWN,_not_failing_on_the_service:_heartbeat
+=== RUN   TestUpWithAFailingComponentIsSentEveryProbe/every_component_UP:_heartbeat
+--- PASS: TestUpWithAFailingComponentIsSentEveryProbe (0.01s)
+    --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/db_DOWN:_every_probe (0.00s)
+    --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/nested_db.replica_DOWN:_every_probe (0.00s)
+    --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/cache_WARN,_a_word_the_service_counts_as_DEGRADED:_every_probe (0.00s)
+    --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/discovery_UNKNOWN,_not_failing_on_the_service:_heartbeat (0.00s)
+    --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/every_component_UP:_heartbeat (0.00s)
+=== RUN   TestUnknownIsSentAtTheHeartbeat
+=== RUN   TestUnknownIsSentAtTheHeartbeat/nothing_listens,_after_the_grace
+=== RUN   TestUnknownIsSentAtTheHeartbeat/nothing_listens,_during_the_grace
+=== RUN   TestUnknownIsSentAtTheHeartbeat/pinned_port_never_UP,_after_the_grace
+=== RUN   TestUnknownIsSentAtTheHeartbeat/the_grace_ends_at_45_s:_the_new_message_is_sent_on_the_first_probe_after_it
+--- PASS: TestUnknownIsSentAtTheHeartbeat (0.01s)
+    --- PASS: TestUnknownIsSentAtTheHeartbeat/nothing_listens,_after_the_grace (0.00s)
+    --- PASS: TestUnknownIsSentAtTheHeartbeat/nothing_listens,_during_the_grace (0.00s)
+    --- PASS: TestUnknownIsSentAtTheHeartbeat/pinned_port_never_UP,_after_the_grace (0.01s)
+    --- PASS: TestUnknownIsSentAtTheHeartbeat/the_grace_ends_at_45_s:_the_new_message_is_sent_on_the_first_probe_after_it (0.00s)
+=== RUN   TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug
+--- PASS: TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug (0.00s)
+=== RUN   TestRejectedDownReportKeepsTheHeartbeatCadence
+--- PASS: TestRejectedDownReportKeepsTheHeartbeatCadence (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.154s
+=== RUN   TestDeriveService
+--- PASS: TestDeriveService (0.00s)
+=== RUN   TestFromEnvDefaults
+--- PASS: TestFromEnvDefaults (0.00s)
+=== RUN   TestFromEnvOverridesAndValidation
+--- PASS: TestFromEnvOverridesAndValidation (0.00s)
+=== RUN   TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly
+--- PASS: TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly (0.00s)
+=== RUN   TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout
+--- PASS: TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout (0.00s)
+=== RUN   TestLogLevelIsReadAndValidated
+--- PASS: TestLogLevelIsReadAndValidated (0.00s)
+=== RUN   TestParsePortRanges
+--- PASS: TestParsePortRanges (0.00s)
+=== RUN   TestEveryEnvironmentVariableIsDocumented
+--- PASS: TestEveryEnvironmentVariableIsDocumented (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.007s
+=== RUN   TestParseKeepsOnlyListeningSockets
+--- PASS: TestParseKeepsOnlyListeningSockets (0.00s)
+=== RUN   TestListeningPortsMergesTablesAndSkips
+--- PASS: TestListeningPortsMergesTablesAndSkips (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.007s
+=== RUN   TestProbeActuatorDocument
+--- PASS: TestProbeActuatorDocument (0.00s)
+=== RUN   TestProbeDownDocumentAndOldActuatorShape
+--- PASS: TestProbeDownDocumentAndOldActuatorShape (0.00s)
+=== RUN   TestProbePlainHTTPClassification
+--- PASS: TestProbePlainHTTPClassification (0.00s)
+=== RUN   TestProbeUnreachableAndTCP
+--- PASS: TestProbeUnreachableAndTCP (0.00s)
+=== RUN   TestFailingCountsTheComponentsTheServiceCounts
+--- PASS: TestFailingCountsTheComponentsTheServiceCounts (0.00s)
+=== RUN   TestNormalize
+--- PASS: TestNormalize (0.00s)
+=== RUN   TestDetectPrefersActuatorOverAnyPort
+--- PASS: TestDetectPrefersActuatorOverAnyPort (0.00s)
+=== RUN   TestDetectFallsBackToRootThenTCP
+--- PASS: TestDetectFallsBackToRootThenTCP (2.41s)
+=== RUN   TestDetectSwitchesToHTTPS
+2026/11/02 06:52:19 http: TLS handshake error from 127.0.0.1:52586: client sent an HTTP request to an HTTPS server
+--- PASS: TestDetectSwitchesToHTTPS (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.428s
+=== RUN   TestSendPostsReportWithClientId
+--- PASS: TestSendPostsReportWithClientId (0.00s)
+=== RUN   TestSendClassifiesFailures
+--- PASS: TestSendClassifiesFailures (0.00s)
+=== RUN   TestNewClientRejectsBadCAFile
+--- PASS: TestNewClientRejectsBadCAFile (0.01s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.025s

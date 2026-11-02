@@ -1,13 +1,32 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
 import type { CommunicationClient } from './api'
 import { SEVERITY_TONE, TYPE_HINT, titleCase } from './display'
+import { duplicateReference, explainPublishError, isRejection } from './errors'
 import { TicketTag } from './TicketTag'
 import { AUDIENCES, COMMUNICATION_TYPES, SEVERITIES, type Communication, type CommunicationType, type Severity, type Audience } from './types'
 import { TITLE_MAX, emptyDraft, parseServices, toRequest, validate, type DraftErrors, type OutageDraft } from './validation'
 
 /** HEALTH is raised by the health-check flow, not by people. */
 const PUBLISHABLE_TYPES = COMMUNICATION_TYPES.filter((t) => t !== 'HEALTH')
+
+/** The fields validate() can fault, in the order they appear on the page. */
+const FIELD_ORDER = ['severity', 'title', 'body', 'services', 'ticket', 'tenantId', 'publisher', 'startsAt', 'endsAt', 'expiresAt'] as const satisfies readonly (keyof DraftErrors)[]
+type ErrorKey = (typeof FIELD_ORDER)[number]
+/** element id suffix and visible label of each faultable field */
+const FIELD: Record<ErrorKey, { id: string; label: string }> = {
+  severity: { id: 'severity', label: 'Severity' },
+  title: { id: 'title', label: 'Title' },
+  body: { id: 'body', label: 'Details' },
+  services: { id: 'services', label: 'Affected services' },
+  ticket: { id: 'ticket', label: 'ServiceNow incident' },
+  tenantId: { id: 'tenant', label: 'Tenant' },
+  publisher: { id: 'publisher', label: 'Publisher' },
+  startsAt: { id: 'starts', label: 'Starts' },
+  endsAt: { id: 'ends', label: 'Ends' },
+  expiresAt: { id: 'expires', label: 'Expires' },
+}
 
 export interface PublishOutageFormProps {
   client: CommunicationClient
@@ -17,8 +36,8 @@ export interface PublishOutageFormProps {
   /** prefilled publisher (team or person) */
   publisher?: string
   onPublished?: (communication: Communication) => void
-  /** "View in feed" on the confirmation */
-  onViewFeed?: () => void
+  /** "View in feed" on the confirmation; the host should show that tenant's feed, filtered to that type */
+  onViewFeed?: (communication: Communication) => void
 }
 
 /** Publish an outage (or incident, maintenance, change) to communication-service. */
@@ -27,7 +46,11 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
   const [draft, setDraft] = useState<OutageDraft>(() => emptyDraft(tenantId, publisher))
   const [errors, setErrors] = useState<DraftErrors>({})
   const [submitting, setSubmitting] = useState(false)
-  const [serverError, setServerError] = useState<string | null>(null)
+  /**
+   * why the last publish failed: the service's words for a rejection (4xx), or that it failed or could not
+   * be reached; `said` keeps the service's own sentence when the form explained it in its own terms
+   */
+  const [serverError, setServerError] = useState<{ text: string; rejected: boolean; said?: string } | null>(null)
   const [published, setPublished] = useState<Communication | null>(null)
   const [showTiming, setShowTiming] = useState(false)
 
@@ -40,26 +63,54 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }))
   }
 
+  const f = (name: string) => `${id}-${name}`
+  const note = (name: string) => `${f(name)}-note`
+
+  /** Moves focus and the viewport to a field; for a segmented group, to its selected segment. */
+  const focusField = (key: ErrorKey) => {
+    const el = document.getElementById(f(FIELD[key].id))
+    if (!el) return
+    const target = el.getAttribute('role') === 'radiogroup' ? (el.querySelector<HTMLElement>('[aria-checked="true"]') ?? el) : el
+    target.focus({ preventScroll: true })
+    target.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+  }
+
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const found = validate(effective)
-    setErrors(found)
-    if (Object.values(found).some(Boolean)) {
-      if (found.startsAt || found.endsAt || found.expiresAt) setShowTiming(true)
+    const first = FIELD_ORDER.find((k) => found[k])
+    if (first) {
+      // render the errors (and open Timing when one is there) before moving focus to the first
+      flushSync(() => {
+        setErrors(found)
+        if (found.startsAt || found.endsAt || found.expiresAt) setShowTiming(true)
+      })
+      focusField(first)
       return
     }
+    setErrors({})
     setSubmitting(true)
     setServerError(null)
+    const request = toRequest(effective)
     try {
-      const saved = await client.publish(toRequest(effective))
+      const saved = await client.publish(request)
       setPublished(saved)
       onPublished?.(saved)
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : String(err))
+      setServerError({ text: explainPublishError(err, request), rejected: isRejection(err), said: duplicateReference(err, request)?.said })
     } finally {
       setSubmitting(false)
     }
   }
+
+  // the banner is rendered under the cards, which at a laptop height can be below the fold: bring
+  // it into view and give it focus, so it is read out and the next Tab stays near the buttons
+  const banner = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!serverError) return
+    banner.current?.focus({ preventScroll: true })
+    banner.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [serverError])
 
   const reset = () => {
     setDraft((d) => ({ ...emptyDraft(d.tenantId, d.publisher), type: d.type }))
@@ -69,20 +120,29 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
     setShowTiming(false)
   }
 
+  // "Publish another": the confirmation (with the button that was pressed) gives way to the empty
+  // form, so focus would fall to <body>; render the form first, then start the person at its first field
+  const another = () => {
+    flushSync(reset)
+    document.getElementById(f('title'))?.focus()
+  }
+
   if (published) {
-    return <Published communication={published} onAnother={reset} onViewFeed={onViewFeed} />
+    return <Published communication={published} onAnother={another} onViewFeed={onViewFeed} />
   }
 
   const services = parseServices(draft.services)
-  const f = (name: string) => `${id}-${name}`
+  const problems = FIELD_ORDER.filter((k) => errors[k])
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
-      <Card title="What's happening" subtitle="Consumers of the feed see exactly this.">
+      <Card title="What's happening" titleAs="h2" subtitle="Consumers of the feed see exactly this.">
         <div className="flex flex-col gap-4">
-          <Field label="Type" hint={TYPE_HINT[draft.type]}>
+          <Field label="Type" labelId={f('type-label')} hint={TYPE_HINT[draft.type]} noteId={note('type')}>
             <Segmented<CommunicationType>
-              ariaLabel="Communication type"
+              id={f('type')}
+              ariaLabelledBy={f('type-label')}
+              describedBy={note('type')}
               className="flex-wrap"
               value={draft.type}
               onChange={(v) => set('type', v)}
@@ -90,9 +150,12 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
             />
           </Field>
 
-          <Field label="Severity" error={errors.severity}>
+          <Field label="Severity" labelId={f('severity-label')} error={errors.severity} noteId={note('severity')}>
             <Segmented<Severity>
-              ariaLabel="Severity"
+              id={f('severity')}
+              ariaLabelledBy={f('severity-label')}
+              describedBy={errors.severity ? note('severity') : undefined}
+              invalid={!!errors.severity}
               value={draft.severity}
               onChange={(v) => set('severity', v)}
               options={SEVERITIES.map((s) => ({ value: s, label: titleCase(s) }))}
@@ -102,6 +165,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
           <Field label="Title" required htmlFor={f('title')} error={errors.title} hint={`${draft.title.length}/${TITLE_MAX}`}>
             <Input
               id={f('title')}
+              aria-describedby={note('title')}
               value={draft.title}
               maxLength={TITLE_MAX}
               invalid={!!errors.title}
@@ -113,6 +177,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
           <Field label="Details" htmlFor={f('body')} error={errors.body} hint="Impact, workaround, next update. Plain text.">
             <Textarea
               id={f('body')}
+              aria-describedby={note('body')}
               rows={5}
               value={draft.body}
               invalid={!!errors.body}
@@ -127,7 +192,15 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
             error={errors.services}
             hint="Comma separated. Consumers filter the feed by these names."
           >
-            <Input id={f('services')} mono value={draft.services} invalid={!!errors.services} placeholder="payments-api, checkout-web" onChange={(e) => set('services', e.target.value)} />
+            <Input
+              id={f('services')}
+              aria-describedby={note('services')}
+              mono
+              value={draft.services}
+              invalid={!!errors.services}
+              placeholder="payments-api, checkout-web"
+              onChange={(e) => set('services', e.target.value)}
+            />
             {services.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1">
                 {services.map((s) => (
@@ -139,17 +212,18 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
             )}
           </Field>
 
-          <Field label="ServiceNow incident" htmlFor={f('ticket')} error={errors.ticket} hint="Optional. The INC tracking this; consumers get a link to it.">
-            <Input id={f('ticket')} mono value={draft.ticket} invalid={!!errors.ticket} placeholder="INC0012345" onChange={(e) => set('ticket', e.target.value)} />
+          <Field label="ServiceNow incident" htmlFor={f('ticket')} error={errors.ticket} hint="Optional. The INC tracking this; consumers see it as a chip on the notice, linked when the service knows your ServiceNow instance.">
+            <Input id={f('ticket')} aria-describedby={note('ticket')} mono value={draft.ticket} invalid={!!errors.ticket} placeholder="INC0012345" onChange={(e) => set('ticket', e.target.value)} />
           </Field>
         </div>
       </Card>
 
-      <Card title="Who and where">
+      <Card title="Who and where" titleAs="h2">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Tenant" required htmlFor={f('tenant')} error={errors.tenantId} hint="The tenant whose feed this lands in.">
             <Input
               id={f('tenant')}
+              aria-describedby={note('tenant')}
               mono
               value={effective.tenantId}
               disabled={lockTenant}
@@ -162,7 +236,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
             />
           </Field>
           <Field label="Publisher" required htmlFor={f('publisher')} error={errors.publisher} hint="Your team or name, recorded in the audit trail.">
-            <Input id={f('publisher')} value={draft.publisher} invalid={!!errors.publisher} placeholder="payments-oncall" onChange={(e) => set('publisher', e.target.value)} />
+            <Input id={f('publisher')} aria-describedby={note('publisher')} value={draft.publisher} invalid={!!errors.publisher} placeholder="payments-oncall" onChange={(e) => set('publisher', e.target.value)} />
           </Field>
           <Field label="Audience" htmlFor={f('audience')}>
             <Select
@@ -173,14 +247,15 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
               options={AUDIENCES.map((a) => ({ value: a, label: titleCase(a) }))}
             />
           </Field>
-          <Field label="External reference" htmlFor={f('ref')} hint="Idempotency key, optional; defaults to the incident number.">
-            <Input id={f('ref')} mono value={draft.externalRef} placeholder="payments-2026-11-01" onChange={(e) => set('externalRef', e.target.value)} />
+          <Field label="External reference" htmlFor={f('ref')} hint="Optional idempotency key, permanent per tenant; defaults to the incident number.">
+            <Input id={f('ref')} aria-describedby={note('ref')} mono value={draft.externalRef} placeholder="payments-2026-11-01" onChange={(e) => set('externalRef', e.target.value)} />
           </Field>
         </div>
       </Card>
 
       <Card
         title="Timing"
+        titleAs="h2"
         subtitle={showTiming ? 'Times are in your local time zone.' : 'Starts now and stays up until you retire it.'}
         actions={
           <Button size="sm" variant="ghost" icon={showTiming ? 'chevron-down' : 'calendar'} onClick={() => setShowTiming((v) => !v)}>
@@ -191,29 +266,57 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
         {showTiming ? (
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Starts" htmlFor={f('starts')} error={errors.startsAt} hint="Empty means now.">
-              <input id={f('starts')} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.startsAt} onChange={(e) => set('startsAt', e.target.value)} />
+              <input id={f('starts')} aria-describedby={note('starts')} aria-invalid={errors.startsAt ? true : undefined} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.startsAt} onChange={(e) => set('startsAt', e.target.value)} />
             </Field>
             <Field label="Ends" required={draft.type === 'MAINTENANCE'} htmlFor={f('ends')} error={errors.endsAt} hint="Expected resolution.">
-              <input id={f('ends')} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.endsAt} onChange={(e) => set('endsAt', e.target.value)} />
+              <input id={f('ends')} aria-describedby={note('ends')} aria-invalid={errors.endsAt ? true : undefined} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.endsAt} onChange={(e) => set('endsAt', e.target.value)} />
             </Field>
             <Field label="Expires" htmlFor={f('expires')} error={errors.expiresAt} hint="Drops off the feed then.">
-              <input id={f('expires')} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.expiresAt} onChange={(e) => set('expiresAt', e.target.value)} />
+              <input id={f('expires')} aria-describedby={note('expires')} aria-invalid={errors.expiresAt ? true : undefined} type="datetime-local" className={cx(inputClass, 'px-3 py-2 text-sm')} value={draft.expiresAt} onChange={(e) => set('expiresAt', e.target.value)} />
             </Field>
           </div>
         ) : undefined}
       </Card>
 
-      {serverError && (
-        <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical">
+      {problems.length > 0 && (
+        <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical-fg">
           <Icon name="alert-triangle" size={16} className="mt-0.5 shrink-0" />
-          <span>
-            <span className="font-medium">The service rejected this.</span> {serverError}
-          </span>
+          <p>
+            <span className="font-medium">{problems.length === 1 ? 'One field needs attention' : `${problems.length} fields need attention`}:</span>{' '}
+            {problems.map((k, i) => (
+              <span key={k}>
+                <button type="button" className="font-medium underline underline-offset-2" onClick={() => focusField(k)}>
+                  {FIELD[k].label}
+                </button>
+                {` (${errors[k]})`}
+                {i < problems.length - 1 ? ', ' : '.'}
+              </span>
+            ))}
+          </p>
+        </div>
+      )}
+
+      {serverError && (
+        <div ref={banner} tabIndex={-1} role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical-fg outline-none">
+          <Icon name="alert-triangle" size={16} className="mt-0.5 shrink-0" />
+          <div className="flex min-w-0 flex-col gap-1">
+            <span>
+              {serverError.rejected && <span className="font-medium">The service rejected this. </span>}
+              {serverError.text}
+            </span>
+            {serverError.said && (
+              <details className="text-caption">
+                <summary className="w-fit cursor-pointer font-medium">What the service said</summary>
+                <p className="mt-1 break-words">{serverError.said}</p>
+              </details>
+            )}
+          </div>
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2.5 text-sm text-secondary">
+        {/* the switch is 30x18 px; the labelled row is the click target, at least 24 px tall */}
+        <label className="flex min-h-6 cursor-pointer items-center gap-2.5 py-1 text-sm text-secondary">
           <Switch size="sm" label="Save as draft" checked={draft.draft} onChange={(v) => set('draft', v)} />
           Save as draft (not visible to consumers)
         </label>
@@ -230,18 +333,23 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
   )
 }
 
-function Published({ communication: c, onAnother, onViewFeed }: { communication: Communication; onAnother: () => void; onViewFeed?: () => void }) {
+function Published({ communication: c, onAnother, onViewFeed }: { communication: Communication; onAnother: () => void; onViewFeed?: (communication: Communication) => void }) {
   const live = c.status === 'ACTIVE'
+  // the form (and the button that was pressed) is gone: put focus on the outcome so it is read out and in view
+  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    heading.current?.focus()
+  }, [])
   return (
     <Card className="animate-scale-in">
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <div className={cx('flex h-12 w-12 items-center justify-center rounded-full', live ? 'bg-healthy-tint text-healthy' : 'bg-accent-tint text-accent')}>
+        <div className={cx('flex h-12 w-12 items-center justify-center rounded-full', live ? 'bg-healthy-tint text-healthy-fg' : 'bg-accent-tint text-accent-fg')}>
           <Icon name="check" size={22} strokeWidth={2.2} />
         </div>
         <div>
-          <p className="text-title3 font-semibold text-primary">
+          <h2 ref={heading} tabIndex={-1} className="text-title3 font-semibold text-primary outline-none">
             {c.status === 'DRAFT' ? 'Draft saved' : live ? `${titleCase(c.type)} published` : `${titleCase(c.type)} scheduled`}
-          </p>
+          </h2>
           <p className="mt-1 text-sm text-secondary">
             {c.status === 'DRAFT'
               ? 'Consumers will not see it until it is published.'
@@ -264,7 +372,7 @@ function Published({ communication: c, onAnother, onViewFeed }: { communication:
             Publish another
           </Button>
           {onViewFeed && c.status !== 'DRAFT' && (
-            <Button variant="primary" onClick={onViewFeed} iconRight="external">
+            <Button variant="primary" onClick={() => onViewFeed(c)} iconRight="external">
               View in feed
             </Button>
           )}

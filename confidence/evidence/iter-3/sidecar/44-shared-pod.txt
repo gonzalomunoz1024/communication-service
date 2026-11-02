@@ -1,0 +1,15 @@
+## shared pod read at 2026-11-02T06:51:21Z (read only)
+$ curl -s 127.0.0.1:19465/status
+{"version":"ci-iter3","service":"fake-app","tenant":"podtest","instance":"fake-app-7f9c6d5b4-x2k4q","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"podtest","service":"fake-app","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T06:51:17.705Z","publisher":"health-sidecar","instance":{"id":"fake-app-7f9c6d5b4-x2k4q","namespace":"podtest-ns","node":"worker-1","cluster":"sandbox","version":"1.0.0","sidecar":"ci-iter3"}},"lastSendAt":"2026-11-02T06:51:17.70596916Z","reportsSent":31}
+exit=0
+$ curl -s -o /dev/null -w %{http_code} 127.0.0.1:19465/healthz
+200
+$ docker inspect sidecar (user, readonly, caps, image labels)
+User=1000660000:0 ReadonlyRootfs=true CapDrop=[ALL] SecOpt=[no-new-privileges] NetworkMode=container:4019e5858bf5ef6305b211039553adfc4c004a8ebaaa8469cfaad4e3d7e8aa5d
+{"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.revision":"6079180","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar","org.opencontainers.image.version":"ci-iter3"}
+$ docker logs sidecar | tail -8
+{"time":"2026-11-02T06:34:40.966695129Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"fake-app","tenant":"podtest","instance":"fake-app-7f9c6d5b4-x2k4q","endpoint":"http://172.17.0.1:8080","probe":"auto"}
+{"time":"2026-11-02T06:34:40.969352227Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T06:34:41.000453404Z","level":"INFO","msg":"reported","status":"UP","message":""}
+$ docker logs sidecar | levels
+      3 INFO

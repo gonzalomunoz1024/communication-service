@@ -1,0 +1,38 @@
+# Private stack for the verifier's own scenarios (scripts/stack-up.sh): own Mongo container, two backends from the iteration-4 jar, vite preview of frontend/dist, an emulated pod (shared network namespace) with fakeapp + sidecar under restricted-v2-like settings, a pull-probe stub
+# jar: md5 prefix 1320a3b47a1d printed by stack-up.sh; sha256 64e07ece32b4d9f6 for both the scratchpad copy and build/libs/communication-service-0.0.1-SNAPSHOT.jar (same bytes)
+
+== 2026-11-02T10:36:08Z private sidecar image
+$ docker build -t health-sidecar:e2e4 --build-arg GO_IMAGE=local/go-toolset:1.27 --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot --build-arg VERSION=e2e4 --build-arg REVISION=d10369b21d65e9500bbfae7de53013ce5f7b78cc sidecar
+sha256:40f9d4b176c504bf2404f44bf14617bdd840c53de5b0cb1a7dc12c07abd6793b
+exit=0
+id=sha256:40f9d4b176c504bf2404f44bf14617bdd840c53de5b0cb1a7dc12c07abd6793b user=1001 version=e2e4 revision=d10369b21d65e9500bbfae7de53013ce5f7b78cc entrypoint=[/usr/local/bin/health-sidecar]
+
+## 2026-11-02T10:36:36.757Z private stack up (head d10369b, jar 1320a3b47a1d)
+e2e4-mongo started
+2026-11-02T10:36:39.377Z mongo answers ping
+backend A pid 21021
+backend B pid 21027
+2026-11-02T10:36:56.406Z backend A readiness ready after 17 s
+2026-11-02T10:36:56.690Z backend B readiness ready after 0 s
+2026-11-02T10:36:57.727Z vite preview (frontend/dist) -> A ready after 1 s
+## 2026-11-02T10:36:57.729Z sidecar image health-sidecar:e2e4 (built beforehand from sidecar/Dockerfile, GO_IMAGE=local/go-toolset:1.27 BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot): sha256:40f9d4b176c504bf2404f44bf14617bdd840c53de5b0cb1a7dc12c07abd6793b e2e4/d10369b21d65e9500bbfae7de53013ce5f7b78cc user=1001
+e2e4-netns started
+e2e4-app started (fakeapp:e2e)
+e2e4-sidecar started (health-sidecar:e2e4, uid 1000660000, read-only, cap-drop ALL, no-new-privileges)
+e2e4-stub started (pull-probe target)
+2026-11-02T10:36:59.057Z fake app in the pod ready after 0 s
+2026-11-02T10:37:00.079Z sidecar reported ready after 1 s
+2026-11-02T10:37:00.123Z backend A sees monitor ve4/ve4-app UP ready after 0 s
+## 2026-11-02T10:37:00.125Z private stack up: A :19501 B :19502 UI :19530 pod app :19540 status :19541 stub :19551 mongo :19527
+e2e4-stub	fakeapp:e2e	Up 1 second	127.0.0.1:19551->8080/tcp
+e2e4-sidecar	health-sidecar:e2e4	Up 1 second	
+e2e4-app	fakeapp:e2e	Up 1 second	
+e2e4-netns	golang:1.24	Up 2 seconds	127.0.0.1:19540->8080/tcp, 127.0.0.1:19541->9465/tcp
+e2e4-mongo	mongo:7.0	Up 23 seconds	127.0.0.1:19527->27017/tcp
+
+2026-11-02T10:37:11Z e2e4-sidecar: user=1000660000:0 readonly=true capdrop=[ALL] secopt=[no-new-privileges] netmode=container:49d4dba23d8c1e55e336d137165d47ef6e97a682ddc2b00dea464df628eda74e
+  /proc/22111/status: Uid: 1000660000 1000660000 1000660000 1000660000;Gid: 0 0 0 0;CapPrm: 0000000000000000;CapEff: 0000000000000000;NoNewPrivs: 1;Seccomp: 2
+  first log lines:
+{"time":"2026-11-02T10:36:58.657050907Z","level":"INFO","msg":"health sidecar starting","version":"e2e4","service":"ve4-app","tenant":"ve4","instance":"ve4-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T10:36:58.660904274Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:36:59.167067795Z","level":"INFO","msg":"reported","status":"UP","message":""}

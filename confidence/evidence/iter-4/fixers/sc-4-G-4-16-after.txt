@@ -1,0 +1,18 @@
+# sc-4 G-4-16 (Go half) AFTER: probe.Normalize trims every character up to U+0020 and nothing else, like String.trim()
+# date: 2026-11-02T08:18:24Z
+
+$ go test -count=1 -run 'TestStatusWordsAreTrimmedLikeTheService|TestNormalize$|TestFailingCountsTheComponentsTheServiceCounts' -v ./internal/probe/
+=== RUN   TestFailingCountsTheComponentsTheServiceCounts
+--- PASS: TestFailingCountsTheComponentsTheServiceCounts (0.00s)
+=== RUN   TestNormalize
+--- PASS: TestNormalize (0.00s)
+=== RUN   TestStatusWordsAreTrimmedLikeTheService
+--- PASS: TestStatusWordsAreTrimmedLikeTheService (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	0.007s
+exit=0
+
+$ go test -count=1 -race ./internal/probe/ ./internal/agent/   (the send cadence uses probe.Failing)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.496s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.291s
+exit=0

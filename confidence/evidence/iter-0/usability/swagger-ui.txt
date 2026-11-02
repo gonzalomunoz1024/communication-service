@@ -1,0 +1,3 @@
+{"title":"Communication Service  v1  OAS 3.1","tags":["Admin","Feed","Health","Publishing"],"authorizeButton":true}
+{"withoutAuthorize":{"status":"401\nUndocumented","body":"Error: Unauthorized  Response body Download {   \"error\": \"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)\" } Response h"}}
+{"authDialogText":"clientId (apiKey)  Repository name of the calling system; required on every /v1 request  Name: X-Client-Id  In: header  Value: Authorize Close","afterAuthorize":"200","calls":[{"url":"/v1/feed?tenantId=ux-api&includeUpcoming=true&page=0&size=20","status":401},{"url":"/v1/feed?tenantId=ux-api&includeUpcoming=true&page=0&size=20","status":200}]}

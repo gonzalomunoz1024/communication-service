@@ -1,0 +1,63 @@
++0.1s instance A up: true
++0.1s instance B up: true
++0.6s badge → Waiting for a tenant
++0.7s badge → Connecting
++0.7s stream REQUEST #1 ?lastEventId=(none)
++0.7s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++0.8s stream RESPONSE 200
++0.8s SSE frame snapshot id=245 before the drop
++0.8s stream REQUEST FAILED net::ERR_ABORTED
++0.8s stream REQUEST #2 ?lastEventId=(none)
++0.8s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++0.8s stream RESPONSE 200
++0.8s SSE frame snapshot id=245 before the drop
++0.9s feed Live with one item
++0.9s SIGKILL instance A (pid 4230); last SSE id seen 245
++0.9s A down: true
++0.9s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++1.0s badge → Reconnecting
++3.9s stream REQUEST #3 ?lastEventId=(none)
++3.9s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=245
++4.0s stream RESPONSE 502
++4.1s badge → Reconnecting (1)
++5.0s stream REQUEST #4 ?lastEventId=245
++5.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++5.0s stream RESPONSE 502
++5.0s badge → Reconnecting (2)
++7.0s stream REQUEST #5 ?lastEventId=245
++7.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++7.0s stream RESPONSE 502
++7.1s badge → Reconnecting (3)
++11.0s stream REQUEST #6 ?lastEventId=245
++11.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++11.0s stream RESPONSE 502
++11.0s badge → Reconnecting (4)
++19.0s stream REQUEST #7 ?lastEventId=245
++19.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++19.0s stream RESPONSE 502
++19.0s badge → Reconnecting (5)
++29.0s stream REQUEST #8 ?lastEventId=245
++29.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++29.0s stream RESPONSE 502
++29.1s badge → Reconnecting (6)
++39.0s stream REQUEST #9 ?lastEventId=245
++39.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++39.0s stream RESPONSE 502
++39.1s badge → Reconnecting (7)
++49.0s stream REQUEST #10 ?lastEventId=245
++49.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++49.0s stream RESPONSE 502
++49.0s stream REQUEST FAILED net::ERR_ABORTED
++49.0s badge → Reconnecting (8)
++53.0s restarting instance A
++59.0s stream REQUEST #11 ?lastEventId=245
++59.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++59.0s stream RESPONSE 502
++59.1s badge → Reconnecting (9)
++61.3s A up again: true
++69.0s stream REQUEST #12 ?lastEventId=245
++69.0s CDP wire: stream request ?lastEventId=245 Last-Event-ID header=(none)
++69.0s stream RESPONSE 200
++75.1s badge → Live
++75.2s badge Live again: true (13.9 s after A answered)
++76.0s SSE frame created id=246 published after the restart

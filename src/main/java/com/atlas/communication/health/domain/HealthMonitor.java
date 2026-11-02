@@ -118,6 +118,19 @@ public record HealthMonitor(
     }
 
     /**
+     * Claims the probe slot: the probe about to run is recorded as of {@code now}, so the monitor
+     * is not due again until its interval has elapsed. Saved under the version check before the
+     * probe runs, this keeps several instances of the service from probing one monitor at once:
+     * only the instance whose save wins goes on to probe.
+     */
+    public HealthMonitor withProbeClaimed(Instant now) {
+        State s = state;
+        return withState(new State(s.lastStatus(), s.lastReportAt(), now, s.lastSummary(),
+                s.unhealthyStreak(), s.healthyStreak(), s.openCommunicationId(), s.openStatus(),
+                s.openSignature(), s.incidents()), now);
+    }
+
+    /**
      * A push-only monitor with a staleness window is stale once that window has elapsed since
      * the last real report (or since registration, if it never reported).
      */
@@ -192,11 +205,16 @@ public record HealthMonitor(
                 s.unhealthyStreak(), s.healthyStreak(), null, null, null, s.incidents()), updatedAt);
     }
 
-    /** Clears the open notice and resets the failure streak (an operator closed it by hand). */
+    /**
+     * Clears the open notice and starts the failure count again (an operator closed it by hand).
+     * The observation in hand, when it is itself failing, is the first of the new count, so the
+     * notice reopens after {@code failureThreshold} failing observations, not one more.
+     */
     public HealthMonitor withClosedByOperator() {
         State s = state;
+        int counted = s.unhealthyStreak() > 0 ? 1 : 0;
         return withState(new State(s.lastStatus(), s.lastReportAt(), s.lastProbeAt(), s.lastSummary(),
-                0, s.healthyStreak(), null, null, null, s.incidents()), updatedAt);
+                counted, s.healthyStreak(), null, null, null, s.incidents()), updatedAt);
     }
 
     /** The idempotency key of the current incident's communication. */

@@ -1,0 +1,65 @@
+# e2e-s G-2-17 after: first full run of the in-repo end-to-end suite, from a freshly created stack
+# (fixer E2E-S, worktree of /home/claude/communication-service at d1aae2c, 2026-11-02 02:56-02:58 UTC)
+#
+# Commits on top of 3b18b1d: fd88e09 (root Dockerfile + .dockerignore), 470a62c (e2e/fakeapp),
+# ccf48f6 (e2e/ suite, compose stack, stack.sh, READMEs), d1aae2c (.github/workflows/e2e.yml).
+# Inputs: build/libs/communication-service-0.0.1-SNAPSHOT.jar from `./gradlew --max-workers=2 --no-daemon bootJar`
+# in the worktree (BUILD SUCCESSFUL in 23s), frontend/dist from `npm ci && npm run build` (built in 455ms),
+# e2e/node_modules from `npm install` (@playwright/test 1.63.0, Chromium 1243 preinstalled at /opt/pw-browsers,
+# `playwright install` never run). Sandbox substitution for the sidecar image only, because the UBI registry is
+# blocked here: GO_IMAGE=local/go-toolset:1.24 BASE_IMAGE=gcr.io/distroless/static-debian12:latest (CI uses the
+# sidecar Dockerfile's defaults). Output below is the run's log with BuildKit progress lines, blank lines,
+# compose per-container progress lines and stack traces of the expected proxy errors removed.
+#
+# Also run beforehand: `go vet ./... && go test -count=1 ./...` in e2e/fakeapp (3 tests, ok 0.011s);
+# `npm run typecheck` in e2e/ (clean); `python3 -c "import yaml; yaml.safe_load(...)"` on the workflow (valid,
+# 12 steps); the env binding of the pinned thresholds, checked with a throwaway container started with
+# COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD=3 / RECOVERYTHRESHOLD=4: a report's monitor answered
+# {"failureThreshold":3,"recoveryThreshold":4,"publisher":"health-monitor"}. A first run on the same stack
+# before this one also passed (6 passed, 40.8s; F-91 card after 8.5 s, F-92 healed 7.2 s after the backend).
+
+== ./stack.sh down (fresh start) ==
+== GO_IMAGE=local/go-toolset:1.24 BASE_IMAGE=gcr.io/distroless/static-debian12:latest ./stack.sh up ==
+ Image communication-service:e2e Building
+ Image fakeapp:e2e Building
+ Image health-sidecar:e2e Building
+ Image health-sidecar:e2e Built
+ Image fakeapp:e2e Built
+ Image communication-service:e2e Built
+02:57:09 stack: the backend is ready (6 s)
+02:57:10 stack: the fake app answers UP (0 s)
+02:57:11 stack: the sidecar has reported (1 s)
+02:57:11 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+02:57:11 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+== npx playwright test ==
+Running 6 tests using 1 worker
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (49ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body (185ms)
+  ✓  3 tests/01-api-contract.spec.ts:27:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (21ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (2.6s)
+F-91: the OUTAGE card appeared 6.4 s after the app went DOWN
+F-91: the card left 6.8 s after the app came back
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (14.1s)
+F-92: the badge showed Reconnecting 0.4 s into the restart
+[WebServer] 2:57:35 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend
+[WebServer] Error: read ECONNRESET
+F-92: a reopen carried lastEventId=7
+[WebServer] 2:57:36 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=7
+[WebServer] Error: socket hang up
+[WebServer] 2:57:38 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend
+[WebServer] Error: read ECONNRESET
+[WebServer] 2:57:42 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend
+[WebServer] Error: read ECONNRESET
+[WebServer] 2:57:50 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend
+[WebServer] Error: read ECONNRESET
+F-92: the backend was ready again 22.2 s after the restart began
+F-92: the page showed it 12.7 s after the backend was back
+  ✓  6 tests/04-f92-backend-restart.spec.ts:4:5 › F-92 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and shows what was published meanwhile (36.1s)
+  6 passed (55.1s)
+playwright exit=0
+== ./stack.sh down ==
+done exit=0
+
+# The "[vite] http proxy error" lines are the preview server's proxy answering 502 to the page's stream reopen
+# attempts while the backend container was down during F-92 (the badge's Reconnecting (n) phase), which is the
+# behaviour the test depends on; they stop once the backend is ready again.

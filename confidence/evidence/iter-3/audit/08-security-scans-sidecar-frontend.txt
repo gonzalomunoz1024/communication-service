@@ -1,0 +1,72 @@
+Iteration-3 audit: vulnerability scans of the sidecar and the frontend with the same reachable database as 07 (auditor's own check, not a sampled claim)
+Why: 07 shows a vulnerability database is reachable here (Trivy DB from mirror.gcr.io), so the gate 'an open critical/high security finding' can be
+checked for every service, not only the backend. The sidecar verifier wrote 'no CVE statement for the stdlib in go1.25.14' because vuln.go.dev is
+blocked (verifier-sidecar.md:46-49, :202-203; replayed in 40-sidecar-replays.txt, still blocked).
+
+Tool: mirror.gcr.io/aquasec/trivy:0.58.1, --skip-db-update with the auditor's cache:
+{"Version":2,"NextUpdate":"2026-11-03T07:17:05.526947983Z","UpdatedAt":"2026-11-02T07:17:05.526948404Z","DownloadedAt":"2026-11-02T07:55:29.611027381Z"}
+
+
+== 1. Sidecar image binary (built from e3968c4 by 03-image-build.sh; the sandbox's go-toolset stand-in is go1.25.14, the same as the verifier's ev/03)
+$ go version -m health-sidecar-au3 | head -3
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit3/sc/bin/health-sidecar-au3: go1.25.14
+	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+$ docker run --rm -v <cache>:/root/.cache -v <dir with only the binary>:/scan:ro mirror.gcr.io/aquasec/trivy:0.58.1 rootfs --skip-db-update --scanners vuln --format json /scan   -> exit 0
+target health-sidecar-au3 (gobinary): 14 findings {'HIGH': 4, 'MEDIUM': 9, 'LOW': 1}
+  HIGH   CVE-2026-111943  stdlib v1.25.14 fixed 1.26.10, 1.27.3 | crypto/x509: golang: crypto/x509: Man-in-the-middle attacks via untrusted interm
+  HIGH   CVE-2026-78667   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: golang: golang: Denial of Service via crafted HTTP Range headers
+  HIGH   CVE-2026-78669   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: net/http/internal/http2: golang.org/x/net/http2: net/http: Denial of S
+  HIGH   CVE-2026-97031   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | crypto/tls: golang: crypto/tls: Denial of Service via multiple ECH outer extensi
+  MEDIUM CVE-2026-56866   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: golang: golang: Cross-user response poisoning via desynchronized HTTP 
+  MEDIUM CVE-2026-78659   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: golang.org/x/net/http2: golang: net/http: Denial of Service via HTTP/2
+  MEDIUM CVE-2026-78660   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: golang: golang.org/x/net/http2: net/http: HTTP response smuggling via 
+  MEDIUM CVE-2026-78663   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: net/http/internal/http2: golang: golang.org/x/net/http2: golang: flow 
+  MEDIUM CVE-2026-94439   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: golang: net/http: HTTP request smuggling via improper handling of HTTP
+  MEDIUM CVE-2026-94440   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/textproto: mime/multipart: golang: golang: Denial of Service via memory limi
+  MEDIUM CVE-2026-94448   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | html/template: golang: golang: cross-site scripting via consecutive expressions 
+  MEDIUM CVE-2026-97030   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | html/template: golang: html/template: Cross-site scripting via improper escaping
+  MEDIUM CVE-2026-97032   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | net/http: net/http/internal/http2: golang: golang.org/x/net/http2: net/http: Den
+  LOW    CVE-2026-56857   stdlib v1.25.14 fixed 1.26.9, 1.27.2 | os: golang: golang: Directory traversal via Windows junction handling
+No Go 1.25.x release carries the fixes (fixed versions are 1.26.x / 1.27.x only). govulncheck@latest itself switches to go1.26.10 here (40-security).
+
+== 2. Where the repository pins the Go line
+sidecar/Dockerfile:8   ARG GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.25
+sidecar/Dockerfile:13  ENV GOTOOLCHAIN=local CGO_ENABLED=0 GOFLAGS=-trimpath
+sidecar/go.mod:3       go 1.25   (no toolchain line; Dockerfile:7 and deploy/dockerfile_test.go keep the two equal)
+.github/workflows/ci.yml:80-82 setup-go with go-version-file: sidecar/go.mod; ci.yml:101-102 'go run golang.org/x/vuln/cmd/govulncheck@latest ./...'
+History: go 1.24 at 191a0c5; go 1.25 / go-toolset:1.25 since a5b1ea1 (iteration 2, 'Fix G-2-14'); unchanged in iteration 3. Newly observed, not a regression.
+Triage files: none (no .trivyignore, VEX or govulncheck exclusions in the repository).
+
+== 3. Reachability, by code read (govulncheck's call-graph check cannot run here)
+- CVE-2026-111943 crypto/x509 (Verify rejects known distrusted intermediates): REACHABLE. The report client is a TLS client with verification on by
+  default (sidecar/internal/report/client.go:65-89: tls.Config{MinVersion TLS1.2}, optional CS_CA_FILE pool, InsecureSkipVerify only on opt-in), so every
+  https CS_ENDPOINT handshake calls x509 Verify. Red Hat rates it 3/HIGH (CVSS 6.8, AC:H/UI:R).
+- CVE-2026-78667 net/http Range header: not reached (no ServeContent/ServeFile/FileServer in sidecar/cmd or internal).
+- CVE-2026-78669 HTTP/2 SETTINGS: not reached as far as the code shows (client Transport sets TLSClientConfig without ForceAttemptHTTP2, so HTTP/2
+  is off; the status server is plain HTTP/1.1, cmd/health-sidecar/main.go:55-57).
+- CVE-2026-97031 crypto/tls ECH (server side): not reached (the sidecar runs no TLS server).
+So CI's own govulncheck step would report at least the x509 entry once vuln.go.dev is reachable (not run: blocked here).
+
+== 4. Not verifiable here
+The shipped builder registry.access.redhat.com/ubi9/go-toolset:1.25 (registry.access.redhat.com/v2/ -> 000 at 09:05Z). Red Hat may backport fixes
+into its own 1.25 build; a version-based scanner would still report the same IDs for it, and CI's setup-go path builds with upstream 1.25.x.
+
+== 5. Frontend and E2E dependency lockfiles (copies of frontend/ and e2e/ package.json + package-lock.json)
+$ ... trivy:0.58.1 fs --skip-db-update --scanners vuln --include-dev-deps --format json /scan   -> exit 0
+  e2e/package-lock.json (npm): 0 findings
+  frontend/package-lock.json (npm): 0 findings
+  go.mod (gomod): 0 findings
+  (the go.mod line is the sidecar source tree: no third-party modules, 0 findings)
+The frontend has no open finding (with dev dependencies included), consistent with the frontend verifier.
+
+== 6. Ruling
+Sidecar: 4 open HIGH findings in the Go standard library compiled into the image binary, one of them reachable on the default https path, none
+triaged, no fix on the Go line the repository pins. The gate 'an open critical/high security finding' applies as worded, by the same test the
+audit applies to GAP-backend3-6 (07): an open, reproduced finding in a shipped runtime component, with a reachable database. Sidecar capped at 80.
+Frontend: no finding, no cap. E2E: already capped through the backend; the sidecar adds nothing numerically.
+
+== 7. Publication dates (PublishedDate in the auditor's Trivy JSON)
+The 4 HIGH stdlib entries were published 2026-10-08 (CVE-2026-78667, -78669, -97031) and 2026-10-21 (CVE-2026-111943), before iteration 2.
+Iteration 2's sidecar (go1.25.0) and iteration 3's (go1.25.14) are on the same unsupported Go line; iteration 2 had no reachable database
+for the Go standard library. Newly observed, not a regression.

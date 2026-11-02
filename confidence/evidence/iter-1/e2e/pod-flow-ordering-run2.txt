@@ -1,0 +1,13 @@
+02:00:03.466 === F-72/F-88 startup ordering, app restart, sidecar crash, rediscovery (pod 2)
+02:00:11.081 F-72 PASS sidecar started before the app: reports UNKNOWN ("starting: waiting for the app to listen"), monitor registered with no notice :: monitor lastStatus=UNKNOWN summary="UNKNOWN (1 pod starting, none reporting yet)" sidecar lastReport=UNKNOWN "starting: waiting for the app to listen"
+02:00:11.092 F-88 PASS no false outage while the app is not up yet :: items=0
+02:00:13.323 F-88 PASS app starts after the sidecar: discovered and UP :: after 2.1s "UP (1 of 1 pod UP)" target=http://127.0.0.1:8080/actuator/health
+02:00:22.551 F-88 PASS app container stopped -> OUTAGE notice after two DOWN observations, naming the pod (G-1-2; was never opened in iteration 0) :: after 9.2s body="Automated health check reported **DOWN** at 2026-11-02T02:00:22.211766607Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: app2-5d4c7b6a9-zzzzz) |  | This notice is managed automaticall"
+02:00:22.611 F-88 PASS while the app is gone: sidecar2 /status lastReport DOWN "app is not listening (last target …)", pod record DOWN with that message, log has "health target gone" + reported DOWN (G-1-2) :: status: DOWN "app is not listening (last target http://127.0.0.1:8080/actuator/health)" | pod: DOWN "app is not listening (last target http://127.0.0.1:8080/actuator/health)" | log: 02:00:15 health target gone; will rediscover / 02:00:15 reported DOWN
+02:00:31.834 F-88 PASS app back -> notice retired (recovered) :: after 9.1s "ACTIVE -> RETIRED: recovered: UP (1 of 1 pod UP)"
+02:00:41.582 F-88 PASS sidecar SIGKILL + restart: reports UP again, no new notice, app unaffected :: incidents 1->1 items=0
+02:00:45.831 F-77 PASS app restarted on another port: sidecar rediscovers the new target :: after 4.0s target=http://127.0.0.1:8081/actuator/health
+02:00:45.864 F-89 PASS sidecar2 log lines are JSON with level/msg (start, target found, reported) :: 15 lines, msgs=health sidecar starting / reported / health target found / health target gone; will rediscover
+
+SUMMARY: 9 checks, 9 pass, 0 fail
+EXIT=0

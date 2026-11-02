@@ -1,0 +1,94 @@
+== 02:39:22 cmd-15: removed test lines under sidecar/ since 191a0c5
+ .../component-native/add-native-sidecar.yaml       |  66 +++++
+ .../kustomize/component-native/kustomization.yaml  |  15 ++
+ .../kustomize/component/add-native-sidecar.yaml    |  61 -----
+ .../deploy/kustomize/component/add-sidecar.yaml    |   2 +-
+ .../deploy/kustomize/example/kustomization.yaml    |   1 +
+ sidecar/deploy/manual/deployment.yaml              |   2 +
+ .../testdata/native-with-init/kustomization.yaml   |  18 ++
+ .../testdata/native-with-init/workloads.yaml       |  53 ++++
+ sidecar/internal/agent/agent.go                    |  97 +++++--
+ sidecar/internal/agent/agent_test.go               | 102 ++++++++
+ sidecar/internal/config/docs_test.go               |  72 ++++++
+ 13 files changed, 769 insertions(+), 99 deletions(-)
+removed lines in *_test.go: 0
+
+== 02:39:22 cmd-2: go test -race once; go test with kustomize/kubeconform off PATH
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.568s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.108s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.016s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.052s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.462s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.116s
+race exit 0
+--- SKIP: TestNativeComponentKeepsExistingInitContainers (0.00s)
+--- SKIP: TestClassicComponentAppendsTheContainer (0.00s)
+--- SKIP: TestBothComponentsShareTheContainerContract (0.00s)
+--- PASS: TestManualSnippetSharesTheContainerContract (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.002s
+(tools on PATH? kustomize=none)
+
+== 02:39:28 F-80: image build from the repository Dockerfile with substituted bases
+sha256:39171a058cad00f1c7c3d4d56166a620f0807efc215e39914d5bdc022d3e8565
+User=1001 ExposedPorts={"9465/tcp":{}} Size=16194366 Labels={"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar"} Entrypoint=["/usr/local/bin/health-sidecar"]
+
+== 02:39:41 F-73 CASE 1/2: flap damping (stub actuator fails exactly one request)
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg=None sent=1
+  [02:39:47] one failing health request injected (default CS_RETRY_DELAY=2s)
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg=None sent=1
+  stub backend saw 1 reports: ['UP']
+  DOWN lines in sidecar log: 0
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg=None sent=1
+  [02:40:00] one failing health request injected (CS_RETRY_DELAY=0)
+  /status: target=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg=None sent=3
+  stub backend saw 3 reports: ['UP', 'DOWN', 'UP']
+
+== 02:40:09 F-79: TLS to the endpoint (private CA)
+  CASE 1: https endpoint, no CA
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='post https://127.0.0.1:9100/v1/health/reports: Post "https://127.0.0.1:9100/v1/health/reports": tls: failed to verify certificate: x509: certificate signed by unknown authority' sent=0
+{"time":"2026-11-02T02:40:11.20295742Z","level":"WARN","msg":"report failed; will retry","error":"post https://127.0.0.1:9100/v1/health/reports: Post \"https://127.0.0.1:9100/v1/health/reports\": tls: failed to verify certificate: x509: certificate signed by unknown authority","in":"1s"}
+  CASE 2: CS_CA_FILE=/certs/ca.pem (read-only mount)
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError=None sent=2
+  CASE 3: CS_INSECURE_SKIP_VERIFY=true
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError=None sent=2
+
+== 02:40:30 cmd-14: govulncheck
+go: golang.org/x/vuln@v1.9.0 requires go >= 1.26.0; switching to go1.26.10
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1
+exit 1
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1
+exit 1
+
+== 02:40:37 F-87 soak: two sidecars at CS_INTERVAL=1s CS_HEARTBEAT=2s (HTTP probe / TCP probe) sampled every 30 s for 6 min
+  02:40:40 s1 VmRSS: 7596 kB | status=UP sent=1 sendErr=None
+  02:40:40 s2 VmRSS: 7380 kB | status=UP sent=1 sendErr=None
+  02:41:10 s1 VmRSS: 8420 kB | status=UP sent=14 sendErr=None
+  02:41:10 s2 VmRSS: 7652 kB | status=UP sent=14 sendErr=None
+  02:41:40 s1 VmRSS: 9140 kB | status=UP sent=28 sendErr=None
+  02:41:40 s2 VmRSS: 7776 kB | status=UP sent=28 sendErr=None
+  02:42:10 s1 VmRSS: 9776 kB | status=UP sent=41 sendErr=None
+  02:42:11 s2 VmRSS: 7896 kB | status=UP sent=42 sendErr=None
+  02:42:41 s1 VmRSS: 10864 kB | status=UP sent=55 sendErr=None
+  02:42:41 s2 VmRSS: 8060 kB | status=UP sent=55 sendErr=None
+  02:43:11 s1 VmRSS: 11140 kB | status=UP sent=69 sendErr=None
+  02:43:11 s2 VmRSS: 8244 kB | status=UP sent=69 sendErr=None
+  02:43:41 s1 VmRSS: 11252 kB | status=UP sent=82 sendErr=None
+  02:43:41 s2 VmRSS: 8428 kB | status=UP sent=83 sendErr=None
+  02:44:11 s1 VmRSS: 11308 kB | status=UP sent=96 sendErr=None
+  02:44:11 s2 VmRSS: 8608 kB | status=UP sent=96 sendErr=None
+  02:44:41 s1 VmRSS: 11332 kB | status=UP sent=110 sendErr=None
+  02:44:41 s2 VmRSS: 8760 kB | status=UP sent=110 sendErr=None
+  02:45:11 s1 VmRSS: 11532 kB | status=UP sent=124 sendErr=None
+  02:45:12 s2 VmRSS: 8896 kB | status=UP sent=123 sendErr=None
+  02:45:42 s1 VmRSS: 11564 kB | status=UP sent=138 sendErr=None
+  02:45:42 s2 VmRSS: 9048 kB | status=UP sent=137 sendErr=None
+  02:46:12 s1 VmRSS: 11584 kB | status=UP sent=151 sendErr=None
+  02:46:12 s2 VmRSS: 9204 kB | status=UP sent=151 sendErr=None
+  02:46:42 s1 VmRSS: 11552 kB | status=UP sent=165 sendErr=None
+  02:46:42 s2 VmRSS: 9408 kB | status=UP sent=165 sendErr=None
+  WARN/ERROR lines: s1 0 s2 0; reports at the stub: 1 log lines
+== 02:47:13 done

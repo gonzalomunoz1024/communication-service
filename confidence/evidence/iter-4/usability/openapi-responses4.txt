@@ -1,0 +1,91 @@
+openapi 3.1.0 | title: Communication Service | version: v1
+servers: [{'url': 'http://localhost:8080', 'description': 'Generated server url'}]
+GET    /v1/admin/communications                      lock    req-example=False -> 200[application/json:PageCommunication] 400[] 401[application/json:Error,ex] 503[]
+DELETE /v1/admin/communications/{id}                 lock    req-example=False -> 204[] 400[] 401[application/json:Error,ex] 404[] 503[]
+POST   /v1/admin/communications/{id}/retire          lock    req-example=True  -> 200[application/json:Communication] 400[] 401[application/json:Error,ex] 404[] 409[application/json:Error,ex] 503[]
+GET    /v1/admin/tenants                             lock    req-example=False -> 200[application/json:array] 400[] 401[application/json:Error,ex] 503[]
+GET    /v1/communications                            lock    req-example=False -> 200[application/json:PageCommunication] 400[] 401[application/json:Error,ex] 503[]
+POST   /v1/communications                            lock    req-example=True  -> 201[application/json:Communication] 400[] 401[application/json:Error,ex] 409[application/json:,ex] 503[]
+GET    /v1/communications/{id}                       lock    req-example=False -> 200[application/json:Communication] 400[] 401[application/json:Error,ex] 404[] 503[]
+PUT    /v1/communications/{id}                       lock    req-example=True  -> 200[application/json:Communication] 400[] 401[application/json:Error,ex] 404[] 409[application/json:Error,ex] 503[]
+POST   /v1/communications/{id}/publish               lock    req-example=False -> 200[application/json:Communication] 400[] 401[application/json:Error,ex] 404[] 409[application/json:Error,ex] 503[]
+POST   /v1/communications/{id}/retire                lock    req-example=True  -> 200[application/json:Communication] 400[] 401[application/json:Error,ex] 404[] 409[application/json:Error,ex] 503[]
+GET    /v1/feed                                      lock    req-example=False -> 200[application/json:PageFeedItem] 400[] 401[application/json:Error,ex] 503[]
+GET    /v1/feed/stream                               lock    req-example=False -> 200[text/event-stream:array] 400[] 401[application/json:Error,ex] 503[]
+GET    /v1/feed/{id}                                 lock    req-example=False -> 200[application/json:FeedItem] 400[] 401[application/json:Error,ex] 404[] 503[]
+GET    /v1/health/monitors                           lock    req-example=False -> 200[application/json:array] 400[] 401[application/json:Error,ex] 503[]
+POST   /v1/health/monitors                           lock    req-example=True  -> 201[application/json:HealthMonitor] 400[] 401[application/json:Error,ex] 409[application/json:Error,ex] 503[]
+GET    /v1/health/monitors/{id}                      lock    req-example=False -> 200[application/json:HealthMonitor] 400[] 401[application/json:Error,ex] 404[] 503[]
+DELETE /v1/health/monitors/{id}                      lock    req-example=False -> 204[] 400[] 401[application/json:Error,ex] 404[] 503[]
+GET    /v1/health/monitors/{id}/instances            lock    req-example=False -> 200[application/json:array] 400[] 401[application/json:Error,ex] 404[] 503[]
+POST   /v1/health/monitors/{id}/probe                lock    req-example=False -> 200[application/json:HealthMonitor] 400[] 401[application/json:Error,ex] 404[] 409[application/json:Error,ex] 503[]
+POST   /v1/health/reports                            lock    req-example=True  -> 202[application/json:HealthMonitor] 400[] 401[application/json:Error,ex] 503[]
+operations: 20
+mentions unknown fields: False | mentions suggestedExternalRef: True | mentions expectedVersion description: True
+POST /v1/communications responses (raw):
+{
+ "201": {
+  "description": "Published, or saved as a DRAFT when draft is true",
+  "headers": {
+   "Location": {
+    "description": "The new notice: /v1/communications/{id}",
+    "style": "simple",
+    "schema": {
+     "type": "string"
+    }
+   }
+  },
+  "content": {
+   "application/json": {
+    "schema": {
+     "$ref": "#/components/schemas/Communication"
+    }
+   }
+  }
+ },
+ "400": {
+  "$ref": "#/components/responses/BadRequest"
+ },
+ "401": {
+  "description": "No X-Client-Id header (or ?clientId= on the stream)",
+  "content": {
+   "application/json": {
+    "schema": {
+     "$ref": "#/components/schemas/Error"
+    },
+    "example": {
+     "error": "missing X-Client-Id header: identify the calling system by its repository name"
+    }
+   }
+  }
+ },
+ "409": {
+  "description": "externalRef already used in this tenant. It is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value. The body names the notice that holds it, and suggestedExternalRef is the first follow-up value the tenant does not hold yet (absent when the first 50 are all taken).",
+  "content": {
+   "application/json": {
+    "example": {
+     "error": "externalRef 'INC0012345' is already used by notice 3f0c2a1e-7d4b-4a4e-9c2b-5e1f0a6d8b21 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-3, which is still free).",
+     "suggestedExternalRef": "INC0012345-3"
+    }
+   }
+  }
+ },
+ "503": {
+  "$ref": "#/components/responses/ServiceUnavailable"
+ }
+}
+components.responses: ['BadRequest', 'NotFound', 'ServiceUnavailable']
+  BadRequest : {"description": "The request cannot be accepted as sent: a malformed X-Client-Id, a body that is not JSON or has a field this route does not take, or a field or parameter that fails validation. The error names it and says what to send.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}, "example": {"error": "severity: 'SEVERE' is not one of [INFO, MINOR, MAJOR, CRITICAL]"}}}}
+  NotFound : {"description": "Nothing with this id: no communication, or no monitor on /v1/health routes", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}, "example": {"error": "communication 3f0c2a1e-7d4b-4a4e-9c2b-5e1f0a6d8b21 not found"}}}}
+  ServiceUnavailable : {"description": "The database is unreachable: nothing was read or changed; retry later (/actuator/health/readiness answers 503 meanwhile)", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}, "example": {"error": "database unavailable"}}}}
+request example (POST /v1/communications): {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateCommunicationCommand"}, "examples": {"incident": {"summary": "An incident customers see, with its ticket", "description": "incident", "value": {"tenantId": "acme", "publisher": "sre-team", "type": "INCIDENT", "severity": "MAJOR", "title": "Checkout errors for some customers", "body": "Some payments fail. We are rolling back the last release; next update in 30 minutes.", "affectedServices": ["checkout", "payments"], "audience": "CUSTOMERS", "externalRef": "INC0012345", "ticket": {"system": "servicenow", "number": "INC0012345"}}}}}}, "required": true}
+Error schema: {"type": "object", "properties": {"error": {"type": "string", "description": "What is wrong, in words that say what to send instead"}}, "required": ["error"]}
+schemas mentioning suggestedExternalRef: ['CreateCommunicationCommand']
+externalRef -> {"type": "string", "description": "Permanent idempotency key, usable once per tenant for the life of the store (retired and expired notices included). Repeat it only to retry the same publish: the 409 names the notice that already holds it. A follow-up notice needs a new value, for example INC0012345-2; the 409 suggests the first one still free as suggestedExternalRef. Defaults to ticket.number wh
+ticket -> {"$ref": "#/components/schemas/Ticket"}
+expiresAt -> {"type": "string", "format": "date-time"}
+startsAt -> {"type": "string", "format": "date-time"}
+endsAt -> {"type": "string", "format": "date-time"}
+draft -> {"type": "boolean"}
+UpdateCommunicationCommand required: ['expectedVersion']
+expectedVersion -> {"type": "integer", "format": "int64", "description": "The version you last read: every answer and GET /v1/communications/{id} carry it. A 409 'expectedVersion N does not match current version M' means someone saved in between: re-read, re-apply your change and send the new version.", "example": 0}

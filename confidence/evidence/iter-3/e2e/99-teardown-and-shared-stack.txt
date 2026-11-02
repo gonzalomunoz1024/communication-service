@@ -1,0 +1,20 @@
+# teardown of the private stack and checks that nothing shared was touched (2026-11-02T07:23:36Z)
+$ bash scripts/stack-down.sh   (kills backends A/B and vite preview by pid, docker rm -f e2e3-*)  -> "private stack down" (run 07:23Z)
+$ docker ps -a | grep -E "e2e3|^e2e-"
+(none)
+$ docker network ls | grep e2e
+(none)
+$ connect to every port this verifier used (19501 19502 19527 19530 19540 19541 19542 19543 19551 19560 19590 28030 28080 28090 28091)
+(no port open unless listed above)
+$ shared stack (read only)
+backend :8080 /actuator/health/readiness -> 200
+frontend :3000 / -> 200
+sidecar Up 48 minutes (created 2026-11-02 06:34:40 +0000 UTC)
+app Up 48 minutes (created 2026-11-02 06:34:40 +0000 UTC)
+mongo7 Up 8 hours (created 2026-11-01 23:14:32 +0000 UTC)
+$ git status --short
+?? confidence/evidence/iter-3/backend/
+?? confidence/evidence/iter-3/e2e/
+$ git rev-parse --abbrev-ref HEAD; git rev-parse --short HEAD
+confidence-loop/2026-11-01
+e3968c4

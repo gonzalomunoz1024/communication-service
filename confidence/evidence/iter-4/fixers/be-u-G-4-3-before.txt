@@ -1,0 +1,23 @@
+# G-4-3 before: Dockerfile:11 ARG BASE_IMAGE=gcr.io/distroless/java21-debian12:nonroot (unpinned)
+$ docker build -t beu-backend:before .   (the G-4-1 jar from build/libs)
+$ flock …/orch-trivy/.lock docker run --rm -v …/orch-trivy/cache:/root/.cache -v /var/run/docker.sock:/var/run/docker.sock \
+    mirror.gcr.io/aquasec/trivy:0.58.1 image --skip-db-update --skip-java-db-update --scanners vuln --pkg-types os \
+    --cache-backend memory --format json beu-backend:before
+INFO	Detected OS	family="debian" version="12.13"
+INFO	[debian] Detecting vulnerabilities...	os_version="12" pkg_num=20
+ArtifactName=beu-backend:before findings=108 CRITICAL=2 HIGH=12 MEDIUM=64 LOW=24 UNKNOWN=6
+  CRITICAL CVE-2026-111497      libbrotli1@1.0.9-2+b6  fixed: 1.0.9-2+deb12u1
+  CRITICAL CVE-2023-45853       zlib1g@1:1.2.13.dfsg-1  fixed: -
+  HIGH     CVE-2024-28757       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u4
+  HIGH     CVE-2025-59375       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u5
+  HIGH     CVE-2026-25210       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u4
+  HIGH     CVE-2026-45186       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u4
+  HIGH     CVE-2026-66046       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u4
+  HIGH     CVE-2026-76957       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u3
+  HIGH     CVE-2026-77214       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u5
+  HIGH     CVE-2026-93990       libexpat1@2.5.0-1+deb12u2  fixed: 2.5.0-1+deb12u4
+  HIGH     CVE-2026-41254       liblcms2-2@2.14-2  fixed: 2.14-2+deb12u1
+  HIGH     CVE-2026-53613       libuuid1@2.38.1-5+deb12u3  fixed: -
+  HIGH     CVE-2026-53615       libuuid1@2.38.1-5+deb12u3  fixed: -
+  HIGH     CVE-2026-78410       libuuid1@2.38.1-5+deb12u3  fixed: -
+fixable findings: 42 (libbrotli1, libc6, libexpat1, liblcms2-2, libpng16-16, tzdata)

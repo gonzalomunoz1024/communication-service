@@ -1,0 +1,15 @@
+# sc-4 G-4-24 AFTER: configuration row for HTTPS_PROXY / HTTP_PROXY / NO_PROXY and a usual-causes line
+# date: 2026-11-02T08:21:48Z
+
+$ grep -n 'PROXY' README.md
+225:| `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | unset | proxy for the reports, chosen as Go's `net/http` does (`HTTPS_PROXY` for an `https://` endpoint, `HTTP_PROXY` for `http://`, the lower-case names too; hosts listed in `NO_PROXY` are reached directly); the probes to the app never use a proxy. A cluster-wide proxy injected into the pod's environment carries the reports: add the endpoint's host 
+291:   `NO_PROXY` in the configuration table); the app is unaffected, the sidecar retries with backoff.
+
+$ go test -count=1 -run 'TestProxyVariablesAreDocumented|TestEveryEnvironmentVariableIsDocumented' -v ./internal/config/
+=== RUN   TestEveryEnvironmentVariableIsDocumented
+--- PASS: TestEveryEnvironmentVariableIsDocumented (0.00s)
+=== RUN   TestProxyVariablesAreDocumented
+--- PASS: TestProxyVariablesAreDocumented (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.004s
+exit=0

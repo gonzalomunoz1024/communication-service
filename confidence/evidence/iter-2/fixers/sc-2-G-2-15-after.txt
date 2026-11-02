@@ -1,0 +1,67 @@
+# G-2-15 after: commit "Fix G-2-15: fail the manifest tests in CI without the tools, pin the /status contract, test main's wiring"
+
+## (1) deploy tests with CI=true and kustomize/kubeconform NOT on PATH: every manifest test fails naming the tool
+$ cd sidecar && CI=true go test -count=1 -v ./deploy/
+    deploy_test.go:195: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestNativeComponentKeepsExistingInitContainers (0.00s)
+    deploy_test.go:221: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestClassicComponentAppendsTheContainer (0.00s)
+    deploy_test.go:236: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestBothComponentsShareTheContainerContract (0.00s)
+    deploy_test.go:285: kubeconform is not on PATH and CI is set: install kubeconform in the CI image, the manifest tests must not skip there
+--- FAIL: TestManualSnippetSharesTheContainerContract (0.00s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.009s
+exit=1
+
+## (2) CI=true with the tools on PATH (kustomize v5.5.0, kubeconform v0.6.7): pass, schema validation ran
+$ CI=true PATH=<scratchpad>/tools:$PATH go test -count=1 -v ./deploy/
+    deploy_test.go:216: kubeconform 1.29.0: Summary: 3 resources found parsing stdin - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestNativeComponentKeepsExistingInitContainers (0.92s)
+    deploy_test.go:230: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+    deploy_test.go:231: kubeconform 1.29.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestClassicComponentAppendsTheContainer (0.86s)
+--- PASS: TestBothComponentsShareTheContainerContract (0.16s)
+    deploy_test.go:285: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestManualSnippetSharesTheContainerContract (0.39s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	2.341s
+exit=0
+(without CI and without the tools the three kustomize tests still SKIP and the kubeconform step logs, as before: laptops keep the skip)
+
+## (3) cmd/health-sidecar against main refactored into run(ctx, getenv, stdout) int
+$ go test -count=1 -v ./cmd/health-sidecar/
+=== RUN   TestRunRejectsMissingEndpointWithAClearError
+--- PASS: TestRunRejectsMissingEndpointWithAClearError (0.00s)
+=== RUN   TestRunRejectsAnUnreadableCAFile
+--- PASS: TestRunRejectsAnUnreadableCAFile (0.01s)
+=== RUN   TestRunReportsWithTheBuildVersionAndStopsCleanly
+--- PASS: TestRunReportsWithTheBuildVersionAndStopsCleanly (0.01s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	0.027s
+exit=0
+(missing CS_ENDPOINT -> exit 2 + one JSON ERROR line "invalid configuration" whose error contains "CS_ENDPOINT is required";
+ unreadable CS_CA_FILE -> exit 2 "cannot build report client" naming CS_CA_FILE; valid env -> POST with User-Agent
+ health-sidecar/1.2.3-test and instance.sidecar 1.2.3-test, "health sidecar starting" version=1.2.3-test at INFO,
+ leaving report on cancel, "health sidecar stopped", exit 0, no ERROR line)
+
+## (4) the /status contract test with the README table completed (identity row added)
+$ go test -count=1 -v -run TestStatusJSONMatchesTheDocumentedContract ./internal/agent/
+=== RUN   TestStatusJSONMatchesTheDocumentedContract
+--- PASS: TestStatusJSONMatchesTheDocumentedContract (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.010s
+$ go test -count=1 ./internal/agent/
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.040s
+
+## static checks and the race detector on the two packages with concurrent tests
+$ gofmt -l . ; go vet ./...
+(no files) (clean)
+$ go test -count=1 -race ./cmd/health-sidecar/ ./internal/agent/
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.119s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.083s
+exit=0

@@ -1,0 +1,23 @@
+23:53:21.204 === F-92 backend down / F-61 browser reconnect
+23:53:37.421 F-60 PASS indicator reaches Live (empty tenant: only after the first keepalive, see F-18/GAP) :: 
+23:53:37.988 kill backend A pid 21826 
+23:53:48.025 F-92 FAIL backend A really down (connection refused) :: pid=21826
+23:53:58.122 F-61 FAIL backend down: indicator shows Reconnecting :: after 20.1s
+23:53:58.705 F-92 PASS UI: feed load while the backend is down -> "Couldn't load the feed" + Try again (error text from the proxy) :: text="Couldn't load the feed502 Bad Gateway"
+23:54:04.799 F-74 PASS sidecar: "report failed; will retry" with backoff while the backend is down :: 23:53:48 report failed; will retry post http://172.17.0.1:18081/v1/health/reports: Post "http://172.17.0.1:18081/v1/health/reports": dial tcp 172.17.0.1:18081: connect: connection refused retryIn= | 23:53:51 report failed; will retry post http://172.17.0.1:18081/v1/health/reports: Post "http://172.17.0.1:18081/v1/health/reports": dial tcp 172.17.0.1:18081: connect: connection refused retryIn= | 23
+23:54:04.802 F-78 FAIL sidecar /status exposes lastSendError while the backend is down :: {"version":"ci","service":"e2e-app","tenant":"e2e-pod","instance":"e2e-app-6b7d9c8f5-abcde","target":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"e2e-pod","service":
+23:54:04.831 F-21 PASS B keeps serving while A is down (publish 201) :: status=201
+23:54:11.439 F-92 PASS backend A restarted :: after 6.6s
+23:54:15.511 F-61 FAIL after the restart the browser stream heals and the item published meanwhile appears :: indicator=Live seesMissedItem=false (manual Last-Event-ID probe -> HTTP 500)
+23:54:27.527 F-61 FAIL 16 s after the restart: stream state and missed item :: indicator=Live seesMissedItem=false stream responses seen by the page: [?]
+23:54:27.695 F-92 PASS manual Refresh heals the list :: 
+23:54:27.758 sidecar log since the kill: 23:53:48 report failed; will retry post http://172.17.0.1:18081/v1/health/reports: Post "http:/ | 23:53:51 report failed; will retry post http://172.17.0.1:18081/v1/health/reports: Post "http:/ | 23:53:54 report failed; will retry post http://172.17.0.1:18081/v1/health/reports: Post "http:/ | 23:54:01 report failed; will retry post http://172.17.0.1:18081/v1/health/reports: Post "http:/
+23:54:27.776 F-92 PASS sidecar recovers after the backend is back (next report accepted), monitor UP, no duplicate notice :: recovered after 22.9s state="UP (1 of 1 pod UP)" lastSendError=none
+23:54:27.876 F-92 PASS browser console errors during backend outage (expected: network errors only) :: Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+
+SUMMARY: 13 checks, 8 pass, 5 fail
+  FAIL F-92 backend A really down (connection refused) :: pid=21826
+  FAIL F-61 backend down: indicator shows Reconnecting :: after 20.1s
+  FAIL F-78 sidecar /status exposes lastSendError while the backend is down :: {"version":"ci","service":"e2e-app","tenant":"e2e-pod","instance":"e2e-app-6b7d9c8f5-abcde","target":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"e2e-pod","service":
+  FAIL F-61 after the restart the browser stream heals and the item published meanwhile appears :: indicator=Live seesMissedItem=false (manual Last-Event-ID probe -> HTTP 500)
+  FAIL F-61 16 s after the restart: stream state and missed item :: indicator=Live seesMissedItem=false stream responses seen by the page: [?]

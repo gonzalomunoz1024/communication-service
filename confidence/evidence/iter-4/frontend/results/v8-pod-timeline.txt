@@ -1,0 +1,12 @@
++0.6s vf4-app up (19291 app, 19292 sidecar status) | vf4-sidecar up (tenant vf4-pod-mvz4xn4r)
++0.6s sidecar container: 1000660000:0 ro=true capdrop=[ALL] secopt=[no-new-privileges] net=container:574e47192cbffad461b01f977470c248622126acc300b7e93236e0dfa2bb8834
++0.7s monitor 96d40cfa-106d-47e4-969b-a6bb583fa6cc UP; instances [["vf4-fake-app-5d7c9b8f6-q1w2e","UP","ci-iter4"]]
++7.7s UI feed Live, All clear
++7.7s app DOWN: {"db":"DOWN","status":"DOWN"}
++14.5s card 'vf4-fake-app is down' visible after 6839 ms
++14.7s app UP: {"db":"UP","status":"UP"}
++23.6s card gone 8895 ms after recovery; history actors ["health-sidecar"]
++24.2s pod 2 started
++24.3s app 1 DOWN with pod 2 UP: {"db":"DOWN","status":"DOWN"}
++36.3s after 12 s: monitor UP 'UP (1 of 2 pods UP (DOWN: vf4-fake-app-5d7c9b8f6-q1w2e))', cards 0
++36.5s sidecar 1 stopped in 119 ms, exit 0; pod 1 left=true

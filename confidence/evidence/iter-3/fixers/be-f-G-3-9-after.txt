@@ -1,0 +1,45 @@
+# G-3-9 after the fix (Communication.validateInvariants names both values and a defaulted start;
+# @NotNull message on UpdateCommunicationCommand.expectedVersion; handleBind keeps a message that names its field)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*CommunicationTest' --tests '*RestControllerPublishingAdapterTest'
+#          --tests '*GlobalExceptionHandlerTest' integrationTest --tests '*CommunicationServiceE2EIT' --continue
+BUILD SUCCESSFUL in 41s
+exit=0
+  common.domain.CommunicationTest" tests="19" skipped="0" failures="0" errors="0"
+  publishing.adapters.inbound.RestControllerPublishingAdapterTest" tests="17" skipped="0" failures="0" errors="0"
+  config.GlobalExceptionHandlerTest" tests="4" skipped="0" failures="0" errors="0"
+  CommunicationServiceE2EIT" tests="9" skipped="0" failures="0" errors="0"
+  the new cases, all passed:
+    testcase name="anExpiryNotAfterTheStartNamesBothValuesAndAStartThatDefaulted()"
+    testcase name="anUpdateWithoutExpectedVersionSaysWhatToSendAndWhatA409Means()"
+    testcase name="anExpiryBeforeTheDefaultedStartAndAMissingVersionSayWhatWasSentAndWhatToSend()"
+  whole unit suite after the change (same tree before the millisecond rounding of the defaulted start):
+    BUILD SUCCESSFUL in 1m 3s
+    exit=0
+    test: 219 tests, 0 failures; integrationTest (CommunicationServiceE2EIT, OpenApiContractIT): 12 tests, 0 failures
+
+## pinned texts
+CommunicationTest: expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-10-14T12:00:00Z)
+                   expiresAt 2026-10-14T13:00:00Z must be after startsAt 2026-10-14T13:00:00Z   (startsAt sent)
+                   expiresAt 2026-10-14T11:59:00Z must be after startsAt 2026-10-14T12:00:00Z   (update, stored start)
+RestControllerPublishingAdapterTest: expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since
+
+## HTTP, same script, jar built from the worktree with the fix
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g39","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"already over","expiresAt":"2026-10-01T09:00:00Z"}
+  -> {"error":"expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-11-02T05:51:29.172Z)"} [HTTP 400]
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g39","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"expires as it starts","startsAt":"2026-11-02T06:51:29Z","expiresAt":"2026-11-02T06:51:29Z"}
+  -> {"error":"expiresAt 2026-11-02T06:51:29Z must be after startsAt 2026-11-02T06:51:29Z"} [HTTP 400]
+(published 1ef90876-7b61-44a0-9eb7-ce2e613792b4, version 0, startsAt = its publish time)
+PUT http://localhost:18200/v1/communications/1ef90876-7b61-44a0-9eb7-ce2e613792b4 {"expiresAt":"2026-10-01T09:00:00Z","expectedVersion":0}
+  -> {"error":"expiresAt 2026-10-01T09:00:00Z must be after startsAt 2026-11-02T05:51:29.245Z"} [HTTP 400]
+PUT http://localhost:18200/v1/communications/1ef90876-7b61-44a0-9eb7-ce2e613792b4 {"body":"Mitigation in progress."}
+  -> {"error":"expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since"} [HTTP 400]
+PUT http://localhost:18200/v1/communications/1ef90876-7b61-44a0-9eb7-ce2e613792b4 {"body":"Mitigation in progress.","expectedVersion":0}
+  -> {"id":"1ef90876-7b61-44a0-9eb7-ce2e613792b4","tenantId":"fixbef-g39","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"down","body":"Mitigation in progress.","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T05:51:29.245Z","createdAt":"2026-11-02T05:51:29.245Z","updatedAt":"2026-11-02T05:51:29.462771650Z","version":1 ... [HTTP 200]
+
+## final state: the G-3-9 commit was amended (6419cea -> 37a1eca) after the first full check failed in spotbugsMain
+## (NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE, handleBind calling getDefaultMessage() twice; now read once into a local),
+## plus a README sentence; G-3-11 re-applied on top (d6212d1 -> 32c5c3c). Behaviour unchanged. Full check at 32c5c3c:
+## ./gradlew --max-workers=2 --no-daemon check
+BUILD SUCCESSFUL in 1m 47s
+exit=0
+test: 220 tests, 0 failures; integrationTest: 46 tests, 0 failures; spotbugsMain: 0 bugs; jacocoTestCoverageVerification passed

@@ -1,0 +1,66 @@
+== 2026-11-02T06:59:40Z start: node v1-shell-theme-form.js (commit e3968c4)
+PASS [F-52] document.title on the feed tab :: Feed · Outage Notifications
+PASS [F-52] header shows the app title (h1) :: h1 present
+PASS [F-52] G-2-12/UX-13: a first visit pre-fills NO tenant (value ''), 'acme' is only the placeholder, the input's title is the prompt :: {"value":"","placeholder":"acme","titleAttr":"Enter the tenant your consumers read; the service owners assign it.","storedAtStart":""}
+PASS [F-52] G-2-12: with no tenant the page shows the prompt line and the feed's 'Choose a tenant' state :: {"promptShown":1,"chooser":1}
+PASS [F-52] with no tenant no /v1/feed request or stream is opened :: requests=0
+PASS [F-52] tenant input is monospace :: "SF Mono", ui-monospace, Menlo, monospace
+PASS [F-52] theme toggle present :: toggle found
+PASS [F-52] two tabs Feed / Publish :: ["Feed","Publish"]
+PASS [F-52] G-2-12: the prompt disappears once a tenant is typed; the tenant is saved in comm-tenant and remembered after a reload :: {"promptGone":0,"stored":"vf3-shell-mvywsaxf","afterReload":"vf3-shell-mvywsaxf"}
+PASS [F-52] G-2-12: the form's Tenant field mirrors the header (and is empty, placeholder 'acme', when no tenant is set) :: {"formTenant":"vf3-shell-mvywsaxf","formTenantEmpty":"","formPlaceholder":"acme"}
+PASS [F-52] #/publish lands on the Publish tab with its title :: aria-selected=true title=Publish · Outage Notifications
+PASS [F-52] Publish tab survives a reload :: aria-selected=true after reload
+PASS [F-52] clicking Feed sets #/feed :: http://127.0.0.1:3000/#/feed
+PASS [F-52] seeded 2 active + 1 upcoming via API :: 201 201 201
+PASS [F-52] Feed tab badge equals the Active now count (upcoming not counted) :: badge=2 heading=Active now2
+PASS [F-52] no console errors / page errors on the shell :: {"errors":[],"console":[]}
+PASS [F-53] index.html carries the inline pre-paint theme script (atlas-theme, prefers-color-scheme) :: inline script present
+PASS [F-53] system mode + light OS → light :: dark=false colorScheme=light
+PASS [F-53] toggle flips to dark, persists atlas-theme=dark, label flips :: dark=true stored=dark labels=Switch to dark mode → Switch to light mode
+PASS [F-53] after a reload the theme is dark before React mounts (no flash) and stays dark :: darkAtInit=true dark=true
+PASS [F-53] explicit dark ignores an OS change :: still dark
+PASS [F-53] system mode follows the OS (dark → light) without a reload :: darkOS=true lightOS=false
+PASS [F-53] color-scheme meta present :: light dark
+PASS [F-54] type segmented control: Outage/Incident/Maintenance/Change, no Health :: ["Outage","Incident","Maintenance","Change"]
+PASS [F-54] type hint text changes with the type :: outage hint=1 maintenance hint=1
+PASS [F-54] severity segmented Info/Minor/Major/Critical, Major preselected :: Info,Minor,Major,Critical major=true
+PASS [F-54] title input has maxLength 200 and a 0/200 counter :: maxlength=200
+PASS [F-54] title counter updates (27/200) :: counter 27/200
+PASS [F-54] affected services split on commas, trimmed, deduped, previewed as chips :: ["payments-api","checkout-web","foo"]
+PASS [F-54] ServiceNow incident field present with INC placeholder :: placeholder ok
+PASS [F-54] G-2-12/UX-10: the incident hint no longer promises a link unconditionally ('…consumers see it as a chip on the notice, linked when the service knows your ServiceNow instance.') :: Optional. The INC tracking this; consumers see it as a chip on the notice, linked when the service knows your ServiceNow instance.
+PASS [F-54] G-2-9: the External reference hint says the key is permanent per tenant :: Optional idempotency key, permanent per tenant; defaults to the incident number.
+PASS [F-54] tenant prefilled from the header :: vf3-form-mvywsaxf
+PASS [F-54] header tenant flows into the form until the form field is edited, then the edit wins :: flowed=vf3-form-2-mvywsaxf kept=vf3-form-edited-mvywsaxf
+PASS [F-54] audience select Customers/Public/Internal (Customers default) :: ["Customers","Public","Internal"]
+PASS [F-54] external reference field present :: present
+PASS [F-54] timing panel collapsed by default with the "Starts now" subtitle :: collapsed
+PASS [F-54] Schedule opens Starts/Ends/Expires datetime-local inputs :: ["datetime-local","datetime-local","datetime-local"]
+PASS [F-54] Ends is marked required only for MAINTENANCE :: maintenance="Ends*" outage="Ends"
+PASS [F-54] Save as draft switch is role=switch, off by default :: aria-checked=false
+PASS [F-54] G-2-12/UX-15: the Save-as-draft row (label) is at least 24 px tall and clicking its text toggles the switch (the switch itself stays 30×18) :: {"row":{"w":288,"h":28},"switch":{"w":30,"h":18},"afterRowClick":"true","afterSecond":"false"}
+PASS [F-54] submit label follows the type :: Publish outage
+PASS [F-54] draft on → submit says Save draft :: Save draft
+PASS [F-54] POST body: instants converted from local (Europe/Madrid, UTC+1 in December) to UTC ISO :: {"startsAt":"2026-12-01T09:00:00.000Z","endsAt":"2026-12-01T11:00:00.000Z","expiresAt":"2026-12-01T12:00:00.000Z"}
+PASS [F-54] POST body: services array, ticket {servicenow, UPPER}, audience, severity, trimmed strings, no draft flag :: {"tenantId":"vf3-form-edited-mvywsaxf","publisher":"vf3-oncall","type":"OUTAGE","severity":"CRITICAL","title":"Payments API returning 503s","body":"Card payments fail.\nRetries succeed.","affectedServices":["payments-api","checkout-web","foo"],"audience":"INTERNAL","startsAt":"2026-12-01T09:00:00.000Z","endsAt":"2026-12-01T11:00:00.000Z","expiresAt":"2026-12-01T12:00:00.000Z","externalRef":"vf3-fo
+PASS [F-54] Clear resets the fields but keeps tenant, publisher and type :: {"title":"","publisher":"vf3-oncall-2","tenant":"vf3-form-edited-mvywsaxf","change":"true"}
+PASS [F-54] no console/page errors while using the form :: {"errors":[],"console":[]}
+PASS [F-55] empty submit → three inline errors (tenant, publisher, title), nothing sent :: {"texts":["Title is required","Tenant is required","Publisher is required"],"posts":0}
+PASS [F-55] the error summary says '3 fields need attention:' with one button per field, and focus is on the first invalid field (Title) :: {"summary":"3 fields need attention: Title (Title is required), Tenant (Tenant is required), Publisher (Publisher is required).","focus":{"tag":"input","id":"_r_0_-title","role":null,"tabindex":null,"label":"Title*","text":"","inViewport":true,"top":406,"bottom":444,"innerHeight":900,"scrollY":50}}
+PASS [F-55] invalid inputs carry aria-invalid=true, valid ones do not :: ["true","true","true",null]
+PASS [F-55] field error clears on edit :: ["Tenant is required","Publisher is required"]
+PASS [F-55] title cannot exceed 200 characters in the UI (maxLength caps the input) :: valueLength after filling 201 chars=200
+PASS [F-55] body over 16 KB counted in UTF-8 bytes (6000 × €) → error :: ["Body is larger than 16 KB"]
+PASS [F-55] 21 services → "At most 20 services" :: ["At most 20 services"]
+PASS [F-55] INFO outage → "Outages need MINOR or higher"; focus lands on the selected Severity segment :: {"t":["Outages need MINOR or higher"],"focusSev":{"tag":"button","id":null,"role":"radio","tabindex":"0","label":"","text":"Info","inViewport":true,"top":228,"bottom":260,"innerHeight":900,"scrollY":90}}
+PASS [F-55] INFO incident → "Incidents need MINOR or higher" :: ["Incidents need MINOR or higher"]
+PASS [F-55] MAINTENANCE without end → Timing panel opens itself with "Maintenance needs an end time" and focus on Ends :: {"t":["Maintenance needs an end time"],"focus":{"tag":"input","id":"_r_0_-ends","role":null,"tabindex":null,"label":"Ends*","text":"","inViewport":true,"top":677,"bottom":715,"innerHeight":900,"scrollY":581}}
+PASS [F-55] end and expiry before start → "Must be after the start" on both :: ["Must be after the start","Must be after the start"]
+PASS [F-55] 'inc12' → ticket error naming the expected format :: ["Not an incident number; expected INC0012345"]
+PASS [F-55] INFO severity allowed for CHANGE (no severity error) :: ["Not an incident number; expected INC0012345"]
+PASS [F-55] nothing was sent while invalid :: POSTs=0
+PASS [F-55] once valid the form submits (CHANGE INFO with end time) → 201 :: status=201
+
+== v1-shell-theme-form: 62 checks, 0 failed
+EXIT 0 (10 s)

@@ -1,0 +1,5 @@
+[seeded] {"n":51,"statuses":[201]}
+[api-409] {"status":409,"body":"{\"error\":\"externalRef 'INC4900001' is already used by notice 35795345-cc7c-4739-9839-c4030a147f00 in tenant ux4-none-free. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (INC4900001-2 to INC4900001-51 are taken as well).\"}"}
+[api-409-from-51] {"status":409,"body":"{\"error\":\"externalRef 'INC4900001-51' is already used by notice 71e38a59-2571-472f-beb5-c8e1a4457af2 in tenant ux4-none-free. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC4900001-52, which is still free).\",\"suggestedExternalRef\":\"INC4900001-52\"}"}
+[ui-banner] {"text":"The service rejected this. INC4900001 is already the reference of a notice in tenant ux4-none-free (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference (INC4900001-2 to INC4900001-51 are taken as well).\nWhat the service said"}
+exit 0

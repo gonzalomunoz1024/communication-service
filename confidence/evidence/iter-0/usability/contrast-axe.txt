@@ -1,0 +1,108 @@
+# Contrast samples (computed colours, WCAG ratio; AA = 4.5:1 for text under 18.66px bold / 24px)
+
+## contrast:feed-empty-light
+  - main p.text-sm.font-medium: 'All clear' rgb(29, 29, 31) on rgb(245,245,247) 14px/500 ratio 15.46 PASS
+  - main p.text-footnote: 'Nothing outage is active or upcoming for' rgb(134, 134, 139) on rgb(245,245,247) 13px/400 ratio 3.33 FAIL AA
+  - main label.text-caption: 'Service' rgb(110, 110, 115) on rgb(251,251,253) 12px/500 ratio 4.91 PASS
+  - main span.text-caption.text-secondary: 'Connecting' rgb(110, 110, 115) on rgb(251,251,253) 12px/400 ratio 4.91 PASS
+  - main button.rounded-full: '' rgb(110, 110, 115) on rgb(0,122,255) 12px/400 ratio 1.26 FAIL AA
+## contrast:publish-light
+  - main label.text-caption: 'Type' rgb(110, 110, 115) on rgb(255,255,255) 12px/500 ratio 5.07 PASS
+  - main p.text-caption2: 'A service is down or unusable' rgb(134, 134, 139) on rgb(255,255,255) 11px/400 ratio 3.62 FAIL AA
+  - main input::placeholder (not found)
+  - main button[type=submit]: 'Publish outage' rgb(255, 255, 255) on rgb(0,122,255) 14px/500 ratio 4.02 FAIL AA
+  - main [role=radiogroup] button[aria-checked=true]: 'Outage' rgb(29, 29, 31) on rgb(255,255,255) 14px/500 ratio 16.83 PASS
+  - main [role=radiogroup] button[aria-checked=false]: 'Incident' rgb(110, 110, 115) on rgb(245,245,247) 14px/500 ratio 4.66 PASS
+  - main p.text-footnote, main .text-footnote (not found)
+## contrast:server-error-light
+  - main [role=alert]: 'The service rejected this. duplicate ext' rgb(255, 59, 48) on rgb(246,226,227) 14px/400 ratio 2.86 FAIL AA
+  - main [role=alert] span.font-medium: 'The service rejected this.' rgb(255, 59, 48) on rgb(246,226,227) 14px/500 ratio 2.86 FAIL AA
+## contrast:card-light
+  - article h3: 'Payments API returning 503s' rgb(29, 29, 31) on rgb(255,255,255) 15px/600 ratio 16.83 PASS
+  - article p.text-sm: 'Card payments fail for ~30% of requests.' rgb(110, 110, 115) on rgb(255,255,255) 14px/400 ratio 5.07 PASS
+  - article .text-caption.text-tertiary: 'Updated just now' rgb(134, 134, 139) on rgb(255,255,255) 12px/400 ratio 3.62 FAIL AA
+  - article span.text-caption.text-tertiary: 'Updated just now' rgb(134, 134, 139) on rgb(255,255,255) 12px/400 ratio 3.62 FAIL AA
+  - main h2: 'Active now1' rgb(134, 134, 139) on rgb(245,245,247) 12px/500 ratio 3.33 FAIL AA
+  - article span.rounded-full.font-medium: 'Active' rgb(255, 59, 48) on rgb(255,235,234) 12px/500 ratio 3.1 FAIL AA
+  - article span.border.rounded-full: 'Outage' rgb(110, 110, 115) on rgb(255,255,255) 12px/500 ratio 5.07 PASS
+  - article span.font-mono: 'INC6284622' rgb(110, 110, 115) on rgb(255,255,255) 12px/500 ratio 5.07 PASS
+  - article button: 'Resolve' rgb(110, 110, 115) on rgb(255,255,255) 12px/400 ratio 5.07 PASS
+## contrast:publish-dark
+  - main label.text-caption: 'Type' rgb(152, 152, 157) on rgb(0,0,0) 12px/500 ratio 7.31 PASS
+  - main p.text-caption2: 'Degraded or partially failing' rgb(99, 99, 102) on rgb(0,0,0) 11px/400 ratio 3.51 FAIL AA
+  - main input::placeholder (not found)
+  - main button[type=submit]: 'Publish incident' rgb(255, 255, 255) on rgb(10,132,255) 14px/500 ratio 3.65 FAIL AA
+  - main [role=radiogroup] button[aria-checked=true]: 'Incident' rgb(245, 245, 247) on rgb(44,44,46) 14px/500 ratio 12.8 PASS
+  - main [role=radiogroup] button[aria-checked=false]: 'Outage' rgb(152, 152, 157) on rgb(28,28,30) 14px/500 ratio 5.93 PASS
+  - main h3, main .text-subheadline: 'What's happening' rgb(245, 245, 247) on rgb(0,0,0) 15px/600 ratio 19.29 PASS
+## contrast:card-dark
+  - article h3: 'Keyboard-only outage' rgb(245, 245, 247) on rgb(0,0,0) 15px/600 ratio 19.29 PASS
+  - article p.text-sm (not found)
+  - article .text-caption.text-tertiary: 'Updated just now' rgb(99, 99, 102) on rgb(0,0,0) 12px/400 ratio 3.51 FAIL AA
+  - main h2: 'Active now1' rgb(99, 99, 102) on rgb(28,28,30) 12px/500 ratio 2.84 FAIL AA
+  - article span.rounded-full.font-medium: 'Active' rgb(255, 69, 58) on rgb(38,10,9) 12px/500 ratio 5.44 PASS
+  - article span.border.rounded-full: 'Outage' rgb(152, 152, 157) on rgb(0,0,0) 12px/500 ratio 7.31 PASS
+  - article button: 'Resolve' rgb(152, 152, 157) on rgb(0,0,0) 12px/400 ratio 7.31 PASS
+  - main p.text-footnote (not found)
+  - main span.text-caption.text-secondary: 'Live' rgb(152, 152, 157) on rgb(44,44,46) 12px/400 ratio 4.85 PASS
+
+# axe-core 4.10 (wcag2a, wcag2aa, wcag21aa) violations per scan
+
+## axe:feed-empty-light - 
+  - color-contrast (serious, 1 nodes): Elements must meet minimum color contrast ratio thresholds
+      .mt-1 :: Fix any of the following: |   Element has insufficient color contrast of 3.32 (foreground color: #86868b, background color: #f5f5f7, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1
+## axe:publish-empty-light - 
+  - color-contrast (serious, 9 nodes): Elements must meet minimum color contrast ratio thresholds
+      .gap-4.flex-col > .flex-col.gap-1\.5:nth-child(1) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.62 (foreground color: #86868b, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+      .flex-col.gap-1\.5:nth-child(3) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.62 (foreground color: #86868b, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+      .gap-4.flex-col > .flex-col.gap-1\.5:nth-child(4) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.62 (foreground color: #86868b, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+      .flex-col.gap-1\.5:nth-child(5) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.62 (foreground color: #86868b, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+## axe:feed-cards-light - 
+  - color-contrast (serious, 13 nodes): Elements must meet minimum color contrast ratio thresholds
+      section:nth-child(2) > h2 :: Fix any of the following: |   Element has insufficient color contrast of 3.32 (foreground color: #86868b, background color: #f5f5f7, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+      .bg-state-failed-tint :: Fix any of the following: |   Element has insufficient color contrast of 3.09 (foreground color: #ff3b30, background color: #ffebea, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+      section:nth-child(2) > article > .py-4.pl-6.pr-5 > .flex-wrap.gap-1\.5 > .bg-warning-tint.text-warning.max-w-full > .truncate :: Fix any of the following: |   Element has insufficient color contrast of 2.02 (foreground color: #ff9500, background color: #fff4e6, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+      .ml-auto.text-tertiary[title="1 Nov 2026, 23:38:09"] :: Fix any of the following: |   Element has insufficient color contrast of 3.62 (foreground color: #86868b, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+## axe:publish-dark - 
+  - color-contrast (serious, 9 nodes): Elements must meet minimum color contrast ratio thresholds
+      .gap-4.flex-col > .flex-col.gap-1\.5:nth-child(1) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+      .flex-col.gap-1\.5:nth-child(3) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+      .gap-4.flex-col > .flex-col.gap-1\.5:nth-child(4) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+      .flex-col.gap-1\.5:nth-child(5) > .gap-1.min-w-0.flex-col > .text-caption2 :: Fix any of the following: |   Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1
+## axe:feed-dark - 
+  - color-contrast (serious, 9 nodes): Elements must meet minimum color contrast ratio thresholds
+      section:nth-child(2) > h2 :: Fix any of the following: |   Element has insufficient color contrast of 2.84 (foreground color: #636366, background color: #1c1c1e, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+      .ml-auto.text-tertiary[title="1 Nov 2026, 23:38:27"] :: Fix any of the following: |   Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+      .gap-1.inline-flex[title="1 Nov 2026, 23:38:27"] :: Fix any of the following: |   Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+      section:nth-child(2) > article > .py-4.pl-6.pr-5 > .gap-x-4.gap-y-1.flex-wrap > .gap-1.inline-flex:nth-child(2) :: Fix any of the following: |   Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1
+
+# Keyboard tab order (publish tab, from page load)
+
+  BUTTON[radio]:Outage
+  BUTTON[radio]:Major
+  INPUT:Title*
+  TEXTAREA:Details
+  INPUT:Affected services
+  INPUT:ServiceNow incident
+  INPUT:Tenant*
+  INPUT:Publisher*
+  SELECT:Audience
+  INPUT:External reference
+  BUTTON:Schedule
+  BUTTON[switch]:Save as draft
+  BUTTON:Clear
+  BUTTON:Publish outage
+  BODY:undefined (NO RING)
+  INPUT:Tenant
+  BUTTON:Switch to dark mode
+  BUTTON[tab]:Publish
+  BUTTON[radio]:Outage
+  BUTTON[radio]:Major
+  INPUT:Title*
+  TEXTAREA:Details
+  INPUT:Affected services
+  INPUT:ServiceNow incident
+
+# Console errors / failed requests during the walk
+ [{"type": "error", "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"}] 
+ [{"url": "http://127.0.0.1:3000/v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communication-frontend", "err": "net::ERR_ABORTED"}, {"url": "http://127.0.0.1:3000/v1/feed/stream?tenantId=ux-sre2&type=OUTAGE&clientId=communication-frontend", "err": "net::ERR_ABORTED"}, {"url": "http://127.0.0.1:3000/v1/feed/stream?tenantId=ux-sre2&type=OUTAGE&clientId=communication-frontend", "err": "net::ERR_ABORTED"}, {"url": "http://127.0.0.1:3000/v1/feed/stream?tenantId=ux-sre2&clientId=communication-frontend", "err": "net::ERR_ABORTED"}, {"url": "http://127.0.0.1:3000/v1/feed/stream?tenantId=ux-sre2&ser

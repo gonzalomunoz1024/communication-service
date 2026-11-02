@@ -1,0 +1,19 @@
+# A23: admin publisher filter
+
+Checks: 2/2 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| A-23b | F-23 | PASS | cross-tenant search by publisher -> tenants ['vb2-x1-4a7b18', 'vb2-x2-4a7b18'] |
+| A-23c | F-23 | PASS | publisher + tenant filter -> ['vb2-x1-4a7b18'] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:8080/v1/communications body={"tenantId": "vb2-x1-4a7b18", "publisher": "vb2-pub-4a7b18", "type": "CHANGE", "severity": "INFO", "title": "by publisher"} -> 201 {"id":"9c09e96d-e5d0-45d1-a70f-08c7b76423f6","tenantId":"vb2-x1-4a7b18","publisher":"vb2-pub-4a7b18","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:10:00.918968106Z","createdAt":"2026-11-02T04:10:00.918968106Z","updatedAt":"2026-11-02T04:10:00.918968106Z","version":0,"history":[{"at":"2026-11-02T04:1
+POST http://localhost:8080/v1/communications body={"tenantId": "vb2-x2-4a7b18", "publisher": "vb2-pub-4a7b18", "type": "CHANGE", "severity": "INFO", "title": "by publisher"} -> 201 {"id":"acac9bc4-297d-4b7d-b30a-b9e65ef18210","tenantId":"vb2-x2-4a7b18","publisher":"vb2-pub-4a7b18","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:10:00.929233868Z","createdAt":"2026-11-02T04:10:00.929233868Z","updatedAt":"2026-11-02T04:10:00.929233868Z","version":0,"history":[{"at":"2026-11-02T04:1
+GET http://localhost:8080/v1/admin/communications?publisher=vb2-pub-4a7b18&size=100 body= -> 200 {"items":[{"id":"acac9bc4-297d-4b7d-b30a-b9e65ef18210","tenantId":"vb2-x2-4a7b18","publisher":"vb2-pub-4a7b18","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:10:00.929Z","createdAt":"2026-11-02T04:10:00.929Z","updatedAt":"2026-11-02T04:10:00.929Z","version":0,"history":[{"at":"2026-11-02T04:10:00.929
+  [PASS] A-23b (F-23): cross-tenant search by publisher -> tenants ['vb2-x1-4a7b18', 'vb2-x2-4a7b18']
+GET http://localhost:8080/v1/admin/communications?publisher=vb2-pub-4a7b18&tenantId=vb2-x1-4a7b18 body= -> 200 {"items":[{"id":"9c09e96d-e5d0-45d1-a70f-08c7b76423f6","tenantId":"vb2-x1-4a7b18","publisher":"vb2-pub-4a7b18","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:10:00.918Z","createdAt":"2026-11-02T04:10:00.918Z","updatedAt":"2026-11-02T04:10:00.918Z","version":0,"history":[{"at":"2026-11-02T04:10:00.918
+  [PASS] A-23c (F-23): publisher + tenant filter -> ['vb2-x1-4a7b18']
+```

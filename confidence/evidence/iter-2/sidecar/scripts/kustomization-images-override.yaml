@@ -1,0 +1,13 @@
+# scratch: the README's images: override on the classic component
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: [deployment.yaml]
+components: [../component]
+images:
+  - name: registry.example.com/platform/health-sidecar
+    newName: registry.apps.example.com/platform/health-sidecar
+    newTag: "1.0.0"
+configMapGenerator:
+  - name: cs-health-sidecar
+    options: {disableNameSuffixHash: true}
+    literals: [CS_ENDPOINT=https://communication.apps.example.com, CS_TENANT=retail]

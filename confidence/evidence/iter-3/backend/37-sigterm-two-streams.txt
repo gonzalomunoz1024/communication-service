@@ -1,0 +1,19 @@
+# 37 - SIGTERM with two open SSE streams (private :19141, db vb3_sigterm; scripts/sigterm_test.py)
+
+$ python3 -I sigterm_test.py   -> exit 0
+started pid 18601 after 7s
+publish -> 201
+SIGTERM sent at t0
+stream 1: ended 0.006s after SIGTERM (eof, 2 event frames seen)
+stream 2: ended 0.006s after SIGTERM (eof, 2 event frames seen)
+process exit code 143 after 4.08s
+log: 2026-11-02T07:18:49.216Z  INFO 18601 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+log: 2026-11-02T07:18:49.219Z  INFO 18601 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+
+Instance log: 23 lines, ERROR 0, WARN 2 (the two SpringDoc startup notices), stack-trace lines 0
+2026-11-02T07:18:49.213Z  INFO 18601 --- [communication-service] [or-http-epoll-1] c.a.c.config.ClientIdWebFilter           : client=vb3-verifier GET /v1/feed/stream -> 200 (2001 ms)
+2026-11-02T07:18:49.213Z  INFO 18601 --- [communication-service] [or-http-epoll-2] c.a.c.config.ClientIdWebFilter           : client=vb3-verifier GET /v1/feed/stream -> 200 (2004 ms)
+2026-11-02T07:18:49.216Z  INFO 18601 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T07:18:49.219Z  INFO 18601 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+
+Reading: both streams end (EOF) 6 ms after the signal, the graceful shutdown completes in 3 ms instead of waiting for them, the JVM exits 143 after 4.1 s (context close); README:174-176 (streams completed at once on SIGTERM) holds. The backend image run (34) showed the same in a container: docker stop 4.42 s, exit 143.

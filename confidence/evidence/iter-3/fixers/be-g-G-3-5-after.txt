@@ -1,0 +1,22 @@
+# G-3-5 after: cyclonedxDirectBom { includeConfigs = ["runtimeClasspath"] } (plugin 3.5.1: entries are full-string regexes,
+# String.matches); cyclonedxBom, the file CI scans, aggregates it; verifySbomScope is part of check
+# Command: ./gradlew --max-workers=2 --no-daemon cyclonedxBom verifySbomScope
+
+> Task :cyclonedxDirectBom
+> Task :cyclonedxBom
+> Task :verifySbomScope
+SBOM scope: 87 components, none of them a build or test tool
+BUILD SUCCESSFUL in 32s
+3 actionable tasks: 3 executed
+RC=0
+
+## build/reports/cyclonedx/bom.json (python3 sbom.py: components, and those whose purl names spotbugs/bcel/jacoco/junit/mockito/assertj/flapdoodle/lombok)
+components: 87
+build/test tool components: 0
+
+## before (3806e7c) vs after, and the after SBOM vs BOOT-INF/lib of the boot jar
+components before 166, after 87; dropped 79, added 0
+dropped components that BOOT-INF/lib ships: 0
+BOOT-INF/lib jars (79) not named in the new SBOM: ['netty-resolver-dns-native-macos-4.1.135.Final-osx-x86_64.jar', 'netty-transport-native-epoll-4.1.135.Final-linux-x86_64.jar', 'spring-boot-jarmode-tools-3.5.16.jar']
+  (the two netty natives are listed without their classifier: netty-transport-native-epoll@4.1.135.Final,
+   netty-resolver-dns-native-macos@4.1.135.Final; spring-boot-jarmode-tools is added to the jar by the Boot plugin)

@@ -1,0 +1,17 @@
+# capture.js request log (the stub backend of pod_flows.js capture), the 500 -> ok switch: explains the one FAIL of 30-pod-flows-run1.txt
+# (the script waited for an INFO 'reported' line; an unchanged report sent after failures is logged at DEBUG, agent.go:355-359)
+1 2026-11-02T07:06:46.819Z mode=ok POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+2 2026-11-02T07:06:51.274Z mode=slow POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+3 2026-11-02T07:06:54.426Z mode=ok POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+4 2026-11-02T07:06:58.520Z mode=400 POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+5 2026-11-02T07:07:03.225Z mode=500 POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+6 2026-11-02T07:07:05.498Z mode=500 POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+7 2026-11-02T07:07:07.858Z mode=ok POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+8 2026-11-02T07:07:12.087Z mode=ok POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+9 2026-11-02T07:07:16.373Z mode=ok POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+10 2026-11-02T07:07:20.607Z mode=ok POST /v1/health/reports status=UP ua=health-sidecar/e2e3 client=ve3-cap-repo
+
+# sidecar3 log lines around the 500 period (from the pod flow run: in= steps)
+2026-11-02T07:07:01.668Z PASS F-74 permanent 4xx: ERROR 'report rejected', no retry within 3 s (next send at the 4 s heartbeat), no backoff state :: rejected after 1773 ms error="report rejected: HTTP 400 {"error":"stub says 400"}"; requests in the 3 s after: 0
+2026-11-02T07:07:05.512Z PASS F-74 5xx: 'report failed; will retry' with exponential backoff (in 1s, then 2s) :: 1s:post http://172.17.0.1:19560/v1/health/r | 2s:post http://172.17.0.1:19560/v1/health/r
+2026-11-02T07:07:20.729Z FAIL F-74 backend healthy again -> the retry succeeds, backoff cleared :: reported 15215 ms after the stub recovered

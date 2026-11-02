@@ -1,0 +1,110 @@
+[
+  {
+    "feature": "F-65",
+    "name": "axe feed tab (light): 2 violation rule(s), 1 serious/critical",
+    "ok": false,
+    "evidence": "[{\"id\":\"color-contrast\",\"impact\":\"serious\",\"help\":\"Elements must meet minimum color contrast ratio thresholds\",\"nodes\":23,\"targets\":[\"section:nth-child(2) > h2\",\"article:nth-child(2) > .py-4.pl-6.pr-5 > .flex-wrap.gap-1\\\\.5 > .bg-state-failed-tint.text-state-failed.capitalize\",\".bg-warning-tint > .truncate\"],\"summary\":\"Fix any of the following:\\n  Element has insufficient color contrast of 3.32 (foreground color: #86868b, background color: #f5f5f7, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1\"},{\"id\":\"page-has-heading-one\",\"impact\":\"moderate\",\"help\":\"Page should contain a level-one heading\",\"nodes\":1,\"targets\":[\"html\"],\"summary\":\"Fix all of the following:\\n  Page must have a level-one heading\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "axe publish tab, timing open (light): 2 violation rule(s), 1 serious/critical",
+    "ok": false,
+    "evidence": "[{\"id\":\"color-contrast\",\"impact\":\"serious\",\"help\":\"Elements must meet minimum color contrast ratio thresholds\",\"nodes\":12,\"targets\":[\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(1) > .gap-1.min-w-0.flex-col > .text-caption2\",\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(3) > .gap-1.min-w-0.flex-col > .text-caption2\",\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(4) > .gap-1.min-w-0.flex-col > .text-caption2\"],\"summary\":\"Fix any of the following:\\n  Element has insufficient color contrast of 3.62 (foreground color: #86868b, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1\"},{\"id\":\"page-has-heading-one\",\"impact\":\"moderate\",\"help\":\"Page should contain a level-one heading\",\"nodes\":1,\"targets\":[\"html\"],\"summary\":\"Fix all of the following:\\n  Page must have a level-one heading\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "axe publish tab with validation errors (light): 2 violation rule(s), 1 serious/critical",
+    "ok": false,
+    "evidence": "[{\"id\":\"color-contrast\",\"impact\":\"serious\",\"help\":\"Elements must meet minimum color contrast ratio thresholds\",\"nodes\":12,\"targets\":[\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(1) > .gap-1.min-w-0.flex-col > .text-caption2.text-tertiary\",\".gap-1\\\\.5.flex-col.flex:nth-child(3) > .gap-1.min-w-0.flex-col > .text-critical.text-caption2[role=\\\"alert\\\"]\",\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(4) > .gap-1.min-w-0.flex-col > .text-caption2.text-tertiary\"],\"summary\":\"Fix any of the following:\\n  Element has insufficient color contrast of 3.62 (foreground color: #86868b, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1\"},{\"id\":\"page-has-heading-one\",\"impact\":\"moderate\",\"help\":\"Page should contain a level-one heading\",\"nodes\":1,\"targets\":[\"html\"],\"summary\":\"Fix all of the following:\\n  Page must have a level-one heading\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "axe feed tab (dark): 2 violation rule(s), 1 serious/critical",
+    "ok": false,
+    "evidence": "[{\"id\":\"color-contrast\",\"impact\":\"serious\",\"help\":\"Elements must meet minimum color contrast ratio thresholds\",\"nodes\":17,\"targets\":[\"section:nth-child(2) > h2\",\"section:nth-child(2) > article:nth-child(2) > .py-4.pl-6.pr-5 > .flex-wrap.gap-1\\\\.5 > .ml-auto.text-tertiary[title=\\\"1 Nov 2026, 23:55:28\\\"]\",\"article:nth-child(2) > .py-4.pl-6.pr-5 > .gap-x-4.gap-y-1.flex-wrap > .gap-1.inline-flex[title=\\\"1 Nov 2026, 23:55:28\\\"]\"],\"summary\":\"Fix any of the following:\\n  Element has insufficient color contrast of 2.84 (foreground color: #636366, background color: #1c1c1e, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1\"},{\"id\":\"page-has-heading-one\",\"impact\":\"moderate\",\"help\":\"Page should contain a level-one heading\",\"nodes\":1,\"targets\":[\"html\"],\"summary\":\"Fix all of the following:\\n  Page must have a level-one heading\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "axe publish tab, timing open (dark): 2 violation rule(s), 1 serious/critical",
+    "ok": false,
+    "evidence": "[{\"id\":\"color-contrast\",\"impact\":\"serious\",\"help\":\"Elements must meet minimum color contrast ratio thresholds\",\"nodes\":12,\"targets\":[\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(1) > .gap-1.min-w-0.flex-col > .text-caption2\",\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(3) > .gap-1.min-w-0.flex-col > .text-caption2\",\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(4) > .gap-1.min-w-0.flex-col > .text-caption2\"],\"summary\":\"Fix any of the following:\\n  Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1\"},{\"id\":\"page-has-heading-one\",\"impact\":\"moderate\",\"help\":\"Page should contain a level-one heading\",\"nodes\":1,\"targets\":[\"html\"],\"summary\":\"Fix all of the following:\\n  Page must have a level-one heading\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "axe publish tab with validation errors (dark): 2 violation rule(s), 1 serious/critical",
+    "ok": false,
+    "evidence": "[{\"id\":\"color-contrast\",\"impact\":\"serious\",\"help\":\"Elements must meet minimum color contrast ratio thresholds\",\"nodes\":9,\"targets\":[\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(1) > .gap-1.min-w-0.flex-col > .text-caption2.text-tertiary\",\".gap-4.flex-col.flex > .gap-1\\\\.5.flex-col.flex:nth-child(4) > .gap-1.min-w-0.flex-col > .text-caption2.text-tertiary\",\".gap-1\\\\.5.flex-col.flex:nth-child(5) > .gap-1.min-w-0.flex-col > .text-caption2.text-tertiary\"],\"summary\":\"Fix any of the following:\\n  Element has insufficient color contrast of 3.5 (foreground color: #636366, background color: #000000, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1\"},{\"id\":\"page-has-heading-one\",\"impact\":\"moderate\",\"help\":\"Page should contain a level-one heading\",\"nodes\":1,\"targets\":[\"html\"],\"summary\":\"Fix all of the following:\\n  Page must have a level-one heading\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "publish tab: every input/textarea/select has a label[for], wrapping label or aria-label",
+    "ok": true,
+    "evidence": "[{\"id\":\"acme\",\"named\":true,\"how\":\"aria-label\"},{\"id\":\"_r_0_-title\",\"named\":true,\"how\":\"label[for]\"},{\"id\":\"_r_0_-body\",\"named\":true,\"how\":\"label[for]\"},{\"id\":\"_r_0_-services\",\"named\":true,\"how\":\"label[for]\"},{\"id\":\"_r_0_-ticket\",\"named\":true,\"how\":\"label[for]\"},{\"id\":\"_r_0_-tenant\",\"named\":true,\"how\":\"label[for]\"},{\"id\":\"_r_0_-publisher\",\"named\":true,\"how\":\"label[for]\"},{\"id\":\"_r_0_-audience\",\"named\":true,\"how\":\"aria-label\"},{\"id\":\"_r_0_-ref\",\"named\":true,\"how\":\"label[for]\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "roles: tabs, two radiogroups (type, severity) with aria-checked radios, switch with aria-label + aria-checked",
+    "ok": true,
+    "evidence": "{\"tablist\":2,\"radiogroups\":2,\"radios\":8,\"switches\":[{\"label\":\"Save as draft\",\"checked\":\"false\"}]}"
+  },
+  {
+    "feature": "F-65",
+    "name": "Tab order from the header: theme toggle → selected tab (roving) → type → severity → title → details → services → ticket → tenant → publisher → audience → ref → schedule → draft switch → Clear → Publish",
+    "ok": true,
+    "evidence": "[\"button:Switch to dark mode\",\"button[tab]:Publish\",\"button[radio]:Outage\",\"button[radio]:Major\",\"input:Title*\",\"textarea:Details\",\"input:Affected services\",\"input:ServiceNow incident\",\"input:Tenant*\",\"input:Publisher*\",\"select:Audience\",\"input:External reference\",\"button:Schedule\",\"button[switch]:Save as draft\",\"button:Clear\",\"button:Publish outage\",\"body:Outage NotificationsTenantFeed\",\"input:Tenant\",\"button:Switch to dark mode\",\"button[tab]:Publish\",\"button[radio]:Outage\",\"button[radio]:Major\"]"
+  },
+  {
+    "feature": "F-65",
+    "name": "roving tabindex: exactly one tabbable radio per group and one tabbable tab",
+    "ok": true,
+    "evidence": "{\"radios\":[0,-1,-1,-1,-1,-1,0,-1],\"tabs\":[-1,0]}"
+  },
+  {
+    "feature": "F-65",
+    "name": "segmented control: ArrowRight/End/Home/ArrowLeft(wrap) move the selection and focus",
+    "ok": true,
+    "evidence": "{\"afterRight\":\"true\",\"afterEnd\":\"true\",\"afterHome\":\"true\",\"wrap\":\"true\",\"focus\":\"button[radio]:Change\"}"
+  },
+  {
+    "feature": "F-65",
+    "name": "tabs: ArrowRight from Publish wraps to Feed and selects it",
+    "ok": true,
+    "evidence": "{\"feedSel\":\"true\",\"url\":\"http://127.0.0.1:3000/#/feed\",\"focus\":\"button[tab]:Feed2\"}"
+  },
+  {
+    "feature": "F-65",
+    "name": "switch toggles with Space and Enter (aria-checked follows)",
+    "ok": true,
+    "evidence": "{\"sw\":\"true\",\"sw2\":\"false\"}"
+  },
+  {
+    "feature": "F-65",
+    "name": "Enter in a text field submits; validation errors are role=alert and inputs aria-invalid",
+    "ok": true,
+    "evidence": "{\"alerts\":2}"
+  },
+  {
+    "feature": "F-65",
+    "name": "keyboard focus is visible (focus-visible ring: outline or box-shadow)",
+    "ok": true,
+    "evidence": "{\"el\":\"Switch to dark mode\",\"matchesFocusVisible\":true,\"outline\":\"solid 3px\",\"boxShadow\":\"none\"}"
+  },
+  {
+    "feature": "F-65",
+    "name": "feed tab: filter controls have accessible names via label association or aria-label (not placeholder only)",
+    "ok": false,
+    "evidence": "[{\"id\":\"acme\",\"how\":\"aria-label\"},{\"id\":\"Any service\",\"how\":\"placeholder only\"},{\"id\":\"select-one\",\"how\":\"aria-label\"},{\"id\":\"select-one\",\"how\":\"aria-label\"}]"
+  },
+  {
+    "feature": "F-65",
+    "name": "connection status dot has a text label",
+    "ok": true,
+    "evidence": "Live"
+  },
+  {
+    "feature": "F-65",
+    "name": "card action buttons have text names (Resolve)",
+    "ok": true,
+    "evidence": "[\"Resolve\"]"
+  }
+]

@@ -1,0 +1,17 @@
+# G-3-7 after the fix (@JsonSetter(contentNulls = FAIL) + List<@NotBlank String> on both commands; describeInput names an InvalidNullException's path)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*RestControllerPublishingAdapterTest' --tests '*GlobalExceptionHandlerTest' --tests '*PublishingUseCaseTest'
+
+<testsuite name="com.atlas.communication.publishing.adapters.inbound.RestControllerPublishingAdapterTest" tests="15" skipped="0" failures="0" errors="0"
+<testsuite name="com.atlas.communication.config.GlobalExceptionHandlerTest" tests="4" skipped="0" failures="0" errors="0"
+<testsuite name="com.atlas.communication.publishing.application.PublishingUseCaseTest" tests="26" skipped="0" failures="0" errors="0"
+<testcase name="aNullServiceEntryNamesItsPositionAndTheRule()" classname="com.atlas.communication.publishing.adapters.inbound.RestControllerPublishingAdapterTest" time="0.121"/>
+<testcase name="anEmptyOrBlankServiceEntryIsRejected()" classname="com.atlas.communication.publishing.adapters.inbound.RestControllerPublishingAdapterTest" time="0.067"/>
+
+the pinned answers (assertions in the tests, all four now met):
+  POST {"affectedServices":["vm-api",null],...}       -> 400 {"error":"affectedServices[1]: must not be null"}
+  PUT  {"affectedServices":[null],"expectedVersion":0} -> 400 {"error":"affectedServices[0]: must not be null"}
+  POST {"affectedServices":["vm-api",""],...}         -> 400 {"error":"affectedServices[1]: must not be blank"}
+  PUT  {"affectedServices":["  ","vm-api"],...}       -> 400 {"error":"affectedServices[0]: must not be blank"}
+  and the use case is never called (verifyNoInteractions)
+BUILD SUCCESSFUL in 36s
+exit=0

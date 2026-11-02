@@ -1,0 +1,15 @@
++0.4s indicator → Connecting (EventSource readyStates: 2,0)
++0.4s stream REQUEST FAILED net::ERR_ABORTED
++0.4s stream REQUEST last-event-id=(none)
++0.4s stream RESPONSE 200 text/event-stream;charset=UTF-8
++0.4s stream REQUEST last-event-id=(none)
++0.4s stream REQUEST FAILED net::ERR_ABORTED
++0.5s stream RESPONSE 200 text/event-stream;charset=UTF-8
++0.5s stream REQUEST last-event-id=(none)
++0.5s feed is Live; killing the backend now
++0.6s indicator → Live (EventSource readyStates: 2,2,2,1)
++0.9s backend is down (GET fails)
++12.9s after 12 s down: readyStates=2,2,2,1
++19.2s backend is back (GET 200)
++19.5s published after restart → 201
++34.5s 15 s after restart: card shown=true, readyStates=2,2,2,1, indicator=Live

@@ -1,0 +1,24 @@
+# Backend tests: ./gradlew test --rerun integrationTest --rerun (main checkout, no clean; one run)
+start 2026-11-02T07:58:07Z; end 2026-11-02T07:59:16Z
+jar before: b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f  build/libs/communication-service-0.0.1-SNAPSHOT.jar
+
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileTestJava UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+> Task :test
+> Task :integrationTest
+BUILD SUCCESSFUL in 1m 9s
+6 actionable tasks: 2 executed, 4 up-to-date
+EXIT 0
+
+## JUnit XML (build/test-results, written by this run)
+build/test-results/test: 27 files, 251 tests, 0 skipped, 0 failures, 0 errors, timestamps 07:58:19.422Z .. 07:58:37.696Z
+build/test-results/integrationTest: 8 files, 46 tests, 0 skipped, 0 failures, 0 errors, timestamps 07:58:47.938Z .. 07:59:04.487Z
+total 297 = 251 unit + 46 IT, as the verifier's ev/02 (three runs, 297/297 each)
+
+jar after: b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f (unchanged; the run neither cleans nor rebuilds bootJar)
+
+## not run (by the brief): check, spotbugs, jacocoTestCoverageVerification, cyclonedxBom; the verifier's ev/01 (check --rerun-tasks) stands for those.

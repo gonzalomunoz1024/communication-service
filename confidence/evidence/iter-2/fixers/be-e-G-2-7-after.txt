@@ -1,0 +1,4 @@
+# G-2-7 after: same command with probeNow applying the probe again on a lost version check; exit 0
+
+21:BUILD SUCCESSFUL in 13s
+JUnit XML: HealthMonitorUseCaseTest tests=19 failures=0

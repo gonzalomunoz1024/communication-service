@@ -1,0 +1,31 @@
+# G-3-32 before the fix (worktree at 6636274 + the test changes only)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*.CommunicationTest' --continue
+# tests: CommunicationTest.anEndNotAfterTheStartNamesBothValuesAndAStartThatDefaulted (new: defaulted start, update);
+#        CommunicationTest.endsBeforeStartIsRejected (existing; its hasMessageContaining("endsAt must be after startsAt")
+#        now pins the full text with both values)
+
+CommunicationTest > anEndNotAfterTheStartNamesBothValuesAndAStartThatDefaulted() FAILED
+    org.opentest4j.AssertionFailedError: 
+    Expecting message to be:
+      "endsAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-10-14T12:00:00Z)"
+    but was:
+      "endsAt must be after startsAt"
+
+CommunicationTest > endsBeforeStartIsRejected() FAILED
+    org.opentest4j.AssertionFailedError: 
+    Expecting message to be:
+      "endsAt 2026-10-14T12:00:50Z must be after startsAt 2026-10-14T12:01:40Z"
+    but was:
+      "endsAt must be after startsAt"
+20 tests completed, 2 failed
+BUILD FAILED in 18s
+exit=1
+
+## HTTP (scratchpad http-g332.sh): private mongod :18201, backend :18200, jar built at 6636274
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g332","publisher":"sre","type":"MAINTENANCE","severity":"INFO","title":"window already over","endsAt":"2026-10-01T09:00:00Z"}
+  -> {"error":"endsAt must be after startsAt"} [HTTP 400]
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g332","publisher":"sre","type":"MAINTENANCE","severity":"INFO","title":"ends before it starts","startsAt":"2026-11-02T08:13:28Z","endsAt":"2026-11-02T07:13:28Z"}
+  -> {"error":"endsAt must be after startsAt"} [HTTP 400]
+(published f5295b85-7e6f-4895-a1d8-9fadd6231cc8: startsAt 2026-11-02T07:13:28Z, endsAt 2026-11-02T08:13:28Z, version 0)
+PUT http://localhost:18200/v1/communications/f5295b85-7e6f-4895-a1d8-9fadd6231cc8 {"endsAt":"2026-11-02T06:43:28Z","expectedVersion":0}
+  -> {"error":"endsAt must be after startsAt"} [HTTP 400]

@@ -1,0 +1,12 @@
+## docker inspect (user / read-only / caps / security-opt / network mode)
+e2e-backend user=65532:65532 readonly=false capdrop=[] secopt=[] netmode=e2e image=communication-service:e2e status=running restarts=0
+e2e-app user=65532:65532 readonly=false capdrop=[] secopt=[] netmode=e2e image=fakeapp:e2e status=running restarts=0
+e2e-sidecar user=1000660000:0 readonly=true capdrop=[ALL] secopt=[no-new-privileges:true] netmode=container:b463b0c376b4b27d573006f2d72d8168582eae6213f2d18708c599f5dde36359 image=health-sidecar:e2e status=running restarts=0
+e2e-mongo user= readonly=false capdrop=[] secopt=[] netmode=e2e image=mongo:7.0 status=running restarts=0
+## processes as seen from the host
+e2e-backend pid=16374 uid=65532 cmd=java -jar /app/app.jar 
+e2e-sidecar pid=14305 uid=1000660000 cmd=/usr/local/bin/health-sidecar 
+e2e-app pid=14205 uid=65532 cmd=/fakeapp 
+## image labels
+{"com.docker.compose.project":"e2e","com.docker.compose.service":"sidecar","com.docker.compose.version":"5.6.1","org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.revision":"unknown","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar","org.opencontainers.image.version":"dev"}
+backend user=65532:65532 labels={"com.docker.compose.project":"e2e","com.docker.compose.service":"backend","com.docker.compose.version":"5.6.1","org.opencontainers.image.description":"Shared customer communications platform: incidents, changes, outages, maintenance and health notices","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"communication-service"}

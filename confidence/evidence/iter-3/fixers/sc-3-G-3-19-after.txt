@@ -1,0 +1,39 @@
+== G-3-19 after: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat driven through Run on the harness clock
+-- go test -run 'TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat$|TestRunSendsLeavingReportOnShutdown$' -count=20 -race -v (summary):
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+     20 --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat
+     20 --- PASS: TestRunSendsLeavingReportOnShutdown
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.771s
+      1 real	0m2.599s
+
+-- mutation: (a) the every-probe clause removed from send() (10 runs)
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     10     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+     10     agent_test.go:590: after tick 2: 1 reports sent, want 2 (running counts [1 2 3 4 5 6])
+
+-- mutation: (b) the heartbeat never fires (>= Heartbeat -> >= 1000*Heartbeat) (10 runs)
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+     10     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     10     agent_test.go:590: after tick 3: 1 reports sent, want 2 (running counts [1 1 2 2 3 3])
+
+-- mutation: (c) Run's jitter 0.2 -> 3.0 (10 runs)
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+      6     agent_test.go:590: after tick 2: 2 reports sent, want 1 (running counts [1 1 2 2 3 3])
+      2     agent_test.go:590: after tick 4: 3 reports sent, want 2 (running counts [1 1 2 2 3 3])
+      1     agent_test.go:590: after tick 6: 4 reports sent, want 3 (running counts [1 1 2 2 3 3])
+      1     agent_test.go:600: Run waited 18.157715465s after tick 3, want the 15s interval plus less than 20 % jitter
+
+-- mutation: (d) Run stops after its first tick (no loop) (10 runs)
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+     20     agent_test.go:638: Run returned after waiting 0 times, want a wait after each of its 6 ticks
+
+-- mutation: (e) Run returns on cancellation without the leaving report (10 runs)
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     10     --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+     10     agent_test.go:638: after the 3 reports Run should send exactly one leaving report, got []
+     10     agent_test.go:638: after the 6 reports Run should send exactly one leaving report, got []
+
+-- mutations reverted: agent.go identical to the fix

@@ -1,0 +1,32 @@
+[
+  {
+    "feature": "F-61",
+    "name": "indicator shows 'Reconnecting' while the backend is down",
+    "ok": false,
+    "evidence": "[\"+5.7s indicator → Paused\",\"+5.9s indicator → Live\",\"+54.2s card 'published after restart' shown after >30s; indicator=Live\"]"
+  },
+  {
+    "feature": "F-61",
+    "name": "the browser retries the stream on its own and sends Last-Event-ID",
+    "ok": false,
+    "evidence": "{\"retries\":0,\"streamLines\":[\"+5.7s stream REQUEST last-event-id=(none)\",\"+5.7s stream REQUEST FAILED net::ERR_ABORTED\",\"+5.8s stream REQUEST last-event-id=(none)\",\"+5.8s stream REQUEST FAILED net::ERR_ABORTED\",\"+5.8s stream REQUEST last-event-id=(none)\",\"+5.9s stream RESPONSE 200\"]}"
+  },
+  {
+    "feature": "F-20",
+    "name": "resumed stream requests (Last-Event-ID) are answered 200, never 500",
+    "ok": false,
+    "evidence": "[\"+5.9s stream RESPONSE 200\"]"
+  },
+  {
+    "feature": "F-61",
+    "name": "after the restart the new item appears without a manual refresh and the indicator is Live again",
+    "ok": false,
+    "evidence": "{\"shownAt\":null,\"indicator\":\"Live\",\"eventSourceClosedForGood\":false}"
+  },
+  {
+    "feature": "F-61",
+    "name": "diagnostic: toggling Live updates off/on (fresh EventSource without Last-Event-ID) restores the stream",
+    "ok": true,
+    "evidence": "{\"healed\":true,\"nowShown\":true}"
+  }
+]

@@ -1,0 +1,112 @@
+
+### 1. module graph (third-party modules) and go.sum
+$ go list -m all
+github.com/gonzalomunoz1024/communication-service/sidecar
+exit=0
+go.sum present: no
+imports outside the standard library: 0
+
+### 2. govulncheck v1.9.0 on the source (Go go1.27.3)
+$ go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -db https://storage.googleapis.com/go-vulndb ./...
+No vulnerabilities found.
+exit=0
+$ go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -db https://storage.googleapis.com/go-vulndb -show verbose ./... | grep -E 'Go:|Scanner:|DB:|DB updated|No vulnerabilities|Vulnerability #'
+Fetching vulnerabilities from the database...
+Checking the code against the vulnerabilities...
+No vulnerabilities found.
+
+### 3. govulncheck -mode=binary on the image's binary (health-sidecar:vs4)
+$ go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -db https://storage.googleapis.com/go-vulndb -mode=binary -show verbose /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar4/bin/health-sidecar-vs4
+Scanning your binary for known vulnerabilities...
+Fetching vulnerabilities from the database...
+Checking the binary against the vulnerabilities...
+The package pattern matched the following root package:
+  github.com/gonzalomunoz1024/communication-service/sidecar
+Govulncheck scanned the following 1 modules and the go1.27.3 standard library:
+  github.com/gonzalomunoz1024/communication-service/sidecar@(devel)
+No vulnerabilities found.
+exit=0
+
+### 4. control: the iteration-3 tree (6c15715) built with go1.25.14, the line AUD-3-1 flagged
+control build exit=0
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar4/bin/control-go12514: go1.25.14
+$ go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -db https://storage.googleapis.com/go-vulndb -mode=binary /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar4/bin/control-go12514 | grep -E 'Vulnerability #|Found in|Fixed in|vulnerabilit'
+Vulnerability #1: GO-2026-6809
+    Found in: crypto/x509@go1.25.14
+    Fixed in: crypto/x509@go1.26.10
+Vulnerability #2: GO-2026-6617
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #3: GO-2026-6613
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #4: GO-2026-6612
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #5: GO-2026-6611
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #6: GO-2026-6610
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #7: GO-2026-6609
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #8: GO-2026-6608
+    Found in: mime/multipart@go1.25.14
+    Fixed in: mime/multipart@go1.26.9
+exit=1
+
+### 5. Trivy 0.58.1, CI's image command, on health-sidecar:vs4 (DB of UpdatedAt: 2026-11-02 01:14:05.640637121 +0000 UTC)
+$ trivy image --skip-db-update --skip-java-db-update --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:vs4
+health-sidecar:vs4 (debian 12.15)
+=================================
+Total: 0 (HIGH: 0, CRITICAL: 0)
+2026-11-02T10:25:33Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://aquasecurity.github.io/trivy/v0.58/docs/scanner/vulnerability#severity-selection for details.
+exit=0
+$ trivy image --skip-db-update --skip-java-db-update --scanners vuln --exit-code 1 health-sidecar:vs4   (every severity, fixed or not)
+health-sidecar:vs4 (debian 12.15)
+=================================
+Total: 4 (UNKNOWN: 4, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+┌─────────────────┬───────────────┬──────────┬────────┬───────────────────┬──────────────────┬───────────────────────────────────┐
+│     Library     │ Vulnerability │ Severity │ Status │ Installed Version │  Fixed Version   │               Title               │
+├─────────────────┼───────────────┼──────────┼────────┼───────────────────┼──────────────────┼───────────────────────────────────┤
+│ ca-certificates │ DLA-4845-1    │ UNKNOWN  │ fixed  │ 20250419~deb12u1  │ 20250419~deb12u2 │ ca-certificates - security update │
+├─────────────────┼───────────────┤          │        ├───────────────────┼──────────────────┼───────────────────────────────────┤
+│ tzdata          │ DLA-4792-1    │          │        │ 2026b-0+deb12u1   │ 2026c-0+deb12u1  │ tzdata - new timezone database    │
+│                 ├───────────────┤          │        │                   ├──────────────────┤                                   │
+│                 │ DLA-4854-1    │          │        │                   │ 2026e-0+deb12u1  │                                   │
+│                 ├───────────────┤          │        │                   ├──────────────────┤                                   │
+│                 │ DLA-4867-1    │          │        │                   │ 2026f-0+deb12u1  │                                   │
+└─────────────────┴───────────────┴──────────┴────────┴───────────────────┴──────────────────┴───────────────────────────────────┘
+exit=1
+
+### 6. Trivy rootfs on the binaries alone (every severity): vs4 and the go1.25.14 control
+$ trivy rootfs --skip-db-update --skip-java-db-update --scanners vuln --exit-code 1 /work/vs4
+exit=0
+$ trivy rootfs --skip-db-update --skip-java-db-update --scanners vuln --exit-code 1 /work/control
+Total: 14 (UNKNOWN: 0, LOW: 1, MEDIUM: 9, HIGH: 4, CRITICAL: 0)
+│ stdlib  │ CVE-2026-111943 │ HIGH     │ fixed  │ v1.25.14          │ 1.26.10, 1.27.3 │ crypto/x509: golang: crypto/x509: Man-in-the-middle attack
+│         │ CVE-2026-78667  │          │        │                   │ 1.26.9, 1.27.2  │ net/http: golang: golang: Denial of Service via crafted HT
+│         │ CVE-2026-78669  │          │        │                   │                 │ net/http: net/http/internal/http2: golang.org/x/net/http2:
+│         │ CVE-2026-97031  │          │        │                   │                 │ crypto/tls: golang: crypto/tls: Denial of Service via     
+│         │ CVE-2026-56866  │ MEDIUM   │        │                   │                 │ net/http: golang: golang: Cross-user response poisoning vi
+│         │ CVE-2026-78659  │          │        │                   │                 │ net/http: golang.org/x/net/http2: golang: net/http: Denial
+│         │ CVE-2026-78660  │          │        │                   │                 │ net/http: golang: golang.org/x/net/http2: net/http: HTTP  
+│         │ CVE-2026-78663  │          │        │                   │                 │ net/http: net/http/internal/http2: golang:                
+│         │ CVE-2026-94439  │          │        │                   │                 │ net/http: golang: net/http: HTTP request smuggling via    
+│         │ CVE-2026-94440  │          │        │                   │                 │ net/textproto: mime/multipart: golang: golang: Denial of  
+│         │ CVE-2026-94448  │          │        │                   │                 │ html/template: golang: golang: cross-site scripting via   
+│         │ CVE-2026-97030  │          │        │                   │                 │ html/template: golang: html/template: Cross-site scripting
+│         │ CVE-2026-97032  │          │        │                   │                 │ net/http: net/http/internal/http2: golang:                
+│         │ CVE-2026-56857  │ LOW      │        │                   │                 │ os: golang: golang: Directory traversal via Windows juncti
+exit=1
+
+### 7. the scanner image CI pins (TRIVY_IMAGE) against the one used here
+21:  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7
+local mirror.gcr.io/aquasec/trivy:0.58.1 RepoDigests: ["mirror.gcr.io/aquasec/trivy@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7"]
+$ docker buildx imagetools inspect ghcr.io/aquasecurity/trivy:0.58.1 | head -3
+Name:      ghcr.io/aquasecurity/trivy:0.58.1
+MediaType: application/vnd.docker.distribution.manifest.list.v2+json
+Digest:    sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7
+exit=255

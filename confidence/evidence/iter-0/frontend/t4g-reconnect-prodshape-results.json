@@ -1,0 +1,50 @@
+[
+  {
+    "feature": "F-64",
+    "name": "the built UI served statically from the same origin as /v1 works (publish/feed/stream through a plain reverse proxy)",
+    "ok": true,
+    "evidence": "{\"ui\":\"http://127.0.0.1:3041\"}"
+  },
+  {
+    "feature": "F-61",
+    "name": "when the stream drops the UI shows 'Reconnecting' (EventSource readyState 0)",
+    "ok": false,
+    "evidence": "{\"dropped\":true,\"indicator\":\"Live\",\"esLog\":[\"00:16:27.950 es#2 open\",\"00:16:28.036 es#3 open\",\"00:16:28.104 es#3 error readyState=0\"]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "the browser reconnects on its own and sends Last-Event-ID = the last id it saw",
+    "ok": false,
+    "evidence": "{\"lastEventIds\":[\"(none)\"]}"
+  },
+  {
+    "feature": "F-20",
+    "name": "the service answers the resumed stream (Last-Event-ID) with 200",
+    "ok": false,
+    "evidence": "{\"statuses\":[200,200,500]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "after the restart the UI is 'Live' again and the new item appears without a manual refresh",
+    "ok": false,
+    "evidence": "{\"shownAt\":null,\"indicator\":\"Reconnecting\"}"
+  },
+  {
+    "feature": "F-61",
+    "name": "after the EventSource gave up, the UI opens a new stream by itself within 20 s",
+    "ok": false,
+    "evidence": "{\"streamRequests\":4}"
+  },
+  {
+    "feature": "F-61",
+    "name": "diagnostic: a manual Live-updates off/on (fresh EventSource, no Last-Event-ID) restores Live and shows the missed item",
+    "ok": true,
+    "evidence": "{\"healed\":true,\"nowShown\":true}"
+  },
+  {
+    "feature": "F-61",
+    "name": "console/page errors during the scenario",
+    "ok": true,
+    "evidence": "{\"pageErrors\":[],\"console\":[{\"type\":\"error\",\"text\":\"Failed to load resource: the server responded with a status of 500 (Internal Server Error)\"}]}"
+  }
+]

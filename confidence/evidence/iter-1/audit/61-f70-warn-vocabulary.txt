@@ -1,0 +1,7 @@
+# F-70 (E2E row: app WARN -> sidecar reports WARN -> backend DEGRADED) — vocabulary check on V :19802, 2026-11-02T03:17:11Z
+## push: status WARN
+{"id":"85c3f5cf-69da-475e-a7ba-b20f32a29ae4","tenantId":"audit1-warn-1793589431","service":"warn-app","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minH
+## monitor state
+{"service": "warn-app", "state": {"lastStatus": "DEGRADED", "lastReportAt": "2026-11-02T03:17:11.667Z", "lastSummary": "DEGRADED: disk DEGRADED", "unhealthyStreak": 1, "healthyStreak": 0, "incidents": 0}}
+## pull: stub /warn ({"status":"WARN"}) via probe-now
+{"lastStatus": "DEGRADED", "lastSummary": "DEGRADED (HTTP 200)"}

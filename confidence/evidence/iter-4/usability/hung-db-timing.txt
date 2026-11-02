@@ -1,0 +1,6 @@
+start 2026-11-02T11:06:48Z
+publish (a write)                  -> 503 15.016955s {"error":"database unavailable"}
+GET /v1/feed (a read)              -> 503 20.026032s {"error":"database unavailable"}
+publish again (a write)            -> 503 15.026078s {"error":"database unavailable"}
+end 2026-11-02T11:07:57Z
+exit 0

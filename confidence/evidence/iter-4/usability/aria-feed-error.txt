@@ -1,0 +1,30 @@
+- main:
+  - tablist "Sections":
+    - tab "Feed" [selected]
+    - tab "Publish"
+  - text: Service
+  - textbox "Service":
+    - /placeholder: Any service
+  - text: Type
+  - combobox "Type":
+    - option "All types"
+    - option "Outage"
+    - option "Incident"
+    - option "Maintenance" [selected]
+    - option "Change"
+    - option "Health"
+  - text: Minimum severity
+  - combobox "Minimum severity":
+    - option "Any severity" [selected]
+    - option "Info"
+    - option "Minor"
+    - option "Major"
+    - option "Critical"
+  - switch "Live updates" [checked]
+  - status: Connecting
+  - button "Refresh"
+  - status
+  - alert:
+    - paragraph: Couldn't load the feed
+    - paragraph: "The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment."
+    - button "Try again"

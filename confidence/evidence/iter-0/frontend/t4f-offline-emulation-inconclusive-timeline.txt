@@ -1,0 +1,24 @@
++0.4s indicator → Paused
++0.4s stream REQUEST #1 Last-Event-ID=(none)
++0.4s stream REQUEST FAILED net::ERR_ABORTED
++0.4s stream REQUEST #2 Last-Event-ID=(none)
++0.5s indicator → Connecting
++0.5s stream RESPONSE 200
++0.5s stream REQUEST FAILED net::ERR_ABORTED
++0.5s stream REQUEST #3 Last-Event-ID=(none)
++0.5s stream RESPONSE 200
++0.6s feed is Live with one item (3 stream requests so far, all without Last-Event-ID)
++0.6s browser goes OFFLINE (in-flight stream should fail)
++0.7s indicator → Live
++6.7s drop seen by the EventSource: false; indicator=Live; es log=["00:12:56.044 es#3 open","00:12:56.097 es#4 open"]
++10.7s after 4 s offline: 0 reconnect attempts (all failed, network down)
++10.7s browser back ONLINE
++27.2s reconnect with Last-Event-ID=null; stream responses so far=[200,200]; EventSource closed for good=false; indicator=Live
++27.2s published a second item → 201
++27.7s card 'published after reconnect' shown after 0.5s; indicator=Live; stream requests=3
++27.8s stream REQUEST FAILED net::ERR_ABORTED
++27.9s indicator → Paused
++28.2s stream REQUEST #4 Last-Event-ID=(none)
++28.2s stream RESPONSE 200
++28.3s indicator → Live
++28.5s diagnostic: Live updates off/on (fresh EventSource, no Last-Event-ID) → indicator=Live, card shown=true; last stream request Last-Event-ID=(none)

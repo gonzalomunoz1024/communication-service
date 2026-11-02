@@ -1,0 +1,54 @@
+# G-3-1 before the fix (worktree at 3806e7c + the new test only)
+# command: ./gradlew --max-workers=2 --no-daemon integrationTest --tests 'com.atlas.communication.OperationsEndpointsIT'
+# test: OperationsEndpointsIT.aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError
+#   (the event log's head()/canResumeAfter() fail 300 ms after the stream opened, as server selection does when Mongo is unreachable)
+
+<testsuite name="com.atlas.communication.OperationsEndpointsIT" tests="7" skipped="0" failures="1" errors="0"
+  testcase "livenessIsUp()"
+  testcase "onlyHealthIsExposed()"
+  testcase "readinessAsksMongoAndLivenessDoesNot()"
+  testcase "readinessIsUpWhenMongoAnswers()"
+  testcase "aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError()"
+  testcase "theMongoClientGivesUpOnAnUnreachableDatabaseWithinSeconds()"
+  testcase "overallHealthNeedsNoClientIdAndHidesDetails()"
+
+> Task :integrationTest
+
+OperationsEndpointsIT > aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError() FAILED
+    java.lang.AssertionError: [timeout /v1/feed/stream?tenantId=ops-outage: WARN and above] 
+    Expecting no elements of:
+      ["WARN com.atlas.communication.config.GlobalExceptionHandler: GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27099, type=UNKNOWN, state=CONNECTING}]",
+        "ERROR org.springframework.web.server.adapter.HttpWebHandlerAdapter: [efc1ed61-6] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=ops-outage", but ServerHttpResponse already committed (200 OK)",
+        "ERROR reactor.netty.http.server.HttpServerOperations: [efc1ed61-6, L:/127.0.0.1:42141 - R:/127.0.0.1:40728] Error finishing response. Closing connection"]
+    to match given predicate but this element did:
+      "ERROR org.springframework.web.server.adapter.HttpWebHandlerAdapter: [efc1ed61-6] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=ops-outage", but ServerHttpResponse already committed (200 OK)"
+        at com.atlas.communication.OperationsEndpointsIT.lambda$aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError$7(OperationsEndpointsIT.java:185)
+        at java.base/java.util.Map.forEach(Map.java:733)
+        at com.atlas.communication.OperationsEndpointsIT.aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError(OperationsEndpointsIT.java:149)
+
+2026-11-02T05:18:53.274Z  INFO 27032 --- [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T05:18:53.278Z  INFO 27032 --- [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+
+123:BUILD FAILED in 46s
+125:exit=1
+
+## Real server, same scenario (scratchpad/bef/repro-g31.sh): private mongod 7.0.45 on :18201, backend on :18200
+## (db fixbef_g31), mongod stopped once the backend had started, then a fresh and a resuming stream.
+## The brief's form (--spring.data.mongodb.uri=mongodb://localhost:27099/...) cannot open a stream: the service
+## exits at startup without a database ('Application run failed', exit 1, logs/repro-27099.log).
+## jar: scratchpad/communication-service-iter2.jar (the iteration-2 code, identical in src/main to 3806e7c)
+GET lines (curl -N -m 15 -H 'X-Client-Id: fixbef-repro' http://localhost:18200/v1/feed/stream?...):
+GET /v1/feed/stream?tenantId=fixbef-g31 -> :connected  curl: (18) transfer closed with outstanding read data remaining  [curl exit=18 http=200]  (5.3 s)
+GET /v1/feed/stream?tenantId=fixbef-g31&lastEventId=1 -> :connected  curl: (18) transfer closed with outstanding read data remaining  [curl exit=18 http=200]  (5.0 s)
+stream-path WARN/ERROR lines in the backend log while the two streams were open:
+2026-11-02T05:19:58.981Z  WARN 29827 --- [communication-service] [or-http-epoll-3] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T05:19:58.989Z ERROR 29827 --- [communication-service] [or-http-epoll-3] o.s.w.s.adapter.HttpWebHandlerAdapter    : [1c8076f7-1] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=fixbef-g31", but ServerHttpResponse already committed (200 OK)
+2026-11-02T05:19:58.994Z ERROR 29827 --- [communication-service] [or-http-epoll-3] r.n.http.server.HttpServerOperations     : [1c8076f7-1, L:/127.0.0.1:18200 - R:/127.0.0.1:52234] Error finishing response. Closing connection
+2026-11-02T05:20:04.037Z  WARN 29827 --- [communication-service] [or-http-epoll-4] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of clust
+2026-11-02T05:20:04.038Z ERROR 29827 --- [communication-service] [or-http-epoll-4] o.s.w.s.adapter.HttpWebHandlerAdapter    : [0ccc8b6c-2] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=fixbef-g31&lastEventId=1", but ServerHttpResponse already committed (200 O
+2026-11-02T05:20:04.039Z ERROR 29827 --- [communication-service] [or-http-epoll-4] r.n.http.server.HttpServerOperations     : [0ccc8b6c-1, L:/127.0.0.1:18200 - R:/127.0.0.1:52246] Error finishing response. Closing connection
+counts in that window (from the script):
+ERROR lines: 4
+stack frame lines ('	at '): 125
+WARN 'feed stream closed': 0
+WARN '-> 503' on the stream path: 2

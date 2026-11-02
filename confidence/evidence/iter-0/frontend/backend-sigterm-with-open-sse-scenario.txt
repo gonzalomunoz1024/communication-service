@@ -1,0 +1,36 @@
+backend up, pid 22094
+seed 201
+sending SIGTERM to java pid 22094 at 00:01:07
++2s after SIGTERM: java alive=yes, new GET -> 000
++4s after SIGTERM: java alive=yes, new GET -> 000
++6s after SIGTERM: java alive=yes, new GET -> 000
++8s after SIGTERM: java alive=yes, new GET -> 000
++10s after SIGTERM: java alive=yes, new GET -> 000
++12s after SIGTERM: java alive=yes, new GET -> 000
++14s after SIGTERM: java alive=yes, new GET -> 000
++16s after SIGTERM: java alive=yes, new GET -> 000
++18s after SIGTERM: java alive=yes, new GET -> 000
++20s after SIGTERM: java alive=yes, new GET -> 000
++22s after SIGTERM: java alive=yes, new GET -> 000
++24s after SIGTERM: java alive=yes, new GET -> 000
++26s after SIGTERM: java alive=yes, new GET -> 000
++28s after SIGTERM: java alive=yes, new GET -> 000
++30s after SIGTERM: java alive=yes, new GET -> 000
++32s after SIGTERM: java alive=yes, new GET -> 000
++34s after SIGTERM: java alive=no, new GET -> 000
+--- SSE client log:
++0.0s response 200
++0.0s data "id:7\\nevent:snapshot\\ndata:"
++0.0s data "{\"seq\":7,\"type\":\"SNAPSHOT\",\"at\":\"2026-11-02T00:01:04.664723542Z\",\"comm"
++0.0s data "\\n\\n"
++0.0s data "id:8\\nevent:created\\ndata:"
++0.0s data "{\"seq\":8,\"type\":\"CREATED\",\"at\":\"2026-11-02T00:01:04.581Z\",\"communicati"
++0.0s data "\\n\\n"
++15.0s data ":keepalive\\n\\n"
++30.0s data ":keepalive\\n\\n"
++45.0s still open after 45s
+--- backend shutdown log lines:
+2026-11-02T00:01:07.635Z  INFO 22094 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Wait
+2026-11-02T00:01:37.639Z  INFO 22094 --- [communication-service] [ionShutdownHook] o.s.c.support.DefaultLifecycleProcessor  : Shutdown phase 2147482623 ends wit
+2026-11-02T00:01:37.640Z  INFO 22094 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown aborted with one
+SCENARIO_A_DONE

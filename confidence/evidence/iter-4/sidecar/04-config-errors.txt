@@ -1,0 +1,124 @@
+### 1. required variables and the shape of the error (one ERROR line, every variable at once)
+[no env] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+[endpoint scheme] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_ENDPOINT must start with http:// or https://"}
+[several at once] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")\nCS_LOG_LEVEL must be debug, info, warn or error (got \"loud\")\nCS_ENDPOINT must start with http:// or https://\nCS_TENANT is required\nCS_PROBE must be auto, actuator, http or tcp (got \"grpc\")\nCS_PORT out of range: 70000\nCS_SCHEME must be http or https (got \"ftp\")\nCS_INTERVAL must be at least 1s\nCS_REPORT_TIMEOUT must be more than 0 (got 0s)\nCS_RETRY_DELAY must not be negative (got -1s)"}
+### 2. each invalid value alone, with the rest valid
+[CS_PROBE=grpc] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PROBE must be auto, actuator, http or tcp (got \"grpc\")\nCS_PORT is required when CS_PROBE=grpc"}
+[CS_PROBE=http] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PORT is required when CS_PROBE=http"}
+[CS_PORT=abc] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PORT: strconv.Atoi: parsing \"abc\": invalid syntax"}
+[CS_PORT=-1] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PORT out of range: -1"}
+[CS_PORT=70000] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PORT out of range: 70000"}
+[CS_SCHEME=ftp] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_SCHEME must be http or https (got \"ftp\")"}
+[CS_INTERVAL=soon] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_INTERVAL: time: invalid duration \"soon\""}
+[CS_INTERVAL=999ms] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_INTERVAL must be at least 1s"}
+[CS_INTERVAL=0] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_INTERVAL must be at least 1s"}
+[CS_HEARTBEAT=1x] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_HEARTBEAT: time: unknown unit \"x\" in duration \"1x\""}
+[CS_PROBE_TIMEOUT=3] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PROBE_TIMEOUT: time: missing unit in duration \"3\""}
+[CS_REPORT_TIMEOUT=ten] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_REPORT_TIMEOUT: time: invalid duration \"ten\""}
+[CS_STARTUP_GRACE=5mins] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_STARTUP_GRACE: time: unknown unit \"mins\" in duration \"5mins\""}
+[CS_RETRY_DELAY=2] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_RETRY_DELAY: time: missing unit in duration \"2\""}
+[CS_IGNORE_PORTS=1-2-3] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_IGNORE_PORTS: bad port range \"1-2-3\""}
+[CS_IGNORE_PORTS=9-1] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_IGNORE_PORTS: bad port range \"9-1\""}
+[CS_IGNORE_PORTS=a] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_IGNORE_PORTS: bad port \"a\""}
+[CS_INSECURE_SKIP_VERIFY=maybe] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")"}
+[CS_INSECURE_SKIP_VERIFY=2] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_INSECURE_SKIP_VERIFY must be true or false (got \"2\")"}
+[CS_INSECURE_SKIP_VERIFY=enabled] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_INSECURE_SKIP_VERIFY must be true or false (got \"enabled\")"}
+[CS_LOG_LEVEL=loud] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_LOG_LEVEL must be debug, info, warn or error (got \"loud\")"}
+[CS_LOG_LEVEL=warning] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_LOG_LEVEL must be debug, info, warn or error (got \"warning\")"}
+[CS_LOG_LEVEL=trace] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_LOG_LEVEL must be debug, info, warn or error (got \"trace\")"}
+[CS_LOG_LEVEL=DEBUG+1] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_LOG_LEVEL must be debug, info, warn or error (got \"DEBUG+1\")"}
+[CS_CA_FILE missing] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "cannot build report client", "error": "CS_CA_FILE: open /nonexistent/ca.pem: no such file or directory"}
+### 3. G-4-22: durations the sidecar cannot use (zero or negative timeouts/heartbeat, negative delay/grace) -> exit 2 naming the variable
+[CS_REPORT_TIMEOUT=0s] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"}
+[CS_REPORT_TIMEOUT=0] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"}
+[CS_REPORT_TIMEOUT=-5s] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_REPORT_TIMEOUT must be more than 0 (got -5s)"}
+[CS_PROBE_TIMEOUT=0s] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PROBE_TIMEOUT must be more than 0 (got 0s)"}
+[CS_PROBE_TIMEOUT=-1s] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_PROBE_TIMEOUT must be more than 0 (got -1s)"}
+[CS_HEARTBEAT=0s] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_HEARTBEAT must be more than 0 (got 0s)"}
+[CS_HEARTBEAT=-30s] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_HEARTBEAT must be more than 0 (got -30s)"}
+[CS_RETRY_DELAY=-2s] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_RETRY_DELAY must not be negative (got -2s)"}
+[CS_RETRY_DELAY=-1ns] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_RETRY_DELAY must not be negative (got -1ns)"}
+[CS_STARTUP_GRACE=-1m] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_STARTUP_GRACE must not be negative (got -1m0s)"}
+[all five at once] -> exit=2 lines=1
+    {"level": "ERROR", "msg": "invalid configuration", "error": "CS_HEARTBEAT must be more than 0 (got 0s)\nCS_PROBE_TIMEOUT must be more than 0 (got -1s)\nCS_REPORT_TIMEOUT must be more than 0 (got 0s)\nCS_RETRY_DELAY must not be negative (got -2s)\nCS_STARTUP_GRACE must not be negative (got -1m0s)"}
+### 4. G-4-22: the zero values that stay valid, and small positive ones
+[CS_RETRY_DELAY=0] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "15033bcdee8d", "probe": "auto"}
+[CS_RETRY_DELAY=0s] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "eff2a2763678", "probe": "auto"}
+[CS_STARTUP_GRACE=0] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "16dfd5dcb7ac", "probe": "auto"}
+[CS_STARTUP_GRACE=0s] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "15de73551236", "probe": "auto"}
+[CS_PROBE_TIMEOUT=1ms] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "5497bcf93f38", "probe": "auto"}
+[CS_REPORT_TIMEOUT=1ms] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "f814509d679f", "probe": "auto"}
+[CS_HEARTBEAT=1ns] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "c42f959cb807", "probe": "auto"}
+### 5. G-3-17: every documented boolean spelling starts (verification state checked against a TLS stub in 14-tls)
+[CS_INSECURE_SKIP_VERIFY='true'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "e750dce2aee3", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='TRUE'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "42b4ff021f34", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='True'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "a80273cbb6b7", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='1'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "6c050fb1d08d", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='yes'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "39f1a0945cd4", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='YES'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "082b2d575aba", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='on'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "610861fd77eb", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='On'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "78b6f1a64599", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='false'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "7c528ec0bcd6", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='FALSE'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "6934f8ffccbb", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='0'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "2c1dddb1e68f", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='no'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "2a76aaf84e05", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='No'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "4836c81db74d", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='off'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "9b9a23178d1f", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY='OFF'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "6ea720463250", "probe": "auto"}
+[CS_INSECURE_SKIP_VERIFY=' true '] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "26ad879eb6df", "probe": "auto"}
+### 6. G-3-14: the documented log levels start, in any case; the level applies from the first line
+[CS_LOG_LEVEL='debug'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "461455f833a4", "probe": "auto"}
+[CS_LOG_LEVEL='DEBUG'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "aba6dc5c18af", "probe": "auto"}
+[CS_LOG_LEVEL='info'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "cfg", "instance": "79ca83aaf731", "probe": "auto"}
+[CS_LOG_LEVEL='Warn'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "WARN", "msg": "report failed; will retry", "error": "post http://127.0.0.1:19399/v1/health/reports: Post \"http://127.0.0.1:19399/v1/health/reports\": dial tcp 127.0.0.1:19399: connect: connection refused"}
+[CS_LOG_LEVEL='error'] -> running after 1.5 s=true, exit after SIGTERM=0; first line: 
+[CS_LOG_LEVEL=' ERROR '] -> running after 1.5 s=true, exit after SIGTERM=0; first line: 
+    last run (CS_LOG_LEVEL=' ERROR '): 0 lines logged
+### 7. DeriveService and defaults (no CS_SERVICE)
+[POD_NAME=payments-api-7f9c6d5b4-x2k4q] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "payments-api", "instance": "payments-api-7f9c6d5b4-x2k4q", "probe": "auto"}
+[POD_NAME=payments-api-x2k4q] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "payments-api", "instance": "payments-api-x2k4q", "probe": "auto"}
+[POD_NAME=ledger-0] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "ledger", "instance": "ledger-0", "probe": "auto"}
+[POD_NAME=web-abcde] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "web-abcde", "instance": "web-abcde", "probe": "auto"}
+[POD_NAME=bare] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "bare", "instance": "bare", "probe": "auto"}
+[POD_NAME=my-app-1a2b3c4d5-zzzzz] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "my-app-1a2b3c4d5", "instance": "my-app-1a2b3c4d5-zzzzz", "probe": "auto"}
+[no POD_NAME (container hostname)] -> running after 1.5 s=true, exit after SIGTERM=0; first line: {"level": "INFO", "msg": "health sidecar starting", "service": "54247844f0a9", "instance": "54247844f0a9", "probe": "auto"}
+[CS_SERVICE required when underivable] not reachable from the environment: with POD_NAME and CS_SERVICE empty the hostname is used; covered by config_test.go only
+exit=0

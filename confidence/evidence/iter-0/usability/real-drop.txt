@@ -1,0 +1,4 @@
+backend up true
+publish 201
+publish while reconnecting 201
+{"before":"Live","cards":1,"afterKill":"Live","textAfterKill":"Feed | 1 | Publish | Service | Type | All types | Outage | Incident | Maintenance | Change | Health | Minimum severity | Any severity | Info | Minor | Major | Critical | Live | Refresh | ACTIVE NOW | ","backendBack":true,"indicatorAfterRestart":"Live","recoveredWithinMs":1010,"newItemVisibleWithoutReload":true,"streamRequests":[200],"consoleErrors":[],"afterReload":{"indicator":"Live","newItemVisible":true}}

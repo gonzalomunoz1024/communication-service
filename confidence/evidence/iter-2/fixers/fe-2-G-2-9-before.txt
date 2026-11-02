@@ -1,0 +1,28 @@
+# G-2-9 (UI half), before the fix: the new tests in errors.test.ts and PublishOutageForm.test.tsx against the iteration-1 wording (worktree at 3b18b1d)
+# cwd frontend/: npx vitest run src/test/errors.test.ts src/test/PublishOutageForm.test.tsx
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a8066b44d275a8a34/frontend
+ ❯ src/test/errors.test.ts (6 tests | 1 failed) 23ms
+   ❯ explainPublishError (3)
+     × explains a bare duplicate-externalRef 409 in the form's terms: the key is permanent, so a follow-up needs a new reference 14ms
+ ❯ src/test/PublishOutageForm.test.tsx (9 tests | 1 failed) 1654ms
+   ❯ PublishOutageForm duplicate reference (2)
+     × explains a 409 for a reused incident number: the reference is permanent, a follow-up needs a new one 237ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains a 409 for a reused incident number: the reference is permanent, a follow-up needs a new one
+Error: expect(element).toHaveTextContent()
+Expected element to have text content:
+  The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2.
+Received:
+  The service rejected this. A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.
+ ❯ src/test/PublishOutageForm.test.tsx:136:19
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+ FAIL  src/test/errors.test.ts > explainPublishError > explains a bare duplicate-externalRef 409 in the form's terms: the key is permanent, so a follow-up needs a new reference
+AssertionError: expected 'A notice with the reference INC001234…' to be 'INC0012345 is already the reference o…' // Object.is equality
+Expected: "INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2."
+Received: "A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference."
+ ❯ src/test/errors.test.ts:34:18
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+ Test Files  2 failed (2)
+      Tests  2 failed | 13 passed (15)
+   Start at  02:44:45
+   Duration  2.68s (tests 60%, environment 24%, setup 9%, transform 4%, import 2%)

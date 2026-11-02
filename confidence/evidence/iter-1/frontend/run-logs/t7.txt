@@ -1,0 +1,13 @@
+PASS [F-55] G-1-12: submitting an empty form from the bottom of the page focuses the first invalid field (Title) and scrolls it into view; the summary says '3 fields need attention:' with one button per field :: {"scrolledBeforeSubmit":729,"focused":{"tag":"input","id":"_r_0_-title","role":null,"checked":null,"text":"","inViewport":true,"top":261,"innerHeight":560,"scrollY":129},"summary":"3 fields need attention: Title (Title is required), Tenant (Tenant is required), Publisher (Publisher is required).","buttons":["Title","Tenant","Publisher"]}
+PASS [F-55] G-1-12: a summary button moves focus to its field (Publisher) and brings it into view :: {"tag":"input","id":"_r_0_-publisher","role":null,"checked":null,"text":"","inViewport":true,"top":261,"innerHeight":560,"scrollY":681}
+PASS [F-55] G-1-12: when the severity is the only problem, focus lands on the selected segment of the Severity radiogroup; the summary says 'One field needs attention: Severity' :: {"focused":{"tag":"button","id":null,"role":"radio","checked":"true","text":"Info","inViewport":true,"top":256,"innerHeight":560,"scrollY":62},"summary":"One field needs attention: Severity (Outages need MINOR or higher)."}
+PASS [F-55] G-1-12: MAINTENANCE without an end → the Timing panel opens and focus lands on the Ends input, scrolled into view :: {"tag":"input","id":"_r_0_-ends","role":null,"checked":null,"text":"","inViewport":true,"top":337,"innerHeight":560,"scrollY":889}
+PASS [F-55] G-1-12: a bad incident number on an otherwise valid CHANGE → focus on the ServiceNow incident input :: {"tag":"input","id":"_r_0_-ticket","role":null,"checked":null,"text":"","inViewport":true,"top":261,"innerHeight":560,"scrollY":511}
+PASS [F-55] G-1-12: nothing was sent while invalid :: POSTs=0
+PASS [F-56] G-1-13: 'View in feed' for an INCIDENT published to another tenant lands on that tenant's feed filtered to Incident, with the notice listed :: {"headerTenant":"fe1-other-mvylsnmx","typeValue":"INCIDENT","listed":1,"lastFeedQuery":"?tenantId=fe1-other-mvylsnmx&type=INCIDENT&page=0&size=100"}
+PASS [F-56] G-1-13: 'View in feed' for a scheduled MAINTENANCE filters to Maintenance and shows it under Upcoming :: {"typeM":"MAINTENANCE","underUpcoming":1}
+PASS [F-56] G-1-13: 'View in feed' for a CHANGE filters to Change; the filter can still be changed by hand afterwards :: {"typeC":"CHANGE","afterManualChange":"?tenantId=fe1-other-mvylsnmx&type=OUTAGE&page=0&size=100"}
+PASS [F-53] reference screenshots taken (light); no console/page errors while rendering both tabs :: {"errors":[],"console":[]}
+PASS [F-53] reference screenshots taken (dark); no console/page errors while rendering both tabs :: {"errors":[],"console":[]}
+
+== t7-iter1-gaps: 11 checks, 0 failed

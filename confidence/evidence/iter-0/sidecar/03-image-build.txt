@@ -1,0 +1,40 @@
+#10 CACHED
+
+#11 [build 5/6] COPY --chown=1001:0 internal ./internal
+#11 CACHED
+
+#12 [build 6/6] RUN go build -ldflags="-s -w -X main.version=1.0.0-verify" -o /tmp/health-sidecar ./cmd/health-sidecar
+#12 DONE 33.0s
+
+#13 [stage-1 2/3] COPY --from=build /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt
+#13 CACHED
+
+#14 [stage-1 3/3] COPY --from=build /tmp/health-sidecar /usr/local/bin/health-sidecar
+#14 DONE 0.1s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 0.5s done
+#15 exporting manifest sha256:85b04d7d802998e203e4f88b718e2b67feb1ffe5a35b69f093f5637560e892e1 0.0s done
+#15 exporting config sha256:3d59aea3e79a7318e507409edbefe913a306f6da28c3fda2b1c5ab62446d449a 0.0s done
+#15 exporting attestation manifest sha256:f4e6cc50c8a2e61b7688eecddf9c4b4b294ddd2d67d2ba95f3a069bcc6251aec 0.0s done
+#15 exporting manifest list sha256:a2bb60602d01ac0846a77fd736e046ae93ee38aaaa5477a5a0b961fa7d20d9b7
+#15 exporting manifest list sha256:a2bb60602d01ac0846a77fd736e046ae93ee38aaaa5477a5a0b961fa7d20d9b7 done
+#15 naming to docker.io/library/health-sidecar:verify done
+#15 unpacking to docker.io/library/health-sidecar:verify 0.1s done
+#15 DONE 0.8s
+IMAGE_BUILD_RC=0
+User=1001 Entrypoint=["/usr/local/bin/health-sidecar"] Cmd=null Exposed={"9465/tcp":{}} WorkingDir=/ Env=["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"] Size=16193325
+{"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar"}
+0B ENTRYPOINT ["/usr/local/bin/health-sidecar"]
+0B EXPOSE [9465/tcp]
+0B USER 1001
+6.76MB COPY /tmp/health-sidecar /usr/local/bin/health-sidecar # buildkit
+246kB COPY /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt # buildkit
+0B LABEL org.opencontainers.image.title=health-sidecar org.opencontainers.image.description=Probes the app in its pod and reports health to the communication service org.opencontainers.image.source=https://github.com/gonzalomunoz1024/communication-service
+319kB bazel build //common:cacerts_debian12_amd64_tar
+16.4kB bazel build //common:os_release_debian12
+12.3kB bazel build //static:nsswitch
+8.19kB bazel build //common:tmp
+12.3kB bazel build //common:group
+16.4kB bazel build //common:home

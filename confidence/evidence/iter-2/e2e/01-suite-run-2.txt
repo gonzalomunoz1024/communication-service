@@ -1,0 +1,24 @@
+## 2026-11-02T03:58:36.329Z npx playwright test (run 2, same stack as the previous run)
+
+Running 6 tests using 1 worker
+
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (72ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body (116ms)
+  ✓  3 tests/01-api-contract.spec.ts:27:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (24ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (2.3s)
+F-91: the OUTAGE card appeared 5.4 s after the app went DOWN
+F-91: the card left 6.8 s after the app came back
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (12.9s)
+F-92: the badge showed Reconnecting 0.4 s into the restart
+[WebServer] 3:58:58 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend
+F-92: a reopen carried lastEventId=17
+[WebServer] 3:58:59 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=17
+[WebServer] 3:59:01 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=17
+[WebServer] 3:59:05 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=17
+[WebServer] 3:59:13 AM [vite] http proxy error: /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=17
+F-92: the backend was ready again 26.4 s after the restart began
+F-92: the page showed it 2.3 s after the backend was back
+  ✓  6 tests/04-f92-backend-restart.spec.ts:4:5 › F-92 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and shows what was published meanwhile (29.7s)
+
+  6 passed (46.9s)
+## 2026-11-02T03:59:24.214Z exit=0 elapsed=47.880202331 s

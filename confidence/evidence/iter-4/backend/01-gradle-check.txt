@@ -1,0 +1,31 @@
+# Gradle check, iteration 4 (raw: <scratch>/backend4/gradle-check-1.txt, 353 lines; driver script <scratch>/backend4/gradle-runs.sh)
+Gradle is run only by this verifier (brief); never `clean` (build/libs kept, hashes below)
+
+start 2026-11-02T10:17:46Z head d10369b
+$ ./gradlew --max-workers=2 --no-daemon check --rerun-tasks
+> Task :cyclonedxDirectBom
+> Task :cyclonedxBom
+> Task :compileJava
+> Task :processResources
+> Task :classes
+> Task :compileTestJava
+> Task :processTestResources
+> Task :testClasses
+> Task :test
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :integrationTest
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :jacocoTestCoverageVerification
+> Task :spotbugsMain
+> Task :jacocoTestReport
+> Task :spotbugsTest SKIPPED
+> Task :verifySbomScope
+SBOM scope: 113 components, none of them a build or test tool
+> Task :check
+BUILD SUCCESSFUL in 3m 7s
+12 actionable tasks: 12 executed
+exit=0 elapsed=188s end 2026-11-02T10:20:54Z
+
+javac warnings under -Xlint:deprecation,removal,unchecked -Werror (build.gradle.kts:57): 0 (the two 'warning:' lines are the JVM's class-data-sharing notice when JaCoCo's agent extends the boot class path, not javac)
+build/libs before: 64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9
+build/libs after:  64e07ece32b4d9f6833d8e94e60094a14543f5f88d299694d9f9ba1e446d4eb9 (unchanged; the shared :8080 runs this jar)

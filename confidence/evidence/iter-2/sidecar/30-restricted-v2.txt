@@ -1,0 +1,37 @@
+== 2026-11-02T04:16:19Z image health-sidecar:vs2 User=1001 | docker 29.9.2 default seccomp profile, no --privileged
+  CASE 1: image default (no --user)  --read-only --cap-drop ALL --security-opt no-new-privileges
+    state=running healthz=200 status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 sendErr=None
+    pid=9978 Uid: 1001 1001 1001 1001 Gid: 0 0 0 0 VmHWM: 7424 kB VmRSS: 7424 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    root mount: overlay overlay ro,relatime,lowerdir=…(overlay snapshots)… | writable mounts: /sys/fs/cgroup /proc/interrupts /proc/keys /proc/timer_list 
+    fds: 7 -> null pipe:[688915] pipe:[688916] socket:[690307] anon_inode:[eventpoll] anon_inode:[eventfd] socket:[687871] 
+  CASE 2: 4242:0  --read-only --cap-drop ALL --security-opt no-new-privileges
+    state=running healthz=200 status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 sendErr=None
+    pid=10293 Uid: 4242 4242 4242 4242 Gid: 0 0 0 0 VmHWM: 7608 kB VmRSS: 7608 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    root mount: overlay overlay ro,relatime,lowerdir=…(overlay snapshots)… | writable mounts: /sys/fs/cgroup /proc/interrupts /proc/keys /proc/timer_list 
+    fds: 7 -> null pipe:[688958] pipe:[688959] socket:[688970] anon_inode:[eventpoll] socket:[690406] anon_inode:[eventfd] 
+  CASE 3: 65534:65534  --read-only --cap-drop ALL --security-opt no-new-privileges
+    state=running healthz=200 status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 sendErr=None
+    pid=10503 Uid: 65534 65534 65534 65534 Gid: 65534 65534 65534 65534 VmHWM: 7576 kB VmRSS: 7576 kB Threads: 9 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    root mount: overlay overlay ro,relatime,lowerdir=…(overlay snapshots)… | writable mounts: /sys/fs/cgroup /proc/interrupts /proc/keys /proc/timer_list 
+    fds: 7 -> null pipe:[689010] pipe:[689011] socket:[688117] anon_inode:[eventpoll] anon_inode:[eventfd] socket:[688111] 
+  CASE 4: OpenShift-like 1000660000:0  --read-only --cap-drop ALL --security-opt no-new-privileges
+    state=running healthz=200 status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 sendErr=None
+    pid=10709 Uid: 1000660000 1000660000 1000660000 1000660000 Gid: 0 0 0 0 VmHWM: 7392 kB VmRSS: 7392 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    root mount: overlay overlay ro,relatime,lowerdir=…(overlay snapshots)… | writable mounts: /sys/fs/cgroup /proc/interrupts /proc/keys /proc/timer_list 
+    fds: 7 -> null pipe:[691289] pipe:[691290] socket:[691334] anon_inode:[eventpoll] anon_inode:[eventfd] socket:[691327] 
+    strace 8 s (openat/creat/mkdir/unlink/rename/write*, all threads):
+      opens: none
+      writes by fd: {'fd 7': 7, 'fd 5': 6, 'fd 3': 3} (fd 1 = stdout log lines; sockets = probes/reports)
+      other: none
+    fd targets at that moment: /dev/null pipe:[691289] pipe:[691290] socket:[691334] anon_inode:[eventpoll] anon_inode:[eventfd] socket:[691327] 
+  CASE 5: non-zero gid, no passwd entry 1000700123:1000700123  --read-only --cap-drop ALL --security-opt no-new-privileges
+    state=running healthz=200 status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=2 sendErr=None
+    pid=10930 Uid: 1000700123 1000700123 1000700123 1000700123 Gid: 1000700123 1000700123 1000700123 1000700123 VmHWM: 7780 kB VmRSS: 7780 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    root mount: overlay overlay ro,relatime,lowerdir=…(overlay snapshots)… | writable mounts: /sys/fs/cgroup /proc/interrupts /proc/keys /proc/timer_list 
+    fds: 7 -> null pipe:[691432] pipe:[691433] socket:[691459] anon_inode:[eventpoll] anon_inode:[eventfd] socket:[691467] 
+  CASE 6: --user 1000660000:0 with --network none (no app, no service): the process still serves /healthz in its own namespace
+    state=running nsenter curl /healthz -> 200 /status -> {"version":"1.0.0-vs2","service":"sec-app","tenant":"vs2-sec","instance":"sec-app-1","upSeen":false,"lastReport":{"tenantId":"vs2-sec","service":"sec-app","status":"UNKNOWN","message":"starting: waiti
+{"time":"2026-11-02T04:16:48.041730862Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: Post \"http://127.0.0.1:9100/v1/health/reports\": dial 
+  CASE 7: the image has no shell: docker run --entrypoint /bin/sh -> docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create 
+  CASE 8: runAsNonRoot admission sanity: the image's USER is numeric (1001), so a kubelet can verify non-root without a passwd lookup
+DONE

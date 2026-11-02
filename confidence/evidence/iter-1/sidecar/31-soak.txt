@@ -1,0 +1,109 @@
+sampler finished, collected at 02:09:32
+== F-87 soak: three sidecars at CS_INTERVAL=1s CS_HEARTBEAT=2s (15x the default probe rate) against the private backend :19300
+   soak1: HTTP probe of fakeapp (started 01:58:13); soak2: same + GODEBUG=gctrace=1 (02:01:52); soak3: CS_PROBE=tcp + gctrace (02:01:53)
+   limits in the snippets: 50m CPU / 32Mi memory, requests 10m / 16Mi; every sidecar ran as 1000660000:0, read-only, no caps
+
+--- sampler 1 (soak1: docker stats cpu/mem, VmRSS, reportsSent)
+01:58:14 cpu=0.00% mem=2.277MiB / 15.71GiB VmRSS: 7384 kB | status=UP sent=1 sendErr=None
+01:58:45 cpu=0.12% mem=3.727MiB / 15.71GiB VmRSS: 8380 kB | status=UP sent=15 sendErr=None
+01:59:16 cpu=0.14% mem=4.348MiB / 15.71GiB VmRSS: 9124 kB | status=UP sent=29 sendErr=None
+01:59:47 cpu=0.09% mem=4.871MiB / 15.71GiB VmRSS: 9840 kB | status=UP sent=43 sendErr=None
+02:00:18 cpu=0.00% mem=5.969MiB / 15.71GiB VmRSS: 10956 kB | status=UP sent=57 sendErr=None
+02:00:49 cpu=0.18% mem=6.496MiB / 15.71GiB VmRSS: 11216 kB | status=UP sent=72 sendErr=None
+02:01:20 cpu=0.12% mem=6.566MiB / 15.71GiB VmRSS: 11392 kB | status=UP sent=86 sendErr=None
+02:01:52 cpu=0.00% mem=6.645MiB / 15.71GiB VmRSS: 11404 kB | status=UP sent=99 sendErr=None
+02:02:23 cpu=0.00% mem=6.266MiB / 15.71GiB VmRSS: 11484 kB | status=UP sent=113 sendErr=None
+02:02:54 cpu=0.17% mem=6.066MiB / 15.71GiB VmRSS: 11528 kB | status=UP sent=128 sendErr=None
+02:03:25 cpu=0.16% mem=6.363MiB / 15.71GiB VmRSS: 11580 kB | status=UP sent=142 sendErr=None
+02:03:56 cpu=0.14% mem=6.438MiB / 15.71GiB VmRSS: 11652 kB | status=UP sent=156 sendErr=None
+02:04:27 cpu=0.17% mem=6.559MiB / 15.71GiB VmRSS: 11776 kB | status=UP sent=170 sendErr=None
+02:04:58 cpu=0.14% mem=6.902MiB / 15.71GiB VmRSS: 12120 kB | status=UP sent=184 sendErr=None
+02:05:29 cpu=0.18% mem=6.82MiB / 15.71GiB VmRSS: 12296 kB | status=UP sent=198 sendErr=None
+02:06:00 cpu=0.16% mem=7.324MiB / 15.71GiB VmRSS: 12300 kB | status=UP sent=212 sendErr=None
+02:06:31 cpu=0.14% mem=6.926MiB / 15.71GiB VmRSS: 11896 kB | status=UP sent=226 sendErr=None
+02:07:03 cpu=0.15% mem=6.684MiB / 15.71GiB VmRSS: 11904 kB | status=UP sent=240 sendErr=None
+02:07:34 cpu=0.10% mem=6.445MiB / 15.71GiB VmRSS: 11904 kB | status=UP sent=254 sendErr=None
+sampler done 02:08:04
+
+--- sampler 2 (all three: VmRSS, open fds, threads, reportsSent, last gctrace line = heap before->after->LIVE MB, goal)
+02:01:53
+  sc1-soak-sidecar rss=11416kB fds=7 threads=9 sent/status=100 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=7448kB fds=7 threads=8 sent/status=1 UP gc(live heap)=n/a
+  sc1-soak3-sidecar rss=7296kB fds=7 threads=7 sent/status=1 UP gc(live heap)=n/a
+02:02:23
+  sc1-soak-sidecar rss=11492kB fds=7 threads=9 sent/status=114 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=8380kB fds=7 threads=8 sent/status=15 UP gc(live heap)=n/a
+  sc1-soak3-sidecar rss=7564kB fds=7 threads=8 sent/status=14 UP gc(live heap)=n/a
+02:02:53
+  sc1-soak-sidecar rss=11528kB fds=7 threads=9 sent/status=127 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=9048kB fds=7 threads=8 sent/status=28 UP gc(live heap)=n/a
+  sc1-soak3-sidecar rss=7692kB fds=7 threads=8 sent/status=28 UP gc(live heap)=n/a
+02:03:23
+  sc1-soak-sidecar rss=11580kB fds=7 threads=9 sent/status=141 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=9700kB fds=7 threads=8 sent/status=42 UP gc(live heap)=n/a
+  sc1-soak3-sidecar rss=7820kB fds=7 threads=8 sent/status=42 UP gc(live heap)=n/a
+02:03:54
+  sc1-soak-sidecar rss=11652kB fds=7 threads=9 sent/status=155 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=10932kB fds=7 threads=9 sent/status=55 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=7956kB fds=7 threads=8 sent/status=55 UP gc(live heap)=n/a
+02:04:24
+  sc1-soak-sidecar rss=11752kB fds=7 threads=9 sent/status=169 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11296kB fds=7 threads=9 sent/status=69 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=8208kB fds=7 threads=8 sent/status=69 UP gc(live heap)=n/a
+02:04:54
+  sc1-soak-sidecar rss=12064kB fds=7 threads=9 sent/status=182 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11416kB fds=7 threads=9 sent/status=83 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=8408kB fds=7 threads=8 sent/status=82 UP gc(live heap)=n/a
+02:05:25
+  sc1-soak-sidecar rss=12296kB fds=7 threads=9 sent/status=196 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11512kB fds=7 threads=9 sent/status=96 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=8556kB fds=7 threads=9 sent/status=96 UP gc(live heap)=n/a
+02:05:55
+  sc1-soak-sidecar rss=12300kB fds=7 threads=9 sent/status=209 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11420kB fds=7 threads=9 sent/status=110 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=8828kB fds=7 threads=9 sent/status=110 UP gc(live heap)=n/a
+02:06:25
+  sc1-soak-sidecar rss=11892kB fds=7 threads=9 sent/status=223 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11512kB fds=7 threads=9 sent/status=123 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=9000kB fds=7 threads=9 sent/status=124 UP gc(live heap)=n/a
+02:06:56
+  sc1-soak-sidecar rss=11904kB fds=7 threads=9 sent/status=237 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11532kB fds=7 threads=9 sent/status=137 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=9160kB fds=7 threads=9 sent/status=138 UP gc(live heap)=n/a
+02:07:26
+  sc1-soak-sidecar rss=11904kB fds=7 threads=9 sent/status=250 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11540kB fds=7 threads=9 sent/status=151 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=9320kB fds=7 threads=9 sent/status=151 UP gc(live heap)=n/a
+02:07:56
+  sc1-soak-sidecar rss=11908kB fds=7 threads=9 sent/status=264 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=11868kB fds=7 threads=9 sent/status=164 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=9508kB fds=7 threads=9 sent/status=165 UP gc(live heap)=n/a
+02:08:26
+  sc1-soak-sidecar rss=11764kB fds=7 threads=9 sent/status=278 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=12100kB fds=7 threads=9 sent/status=178 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=9672kB fds=7 threads=9 sent/status=178 UP gc(live heap)=n/a
+02:08:57
+  sc1-soak-sidecar rss=11768kB fds=7 threads=9 sent/status=292 UP gc(live heap)=n/a
+  sc1-soak2-sidecar rss=12104kB fds=7 threads=9 sent/status=192 UP gc(live heap)=3->3->0 MB, 4 MB goal
+  sc1-soak3-sidecar rss=9816kB fds=7 threads=9 sent/status=192 UP gc(live heap)=n/a
+sampler2 done 02:09:27
+
+--- gctrace trend sc1-soak2-sidecar (every 25th GC line)
+gc 1 @117.979s 0%: 0.039+0.54+0.006 ms clock, 0.15+0.23/0.27/0.071+0.027 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+    last: gc 3 @359.005s 0%: 0.16+0.71+0.005 ms clock, 0.64+0.14/0.39/0+0.021 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+
+--- gctrace trend sc1-soak3-sidecar (every 25th GC line)
+    last: 
+
+--- final docker stats and /proc
+sc1-soak-sidecar cpu=0.13% mem=6.551MiB / 15.71GiB pids=9
+sc1-soak2-sidecar cpu=0.18% mem=6.891MiB / 15.71GiB pids=9
+sc1-soak3-sidecar cpu=0.10% mem=5.371MiB / 15.71GiB pids=9
+  sc1-soak-sidecar VmHWM: 12068 kB VmRSS: 11768 kB Threads: 9  fds=7 uptime=681s reportsSent=309
+  sc1-soak2-sidecar VmHWM: 12112 kB VmRSS: 12112 kB Threads: 9  fds=7 uptime=463s reportsSent=209
+  sc1-soak3-sidecar VmHWM: 10020 kB VmRSS: 10020 kB Threads: 9  fds=7 uptime=462s reportsSent=209
+--- backend side: monitors for tenant sc1-soak
+   soak-app UP 'UP (1 of 1 pod UP)'
+   soak2-app UP 'UP (1 of 1 pod UP)'
+   soak3-app UP 'UP (1 of 1 pod UP)'
+--- WARN/ERROR lines in the three sidecar logs: 0 0 0

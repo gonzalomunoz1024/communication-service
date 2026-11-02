@@ -1,0 +1,30 @@
+1:57:57 AM [vite] http proxy error: /v1/feed?tenantId=acme&type=OUTAGE&page=0&size=100
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:57:57 AM [vite] http proxy error: /v1/feed?tenantId=acme&type=OUTAGE&page=0&size=100
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:57:57 AM [vite] http proxy error: /v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communication-frontend
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:57:57 AM [vite] http proxy error: /v1/feed?tenantId=fe1-dead-mvym01k0&type=OUTAGE&page=0&size=100
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:57:57 AM [vite] http proxy error: /v1/feed/stream?tenantId=fe1-dead-mvym01k0&type=OUTAGE&clientId=communication-frontend
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:57:58 AM [vite] http proxy error: /v1/feed/stream?tenantId=fe1-dead-mvym01k0&type=OUTAGE&clientId=communication-frontend
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:57:59 AM [vite] http proxy error: /v1/feed?tenantId=fe1-dead-mvym01k0&type=OUTAGE&page=0&size=100
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:57:59 AM [vite] http proxy error: /v1/feed/stream?tenantId=fe1-dead-mvym01k0&type=OUTAGE&clientId=communication-frontend
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:58:00 AM [vite] http proxy error: /v1/feed/stream?tenantId=fe1-dead-mvym01k0&type=OUTAGE&clientId=communication-frontend
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:58:01 AM [vite] http proxy error: /v1/communications
+Error: connect ECONNREFUSED 127.0.0.1:1
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)

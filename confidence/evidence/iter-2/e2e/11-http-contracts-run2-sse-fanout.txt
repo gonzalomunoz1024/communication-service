@@ -1,0 +1,19 @@
+## sse phase on A tenant ve2-sse-041410 at 2026-11-02T04:14:10.889Z
+PASS F-18 stream 200 text/event-stream, :connected first, first byte fast :: status=200 first_comment=[(0.006198574999871198, ':connected')] first_byte=[0.006187417002365692]
+PASS F-18 live frames created/updated/retired named after the event type, ids increasing, id == data.seq :: names=['created', 'updated', 'retired'] ids=[36, 37, 38] seqs=[36, 37, 38] types=['CREATED', 'UPDATED', 'RETIRED']
+PASS F-18 :keepalive comment within ~15 s :: keepalives=[(15.01, ':keepalive')]
+PASS F-18 a fresh stream sends one snapshot frame per visible item, all stamped with one id :: snapshots=[('40', 'F-20 three'), ('40', 'F-20 two')] other=[]
+PASS F-20 G-2-8: snapshot id (40) >= the created seq of the newest item in it (40) :: created seqs={'090985e6-6050-4719-a198-665f5841040c': 39, '52d48553-9f07-4a2a-a4d2-bd118b22b165': 40}
+PASS F-20 G-2-8: resuming from the snapshot id replays nothing (no created re-delivery) :: status=200 frames=[]
+PASS F-20 Last-Event-ID header replays exactly what was missed, in order, no snapshot :: 200 [('retired', 'F-20 two'), ('created', 'F-20 four')]
+PASS F-20 ?lastEventId= query does the same (EventSource path) :: 200 [('retired', 'F-20 two'), ('created', 'F-20 four')]
+PASS F-20 never-issued id -> fresh snapshot (2 visible items) :: 200 ['snapshot', 'snapshot']
+PASS F-20 non-numeric Last-Event-ID ignored -> 200 with a snapshot :: 200 ['snapshot', 'snapshot']
+PASS F-20 G-2-8 probe 1/3: snapshot id 43 >= created seq 43; resume from it replays nothing :: replayed=[]
+PASS F-20 G-2-8 probe 2/3: snapshot id 44 >= created seq 44; resume from it replays nothing :: replayed=[]
+PASS F-20 G-2-8 probe 3/3: snapshot id 45 >= created seq 45; resume from it replays nothing :: replayed=[]
+## fanout phase A<->B tenant ve2-fan-041410 at 2026-11-02T04:15:04.342Z
+PASS F-18 publish on B -> created frame on A and B with the same seq; retire on A -> retired on both :: A=[('created', '46', 1.11), ('retired', '47', 2.61)] B=[('created', '46', 0.71), ('retired', '47', 2.21)]
+PASS F-18 A serves what B stored (shared store) :: ['published on B']
+## summary: 15 pass, 0 fail at 2026-11-02T04:15:10.350Z
+exit=0

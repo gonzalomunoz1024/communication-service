@@ -1,0 +1,2 @@
+# one check per line: PASS/FAIL | feature | check | evidence (full, not cut at 400 chars like the run log)
+PASS | F-92 | an id never issued by the log (999999999), as ?lastEventId= or as the Last-Event-ID header → 200 and a fresh snapshot first (the fallback the client relies on), same frames as a fresh subscription | {"fresh":["snapshot"],"query":["snapshot"],"header":["snapshot"]}

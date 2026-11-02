@@ -1,0 +1,59 @@
+# G-3-12 mutation check: the repository's e2e/tests/04-f92-backend-restart.spec.ts, unchanged, on a fresh compose stack (project e2e), run twice
+# with the suite's preview server pointed (COMM_BACKEND) at a verifier proxy (scripts/mut/replay-proxy.js): mode 'pass' forwards untouched (control),
+# mode 'strip' removes ?lastEventId= and Last-Event-ID from /v1/feed/stream requests = a backend that does not replay. Expected: pass passes, strip fails.
+# command: bash scripts/mut/run-mutation.sh (config scripts/mut/pw-proxy.config.js; GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot)
+== 2026-11-02T07:16:56Z stack up
+07:17:12 stack: the backend is ready (8 s)
+07:17:15 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+== 2026-11-02T07:17:16Z spec 04 with the proxy in mode 'pass'
+Running 1 test using 1 worker
+F-92: the badge showed Reconnecting 0.2 s into the restart
+F-92: a reopen carried lastEventId=1
+F-92: the backend was ready again 14.5 s after the restart began
+F-92: the page showed it 1.7 s after the backend was back
+F-92: replayed as created#2 on the stream resumed after 1; 1 list reload
+  ✓  1 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (18.8s)
+  1 passed (20.5s)
+playwright exit=0
+-- proxy log (pass):
+replay proxy (pass) :19590 -> 127.0.0.1:28080
+== 2026-11-02T07:17:38Z spec 04 with the proxy in mode 'strip'
+Running 1 test using 1 worker
+F-92: the badge showed Reconnecting 0.4 s into the restart
+F-92: a reopen carried lastEventId=5
+F-92: the backend was ready again 15.3 s after the restart began
+F-92: the page showed it 1.1 s after the backend was back
+  ✘  1 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (28.3s)
+  1) tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile 
+    Error: SSE frames that carried "F-92 published while the page was away mvyxfhfa"
+    SSE frames that carried "F-92 published while the page was away mvyxfhfa"
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 1
+    + Received  + 1
+      Array [
+    -   "created",
+    +   "snapshot",
+      ]
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+      149 |     // before the replay arrives, so the frame is waited for (expect's 10 s).
+      150 |     const carriedBy = () => frames.filter((f) => f.communicationId === after.id)
+    > 151 |     await expect.poll(() => carriedBy().map((f) => f.event), { message: `SSE frames that carried "${after.title}"` }).toEqual(['created'])
+          |                                                                                                                       ^
+      152 |     const [replayed] = carriedBy()
+      153 |     expect(held, 'the reopen that waited for the fan-out').toContain(`lastEventId=${lastEventId}`)
+      154 |     expect(replayed.url, 'the stream request it came on').toContain(`lastEventId=${lastEventId}`)
+        at /home/claude/communication-service/e2e/tests/04-f92-backend-restart.spec.ts:151:119
+    Error Context: ../../../../tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2e3/mut/test-results/04-f92-backend-restart-F-9-16389-hat-was-published-meanwhile/error-context.md
+  1 failed
+    tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile 
+playwright exit=1
+-- proxy log (strip):
+replay proxy (strip) :19590 -> 127.0.0.1:28080
+2026-11-02T07:17:47.528Z #1 stripped last id 5 from /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend
+2026-11-02T07:17:48.543Z #2 stripped last id 5 from /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=5
+2026-11-02T07:18:00.458Z #3 stripped last id 5 from /v1/feed/stream?tenantId=e2e&type=OUTAGE&clientId=communication-frontend&lastEventId=5
+== 2026-11-02T07:18:10Z stack down
+ Network e2e Removed 
+no e2e-* container left
+mutation script exit=0

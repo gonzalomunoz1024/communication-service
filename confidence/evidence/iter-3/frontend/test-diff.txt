@@ -1,0 +1,67 @@
+# frontend/src/test changes since the iteration-2 verified head be19645 (code under test e3968c4)
+$ git diff --stat be19645..e3968c4 -- frontend/src/test/
+ frontend/src/test/App.test.tsx               |  45 +++++++-
+ frontend/src/test/OutageCard.test.tsx        |  77 ++++++++++++-
+ frontend/src/test/OutageFeed.test.tsx        |  97 +++++++++++++++-
+ frontend/src/test/PublishOutageForm.test.tsx |  57 +++++++++-
+ frontend/src/test/errors.test.ts             |  93 +++++++++++++++-
+ frontend/src/test/useTheme.test.tsx          | 158 +++++++++++++++++++++++++++
+ 6 files changed, 517 insertions(+), 10 deletions(-)
+
+$ git diff be19645..e3968c4 -- frontend/src/test/ | removed lines (every one, with file)
+a/frontend/src/test/App.test.tsx: -  constructor(readonly url: string) {}
+a/frontend/src/test/OutageCard.test.tsx: -import { render, screen } from '@testing-library/react'
+a/frontend/src/test/OutageFeed.test.tsx: -    const status = screen.getByRole('status')
+a/frontend/src/test/OutageFeed.test.tsx: -    expect(screen.getByRole('status')).toHaveTextContent('Resolved “Notice a”. It has left every consumer\'s feed.')
+a/frontend/src/test/PublishOutageForm.test.tsx: -import { render, screen, waitFor } from '@testing-library/react'
+a/frontend/src/test/PublishOutageForm.test.tsx: -  it("shows the service's own words when its 409 already explains the permanent key and names the notice", async () => {
+a/frontend/src/test/PublishOutageForm.test.tsx: -    expect(alert).toHaveTextContent(`The service rejected this. ${explained}`)
+a/frontend/src/test/errors.test.ts: -import { UNREACHABLE_MESSAGE, explainError, explainPublishError, isRejection, isUnreachable } from '../outages/errors'
+a/frontend/src/test/errors.test.ts: -  it("shows the service's own explanation of a duplicate reference when it sends one", () => {
+a/frontend/src/test/errors.test.ts: -    expect(explainPublishError(new ApiError(409, explained))).toBe(explained)
+
+$ git diff -U0 be19645..e3968c4 -- frontend/src/test/{errors.test.ts,PublishOutageForm.test.tsx} | the replacing assertions
++  it("says the service cannot reach its database for its own 503 and keeps the draft editable", async () => {
++    expect(alert).toHaveTextContent('The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.')
++    expect(alert).not.toHaveTextContent('rejected')
++    expect(alert).not.toHaveTextContent(UNREACHABLE_MESSAGE)
+-  it("shows the service's own words when its 409 already explains the permanent key and names the notice", async () => {
++  it("keeps the service's own words in a details element when its 409 explains the permanent key and names the notice", async () => {
+-    expect(alert).toHaveTextContent(`The service rejected this. ${explained}`)
++    expect(alert).toHaveTextContent('The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference).')
++    expect(within(alert).getByText('What the service said').closest('details')).toHaveTextContent(explained)
++  it("explains the service's current 409 sentence in the form's words, with that sentence one click away", async () => {
++    expect(alert).toHaveTextContent(
++  it('names the External reference that was typed and suggests the next follow-up number', async () => {
++    expect(alert).toHaveTextContent(
++  it("treats the service's own 503 as a failure it explained, not as the service being unreachable", () => {
+-  it("shows the service's own explanation of a duplicate reference when it sends one", () => {
++  it("explains a duplicate reference in the form's terms whatever the service's sentence says around it", () => {
+-    expect(explainPublishError(new ApiError(409, explained))).toBe(explained)
++    expect(explainPublishError(new ApiError(409, explained))).toBe(
++    expect(duplicateReference(new ApiError(409, explained))?.said).toBe(explained)
++  it("explains the service's current duplicate-reference sentence without its notice id or client-library terms", () => {
++    expect(duplicateReference(e)).toEqual({ reference: 'INC0012345', tenantId: 'fixfe3', fromTicket: true, next: 'INC0012345-2', said })
++  it('names the External reference the person typed, and suggests the next follow-up number, from the request that was sent', () => {
++    expect(explainPublishError(new ApiError(409, said, true), sent)).toBe(
++    expect(duplicateReference(new ApiError(409, said.replaceAll('INC0012345-2', 'INC0012345'), true), fromTicket)).toMatchObject({ reference: 'INC0012345', fromTicket: true, next: 'INC0012345-2' })
++  it('reads the reference and the tenant from the sentence when no request is at hand, with or without the holder', () => {
++    expect(duplicateReference(noHolder)).toMatchObject({ reference: "O'Brien-7", tenantId: 'acme.eu', next: "O'Brien-8" })
++    expect(duplicateReference(new ApiError(409, 'communication c1 was modified concurrently; reload and retry', true))).toBeNull()
++    expect(duplicateReference(new ApiError(400, 'externalRef: size must be between 0 and 128', true))).toBeNull()
++  it("falls back to the service's own words when it cannot tell which reference is taken", () => {
++    expect(duplicateReference(e)).toBeNull()
++  it('suggests the next follow-up number, and -2 for anything else', () => {
++  it("keeps the reason of a 503 that carries the service's {\"error\"} body apart from a proxy's bare 503", async () => {
+
+$ grep -rnE '\.(skip|only|todo)\(|\b(xit|xdescribe|fit|fdescribe)\(' frontend/src/test
+(none)
+
+$ git log --oneline 3806e7c..e3968c4 -- frontend/
+54fead9 Fix G-3-26: cover useTheme (system, explicit, toggle, storage failure)
+85bf46e Fix G-3-25 (frontend half): show "Automatic" instead of a health: reference
+d685898 Fix G-3-24: load the feed once per tenant typed in the header
+85edf1d Fix G-3-23: announce the connection badge, wait for a tenant, 24 px row
+9cde57e Fix G-3-22: move focus into the Resolve/Withdraw confirmation and back
+05bec99 Fix G-3-21: explain the duplicate-reference 409 in the form's terms
+ad8f6d2 Fix G-3-20: show the service's own 503 as a database outage, not as unreachable

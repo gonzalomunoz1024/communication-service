@@ -1,0 +1,36 @@
+# G-2-13, after: kit tests added (format.test.ts, Segmented.test.tsx, Tabs.test.tsx, job-state.test.ts, kit-layout.test.tsx) and minimatch pinned to 11.0.3 through package.json overrides
+# cwd frontend/: npm run test:coverage (summary and the src/ui rows), then npm audit, npm ls minimatch
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+All files          |   93.49 |    90.73 |   89.42 |   93.99 |                   
+ src               |   97.56 |      100 |     100 |   97.29 |                   
+ src/ui            |   92.05 |    91.86 |   89.18 |   92.03 |                   
+  Button.tsx       |     100 |     91.3 |     100 |     100 | 99-100            
+  EmptyState.tsx   |     100 |    83.33 |     100 |     100 | 21                
+  Field.tsx        |     100 |    83.78 |     100 |     100 | ...55,190,198-199 
+  Icon.tsx         |     100 |     62.5 |     100 |     100 | 144-147           
+  Segmented.tsx    |   94.44 |    93.54 |     100 |     100 | 39,80             
+  Tabs.tsx         |   94.11 |       95 |     100 |     100 | 28                
+  Tag.tsx          |     100 |       84 |     100 |     100 | 51-56,102         
+  ThemeToggle.tsx  |     100 |    66.66 |     100 |     100 | 10,14             
+  format.ts        |     100 |    98.27 |     100 |     100 | 109,130           
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+Statements   : 93.49% ( 719/769 )
+Branches     : 90.73% ( 783/863 )
+Functions    : 89.42% ( 203/227 )
+Lines        : 93.99% ( 595/633 )
+## npm audit
+found 0 vulnerabilities
+## npm ls minimatch
+@atlas/communication-frontend@0.1.0 /home/claude/communication-service/.claude/worktrees/agent-a8066b44d275a8a34/frontend
++-- eslint@9.39.5
+| +-- @eslint/config-array@0.21.2
+| | `-- minimatch@11.0.3 deduped
+| +-- @eslint/eslintrc@3.3.7
+| | `-- minimatch@11.0.3 deduped
+| `-- minimatch@11.0.3 overridden
+`-- typescript-eslint@8.72.1
+  `-- @typescript-eslint/typescript-estree@8.72.1
+    `-- minimatch@11.0.3 deduped
+

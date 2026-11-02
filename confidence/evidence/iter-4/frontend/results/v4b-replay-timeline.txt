@@ -1,0 +1,37 @@
++0.6s badge → Waiting for a tenant
++0.6s GET /v1/feed?tenantId=vf4-replay-mvz50xsg&type=OUTAGE&page=0&size=100 (list load #1)
++0.7s stream REQUEST #1 ?lastEventId=(none)
++0.7s CDP wire headers: stream request Last-Event-ID=(none)
++0.7s GET /v1/feed?tenantId=vf4-replay-mvz50xsg&page=0&size=100 (list load #2)
++0.7s stream REQUEST FAILED net::ERR_ABORTED
++0.7s stream REQUEST #2 ?lastEventId=(none)
++0.7s CDP wire headers: stream request Last-Event-ID=(none)
++0.7s badge → Connecting
++0.7s stream RESPONSE 200
++0.7s SSE frame snapshot id=251 seed a
++0.8s feed Live (production bundle behind rp.js)
++0.8s /__drop → 1 stream(s) dropped
++0.8s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++0.8s badge → Reconnecting
++1.7s published 'missed during drop 1' → 201
++3.8s stream REQUEST #3 ?lastEventId=(none)
++3.8s CDP wire headers: stream request Last-Event-ID=251
++3.8s stream RESPONSE 200
++3.9s SSE frame created id=252 missed during drop 1
++3.9s badge → Live
++3.9s GET /v1/feed?tenantId=vf4-replay-mvz50xsg&page=0&size=100 (list load #3)
++5.0s /__fail-next-stream → armed
++5.0s /__drop → 1 stream(s) dropped
++5.0s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++5.1s badge → Reconnecting
++5.8s published 'missed during drop 2' → 201
++8.0s stream REQUEST #4 ?lastEventId=(none)
++8.0s CDP wire headers: stream request Last-Event-ID=252
++8.0s stream RESPONSE 502
++8.1s badge → Reconnecting (1)
++9.0s stream REQUEST #5 ?lastEventId=252
++9.0s CDP wire headers: stream request Last-Event-ID=(none)
++9.0s stream RESPONSE 200
++9.0s SSE frame created id=253 missed during drop 2
++9.0s GET /v1/feed?tenantId=vf4-replay-mvz50xsg&page=0&size=100 (list load #4)
++9.1s badge → Live

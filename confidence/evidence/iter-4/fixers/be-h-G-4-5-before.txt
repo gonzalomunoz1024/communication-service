@@ -1,0 +1,4 @@
+G-4-5 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  RestControllerHealthAdapterTest > registerRejectsAMisspelledPolicyFieldNamingIt()  (0.05 s)
+    java.lang.AssertionError: Status expected:<400 BAD_REQUEST> but was:<201 CREATED>

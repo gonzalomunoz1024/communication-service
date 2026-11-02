@@ -1,0 +1,14 @@
++0.3s stream request #1 Last-Event-ID=(none)
++0.3s → answered 200 text/event-stream with "retry: 300 / id: 41" and closed the stream (a normal drop)
++0.3s indicator → Connecting
++0.4s stream request #2 Last-Event-ID=(none)
++0.4s → answered 500 (what the service does to a resumed stream today, or a proxy 502 during a restart)
++0.4s stream request #3 Last-Event-ID=(none)
++0.4s → passed through to the real backend
++8.4s after 8 s: 3 stream requests, indicator=Connecting, es log=["00:10:20.916 es#2 open","00:10:20.917 es#2 error readyState=0","00:10:20.957 es#3 error readyState=2"]
++15.5s indicator → Live
++23.4s 15 s later with the route removed (a real stream would now succeed): 3 stream requests in total, indicator=Live
++23.5s indicator → Paused
++24.1s indicator → Connecting
++38.9s indicator → Live
++39.1s diagnostic: Live updates off/on → indicator=Live (3 stream requests in total)

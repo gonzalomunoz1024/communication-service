@@ -1,0 +1,29 @@
+G-4-9 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  MongoCommunicationEventsAdapterTest > aDatabaseOutageWhileTailingIsOneWarningWhenPollingStopsAndOneInfoWhenItWorksAgain()  (0.38 s)
+    org.opentest4j.AssertionFailedError: 
+    Expecting actual:
+      ["WARN event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector",
+        "WARN event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector",
+        "WARN event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector"]
+    to contain exactly (and in same order):
+      ["WARN event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector",
+        "INFO event log poll resumed: database reachable again after 3 skipped poll(s)"]
+    but some elements were not found:
+      ["WARN event log poll skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector",
+        "INFO event log poll resumed: database reachable again after 3 skipped poll(s)"]
+    and others were not expected:
+      ["WARN event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector",
+        "WARN event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector",
+        "WARN event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector"]
+
+Live: iteration-3 jar on :18317 against a private mongo:7.0 (beh-mongo, 127.0.0.1:18310), 'docker stop beh-mongo', about 40 s of outage, then started again (script outage_live.sh):
+iter3: event log poller lines in the backend log, about 40 s of outage:
+  count: 7
+WARN 20509 --- [communication-service] [6153767d8e1eea0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while w
+WARN 20509 --- [communication-service] [6153767d8e1eea0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while w
+WARN 20509 --- [communication-service] [6153767d8e1eea0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while w
+WARN 20509 --- [communication-service] [6153767d8e1eea0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while w
+  ...
+WARN 20509 --- [communication-service] [6153767d8e1eea0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while w
+WARN 20509 --- [communication-service] [6153767d8e1eea0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while w

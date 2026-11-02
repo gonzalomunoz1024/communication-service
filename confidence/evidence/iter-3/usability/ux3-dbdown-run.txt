@@ -1,0 +1,20 @@
+[seed] {"status":201,"text":"{\"id\":\"b5e0d7ce-cbb2-478a-aed8-7aec97dd593e\",\"tenantId\":\"ux3-db\",\"publisher\":\"ux3-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Seeded before the database outage\",\"affectedServices\":[\"db-api\"],\"","ms":445}
+[sidecar-before] {"sendError":null,"reportsSent":1,"lastSendAt":"2026-11-02T07:13:01.878152079Z","last":"UNKNOWN"}
+[before] {"cards":1,"badge":"Live"}
+[mongo-stopped] {}
+[api-feed-while-down] {"status":503,"text":"{\"error\":\"database unavailable\"}","ms":5025}
+[api-readiness] {"status":503,"text":"{\"status\":\"DOWN\"}","ms":1014}
+[api-liveness] {"status":200,"text":"{\"status\":\"UP\"}"}
+[api-publish-while-down] {"status":503,"text":"{\"error\":\"database unavailable\"}","ms":5015}
+[ui-feed-while-down] {"text":"Feed 1 Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh Couldn't load the feed The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment. Try again","badge":"Live","cards":0}
+[ui-fresh-page-while-down] {"badgeOverTime":["0s:Live","2s:Live","4s:Live","6s:Reconnecting","8s:Live","10s:Live","12s:Live","14s:Reconnecting","16s:Live","18s:Live","20s:Live","22s:Reconnecting"],"text":"Feed Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh"}
+[ui-publish-while-down] {"banner":"The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment."}
+[sidecar-while-down] {"sendError":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","reportsSent":1,"lastSendAt":"2026-11-02T07:13:01.878152079Z","last":"UP","afterDownMs":50761}
+[announcements-while-down] {"page1":[{"t":13645,"role":"status","text":""},{"t":46188,"role":"status","text":""},{"t":51204,"role":"alert","text":"The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment."}],"page2":[{"t":16289,"role":"status","text":"Live"},{"t":16289,"role":"status","text":""},{"t":21289,"role":"status","text":"Reconnecting"},{"t":24298,"role":"status","text":"Live"},{"t":24298,"role":"status","text":""},{"t":29303,"role":"status","text":"Reconnecting"},{"t":32311,"role":"status","text":"Live"},{"t":32311,"role":"status","text":""}
+[mongo-started] {"downForMs":51096}
+[api-ready-again] {"afterMs":1812}
+[api-feed-after] {"status":200,"text":"{\"items\":[{\"id\":\"b5e0d7ce-cbb2-478a-aed8-7aec97dd593e\",\"tenantId\":\"ux3-db\",\"publisher\":\"ux3-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Seeded before the database outage\",\"affectedServices\":[\"","ms":51}
+[ui-publish-after] {"heading":"Outage published","banner":null}
+[ui-feed-after] {"cards":2,"badge":"Live","text":"Feed 2 Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh ACTIVE NOW 2 Active Major Outage Updated just now Publish while the database is down Started just now ux3-oncall Resolve Active Major Outage Updated 2m ago Seeded before the database outage db-api Started 2m ago ux3-oncall Resolve"}
+[ui-fresh-page-after] {"badge":"Live","cards":2}
+[sidecar-after] {"sendError":null,"reportsSent":5,"lastSendAt":"2026-11-02T07:14:34.617471884Z","last":"UP"}

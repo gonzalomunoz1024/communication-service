@@ -7,6 +7,10 @@ public record Page<T>(List<T> items, int page, int size, long totalElements, boo
 
     public static final int MAX_SIZE = 100;
 
+    public Page {
+        items = items == null ? List.of() : List.copyOf(items);
+    }
+
     public static <T> Page<T> of(List<T> items, int page, int size, long totalElements) {
         return new Page<>(items, page, size, totalElements, (long) (page + 1) * size < totalElements);
     }

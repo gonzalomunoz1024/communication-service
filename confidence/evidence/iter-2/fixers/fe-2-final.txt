@@ -1,0 +1,28 @@
+# FE-2 final gate at adb9681 (3b18b1d + the five G-2-9..G-2-13 commits)
+# cwd frontend/: npm ci && npm run lint && npm run typecheck && npm test && npm run build (output trimmed to the decisive lines)
+  run `npm fund` for details
+
+found 0 vulnerabilities
+## npm run lint
+
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+
+## npm run typecheck
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+## npm test
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+   Duration  17.94s (tests 40%, environment 36%, setup 14%, transform 6%, import 3%)
+## npm run build
+✓ 47 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-AK2MvNYg.css   31.12 kB │ gzip:  7.09 kB
+dist/assets/index-CATUeeII.js   268.29 kB │ gzip: 83.73 kB
+
+✓ built in 794ms

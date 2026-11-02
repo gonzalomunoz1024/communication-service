@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
  * {@code minHealthyPercent} of the tallied instances are UP; otherwise UP, because readiness
  * already keeps callers away from the bad pods</li>
  * </ul>
+ * While every live instance is still UNKNOWN the message carries the first one's own words, so a
+ * sidecar that found nothing to probe ("set CS_PORT and CS_PATH") is heard, not just "starting".
  */
 public record HealthRollup(
         HealthStatus status,
@@ -37,6 +39,13 @@ public record HealthRollup(
 
     /** Pod names listed in a message before "+n more". */
     static final int NAMES_MAX = 5;
+    /** Longest stretch of a starting pod's own message carried into the rollup's. */
+    static final int POD_MESSAGE_MAX = 160;
+
+    public HealthRollup {
+        failing = failing == null ? List.of() : List.copyOf(failing);
+        unhealthy = unhealthy == null ? List.of() : List.copyOf(unhealthy);
+    }
 
     public static HealthRollup of(List<HealthInstance> instances, int staleAfterSeconds,
             Integer minHealthyPercent, Instant now) {
@@ -70,7 +79,7 @@ public record HealthRollup(
                 .filter(i -> i.status() != HealthStatus.UP)
                 .map(HealthInstance::instanceId)
                 .toList();
-        String message = message(status, live.size(), tallied, up);
+        String message = message(status, live, tallied, up);
         return new HealthRollup(status, live.size(), tallied.size(), up, degraded, down, failing,
                 unhealthy, message);
     }
@@ -91,12 +100,19 @@ public record HealthRollup(
         return new ArrayList<>(byName.values());
     }
 
-    private static String message(HealthStatus status, int live, List<HealthInstance> tallied, int up) {
+    private static String message(HealthStatus status, List<HealthInstance> liveInstances,
+            List<HealthInstance> tallied, int up) {
+        int live = liveInstances.size();
         if (live == 0) {
             return "no live pod reports";
         }
         if (tallied.isEmpty()) {
-            return live + (live == 1 ? " pod starting" : " pods starting") + ", none reporting yet";
+            String starting = live + (live == 1 ? " pod starting" : " pods starting") + ", none reporting yet";
+            return liveInstances.stream()
+                    .filter(i -> i.message() != null && !i.message().isBlank())
+                    .findFirst()
+                    .map(i -> starting + " (" + i.instanceId() + ": " + oneLine(i.message()) + ")")
+                    .orElse(starting);
         }
         StringBuilder sb = new StringBuilder();
         sb.append(up).append(" of ").append(live).append(live == 1 ? " pod" : " pods").append(" UP");
@@ -119,5 +135,11 @@ public record HealthRollup(
             sb.append(" (").append(String.join("; ", parts)).append(')');
         }
         return sb.toString();
+    }
+
+    /** A pod's message on one line, cut to {@link #POD_MESSAGE_MAX} characters. */
+    private static String oneLine(String message) {
+        String line = message.strip().replaceAll("\\s+", " ");
+        return line.length() <= POD_MESSAGE_MAX ? line : line.substring(0, POD_MESSAGE_MAX - 1) + "\u2026";
     }
 }

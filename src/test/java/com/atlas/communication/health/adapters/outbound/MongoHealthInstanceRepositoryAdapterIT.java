@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.boot.data.mongodb.test.autoconfigure.DataMongoTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -34,7 +34,7 @@ class MongoHealthInstanceRepositoryAdapterIT {
     void setUp() {
         adapter = new MongoHealthInstanceRepositoryAdapter(repository);
         // the entity's indexes are created on first use in the app; make them explicit here
-        template.indexOps(HealthInstanceDocument.class).ensureIndex(new Index()
+        template.indexOps(HealthInstanceDocument.class).createIndex(new Index()
                 .on("lastSeenAt", Sort.Direction.ASC)
                 .named("instance_ttl_idx")
                 .expire(HealthInstanceDocument.TTL_SECONDS)).block();

@@ -1,0 +1,101 @@
+# Security gate for what the e2e system ships, and the G-4-31 CI image scan run locally
+# Scanner: mirror.gcr.io/aquasec/trivy:0.58.1 (the digest ci.yml pins), always under 'flock .../orch-trivy/.lock', shared cache mounted at /root/.cache/trivy, --skip-db-update
+# Trivy DB metadata (orch-trivy/cache/trivy/db/metadata.json): {"Version":2,"NextUpdate":"2026-11-03T01:14:05.64063672Z","UpdatedAt":"2026-11-02T01:14:05.640637121Z","DownloadedAt":"2026-11-02T07:28:40.748184579Z"}
+# No Java DB here (it does not fit this disk): the jar's libraries are scanned through the CycloneDX SBOM the jar carries (META-INF/sbom/bom.json, extracted from the jar inside the image)
+
+## G-4-31: the CI steps (ci.yml)
+21:  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7
+67:          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:ci
+140:          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:ci
+
+## sidecar image (health-sidecar:e2e, the suite's, built from d10369b)
+$ trivy image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:e2e   (CI command of G-4-31, sidecar job)
+2026-11-02T10:30:27Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-02T10:30:28Z	INFO	Detected OS	family="debian" version="12.15"
+2026-11-02T10:30:28Z	INFO	[debian] Detecting vulnerabilities...	os_version="12" pkg_num=5
+2026-11-02T10:30:28Z	INFO	Number of language-specific files	num=1
+2026-11-02T10:30:28Z	INFO	[gobinary] Detecting vulnerabilities...
+2026-11-02T10:30:28Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://aquasecurity.github.io/trivy/v0.58/docs/scanner/vulnerability#severity-selection for details.
+health-sidecar:e2e (debian 12.15)
+=================================
+Total: 0 (HIGH: 0, CRITICAL: 0)
+exit=0
+
+$ trivy image --scanners vuln health-sidecar:e2e   (all severities, fixed or not)
+2026-11-02T10:30:28Z	INFO	Detected OS	family="debian" version="12.15"
+2026-11-02T10:30:28Z	INFO	[debian] Detecting vulnerabilities...	os_version="12" pkg_num=5
+2026-11-02T10:30:28Z	INFO	[gobinary] Detecting vulnerabilities...
+health-sidecar:e2e (debian 12.15)
+Total: 4 (UNKNOWN: 4, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+…
+│     Library     │ Vulnerability │ Severity │ Status │ Installed Version │  Fixed Version   │               Title               │
+…
+│ ca-certificates │ DLA-4845-1    │ UNKNOWN  │ fixed  │ 20250419~deb12u1  │ 20250419~deb12u2 │ ca-certificates - security update │
+…
+│ tzdata          │ DLA-4792-1    │          │        │ 2026b-0+deb12u1   │ 2026c-0+deb12u1  │ tzdata - new timezone database    │
+│                 ├───────────────┤          │        │                   …
+│                 │ DLA-4854-1    │          │        │                   │ 2026e-0+deb12u1  │                                   │
+│                 ├───────────────┤          │        │                   …
+│                 │ DLA-4867-1    │          │        │                   │ 2026f-0+deb12u1  │                                   │
+…
+exit=0
+summary of 'trivy image --format json' (all severities):
+health-sidecar:e2e (debian 12.15) os-pkgs debian pkgs 5 [] vulns 4 ['UNKNOWN']
+usr/local/bin/health-sidecar lang-pkgs gobinary pkgs 2 [('github.com/gonzalomunoz1024/communication-service/sidecar', None), ('stdlib', 'v1.27.3')] vulns 0 []
+
+## backend image (communication-service:e2e, the suite's)
+== 2026-11-02T10:30:56Z backend image communication-service:e2e (sha256:8dc2601c5af1833cb51fd9bdd4152b679190b068994edd200ade31297f3ed9d3, jar sha256 64e07ece…, the same bytes as build/libs)
+$ trivy image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 --pkg-types os communication-service:e2e   (CI command of G-4-31 restricted to OS packages: the jar part needs the Java DB, which does not fit here)
+2026-11-02T10:30:56Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-11-02T10:30:56Z	INFO	Detected OS	family="debian" version="13.7"
+2026-11-02T10:30:56Z	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=25
+2026-11-02T10:30:56Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://aquasecurity.github.io/trivy/v0.58/docs/scanner/vulnerability#severity-selection for details.
+communication-service:e2e (debian 13.7)
+=======================================
+Total: 0 (HIGH: 0, CRITICAL: 0)
+exit=0
+
+$ trivy image --scanners vuln --pkg-types os --format json communication-service:e2e  (all severities, fixed or not; summary)
+exit=0
+communication-service:e2e (debian 13.7) vulns 77 {('MEDIUM', 'affected'): 49, ('LOW', 'affected'): 20, ('MEDIUM', 'fix_deferred'): 1, ('UNKNOWN', 'affected'): 3, ('HIGH', 'affected'): 4}
+  fixable CRITICAL/HIGH: []
+  HIGH/CRITICAL (any status): [('libuuid1', 'CVE-2026-76642', 'HIGH', 'affected'), ('libuuid1', 'CVE-2026-78408', 'HIGH', 'affected'), ('libuuid1', 'CVE-2026-78409', 'HIGH', 'affected'), ('libuuid1', 'CVE-2026-78410', 'HIGH', 'affected')]
+
+$ trivy sbom --scanners vuln bom-from-image-jar.json   (META-INF/sbom/bom.json of the jar inside the image: the jar libraries)
+exit=0
+Java jar vulns 0 {}
+total vulns 0
+$ trivy sbom --severity CRITICAL,HIGH --exit-code 1 (table)
+2026-11-02T10:30:58Z	WARN	Unsupported hash algorithm	algorithm="SHA3-256"
+SBOM scanned: CycloneDX 1.6 113 components, e.g. com.fasterxml.jackson.core:jackson-databind 2.21.7, io.netty:netty-handler 4.2.19.Final, org.springframework.boot:spring-boot 4.0.9, org.springframework:spring-webflux 7.0.10, tools.jackson.core:jackson-databind 3.1.7
+
+## control: the same scanner and DB must find the iteration-3 libraries
+(the iteration-3 jar carries no META-INF/sbom/bom.json, so a 3-component CycloneDX file with the versions iteration 3 shipped was written by hand: img/bom-control-iter3-versions.json)
+$ trivy sbom --scanners vuln bom-control-iter3-versions.json   (control: netty-handler 4.1.135.Final, spring-webflux 6.2.19, jackson-databind 2.21.4, the versions iteration 3 shipped; the same scanner and DB must find them)
+exit=0
+Java jar vulns 13 {'HIGH': 3, 'MEDIUM': 7, 'CRITICAL': 3}
+  CRITICAL: [('io.netty:netty-handler', '4.1.135.Final', 'CVE-2026-75595'), ('org.springframework:spring-webflux', '6.2.19', 'CVE-2026-47890'), ('org.springframework:spring-webflux', '6.2.19', 'CVE-2026-47892')]
+
+## sidecar binary, govulncheck
+== 2026-11-02T10:31:28Z the sidecar binary of health-sidecar:e2e (the suite's image, built from d10369b with GO_IMAGE=local/go-toolset:1.27)
+$ go version -m health-sidecar
+./health-sidecar: go1.27.3
+	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+	build	-buildmode=exe
+	build	-compiler=gc
+	build	-trimpath=true
+	build	CGO_ENABLED=0
+	build	GOARCH=amd64
+	build	GOOS=linux
+	build	GOAMD64=v1
+exit=0
+$ govulncheck@v1.9.0 -db https://storage.googleapis.com/go-vulndb -mode=binary health-sidecar
+No vulnerabilities found.
+exit=0
+
+## npm audit (frontend/; e2e/ is in 00-static-checks.txt)
+== 2026-11-02T10:31:35Z frontend/ (the bundle the e2e stack serves), read-only
+$ npm audit
+found 0 vulnerabilities
+exit=0
