@@ -168,21 +168,34 @@ func TestNormalize(t *testing.T) {
 func TestStatusWordsAreTrimmedLikeTheService(t *testing.T) {
 	for _, tc := range []struct {
 		name, word string
-		up         bool // UP on the service; otherwise a word it does not know, so DEGRADED there
+		service    string // what the service reads: UP, UNKNOWN (nothing is left after trimming) or DEGRADED (a word it does not know)
 	}{
-		{"ASCII space", "pass ", true},
-		{"tab", "\tpass", true},
-		{"U+0001, a control character", "pass\u0001", true},
-		{"U+00A0, no-break space", "pass\u00a0", false},
-		{"U+2003, em space", "pass\u2003", false},
+		{"ASCII space", "pass ", UP},
+		{"tab", "\tpass", UP},
+		{"U+0001, a control character", "pass\u0001", UP},
+		{"U+00A0, no-break space", "pass\u00a0", "DEGRADED"},
+		{"U+2003, em space", "pass\u2003", "DEGRADED"},
+		{"an ASCII space alone", " ", UNKNOWN},
+		{"a tab alone", "\t", UNKNOWN},
+		{"U+0001 alone", "\u0001", UNKNOWN},
+		{"U+00A0 alone", "\u00a0", "DEGRADED"},
+		{"U+2003 alone", "\u2003", "DEGRADED"},
 	} {
 		got := Normalize(tc.word)
 		failing := Failing(map[string]any{"c": map[string]any{"status": tc.word}})
-		if tc.up && (got != UP || failing) {
-			t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want UP and not failing, as on the service", tc.name, tc.word, got, failing)
-		}
-		if !tc.up && (got == UP || got == DOWN || got == UNKNOWN || !failing) {
-			t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want an unknown word, failing, as the service's DEGRADED", tc.name, tc.word, got, failing)
+		switch tc.service {
+		case UP:
+			if got != UP || failing {
+				t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want UP and not failing, as on the service", tc.name, tc.word, got, failing)
+			}
+		case UNKNOWN:
+			if got != UNKNOWN || failing {
+				t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want UNKNOWN and not failing, as on the service", tc.name, tc.word, got, failing)
+			}
+		default:
+			if got == UP || got == DOWN || got == UNKNOWN || !failing {
+				t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want an unknown word, failing, as the service's DEGRADED", tc.name, tc.word, got, failing)
+			}
 		}
 	}
 }

@@ -1,0 +1,17 @@
+G-4-16 (integration, orchestrator): the sidecar's TestStatusWordsAreTrimmedLikeTheService had no rows for a status word that is
+only white space, the case BE-H's Java half (fcfd473) changed. Five rows added, the existing five rows keep their expectations.
+
+$ go version
+go version go1.27.3 linux/amd64
+
+Mutation check: probe.Normalize switched to strings.TrimSpace (the pre-G-4-16 rule), test run, code restored.
+$ go test ./internal/probe/ -run TestStatusWordsAreTrimmedLikeTheService
+    probe_test.go:193: U+0001 alone: Normalize("\x01") = "\x01", failing as a component true; want UNKNOWN and not failing, as on the service
+    probe_test.go:197: U+00A0 alone: Normalize(" ") = "UNKNOWN", failing as a component false; want an unknown word, failing, as the service's DEGRADED
+    probe_test.go:197: U+2003 alone: Normalize(" ") = "UNKNOWN", failing as a component false; want an unknown word, failing, as the service's DEGRADED
+
+With the shipped Normalize (TrimFunc r <= ' '):
+$ go test ./internal/probe/ -run TestStatusWordsAreTrimmedLikeTheService -v
+=== RUN   TestStatusWordsAreTrimmedLikeTheService
+--- PASS: TestStatusWordsAreTrimmedLikeTheService (0.00s)
+PASS
