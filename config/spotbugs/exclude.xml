@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs findings on the main classes that are false by design. Every <Match> names the classes
+  it covers and says why in one line; nothing here excludes a package or a bug pattern as a whole.
+  Run ./gradlew spotbugsMain; the report is build/reports/spotbugs/main.html.
+-->
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0">
+
+  <!-- Spring constructor injection: the stored collaborator (ReactiveMongoTemplate, ObjectMapper, a repository port, another use case) is a singleton bean shared by design, not state to copy. -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Method name="&lt;init&gt;"/>
+    <Or>
+      <Class name="com.atlas.communication.common.adapters.outbound.MongoCommunicationEventsAdapter"/>
+      <Class name="com.atlas.communication.config.ClientIdWebFilter"/>
+      <Class name="com.atlas.communication.feed.application.FeedUseCase"/>
+      <Class name="com.atlas.communication.health.adapters.outbound.WebClientHealthProbeAdapter"/>
+      <Class name="com.atlas.communication.health.application.HealthSweepUseCase"/>
+    </Or>
+  </Match>
+
+  <!-- The document's @Id is written by fromDomain and read only by Spring Data's mapping layer through reflection, never by our code. -->
+  <Match>
+    <Bug pattern="URF_UNREAD_FIELD"/>
+    <Class name="com.atlas.communication.health.adapters.outbound.HealthInstanceDocument"/>
+    <Field name="id"/>
+  </Match>
+
+  <!-- counts is an unmodifiable copy made in the compact constructor (Collections.unmodifiableMap over a LinkedHashMap, keeping the status order); SpotBugs only recognises Map.copyOf, which would shuffle it. -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP"/>
+    <Class name="com.atlas.communication.common.domain.TenantSummary"/>
+    <Method name="counts"/>
+  </Match>
+
+  <!-- details and components are unmodifiable copies made in the compact constructor; Map.copyOf would lose the document order the notice text follows and reject the null detail values Actuator documents can carry. -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP"/>
+    <Class name="com.atlas.communication.health.domain.ActuatorComponent"/>
+    <Or>
+      <Method name="details"/>
+      <Method name="components"/>
+      <Method name="children"/>
+    </Or>
+  </Match>
+
+  <!-- Same copies as ActuatorComponent, on the pushed report (a Spring-bound request body read once by the use case). -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP"/>
+    <Class name="com.atlas.communication.health.domain.HealthReportCommand"/>
+    <Or>
+      <Method name="details"/>
+      <Method name="components"/>
+    </Or>
+  </Match>
+
+</FindBugsFilter>

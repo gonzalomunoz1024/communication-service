@@ -38,6 +38,11 @@ public record HealthRollup(
     /** Pod names listed in a message before "+n more". */
     static final int NAMES_MAX = 5;
 
+    public HealthRollup {
+        failing = failing == null ? List.of() : List.copyOf(failing);
+        unhealthy = unhealthy == null ? List.of() : List.copyOf(unhealthy);
+    }
+
     public static HealthRollup of(List<HealthInstance> instances, int staleAfterSeconds,
             Integer minHealthyPercent, Instant now) {
         int threshold = minHealthyPercent == null ? DEFAULT_MIN_HEALTHY_PERCENT : minHealthyPercent;

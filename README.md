@@ -34,7 +34,7 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 
 ./gradlew test              # unit tests
 ./gradlew integrationTest   # *IT tests against embedded MongoDB (downloads mongod once; no Docker)
-./gradlew check             # both (also run by `build`)
+./gradlew check             # every gate below (also run by `build`)
 ```
 
 ### Container image
@@ -55,6 +55,18 @@ Any `application.yml` setting can be passed the same way as an environment varia
 (`COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD=…`). The end-to-end suite under
 [`e2e/`](e2e/README.md) starts this image, the health sidecar and a fake publisher app with
 `docker compose` and drives them from a browser.
+
+### Build gates
+
+`./gradlew check` is the merge gate; CI runs exactly this. It fails on any of:
+
+| Gate | What it enforces | Report |
+|---|---|---|
+| `compileJava`, `compileTestJava` | `-Xlint:deprecation -Xlint:removal -Xlint:unchecked -Werror`: a deprecated, removal-scheduled or unchecked use is a compile error | compiler output |
+| `test`, `integrationTest` | unit tests; `*IT` tests against embedded MongoDB | `build/reports/tests/test/`, `build/reports/tests/integrationTest/` |
+| `spotbugsMain` | SpotBugs on the main classes (effort max, confidence medium and up); findings that are false by design are listed, each with its reason, in `config/spotbugs/exclude.xml` | `build/reports/spotbugs/main.html` |
+| `jacocoTestCoverageVerification` | line coverage of the unit and integration runs together >= 92 % (the Spring wiring in `config/` and the main class are not counted; 95.5 % when the gate was set) | `build/reports/jacoco/test/html/index.html`, `.../jacocoTestReport.xml` |
+| `cyclonedxBom` | CycloneDX SBOM of the runtime dependencies, for the vulnerability scan CI runs on it | `build/reports/cyclonedx/bom.json` |
 
 ### Operations
 

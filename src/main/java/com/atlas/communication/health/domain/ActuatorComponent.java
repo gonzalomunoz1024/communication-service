@@ -1,5 +1,6 @@
 package com.atlas.communication.health.domain;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -14,8 +15,9 @@ public record ActuatorComponent(
         Map<String, ActuatorComponent> components) {
 
     public ActuatorComponent {
-        details = details == null ? Map.of() : details;
-        components = components == null ? Map.of() : components;
+        // unmodifiable copies that keep the document's order and tolerate null detail values
+        details = details == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(details));
+        components = components == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(components));
     }
 
     /** Nested components, falling back to status-bearing entries of {@code details}. */

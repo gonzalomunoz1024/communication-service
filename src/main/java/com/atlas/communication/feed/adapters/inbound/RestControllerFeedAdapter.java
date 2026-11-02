@@ -2,6 +2,7 @@ package com.atlas.communication.feed.adapters.inbound;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
@@ -86,7 +87,7 @@ public class RestControllerFeedAdapter {
             Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query, resumeAfter)
                     .map(e -> ServerSentEvent.<CommunicationEvent>builder()
                             .id(Long.toString(e.seq()))
-                            .event(e.type().name().toLowerCase())
+                            .event(e.type().name().toLowerCase(Locale.ROOT))
                             .data(e)
                             .build())
                     .doFinally(signal -> ended.tryEmitEmpty());

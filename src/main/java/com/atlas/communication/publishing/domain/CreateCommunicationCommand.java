@@ -36,4 +36,8 @@ public record CreateCommunicationCommand(
         Instant expiresAt,
         String externalRef,
         @Valid Ticket ticket) {
+
+    public CreateCommunicationCommand {
+        affectedServices = affectedServices == null ? null : List.copyOf(affectedServices);
+    }
 }

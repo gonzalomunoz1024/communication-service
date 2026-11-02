@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -114,7 +115,7 @@ public class GlobalExceptionHandler {
     public Mono<ResponseEntity<Map<String, String>>> handleStatus(ResponseStatusException ex) {
         String reason = ex.getReason();
         if (reason == null && ex.getStatusCode() instanceof HttpStatus status) {
-            reason = status.getReasonPhrase().toLowerCase();
+            reason = status.getReasonPhrase().toLowerCase(Locale.ROOT);
         }
         return Mono.just(ResponseEntity.status(ex.getStatusCode())
                 .body(Map.of("error", safe(reason))));

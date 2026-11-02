@@ -1,5 +1,6 @@
 package com.atlas.communication.feed.adapters.inbound;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
@@ -7,12 +8,15 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -69,5 +73,33 @@ class RestControllerFeedAdapterTest {
                 .expectNextMatches(e -> e.seq() == 7 && e.communication().id().equals("c1"))
                 .expectComplete()
                 .verify(Duration.ofSeconds(5));
+    }
+
+    @Test
+    void eventNamesAreLowerCasedTheSameWayInEveryLocale() {
+        // browsers subscribe to "retired"; Turkish lower-cases the I of RETIRED to a dotless ı
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try {
+            when(useCase.stream(any(), isNull())).thenReturn(Flux.just(new CommunicationEvent(
+                    8, CommunicationEventType.RETIRED, NOW, created(7, "c1").communication())));
+
+            FluxExchangeResult<ServerSentEvent<CommunicationEvent>> result = client.get()
+                    .uri("/v1/feed/stream?tenantId=vmforge")
+                    .accept(MediaType.TEXT_EVENT_STREAM)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .returnResult(new ParameterizedTypeReference<ServerSentEvent<CommunicationEvent>>() { });
+
+            StepVerifier.create(result.getResponseBody().filter(frame -> frame.data() != null))
+                    .assertNext(frame -> {
+                        assertThat(frame.event()).isEqualTo("retired");
+                        assertThat(frame.id()).isEqualTo("8");
+                    })
+                    .expectComplete()
+                    .verify(Duration.ofSeconds(5));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
     }
 }

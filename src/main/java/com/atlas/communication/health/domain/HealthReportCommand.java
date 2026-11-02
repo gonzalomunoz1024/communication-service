@@ -1,6 +1,8 @@
 package com.atlas.communication.health.domain;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jakarta.validation.Valid;
@@ -29,6 +31,12 @@ public record HealthReportCommand(
         Instant observedAt,
         String publisher,
         @Valid ReportInstance instance) {
+
+    public HealthReportCommand {
+        // unmodifiable copies that keep the document's order and tolerate null detail values
+        components = components == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(components));
+        details = details == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(details));
+    }
 
     public HealthReport toReport(Instant now) {
         return HealthReport.fromActuator(status, componentTree(), message, HealthSource.PUSH,

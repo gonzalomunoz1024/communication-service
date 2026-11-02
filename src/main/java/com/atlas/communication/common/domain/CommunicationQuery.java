@@ -5,7 +5,8 @@ import java.util.Set;
 
 /**
  * Repository filter shared by the feed and admin read sides. All fields are optional
- * (null = no constraint) except paging. When {@code activeAt} is set the repository applies
+ * (null = no constraint; {@code statuses} is kept as an unmodifiable copy, empty = no
+ * constraint) except paging. When {@code activeAt} is set the repository applies
  * the feed visibility predicate: stored status in (SCHEDULED, ACTIVE), startsAt <= activeAt,
  * and (expiresAt null or > activeAt) — OR'd, when {@code upcomingUntil} is set, with
  * SCHEDULED MAINTENANCE whose startsAt <= upcomingUntil.
@@ -24,6 +25,10 @@ public record CommunicationQuery(
         Instant createdTo,
         int page,
         int size) {
+
+    public CommunicationQuery {
+        statuses = statuses == null ? Set.of() : Set.copyOf(statuses);
+    }
 
     /** Feed visibility query: everything visible at {@code activeAt} for one tenant. */
     public static CommunicationQuery visibleAt(String tenantId, Instant activeAt, Instant upcomingUntil,

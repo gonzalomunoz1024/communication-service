@@ -30,4 +30,9 @@ public record UpdateCommunicationCommand(
         @Valid Ticket ticket,
         String actor,
         @NotNull Long expectedVersion) {
+
+    public UpdateCommunicationCommand {
+        // null keeps the stored services (partial update); a given list is copied
+        affectedServices = affectedServices == null ? null : List.copyOf(affectedServices);
+    }
 }
