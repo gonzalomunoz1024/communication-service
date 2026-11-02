@@ -39,7 +39,8 @@ public record UpdateCommunicationCommand(
         @Schema(description = "The version you last read: every answer and GET /v1/communications/{id} carry it. "
                 + "A 409 'expectedVersion N does not match current version M' means someone saved in between: "
                 + "re-read, re-apply your change and send the new version.", example = "0")
-        @NotNull Long expectedVersion) {
+        @NotNull(message = "expectedVersion is required: send the version from your last GET of this notice; "
+                + "a 409 means someone changed it since") Long expectedVersion) {
 
     public UpdateCommunicationCommand {
         // null keeps the stored services (partial update); a given list is copied

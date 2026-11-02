@@ -93,7 +93,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(WebExchangeBindException.class)
     public Mono<ResponseEntity<Map<String, String>>> handleBind(WebExchangeBindException ex) {
         String message = ex.getFieldErrors().stream()
-                .map(f -> f.getField() + ": " + f.getDefaultMessage())
+                .map(f -> {
+                    String rule = f.getDefaultMessage();
+                    // a message that names its field reads as a sentence ("expectedVersion is required: …")
+                    return rule != null && rule.startsWith(f.getField() + " ") ? rule : f.getField() + ": " + rule;
+                })
                 .sorted()
                 .collect(Collectors.joining("; "));
         return Mono.just(ResponseEntity.badRequest()

@@ -200,6 +200,29 @@ class RestControllerPublishingAdapterTest {
     }
 
     @Test
+    void anUpdateWithoutExpectedVersionSaysWhatToSendAndWhatA409Means() {
+        client.put().uri("/v1/communications/c1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("body", "Mitigation in progress."))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("expectedVersion is required: send the version from your last GET "
+                        + "of this notice; a 409 means someone changed it since");
+        // with another failing field, each keeps its own form and both are named
+        client.put().uri("/v1/communications/c1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("title", "x".repeat(201)))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("expectedVersion is required: send the version from your last GET "
+                        + "of this notice; a 409 means someone changed it since; "
+                        + "title: size must be between 0 and 200");
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
     void aMisspelledFieldIs400NamingItAndListingTheKnownOnes() {
         // a typo in an optional field must not silently change what gets published
         // every call would succeed if it got through, so only the binding can turn it into a 400

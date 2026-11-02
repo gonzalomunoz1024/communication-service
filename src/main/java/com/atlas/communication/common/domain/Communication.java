@@ -1,6 +1,7 @@
 package com.atlas.communication.common.domain;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public record Communication(
                 affectedServices, audience == null ? Audience.CUSTOMERS : audience, initial,
                 effectiveStart, endsAt, effectiveExpiry, externalRef, ticket, now, now, null,
                 List.of(new AuditEntry(now, publisher, "created (" + initial + ")")));
-        created.validateInvariants();
+        created.validateInvariants(startsAt == null);
         return created;
     }
 
@@ -170,6 +171,14 @@ public record Communication(
     }
 
     public void validateInvariants() {
+        validateInvariants(false);
+    }
+
+    /**
+     * As {@link #validateInvariants()}; {@code startsAtDefaulted} says that {@code startsAt} is the
+     * creation time because the publisher sent none, which a message about it then says.
+     */
+    private void validateInvariants(boolean startsAtDefaulted) {
         require(tenantId != null && !tenantId.isBlank(), "tenantId is required");
         require(publisher != null && !publisher.isBlank(), "publisher is required");
         require(type != null, "type is required");
@@ -183,7 +192,12 @@ public record Communication(
             require(endsAt != null, "MAINTENANCE requires endsAt");
         }
         require(endsAt == null || endsAt.isAfter(startsAt), "endsAt must be after startsAt");
-        require(expiresAt == null || expiresAt.isAfter(startsAt), "expiresAt must be after startsAt");
+        if (expiresAt != null && !expiresAt.isAfter(startsAt)) {
+            // both values, and where a start nobody sent came from (to the millisecond, as it is stored)
+            throw new IllegalArgumentException("expiresAt " + expiresAt + " must be after startsAt"
+                    + (startsAtDefaulted ? ", which defaulted to now (" + startsAt.truncatedTo(ChronoUnit.MILLIS) + ")"
+                            : " " + startsAt));
+        }
         if (type == CommunicationType.INCIDENT || type == CommunicationType.OUTAGE) {
             require(severity.atLeast(Severity.MINOR), type + " requires severity MINOR or higher");
         }

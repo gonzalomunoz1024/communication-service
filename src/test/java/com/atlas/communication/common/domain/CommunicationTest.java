@@ -79,6 +79,30 @@ class CommunicationTest {
     }
 
     @Test
+    void anExpiryNotAfterTheStartNamesBothValuesAndAStartThatDefaulted() {
+        // no startsAt: the window starts now, which the publisher did not write, so the message says so
+        assertThatThrownBy(() -> Communication.create("c1", "vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "down", null, List.of(), null, false, null, null,
+                Instant.parse("2026-10-01T09:00:00Z"), null, NOW))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now "
+                        + "(2026-10-14T12:00:00Z)");
+        // startsAt given: both values, nothing about a default
+        assertThatThrownBy(() -> Communication.create("c1", "vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "down", null, List.of(), null, false, NOW.plusSeconds(3600), null,
+                NOW.plusSeconds(3600), null, NOW))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("expiresAt 2026-10-14T13:00:00Z must be after startsAt 2026-10-14T13:00:00Z");
+        // an update that moves the expiry before the stored start: the stored value, named as such
+        Communication outage = Communication.create("c1", "vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "down", null, List.of(), null, false, null, null, null, null, NOW);
+        assertThatThrownBy(() -> outage.withContent(null, null, null, null, null, null, null,
+                NOW.minusSeconds(60), "sre", NOW.plusSeconds(10)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("expiresAt 2026-10-14T11:59:00Z must be after startsAt 2026-10-14T12:00:00Z");
+    }
+
+    @Test
     void titleLengthIsCapped() {
         assertThatThrownBy(() -> outageTitled("x".repeat(201)))
                 .isInstanceOf(IllegalArgumentException.class)

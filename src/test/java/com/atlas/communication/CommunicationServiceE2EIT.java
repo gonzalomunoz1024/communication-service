@@ -347,6 +347,28 @@ class CommunicationServiceE2EIT {
     }
 
     @Test
+    void anExpiryBeforeTheDefaultedStartAndAMissingVersionSayWhatWasSentAndWhatToSend() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "already over", "expiresAt", "2026-10-01T09:00:00Z"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg).matches(
+                        "expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now "
+                                + "\\(\\d{4}-\\d\\d-\\d\\dT[0-9:.]+Z\\)"));
+        client.put().uri("/v1/communications/{id}", publishOutage("INC-e2e-version").id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("body", "Mitigation in progress."))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("expectedVersion is required: send the version from your last GET "
+                        + "of this notice; a 409 means someone changed it since");
+    }
+
+    @Test
     void publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem() {
         client.post().uri("/v1/communications")
                 .contentType(MediaType.APPLICATION_JSON)
