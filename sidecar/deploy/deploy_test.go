@@ -1,8 +1,9 @@
-// Package deploy holds tests for the Kustomize snippets under deploy/kustomize and for the image
-// build files. The manifest tests need the kustomize binary and use kubeconform for schema
-// validation. On a laptop a missing tool skips the check, so `go test ./...` stays green on a
-// plain checkout; when CI is set (GitHub Actions sets CI=true) a missing tool fails the test
-// naming it, so a CI image without the tools cannot pass these checks vacuously.
+// Package deploy holds tests for the Kustomize snippets under deploy/kustomize, for the Helm
+// include lines the README prints and for the image build files. The manifest tests need the
+// kustomize and helm binaries and use kubeconform for schema validation. On a laptop a missing
+// tool skips the check, so `go test ./...` stays green on a plain checkout; when CI is set
+// (GitHub Actions sets CI=true) a missing tool fails the test naming it, so a CI image without
+// the tools cannot pass these checks vacuously.
 package deploy
 
 import (

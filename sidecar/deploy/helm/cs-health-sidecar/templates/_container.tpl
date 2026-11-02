@@ -16,7 +16,10 @@ Renders the health sidecar container. In the consuming chart:
     tenant: retail
 
 For a native sidecar (OpenShift 4.16+), include "cs-health-sidecar.initContainer" under
-initContainers instead.
+initContainers instead:
+
+  # templates/deployment.yaml, under spec.template.spec.initContainers
+  {{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
 */}}
 {{- define "cs-health-sidecar.spec" -}}
 {{- $v := .Values.csHealthSidecar | default dict -}}

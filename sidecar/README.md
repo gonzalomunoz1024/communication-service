@@ -28,8 +28,37 @@ Pick one. The team's own manifests do not change in the first two.
 | Path | What the team does |
 | --- | --- |
 | **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap in the app's namespace with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER` ([example](deploy/kustomize/example)) |
-| **Helm** ([deploy/helm/cs-health-sidecar](deploy/helm/cs-health-sidecar)) | adds the library chart as a dependency, `{{ include "cs-health-sidecar.container" . }}` under `containers`, and `csHealthSidecar.endpoint` / `.tenant` in values |
+| **Helm** ([deploy/helm/cs-health-sidecar](deploy/helm/cs-health-sidecar)) | adds the library chart as a dependency, one `include` line under `containers` and `csHealthSidecar.endpoint` / `.tenant` in values (the three pieces below the table) |
 | **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | pastes the container block |
+
+With Helm the consuming chart gets these three pieces, the same as the comment in the chart's
+[`_container.tpl`](deploy/helm/cs-health-sidecar/templates/_container.tpl):
+
+```yaml
+# Chart.yaml
+dependencies:
+  - name: cs-health-sidecar
+    version: 1.0.0
+    repository: https://charts.example.com/platform   # where the platform team publishes the chart
+
+# templates/deployment.yaml, under spec.template.spec.containers
+      containers:
+        - name: my-app
+          image: registry.example.com/my-team/my-app:1.4.2
+        {{- include "cs-health-sidecar.container" . | nindent 8 }}
+
+# values.yaml
+csHealthSidecar:
+  endpoint: https://communication.apps.example.com
+  tenant: retail
+```
+
+`| nindent 8` starts the sidecar container on a new line and puts every line of it at column 8,
+where the other items of `containers` start in a Deployment laid out as above; if your template
+indents the list differently, use the column of its `-`. An `include` without it, on its own line,
+puts only the container's first line at that column: `helm template` and `helm lint` still pass,
+but the rest of the container becomes keys of the Deployment's `spec`, which `kubeconform -strict`
+rejects (`additionalProperties 'env', 'image', … not allowed`).
 
 Whichever path, the two values every team needs are `CS_ENDPOINT` (the communication service's
 Route, e.g. `https://communication.apps.example.com`) and `CS_TENANT`: the tenant id the service
@@ -39,14 +68,22 @@ rather than inventing one, because a notice under an unknown tenant reaches nobo
 
 The chart is a Helm *library* chart: `helm template` on it alone fails by design ("library
 charts are not installable"). Render it through the consuming chart (`helm template my-app ./my-app`
-after adding the dependency and the `include`), which is also where `helm lint` runs.
+after adding the dependency and the `include`), which is also where `helm lint` runs. `helm lint`
+does not notice an `include` at the wrong indentation;
+`helm template my-app ./my-app | kubeconform -strict` does.
 
 On OpenShift 4.16+ (Kubernetes 1.29+) prefer the native sidecar form (an init container with
 `restartPolicy: Always`): it starts before the app, stops after it, and never keeps a Job
 alive. Both Kustomize and Helm offer it: the
 [`deploy/kustomize/component-native`](deploy/kustomize/component-native) component (a
-strategic-merge patch, so init containers the app already has are kept) and
-`cs-health-sidecar.initContainer`.
+strategic-merge patch, so init containers the app already has are kept) and, with Helm,
+`cs-health-sidecar.initContainer` in place of the `containers` line:
+
+```yaml
+# templates/deployment.yaml, under spec.template.spec.initContainers
+      initContainers:
+        {{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
+```
 
 A mutating admission webhook that injects the container on a single pod annotation is the
 planned next step; the container and its configuration stay the same.
@@ -176,8 +213,9 @@ level, a duration, port or boolean it cannot read) stops it at start with exit c
 ERROR line, `invalid configuration`, that names every such variable at once; a `CS_CA_FILE` it
 cannot read stops it the same way, as `cannot build report client`.
 
-`GET :9465/status` shows the discovered target, the last probe result, the last report sent and
-the last send error, which is the first place to look when a service does not show up.
+`GET :9465/status` shows the discovered target, the last report composed, whether or not it was
+sent (one inside the heartbeat window is not), when the service last accepted or rejected a
+report, and the last send error, which is the first place to look when a service does not show up.
 
 ## Debugging: "my service does not show up"
 
@@ -206,7 +244,7 @@ Helm to `csHealthSidecar.extraEnv`; the container reads it when it starts, so re
 | `lastTarget` | the last target probed; kept while `target` is absent because the app stopped listening |
 | `upSeen` | whether the app has answered UP since the sidecar started (before that, reports are UNKNOWN) |
 | `lastReport` | the last report composed (status, components, message, instance) |
-| `lastSendAt`, `reportsSent` | when and how often a report reached the service (`lastSendAt` appears with the first accepted report) |
+| `lastSendAt`, `reportsSent` | when the service last accepted or rejected (400, 401 …) a report, and how many reports it accepted; `lastSendAt` is absent until the first such answer |
 | `sendError` | why the last send failed (`connection refused`, TLS, 401, 400 …); absent while sends succeed |
 
 These names are pinned by `TestStatusJSONMatchesTheDocumentedContract` in `internal/agent`.
@@ -245,9 +283,10 @@ No dependencies outside the Go standard library. The module needs Go 1.25 (`go.m
 the default builder image `ubi9/go-toolset:1.25` ships; `go test ./...` on a laptop with an older
 Go downloads that toolchain through the module proxy.
 
-The tests under `deploy/` render the Kustomize snippets with `kustomize` and validate every form
-with `kubeconform`. Without the two tools on `PATH` they skip on a laptop; when `CI` is set (as
-GitHub Actions does) a missing tool fails the test naming it, so the CI image must install both.
+The tests under `deploy/` render the Kustomize snippets with `kustomize`, render the Helm `include`
+lines this README prints, pasted into a consuming chart, with `helm`, and validate every form with
+`kubeconform`. Without these tools on `PATH` they skip on a laptop; when `CI` is set (as GitHub
+Actions does) a missing tool fails the test naming it, so the CI image must install all three.
 
 To try it on a laptop against a local communication service and a local app on port 8080:
 

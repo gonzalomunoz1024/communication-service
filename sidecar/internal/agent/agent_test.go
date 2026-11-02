@@ -544,6 +544,61 @@ func TestStatusJSONMatchesTheDocumentedContract(t *testing.T) {
 	}
 }
 
+// G-3-10 (GAP-sidecar-2): /status shows the last report composed, whether or not it was sent: a
+// report inside the heartbeat window, which is not sent, and one whose send failed both appear
+// there. lastSendAt is when the service last accepted or rejected a report (a rejected first
+// report sets it too) and reportsSent counts the accepted ones. The README's sentence
+// introducing /status and its lastSendAt row must say so, not "the last report sent" or "appears
+// with the first accepted report".
+func TestStatusShowsTheLastReportComposedSentOrNot(t *testing.T) {
+	app := newFakeApp(t, "UP")
+	h := newHarness(t, baseConfig(), app.port)
+	ctx := context.Background()
+	sentAt := h.clock
+	h.agent.Tick(ctx) // accepted
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx) // inside the heartbeat window: composed, not sent
+	s := h.agent.Status()
+	if s.Last == nil || !s.Last.ObservedAt.Equal(h.clock) || s.LastSendAt == nil || !s.LastSendAt.Equal(sentAt) || s.ReportsSent != 1 {
+		t.Errorf("after a tick that sent nothing: lastReport %+v (want the one observed at %v), lastSendAt %v (want %v), reportsSent %d (want 1)",
+			s.Last, h.clock, s.LastSendAt, sentAt, s.ReportsSent)
+	}
+	h.sender.fail = errors.New("connection refused")
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx) // the heartbeat is due and its send fails
+	s = h.agent.Status()
+	if s.Last == nil || !s.Last.ObservedAt.Equal(h.clock) || s.ReportsSent != 1 || s.SendError == "" {
+		t.Errorf("after a failed send: lastReport %+v (want the one observed at %v), reportsSent %d (want 1), sendError %q",
+			s.Last, h.clock, s.ReportsSent, s.SendError)
+	}
+	rejected := newHarness(t, baseConfig(), app.port)
+	rejected.sender.fail = &report.PermanentError{Status: 400, Body: "bad"}
+	rejected.agent.Tick(ctx)
+	s = rejected.agent.Status()
+	if s.LastSendAt == nil || !s.LastSendAt.Equal(rejected.clock) || s.ReportsSent != 0 || s.SendError == "" {
+		t.Errorf("after a rejected first report: lastSendAt %v (want %v), reportsSent %d (want 0), sendError %q",
+			s.LastSendAt, rejected.clock, s.ReportsSent, s.SendError)
+	}
+
+	readme, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, rest, found := strings.Cut(string(readme), "`GET :9465/status` shows")
+	if !found {
+		t.Fatal("README.md has no sentence starting '`GET :9465/status` shows'")
+	}
+	sentence, _, _ := strings.Cut(rest, "\n\n")
+	if !strings.Contains(sentence, "composed") || strings.Contains(sentence, "report sent") {
+		t.Errorf("the README's sentence on /status should name the last report composed, sent or not:\n%s", sentence)
+	}
+	_, row, found := strings.Cut(string(readme), "\n| `lastSendAt`")
+	row, _, _ = strings.Cut(row, "\n")
+	if !found || !strings.Contains(row, "rejected") || strings.Contains(row, "first accepted report") {
+		t.Errorf("the README's /status row for lastSendAt should say a rejected report sets it too:\n| `lastSendAt`%s", row)
+	}
+}
+
 // documentedStatusFields reads the field names of the README's "`/status` answers with:" table.
 func documentedStatusFields(t *testing.T) map[string]bool {
 	t.Helper()
