@@ -1,0 +1,81 @@
+# The end-to-end stack: MongoDB, the backend (root Dockerfile over the prebuilt jar), a fake publisher
+# app and the health sidecar sharing that app's network namespace, the way the two containers share
+# one in a pod. stack.sh drives it and waits for the pieces; README.md explains the settings.
+name: e2e
+
+networks:
+  default:
+    name: e2e
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: e2e-mongo
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  backend:
+    image: communication-service:e2e
+    build:
+      context: ..
+    container_name: e2e-backend
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:28080:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://e2e-mongo:27017/e2e
+      # The debounce the suite's timing budget is written for: two matching observations open or retire a
+      # notice. These are the service's defaults, pinned so a changed default cannot silently stretch the
+      # budget. With the sidecar below probing every 2 s and re-sending every 4 s, a DOWN app is an OUTAGE
+      # in the feed within about 9 s, and a recovered one retires it as fast.
+      COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD: "2"
+      COMMUNICATION_HEALTH_DEFAULTS_RECOVERYTHRESHOLD: "2"
+
+  app:
+    image: fakeapp:e2e
+    build:
+      context: fakeapp
+    container_name: e2e-app
+    ports:
+      - "127.0.0.1:28090:8080" # the fake app: /actuator/health and POST /__set
+      - "127.0.0.1:28091:9465" # the sidecar's /status, which lives in this container's network namespace
+
+  sidecar:
+    image: health-sidecar:e2e
+    build:
+      context: ../sidecar
+      # taken from the environment when set, otherwise the Dockerfile's defaults (the UBI images); where
+      # the UBI registry is unreachable: GO_IMAGE=local/go-toolset:1.24 BASE_IMAGE=gcr.io/distroless/static-debian12:latest
+      args:
+        - GO_IMAGE
+        - BASE_IMAGE
+    container_name: e2e-sidecar
+    # one pod: the sidecar shares the app's network namespace and finds the app on localhost
+    network_mode: "service:app"
+    depends_on:
+      - app
+      - backend
+    # what the restricted-v2 SCC imposes on OpenShift: an arbitrary UID, a read-only root filesystem, no capabilities
+    user: "1000660000:0"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      CS_ENDPOINT: http://e2e-backend:8080
+      CS_TENANT: e2e
+      CS_SERVICE: fakeapp
+      # a test cadence: probe every 2 s, second look at a non-UP answer after 0.5 s, re-send every 4 s
+      CS_INTERVAL: 2s
+      CS_HEARTBEAT: 4s
+      CS_RETRY_DELAY: 500ms
+      CS_STARTUP_GRACE: 30s
+      # what the Downward API would set
+      POD_NAME: fakeapp-0
+      POD_NAMESPACE: e2e
+      NODE_NAME: local

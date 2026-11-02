@@ -52,7 +52,9 @@ docker run --rm -p 8080:8080 \
 ```
 
 Any `application.yml` setting can be passed the same way as an environment variable
-(`COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD=…`).
+(`COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD=…`). The end-to-end suite under
+[`e2e/`](e2e/README.md) starts this image, the health sidecar and a fake publisher app with
+`docker compose` and drives them from a browser.
 
 ### Operations
 
