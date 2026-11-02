@@ -2,6 +2,7 @@ package com.atlas.communication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
@@ -10,9 +11,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.Ticket;
@@ -32,6 +38,8 @@ class CommunicationServiceE2EIT {
 
     @Autowired
     private WebTestClient client;
+    @LocalServerPort
+    private int port;
 
     @BeforeEach
     void identifyAsTestClient() {
@@ -164,6 +172,36 @@ class CommunicationServiceE2EIT {
                 })
                 .expectComplete()
                 .verify(Duration.ofSeconds(30));
+    }
+
+    @Test
+    void streamIsCommittedAtOnceForATenantWithNothingVisible() {
+        // nothing is visible for this tenant, so no snapshot frame will ever be written; the
+        // status, headers and an opening comment must still reach the client immediately
+        // (before this fix they arrived with the first keepalive, 15 s in)
+        WebClient raw = WebClient.create("http://localhost:" + port);
+        long started = System.nanoTime();
+        String firstBytes = raw.get()
+                .uri("/v1/feed/stream?tenantId=nobody-publishes-here-" + started)
+                .header(ClientIdWebFilter.HEADER, "communication-service-tests")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .exchangeToFlux(response -> {
+                    assertThat(response.statusCode()).isEqualTo(HttpStatus.OK);
+                    assertThat(response.headers().contentType()).hasValueSatisfying(type ->
+                            assertThat(type.isCompatibleWith(MediaType.TEXT_EVENT_STREAM)).isTrue());
+                    return response.bodyToFlux(DataBuffer.class)
+                            .map(buffer -> {
+                                String text = buffer.toString(StandardCharsets.UTF_8);
+                                DataBufferUtils.release(buffer);
+                                return text;
+                            });
+                })
+                .next()
+                .block(Duration.ofSeconds(5));
+        long elapsedMs = Duration.ofNanos(System.nanoTime() - started).toMillis();
+
+        assertThat(firstBytes).startsWith(":connected");
+        assertThat(elapsedMs).as("time to first bytes").isLessThan(2000);
     }
 
     @Test

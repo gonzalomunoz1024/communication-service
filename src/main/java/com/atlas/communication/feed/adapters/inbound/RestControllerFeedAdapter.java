@@ -35,6 +35,9 @@ public class RestControllerFeedAdapter {
 
     /** Comment-only frames so idle streams survive proxies and load balancers. */
     private static final Duration KEEPALIVE_INTERVAL = Duration.ofSeconds(15);
+    /** First bytes of every stream, so status and headers reach the client at once. */
+    private static final ServerSentEvent<CommunicationEvent> CONNECTED =
+            ServerSentEvent.<CommunicationEvent>builder().comment("connected").build();
 
     private final FeedUseCase useCase;
 
@@ -83,7 +86,10 @@ public class RestControllerFeedAdapter {
         Flux<ServerSentEvent<CommunicationEvent>> keepalive = Flux
                 .interval(KEEPALIVE_INTERVAL, KEEPALIVE_INTERVAL)
                 .map(i -> ServerSentEvent.<CommunicationEvent>builder().comment("keepalive").build());
-        return Flux.merge(data, keepalive);
+        // The response is only committed with its first write. A tenant with nothing visible
+        // would otherwise get status and headers with the first keepalive, 15 s in, and a
+        // browser would sit in "connecting" for that long: open with a comment frame instead.
+        return Flux.merge(data, keepalive).startWith(CONNECTED);
     }
 
     /** Browsers echo the last {@code id:} verbatim; anything that is not one of ours means a fresh start. */

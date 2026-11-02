@@ -61,7 +61,9 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
   and mismatches return 409.
 - **SSE contract**: on subscribe, one `snapshot` event per currently-visible item, then live
   `created/updated/activated/expired/retired` events filtered server-side per subscriber;
-  `id:` is a global sequence number from the shared event log; keepalive comments every 15s.
+  `id:` is a global sequence number from the shared event log; the stream opens with a
+  `: connected` comment (so headers arrive at once, even when nothing is visible yet) and sends
+  keepalive comments every 15s.
   A client that reconnects with `Last-Event-ID` (browsers do this on their own; `?lastEventId=`
   for curl) gets every event it missed, in order, while the log still holds it
   (`communication.events.retention`, default 1 day); otherwise it gets a fresh snapshot.
