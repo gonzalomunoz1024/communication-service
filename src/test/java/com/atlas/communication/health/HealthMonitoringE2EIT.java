@@ -171,14 +171,15 @@ class HealthMonitoringE2EIT {
                 .exchange()
                 .expectStatus().isOk();
 
-        // the monitor notices on its next observation and starts counting from zero again...
+        // the monitor notices on its next observation and starts counting again: that
+        // observation, itself failing, is the first of the new count...
         HealthMonitor noticed = probe(monitor.id());
         assertThat(noticed.state().openCommunicationId()).isNull();
-        assertThat(noticed.state().unhealthyStreak()).isZero();
-        assertThat(probe(monitor.id()).state().openCommunicationId()).isNull();
+        assertThat(noticed.state().unhealthyStreak()).isEqualTo(1);
         feedFor("ops-retire-e2e").jsonPath("$.totalElements").isEqualTo(0);
 
-        // ...so the threshold opens a fresh notice, incident #2, instead of silence for ever
+        // ...so the threshold (2) opens a fresh notice, incident #2, on the next failing probe
+        // instead of silence for ever
         HealthMonitor reopened = probe(monitor.id());
         assertThat(reopened.state().openCommunicationId()).isNotNull().isNotEqualTo(first);
         feedFor("ops-retire-e2e")

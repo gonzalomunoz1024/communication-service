@@ -268,7 +268,10 @@ with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attac
   `affectedServices=[service]`, `externalRef=health:<monitorId>:<incident#>`.
 - While open: new failing components update the notice in place (`updated` SSE event); a change
   of kind (DOWN ↔ DEGRADED) retires it and opens the right type; recovery retires it. If an
-  operator retires an automated notice by hand, the monitor respects it and starts counting again.
+  operator retires an automated notice by hand, the monitor respects it and starts counting
+  again: the failing observation that notices the retirement is the first of the new count, so
+  a service that keeps failing gets a fresh notice after `failureThreshold` failing observations
+  (threshold 3: reopened on the third one).
 - Notices are published through the same rules as human ones (`PublishingUseCase`), so feed,
   SSE, permalinks and audit history work unchanged. The scheduler (`communication.health.sweep-interval-ms`,
   default 5s) probes monitors whose interval elapsed; opening a notice claims the monitor first

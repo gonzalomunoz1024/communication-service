@@ -172,12 +172,32 @@ class HealthMonitorTest {
         assertThat(closed.state().unhealthyStreak()).isEqualTo(2);
         assertThat(closed.state().incidents()).isEqualTo(1);
 
+        // an operator's retire starts the count again; the failing observation in hand is its first
         HealthMonitor byOperator = open.withClosedByOperator();
         assertThat(byOperator.state().hasOpen()).isFalse();
-        assertThat(byOperator.state().unhealthyStreak()).isZero();
+        assertThat(byOperator.state().unhealthyStreak()).isEqualTo(1);
 
         assertThat(open.withOpenSignature("DOWN[db=DOWN]").state().openSignature())
                 .isEqualTo("DOWN[db=DOWN]");
+    }
+
+    @Test
+    void anOperatorsRetireStartsTheCountAgainWithTheObservationThatNoticedIt() {
+        HealthMonitor open = openDown();
+
+        // noticed by a failing observation: that one counts, so with threshold 2 the next failure reopens
+        HealthMonitor noticedWhileFailing = open.evaluate(down(NOW.plusSeconds(60)), NOW.plusSeconds(60))
+                .monitor().withClosedByOperator();
+        assertThat(noticedWhileFailing.state().unhealthyStreak()).isEqualTo(1);
+        HealthEvaluation next = noticedWhileFailing.evaluate(down(NOW.plusSeconds(90)), NOW.plusSeconds(90));
+        assertThat(next.transition()).isEqualTo(HealthTransition.OPEN);
+        assertThat(next.monitor().state().unhealthyStreak()).isEqualTo(2);
+
+        // noticed by a healthy observation: there is nothing to count
+        HealthMonitor noticedWhileUp = open.evaluate(probe(HealthStatus.UP, NOW.plusSeconds(60)), NOW.plusSeconds(60))
+                .monitor().withClosedByOperator();
+        assertThat(noticedWhileUp.state().hasOpen()).isFalse();
+        assertThat(noticedWhileUp.state().unhealthyStreak()).isZero();
     }
 
     @Test

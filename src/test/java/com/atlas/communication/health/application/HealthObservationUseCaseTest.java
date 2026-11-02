@@ -227,7 +227,8 @@ class HealthObservationUseCaseTest {
         StepVerifier.create(useCase.observe(openDown("c1", "DOWN[]"), report, NOW))
                 .assertNext(m -> {
                     assertThat(m.state().hasOpen()).isFalse();
-                    assertThat(m.state().unhealthyStreak()).isZero();
+                    // the observation that noticed the retire is itself failing: the new count starts at 1
+                    assertThat(m.state().unhealthyStreak()).isEqualTo(1);
                 })
                 .verifyComplete();
         verify(publishing, never()).update(anyString(), any());
@@ -243,7 +244,7 @@ class HealthObservationUseCaseTest {
         HealthMonitor cleared = useCase.observe(openDown("c1", report.signature()), report, NOW).block();
         assertThat(cleared).isNotNull();
         assertThat(cleared.state().hasOpen()).isFalse();
-        assertThat(cleared.state().unhealthyStreak()).isZero();
+        assertThat(cleared.state().unhealthyStreak()).isEqualTo(1); // this failing observation is the first of the new count
         verify(publishing, never()).update(anyString(), any());
         verify(publishing, never()).create(anyString(), any());
 
@@ -257,6 +258,43 @@ class HealthObservationUseCaseTest {
                     assertThat(m.state().incidents()).isEqualTo(2);
                 })
                 .verifyComplete();
+    }
+
+    /** Threshold 3: how many failing observations an operator's retire buys before the notice reopens. */
+    private static final HealthMonitor.Policy POLICY3 = new HealthMonitor.Policy("vmforge-sre",
+            30, 5000, 3, 1, Severity.MAJOR, Severity.MINOR, Audience.INTERNAL, null, null);
+
+    @Test
+    void afterAnOperatorsRetireTheNoticeReopensOnTheThresholdthFailingObservation() {
+        saveReturnsArgument();
+        HealthReport report = down(List.of(failing("db")));
+        HealthMonitor open = HealthMonitor.create("m1", "vmforge", "vm-api", "http://vm-api/actuator/health", POLICY3, NOW);
+        for (int i = 0; i < 3; i++) {
+            open = open.evaluate(report, NOW).monitor();
+        }
+        open = open.withOpen("c1", HealthStatus.DOWN, report.signature());
+        when(publishing.get("c1")).thenReturn(Mono.just(communication("c1", CommunicationStatus.RETIRED, 3)));
+
+        // the first failing observation after the retire notices it and is the first of the new count
+        HealthMonitor first = useCase.observe(open, report, NOW).block();
+        assertThat(first).isNotNull();
+        assertThat(first.state().hasOpen()).isFalse();
+        assertThat(first.state().unhealthyStreak()).isEqualTo(1);
+
+        // the second is still below the threshold
+        HealthMonitor second = useCase.observe(first, report, NOW).block();
+        assertThat(second).isNotNull();
+        assertThat(second.state().hasOpen()).isFalse();
+        assertThat(second.state().unhealthyStreak()).isEqualTo(2);
+        verify(publishing, never()).create(anyString(), any());
+
+        // the third (= failureThreshold) opens a fresh notice, incident #2: "counts again", not threshold + 1
+        when(publishing.create(anyString(), any())).thenAnswer(inv ->
+                Mono.just(communication(inv.getArgument(0), CommunicationStatus.ACTIVE, 0)));
+        HealthMonitor third = useCase.observe(second, report, NOW).block();
+        assertThat(third).isNotNull();
+        assertThat(third.state().hasOpen()).isTrue();
+        assertThat(third.state().incidents()).isEqualTo(2);
     }
 
     @Test
