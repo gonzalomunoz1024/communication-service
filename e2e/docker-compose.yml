@@ -51,11 +51,10 @@ services:
     image: health-sidecar:e2e
     build:
       context: ../sidecar
-      # taken from the environment when set, otherwise the Dockerfile's defaults (the UBI images, dev/unknown).
-      # stack.sh sets VERSION and REVISION (git describe --tags --always, git rev-parse HEAD), so the image's
-      # labels name the commit under test. Where the UBI registry is unreachable, GO_IMAGE=local/go-toolset:1.27
-      # (golang:1.27.3, the Go release ../sidecar/go.mod requires, plus the CA-bundle path the Dockerfile
-      # copies from; README.md shows the build) and BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot
+      # taken from the environment when set, otherwise the Dockerfile's defaults (golang:1.27 to build, UBI
+      # micro to run, dev/unknown). stack.sh sets VERSION and REVISION (git describe --tags --always, git
+      # rev-parse HEAD), so the image's labels name the commit under test. Where the UBI registry is
+      # unreachable, BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot (README.md)
       args:
         - GO_IMAGE
         - BASE_IMAGE

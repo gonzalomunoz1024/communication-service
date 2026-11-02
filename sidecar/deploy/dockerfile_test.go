@@ -9,7 +9,7 @@ import (
 )
 
 // goVersion is the oldest Go release the module may be built with: go.mod's go directive names
-// it, so an older toolchain refuses the module instead of building it, and the go-toolset tag the
+// it, so an older toolchain refuses the module instead of building it, and the Go image tag the
 // Dockerfile builds with by default is its minor line, so a rebuild takes that line's later
 // patch releases. 1.27.3 is the first release without the four HIGH standard-library
 // vulnerabilities the go1.25.14 build carried (CVE-2026-111943, CVE-2026-78667, CVE-2026-78669,
@@ -27,14 +27,16 @@ func TestGoModAndDockerfileAgreeOnTheGoLine(t *testing.T) {
 	}
 	minor := goVersion[:strings.LastIndex(goVersion, ".")]
 	df := parseDockerfile(t, filepath.Join("..", "Dockerfile"))
-	if got := df.args["GO_IMAGE"]; !strings.HasSuffix(got, "/go-toolset:"+minor) {
-		t.Errorf("Dockerfile default GO_IMAGE = %q, want a go-toolset:%s tag", got, minor)
+	// the upstream Go image: Red Hat had not published ubi9/go-toolset:1.27 (CI got "not found" on
+	// 2026-11-02); the README names it as the override once it ships
+	if got, want := df.args["GO_IMAGE"], "docker.io/library/golang:"+minor; got != want {
+		t.Errorf("Dockerfile default GO_IMAGE = %q, want %s", got, want)
 	}
 	if got := df.stages[0].env["GOTOOLCHAIN"]; got != "local" {
 		t.Errorf("the build stage sets GOTOOLCHAIN=%q, want local: an older builder must stop the build, not build or download", got)
 	}
 	build := section(readFile(t, filepath.Join("..", "README.md")), "## Build")
-	for _, want := range []string{"Go " + goVersion, "`go " + goVersion + "`", "go-toolset:" + minor} {
+	for _, want := range []string{"Go " + goVersion, "`go " + goVersion + "`", "golang:" + minor, "go-toolset:" + minor} {
 		if !strings.Contains(build, want) {
 			t.Errorf("the README's Build section should name %s", want)
 		}

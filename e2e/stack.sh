@@ -13,8 +13,8 @@
 #   ./stack.sh logs [service...]       the containers' logs, every container's by default (what CI prints on failure)
 #
 # Needs docker compose v2, curl, git and node. GO_IMAGE / BASE_IMAGE in the environment override the images
-# the sidecar is built from (docker-compose.yml; unset, the Dockerfile's UBI defaults apply, as in CI; where
-# the UBI registry is unreachable, README.md builds a Go 1.27.3 stand-in); VERSION / REVISION label it
+# the sidecar is built from (docker-compose.yml; unset, the Dockerfile's defaults apply, as in CI; where
+# the UBI registry is unreachable, README.md sets BASE_IMAGE to distroless); VERSION / REVISION label it
 # (default: git describe --tags --always and git rev-parse HEAD); E2E_WAIT_SECONDS (default 150) bounds every wait.
 set -euo pipefail
 cd "$(dirname "$0")"

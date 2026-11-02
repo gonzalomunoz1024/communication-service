@@ -333,11 +333,12 @@ CVE-2026-97031 in `crypto/tls`). The image builds with `GOTOOLCHAIN=local`, so a
 older Go stops the build (`go.mod requires go >= 1.27.3`) instead of producing a vulnerable binary;
 `go test ./...` on a laptop with an older Go downloads Go 1.27.3 through the module proxy.
 
-The default builder is `ubi9/go-toolset:1.27`. Whether Red Hat publishes that tag, with Go 1.27.3 or
-later, could not be checked where this was written (its registry was unreachable there; the image
-was built and scanned with a stand-in carrying Go 1.27.3). If it does not, pass
-`--build-arg GO_IMAGE=` an image with Go 1.27.3 or later and the CA bundle at
-`/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem`, which the final stage copies.
+The default builder is the upstream `golang:1.27` image (`docker.io/library/golang:1.27`). Red Hat had
+not published `ubi9/go-toolset:1.27` when this was written: the first CI run, on 2026-11-02, got "not
+found" for it. Only the static binary and the CA bundle leave the build stage; the image itself is UBI
+micro. Once Red Hat ships Go 1.27.3 or later,
+`--build-arg GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.27` builds with it unchanged: the
+build stage takes the CA bundle from Debian's path or UBI's, whichever the builder has.
 
 The tests under `deploy/` render the Kustomize snippets with `kustomize`, render the Helm `include`
 lines this README prints, pasted into a consuming chart, with `helm`, and validate every form with
