@@ -37,6 +37,23 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 ./gradlew check             # both (also run by `build`)
 ```
 
+### Container image
+
+The root `Dockerfile` puts the jar Gradle built on a distroless Java 21 runtime, as a non-root
+user; the image build itself needs no network, and the artefact tested is the artefact shipped.
+MongoDB stays outside the image: point the container at it.
+
+```bash
+./gradlew bootJar
+docker build -t communication-service:local .
+docker run --rm -p 8080:8080 \
+  -e SPRING_DATA_MONGODB_URI=mongodb://host.docker.internal:27017/communication communication-service:local
+# on Linux add --add-host=host.docker.internal:host-gateway, or a Docker network with Mongo on it
+```
+
+Any `application.yml` setting can be passed the same way as an environment variable
+(`COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD=…`).
+
 ### Operations
 
 Only the health endpoint is exposed, and it sits outside `/v1`, so probes need no `X-Client-Id`:
