@@ -16,6 +16,7 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
 import com.atlas.communication.common.ports.outbound.CommunicationEventsPort;
+import com.atlas.communication.config.GlobalExceptionHandler;
 import com.mongodb.MongoCommandException;
 
 import jakarta.annotation.PostConstruct;
@@ -35,7 +36,9 @@ import reactor.util.retry.Retry;
  * with {@code Last-Event-ID} gets exactly what it missed, in order.
  * <p>
  * Tailing is a poll, not a change stream, so a standalone Mongo (local development, embedded
- * tests) works; live latency is bounded by {@code communication.events.poll-interval-ms}.
+ * tests) works; live latency is bounded by {@code communication.events.poll-interval-ms}. While
+ * the database cannot be reached the poll is skipped: one WARN line when that starts, one INFO
+ * line when a poll works again, DEBUG in between.
  */
 @Component
 @Slf4j
@@ -52,6 +55,8 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
     private final EventsProperties properties;
     /** Last sequence fanned out by this instance; -1 until the log position has been read. */
     private final AtomicLong cursor = new AtomicLong(-1);
+    /** Polls skipped in a row because the database could not be reached; the lines are logged on the change. */
+    private final AtomicLong skippedPolls = new AtomicLong();
     // directBestEffort: slow subscribers miss events instead of blocking the tail; they can
     // resume from Last-Event-ID, and the snapshot-on-subscribe contract heals the rest.
     private final Sinks.Many<CommunicationEvent> sink =
@@ -78,11 +83,33 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
                                 signal.failure().toString())))
                 .thenMany(Flux.interval(interval, interval)
                         .onBackpressureDrop()
-                        .concatMap(tick -> pollOnce().onErrorResume(ex -> {
-                            log.warn("event log poll failed: {}", ex.toString());
-                            return Mono.empty();
-                        }), 1))
+                        .concatMap(tick -> pollOnce()
+                                .doOnNext(fannedOut -> pollWorked())
+                                .onErrorResume(ex -> {
+                                    pollFailed(ex);
+                                    return Mono.empty();
+                                }), 1))
                 .subscribe();
+    }
+
+    private void pollWorked() {
+        long skipped = skippedPolls.getAndSet(0);
+        if (skipped > 0) {
+            log.info("event log poll resumed: database reachable again after {} skipped poll(s)", skipped);
+        }
+    }
+
+    /** One WARN line per outage, not one per poll (two a second by default). */
+    private void pollFailed(Throwable ex) {
+        if (!GlobalExceptionHandler.isDatabaseUnavailable(ex)) {
+            log.warn("event log poll failed: {}", ex.toString());
+            return;
+        }
+        if (skippedPolls.getAndIncrement() == 0) {
+            log.warn("event log poll skipped: {}: {}", GlobalExceptionHandler.DATABASE_UNAVAILABLE, ex.getMessage());
+        } else {
+            log.debug("event log poll skipped: {}: {}", GlobalExceptionHandler.DATABASE_UNAVAILABLE, ex.getMessage());
+        }
     }
 
     @PreDestroy

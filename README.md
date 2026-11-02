@@ -125,7 +125,11 @@ that hangs instead, see the end of this paragraph), readiness reports
 `communication.mongo.readiness-timeout`, 0.8 s, for a ping) so the pod leaves the Service while
 liveness stays `UP`, open SSE streams stay up on keepalives, and
 each scheduler logs one WARN line per skipped run (`health sweep skipped: database unavailable: …`,
-`status sweep skipped: …`) without a stack trace. However often it is probed, readiness logs two
+`status sweep skipped: …`) without a stack trace. The event log's poller, which runs every
+`communication.events.poll-interval-ms` (500 ms), logs one WARN line when its polls start failing
+(`event log poll skipped: database unavailable: …`) and one INFO line when they work again
+(`event log poll resumed: database reachable again after <n> skipped poll(s)`), the polls in
+between at DEBUG. However often it is probed, readiness logs two
 lines per outage: `WARN readiness DOWN: MongoDB did not answer a ping: …` when it starts and
 `INFO readiness UP: MongoDB answers again` when it ends (the stack trace at DEBUG).
 A stream opened during the outage has already answered `200` with its `: connected` comment when

@@ -2,6 +2,8 @@ package com.atlas.communication.common.adapters.outbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,17 +21,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.index.ReactiveIndexOperations;
 
+import com.atlas.communication.LogCapture;
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationEventType;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Severity;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 
 /** The log semantics without Mongo: sequence allocation, tailing, exactly-once resume, retention checks. */
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +50,7 @@ class MongoCommunicationEventsAdapterTest {
     @Mock
     private EventSequence sequence;
     @Mock
-    private ReactiveMongoTemplate template; // only used by start(), which these tests never call
+    private ReactiveMongoTemplate template; // only used by start()
 
     private MongoCommunicationEventsAdapter adapter;
 
@@ -109,6 +117,71 @@ class MongoCommunicationEventsAdapterTest {
         when(repository.findBySeqGreaterThanOrderBySeqAsc(12)).thenReturn(Flux.empty());
         StepVerifier.create(adapter.pollOnce()).expectNext(0L).verifyComplete();
         assertThat(seen).hasSize(2);
+    }
+
+    @Test
+    void aDatabaseOutageWhileTailingIsOneWarningWhenPollingStopsAndOneInfoWhenItWorksAgain() {
+        ReactiveIndexOperations indexes = mock(ReactiveIndexOperations.class);
+        when(template.indexOps(CommunicationEventDocument.class)).thenReturn(indexes);
+        when(indexes.createIndex(any())).thenReturn(Mono.just(MongoCommunicationEventsAdapter.TTL_INDEX));
+        when(sequence.current()).thenReturn(Mono.just(10L));
+        DataAccessResourceFailureException down = new DataAccessResourceFailureException(
+                "Timed out while waiting for a server that matches ReadPreferenceServerSelector");
+        when(repository.findBySeqGreaterThanOrderBySeqAsc(10))
+                .thenReturn(Flux.empty())
+                .thenReturn(Flux.error(down))
+                .thenReturn(Flux.error(down))
+                .thenReturn(Flux.error(down))
+                .thenReturn(Flux.empty());
+
+        VirtualTimeScheduler time = VirtualTimeScheduler.getOrSet();
+        try (LogCapture log = LogCapture.of(MongoCommunicationEventsAdapter.class)) {
+            adapter.start();
+            time.advanceTimeBy(Duration.ofMillis(600)); // six polls: fine, three failing, fine twice
+            adapter.stop();
+
+            verify(repository, times(6)).findBySeqGreaterThanOrderBySeqAsc(10);
+            assertThat(log.atLeast(Level.INFO))
+                    .extracting(e -> e.getLevel() + " " + e.getFormattedMessage())
+                    .containsExactly(
+                            "WARN event log poll skipped: database unavailable: Timed out while waiting for a server"
+                                    + " that matches ReadPreferenceServerSelector",
+                            "INFO event log poll resumed: database reachable again after 3 skipped poll(s)");
+            assertThat(log.events())
+                    .filteredOn(e -> e.getLevel() == Level.DEBUG)
+                    .extracting(ILoggingEvent::getFormattedMessage)
+                    .filteredOn(line -> line.startsWith("event log poll skipped: database unavailable: "))
+                    .as("the polls between the first failure and the recovery").hasSize(2);
+            assertThat(log.events()).extracting(ILoggingEvent::getThrowableProxy).containsOnlyNulls();
+        } finally {
+            VirtualTimeScheduler.reset();
+        }
+    }
+
+    @Test
+    void aPollThatFailsForAnotherReasonIsAWarningEachTime() {
+        ReactiveIndexOperations indexes = mock(ReactiveIndexOperations.class);
+        when(template.indexOps(CommunicationEventDocument.class)).thenReturn(indexes);
+        when(indexes.createIndex(any())).thenReturn(Mono.just(MongoCommunicationEventsAdapter.TTL_INDEX));
+        when(sequence.current()).thenReturn(Mono.just(10L));
+        when(repository.findBySeqGreaterThanOrderBySeqAsc(10))
+                .thenReturn(Flux.error(new IllegalStateException("cannot decode event 11")));
+
+        VirtualTimeScheduler time = VirtualTimeScheduler.getOrSet();
+        try (LogCapture log = LogCapture.of(MongoCommunicationEventsAdapter.class)) {
+            adapter.start();
+            time.advanceTimeBy(Duration.ofMillis(200));
+            adapter.stop();
+
+            // not an outage: nothing to wait out, so every occurrence is worth a line
+            assertThat(log.atLeast(Level.INFO))
+                    .extracting(e -> e.getLevel() + " " + e.getFormattedMessage())
+                    .containsExactly(
+                            "WARN event log poll failed: java.lang.IllegalStateException: cannot decode event 11",
+                            "WARN event log poll failed: java.lang.IllegalStateException: cannot decode event 11");
+        } finally {
+            VirtualTimeScheduler.reset();
+        }
     }
 
     @Test
