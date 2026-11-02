@@ -37,6 +37,10 @@ management:
         readiness:
           include: readinessState,mongo
 
+# as in src/main/resources/application.yml: OpenApiContractIT reads the document the service serves
+springdoc:
+  default-produces-media-type: application/json
+
 communication:
   client-id:
     # HTTP tests send X-Client-Id; ClientIdWebFilterTest covers the rejections

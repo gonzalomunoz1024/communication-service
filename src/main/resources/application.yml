@@ -58,6 +58,8 @@ logging:
     org.mongodb.driver.cluster: WARN
 
 springdoc:
+  # the answers the controllers write are JSON: the document says so instead of */*
+  default-produces-media-type: application/json
   api-docs:
     path: /v3/api-docs
   swagger-ui:
