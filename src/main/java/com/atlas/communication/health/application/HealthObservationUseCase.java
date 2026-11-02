@@ -51,8 +51,12 @@ public class HealthObservationUseCase {
 
     /** Probes a monitor's URL and applies the result. */
     public Mono<HealthMonitor> probe(HealthMonitor monitor, Instant now) {
-        return probes.probe(monitor.url(), Duration.ofMillis(monitor.policy().timeoutMs()), now)
-                .flatMap(report -> observe(monitor, report, now));
+        return probeTarget(monitor, now).flatMap(report -> observe(monitor, report, now));
+    }
+
+    /** Probes a monitor's URL; the observation is not applied. */
+    public Mono<HealthReport> probeTarget(HealthMonitor monitor, Instant now) {
+        return probes.probe(monitor.url(), Duration.ofMillis(monitor.policy().timeoutMs()), now);
     }
 
     /** Applies one observation and persists the monitor; returns the persisted monitor. */

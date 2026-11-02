@@ -34,8 +34,8 @@ import reactor.util.retry.Retry;
  * them can collide on the monitor's version check (a rolling restart has every pod reporting
  * in the same second): a conflicting report is re-applied after a short, growing, randomised
  * pause, so the herd spreads out, before the caller hears about it. An on-demand probe can lose
- * the same check to the scheduler's own probe of that monitor; it is applied again the same
- * way, a few times, before the operator sees a conflict.
+ * the same check to the scheduler's own probe of that monitor; what it observed is applied again
+ * the same way, a few times, before the operator sees a conflict.
  */
 @Service
 @RequiredArgsConstructor
@@ -115,18 +115,27 @@ public class HealthMonitorUseCase implements HealthInboundPort {
     }
 
     /**
-     * The scheduler can save the monitor while an on-demand probe of it is in flight, and the
-     * on-demand probe then loses the version check. The first attempt uses the monitor already in
-     * hand; every retry reads it again, so the probe is applied to the state the scheduler left,
-     * and only a conflict that outlasts {@link #PROBE_ATTEMPTS} reaches the operator.
+     * The scheduler saves the monitor twice around each probe of its own (it claims the probe slot,
+     * then records the result), so an on-demand probe that is in flight meanwhile loses the version
+     * check, and a target slower than the gap between two such saves would make every new probe
+     * lose it again. The target is therefore probed once: the first attempt applies the
+     * observation to the monitor already in hand, every retry to the monitor read again as the
+     * scheduler left it, and only a conflict that outlasts {@link #PROBE_ATTEMPTS} reaches the
+     * operator.
      */
     private Mono<HealthMonitor> probeDespiteTheScheduler(HealthMonitor monitor) {
-        AtomicReference<HealthMonitor> inHand = new AtomicReference<>(monitor);
         return Mono.defer(() -> {
-            HealthMonitor known = inHand.getAndSet(null);
-            return (known == null ? get(monitor.id()) : Mono.just(known))
-                    .flatMap(fresh -> observation.probe(fresh, clock.instant()));
-        }).retryWhen(onConflict(PROBE_ATTEMPTS, "probe of " + monitor.id()));
+            Instant now = clock.instant();
+            return observation.probeTarget(monitor, now)
+                    .flatMap(report -> {
+                        AtomicReference<HealthMonitor> inHand = new AtomicReference<>(monitor);
+                        return Mono.defer(() -> {
+                            HealthMonitor known = inHand.getAndSet(null);
+                            return (known == null ? get(monitor.id()) : Mono.just(known))
+                                    .flatMap(fresh -> observation.observe(fresh, report, now));
+                        }).retryWhen(onConflict(PROBE_ATTEMPTS, "probe of " + monitor.id()));
+                    });
+        });
     }
 
     /** Records the instance's report, then evaluates the service status rolled up from all of them. */
