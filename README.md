@@ -68,6 +68,21 @@ Any `application.yml` setting can be passed the same way as an environment varia
 | `jacocoTestCoverageVerification` | line coverage of the unit and integration runs together >= 92 % (the Spring wiring in `config/` and the main class are not counted; 95.5 % when the gate was set) | `build/reports/jacoco/test/html/index.html`, `.../jacocoTestReport.xml` |
 | `cyclonedxBom` | CycloneDX SBOM of the runtime dependencies, for the vulnerability scan CI runs on it | `build/reports/cyclonedx/bom.json` |
 
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`: three independent
+jobs, one per deliverable, each with its own timeout; a newer push to the same branch cancels the
+run in progress and the workflow token is read-only.
+
+| Job | What runs | Fails when |
+|---|---|---|
+| `backend` | Temurin 21, `./gradlew check` ([Build gates](#build-gates)); `build/reports/**` is kept as the `backend-reports` artifact; the CycloneDX SBOM is scanned with `anchore/scan-action` | a gate fails, or a runtime dependency has a known vulnerability rated high or critical |
+| `frontend` | Node 22, in `frontend/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm audit --omit=dev --audit-level=high` | lint, types, tests or the production build fail, or a shipped dependency has a high advisory |
+| `sidecar` | Go from `sidecar/go.mod` plus kustomize, helm and kubeconform, in `sidecar/`: `go vet ./...`, `CI=true go test ./...` (the manifest tests fail instead of skipping when a tool is missing), `govulncheck ./...`, `docker build` of the image | vet, a test, a known Go vulnerability or the image build fails |
+
+Every step is a plain command a developer can run locally; CI configures nothing a laptop
+would not.
+
 ### Operations
 
 Only the health endpoint is exposed, and it sits outside `/v1`, so probes need no `X-Client-Id`:

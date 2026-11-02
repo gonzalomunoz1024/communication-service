@@ -1,0 +1,99 @@
+# Continuous integration: three independent jobs, one per deliverable. Each job runs the gates a
+# developer can run locally (README "Build gates" and "Continuous integration"), so a red check
+# is always reproducible on a laptop.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Gradle check, SBOM scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      # compile with -Werror, unit tests, *IT tests on embedded MongoDB, SpotBugs, JaCoCo threshold, SBOM
+      - name: Gradle check
+        run: ./gradlew check --no-daemon
+      - name: Upload build reports (tests, SpotBugs, JaCoCo, SBOM)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: build/reports/**
+          if-no-files-found: ignore
+      # a critical or high finding in a runtime dependency fails the job
+      - name: Scan the SBOM for known vulnerabilities
+        uses: anchore/scan-action@v6
+        with:
+          sbom: build/reports/cyclonedx/bom.json
+          fail-build: true
+          severity-cutoff: high
+          output-format: table
+
+  frontend:
+    name: Frontend (lint, typecheck, tests, build, audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # runtime dependencies only (react, react-dom); dev-only advisories do not ship
+      - run: npm audit --omit=dev --audit-level=high
+
+  sidecar:
+    name: Sidecar (vet, tests, manifests, govulncheck, image)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sidecar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecar/go.mod
+          # the module has no third-party dependencies, so there is no go.sum to key a cache on
+          cache: false
+      # the manifest tests render the Kustomize snippets and the Helm library and validate them
+      - uses: imranismail/setup-kustomize@v2
+      - uses: azure/setup-helm@v4
+      - name: Install kubeconform
+        run: |
+          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+      - run: go vet ./...
+      # CI=true makes deploy_test.go fail instead of skip when kustomize or kubeconform is missing
+      - run: CI=true go test ./...
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - name: Build the image
+        run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
