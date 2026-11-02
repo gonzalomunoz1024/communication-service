@@ -1,0 +1,19 @@
+# A23: admin publisher filter (auditor replay)
+
+Checks: 2/2 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| A-23b | F-23 | PASS | cross-tenant search by publisher -> tenants ['au2-x1-30ad09', 'au2-x2-30ad09'] |
+| A-23c | F-23 | PASS | publisher + tenant filter -> ['au2-x1-30ad09'] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:19711/v1/communications body={"tenantId": "au2-x1-30ad09", "publisher": "au2-pub-30ad09", "type": "CHANGE", "severity": "INFO", "title": "by publisher"} -> 201 {"id":"9f216ce2-6b9e-46dd-81d6-cc6811763ff8","tenantId":"au2-x1-30ad09","publisher":"au2-pub-30ad09","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T05:11:22.567288730Z","createdAt":"2026-11-02T05:11:22.567288730Z","updatedAt":"2026-11-02T05:11:22.567288730Z","version":0,"history":[{"at":"2026-11-02T05:1
+POST http://localhost:19711/v1/communications body={"tenantId": "au2-x2-30ad09", "publisher": "au2-pub-30ad09", "type": "CHANGE", "severity": "INFO", "title": "by publisher"} -> 201 {"id":"3a8de94d-3bb8-429a-a62e-2252785625d0","tenantId":"au2-x2-30ad09","publisher":"au2-pub-30ad09","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T05:11:22.580828400Z","createdAt":"2026-11-02T05:11:22.580828400Z","updatedAt":"2026-11-02T05:11:22.580828400Z","version":0,"history":[{"at":"2026-11-02T05:1
+GET http://localhost:19711/v1/admin/communications?publisher=au2-pub-30ad09&size=100 body= -> 200 {"items":[{"id":"3a8de94d-3bb8-429a-a62e-2252785625d0","tenantId":"au2-x2-30ad09","publisher":"au2-pub-30ad09","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T05:11:22.580Z","createdAt":"2026-11-02T05:11:22.580Z","updatedAt":"2026-11-02T05:11:22.580Z","version":0,"history":[{"at":"2026-11-02T05:11:22.580
+  [PASS] A-23b (F-23): cross-tenant search by publisher -> tenants ['au2-x1-30ad09', 'au2-x2-30ad09']
+GET http://localhost:19711/v1/admin/communications?publisher=au2-pub-30ad09&tenantId=au2-x1-30ad09 body= -> 200 {"items":[{"id":"9f216ce2-6b9e-46dd-81d6-cc6811763ff8","tenantId":"au2-x1-30ad09","publisher":"au2-pub-30ad09","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T05:11:22.567Z","createdAt":"2026-11-02T05:11:22.567Z","updatedAt":"2026-11-02T05:11:22.567Z","version":0,"history":[{"at":"2026-11-02T05:11:22.567
+  [PASS] A-23c (F-23): publisher + tenant filter -> ['au2-x1-30ad09']
+```

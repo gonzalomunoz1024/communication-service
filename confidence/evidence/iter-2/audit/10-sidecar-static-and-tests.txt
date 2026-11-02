@@ -1,0 +1,106 @@
+# 10 - sidecar static checks and tests, re-run by the auditor in sidecar/ at HEAD 33451c3 (code = be19645), Go selected by go.mod: go1.25.0
+# (kustomize/kubeconform/helm from the verifiers' scratchpad/tools on PATH unless stated)
+
+START 2026-11-02T04:55:38Z
+--- go version
+go version go1.25.0 linux/amd64
+--- which kustomize kubeconform helm
+<scratchpad>/tools/kustomize
+<scratchpad>/tools/kubeconform
+<scratchpad>/tools/helm
+--- gofmt -l .
+gofmt exit 0
+--- go vet ./...
+vet exit 0
+--- go build ./...
+build exit 0
+--- go test -count=1 ./...
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	0.138s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.083s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.802s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.008s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.004s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.632s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.028s
+test exit 0
+--- go test -count=1 -race ./...
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.346s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.941s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.854s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.070s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.137s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.480s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.284s
+race exit 0
+--- CI=true go test -count=1 ./...
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	0.049s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.157s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.884s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.003s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.016s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.472s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.032s
+ci exit 0
+--- CI=true go test -count=1 -cover ./...
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	0.509s	coverage: 79.2% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.347s	coverage: [no statements]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.758s	coverage: 89.1% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.004s	coverage: 88.4% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.007s	coverage: 92.3% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.444s	coverage: 88.7% of statements
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.030s	coverage: 80.0% of statements
+cover exit 0
+--- CI=true go test -count=1 -v ./... (tally)
+verbose exit 0
+top-level Test* functions run: 42
+subtests run: 2
+PASS lines (top-level): 42
+FAIL lines: 0
+SKIP lines: 0
+--- without the tools on PATH: CI=true go test -v ./deploy/ (expected: FAIL naming the tool)
+    deploy_test.go:195: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestNativeComponentKeepsExistingInitContainers (0.00s)
+    deploy_test.go:221: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestClassicComponentAppendsTheContainer (0.00s)
+    deploy_test.go:236: kustomize is not on PATH and CI is set: install kustomize in the CI image, the manifest tests must not skip there
+--- FAIL: TestBothComponentsShareTheContainerContract (0.00s)
+    deploy_test.go:285: kubeconform is not on PATH and CI is set: install kubeconform in the CI image, the manifest tests must not skip there
+--- FAIL: TestManualSnippetSharesTheContainerContract (0.00s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.004s
+FAIL
+exit 1
+--- without the tools, without CI: go test -v ./deploy/ (expected: SKIP)
+--- SKIP: TestNativeComponentKeepsExistingInitContainers (0.00s)
+--- SKIP: TestClassicComponentAppendsTheContainer (0.00s)
+--- SKIP: TestBothComponentsShareTheContainerContract (0.00s)
+--- PASS: TestManualSnippetSharesTheContainerContract (0.00s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.012s
+exit 0
+END 2026-11-02T04:56:09Z
+
+## GAP-sidecar-4: the wall-clock test passed here (CI=true -v run, machine load ~4-5)
+--- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat (0.66s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe (0.32s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_nothing_before_the_heartbeat (0.34s)
+  sidecar/internal/agent/agent_test.go:573-620: 50 ms interval, real time.Sleep(300 * time.Millisecond), h.agent.Now = time.Now (wall clock) -> timing-dependent, as the gap says
+
+## cmd-8 (backend report): govulncheck
+START 2026-11-02T05:00:32Z
+--- go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+go: golang.org/x/vuln@v1.9.0 requires go >= 1.26.0; switching to go1.26.10
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1
+govulncheck exit 1
+--- curl vuln.go.dev
+HTTP 000
+END 2026-11-02T05:00:36Z
+
+## image (sidecar/Dockerfile with the substitute bases the verifiers used; UBI registry unreachable)
+health-sidecar:au2 built by the auditor from sidecar/Dockerfile (version/revision build args 1.0.0-au2 / be19645, as the labels below show) -> exit 0 in ~13 s (10 build steps DONE)
+user=1001 exposed={"9465/tcp":{}} size=16319254 labels={"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.revision":"be19645","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar","org.opencontainers.image.version":"1.0.0-au2"}

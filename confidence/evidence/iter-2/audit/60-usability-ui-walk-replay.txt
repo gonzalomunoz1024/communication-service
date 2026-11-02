@@ -1,0 +1,38 @@
+# 60 - usability UI walk replay: the reviewer's scripts/ux2-ui.js (copied; tenant ux2-sre, cap tenant au2-many seeded with 103 OUTAGE notices)
+# UI_BASE=http://127.0.0.1:19731 (Vite dev -> A :19701) API_BASE=http://127.0.0.1:19701; @axe-core/playwright from the reviewer's scratch install
+
+[cap-notice] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"text": "Showing the first 100 of 103 notices. Narrow the filters to see the rest.", "tabBadge": "Feed\n99+", "cards": 100}
+[resolve-confirm] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"text": "Resolve as ux2-oncall? It leaves tenant ux2-sre's feed at once and cannot be reopened.", "active": {"tag": "body"}}
+[withdraw-confirm] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"text": "Withdraw as ux2-oncall? Withdrawing retires it before it starts: tenant ux2-sre's consumers never see it and it cannot be reopened."}
+[phone-resolve-confirm] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"scrollWidth": 390, "confirmText": "Resolve as ux2-oncall? It leaves tenant ux2-sre's feed at once and cannot be reopened.", "buttons": 3}
+[publish-another-focus] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"active": {"tag": "input", "role": null, "name": "Title*", "type": null, "outline": "none 3px", "boxShadow": true, "inViewport": true, "top": 390, "bottom": 428}, "tenant": "ux2-sre", "publisher": "ux2-oncall", "type": "Outage"}
+[duplicate-409] DIFFERS
+   auditor : {"text": "The service rejected this. externalRef 'INC2000001' is already used by notice <id> in tenant ux2-sre. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC2000001-2).", "active": {"tag": "div", "role": "alert", "name": "The service rejected this. externalRef 'INC2000001' is already used by notice 6b", "type": null, "outline": "none 3px", "boxShadow": false, "inViewport": true, "top": 716, "bottom": 800}, "bannerBox": {"x": 280, "y": 716, "w": 720, "h": 84}, "submitBox": {"x": 853, "y": 820, "w": 147,
+   reviewer: {"text": "The service rejected this. externalRef 'INC2000001' is already used by notice <id> in tenant ux2-sre. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC2000001-2).", "active": {"tag": "div", "role": "alert", "name": "The service rejected this. externalRef 'INC2000001' is already used by notice 5c", "type": null, "outline": "none 3px", "boxShadow": false, "inViewport": true, "top": 716, "bottom": 800}, "bannerBox": {"x": 280, "y": 716, "w": 720, "h": 84}, "submitBox": {"x": 853, "y": 820, "w": 147,
+[duplicate-advice-works] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"heading": "Outage published", "text": "Feed Publish Outage published Live in the ux2-sre feed now. Major <id> INC2000001 Publish another View in feed"}
+[variant-500-empty] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"text": "The service failed (HTTP 500). Try again; if it keeps happening, tell the service owners.", "activeRole": "alert", "titleKept": "Variant 500-empty"}
+[variant-500-json] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"text": "The service failed (HTTP 500): unexpected error. Try again; if it keeps happening, tell the service owners.", "activeRole": "alert", "titleKept": "Variant 500-json"}
+[feed-500-json] IDENTICAL to the reviewer (ids normalised)
+   auditor : {"text": "Feed Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh Couldn't load the feed The service failed (HTTP 500): unexpected error. Try again; if it keeps happening, tell the service owners. Try again", "badge": "Live"}
+
+axe scans (auditor): [('axe:landing-light', 0), ('axe:publish-409-light', 0), ('axe:feed-cards-light', 0), ('axe:publish-empty-light', 0), ('axe:publish-409-dark', 0), ('axe:feed-cards-dark', 0), ('axe:phone-feed-light', 0), ('axe:phone-publish-409-light', 0), ('axe:phone-feed-dark', 0)]
+axe scans (reviewer): [('axe:landing-light', 0), ('axe:publish-409-light', 0), ('axe:feed-cards-light', 0), ('axe:publish-empty-light', 0), ('axe:publish-409-dark', 0), ('axe:feed-cards-dark', 0), ('axe:phone-feed-light', 0), ('axe:phone-publish-409-light', 0), ('axe:phone-feed-dark', 0)]
+
+## UX-48: accessibility tree around the live badge (auditor aria-feed.txt lines 28-33; the reviewer's lines 28-33 are identical)
+    - option "Major"
+    - option "Critical"
+  - switch "Live updates" [checked]
+  - text: Live
+  - button "Refresh"
+  - status
+diff of the two aria-feed.txt files: 4 lines
+
+note (added at write-up): the duplicate-409 record differs from the reviewer's only in a truncated notice-id fragment (6b... here, 5c... there) inside the focused element's accessible name, which the id normalisation did not catch; the banner text, focus target and outline are identical.

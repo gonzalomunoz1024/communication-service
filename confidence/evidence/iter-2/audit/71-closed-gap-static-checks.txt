@@ -1,0 +1,74 @@
+# 71 - closed gaps that the sample did not exercise at run time: static re-derivation (HEAD 33451c3 = be19645 code)
+
+## G-2-2 SpotBugs + JaCoCo gates wired into check (not executed: the brief limits the auditor's Gradle to test/integrationTest)
+1:import com.github.spotbugs.snom.Confidence
+2:import com.github.spotbugs.snom.Effort
+6:    // line coverage of the unit and integration runs together: ./gradlew jacocoTestReport -> build/reports/jacoco/
+7:    jacoco
+12:    // static analysis of the main classes: ./gradlew spotbugsMain -> build/reports/spotbugs/
+13:    id("com.github.spotbugs") version "6.5.13"
+82:// config/spotbugs/exclude.xml; test classes are not analysed.
+83:spotbugs {
+84:    effort = Effort.MAX
+85:    reportLevel = Confidence.MEDIUM
+86:    excludeFilter = file("config/spotbugs/exclude.xml")
+93:configurations.matching { it.name.startsWith("spotbugs") }.configureEach {
+102:tasks.spotbugsMain {
+107:tasks.spotbugsTest {
+120:    dependsOn(tasks.test, integrationTest)
+125:tasks.jacocoTestReport {
+134:tasks.jacocoTestCoverageVerification {
+141:                minimum = "0.92".toBigDecimal() // measured 0.9553 on 2026-11-02 over 1187 lines
+150:    dependsOn(integrationTest, tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification,
+
+## G-2-3 CI workflow parses; jobs and steps
+.github/workflows/ci.yml jobs: ['backend', 'frontend', 'sidecar']
+   backend -> actions/checkout@v4 | actions/setup-java@v4 | gradle/actions/setup-gradle@v4 | Gradle check | Upload build reports (tests, SpotBugs, JaCoCo, SBOM) | Scan the SBOM for known vulnerabilities
+   frontend -> actions/checkout@v4 | actions/setup-node@v4 | npm ci | npm run lint | npm run typecheck | npm test | npm run build | npm audit --omit=dev --audit-level=high
+   sidecar -> actions/checkout@v4 | actions/setup-go@v5 | imranismail/setup-kustomize@v2 | azure/setup-helm@v4 | Install kubeconform | go vet ./... | CI=true go test ./... | govulncheck | Build the image
+.github/workflows/e2e.yml jobs: ['e2e']
+   e2e -> actions/checkout@v4 | actions/setup-java@v4 | actions/setup-node@v4 | Build the backend jar | Build the frontend bundle | Build the stack's images | Install the suite and its browser | Start the stack | Run the suite | Stack logs | Stop the stack | Upload the report and the traces
+
+## G-2-15 the /status contract test and main tests are in the suite that passed (ev-a/10)
+--- PASS: TestRunRejectsMissingEndpointWithAClearError (0.00s)
+--- PASS: TestRunRejectsAnUnreadableCAFile (0.04s)
+--- PASS: TestRunReportsWithTheBuildVersionAndStopsCleanly (0.01s)
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+--- PASS: TestRunSendsLeavingReportOnShutdown (0.01s)
+--- PASS: TestStatusJSONMatchesTheDocumentedContract (0.00s)
+
+## G-2-17 the in-repo e2e suite, statically (not executed: the single-instance compose project 'e2e' was up and in use by the E2E-T fixer:
+##   e2e-sidecar e2e-app e2e-backend e2e-mongo )
+cd e2e && npx playwright test --list:
+Listing tests:
+  01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body
+  01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body
+  01-api-contract.spec.ts:27:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id
+  02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed
+  03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves
+  04-f92-backend-restart.spec.ts:4:5 › F-92 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and shows what was published meanwhile
+Total: 6 tests in 4 files
+npx tsc --noEmit -p tsconfig.json -> exit 0
+14:  workers: 1,
+15:  retries: 0,
+21:    trace: 'retain-on-failure',
+root Dockerfile base/user lines:
+13:FROM ${BASE_IMAGE}
+20:USER 65532:65532
+21:EXPOSE 8080
+
+## hard gate 'open critical/high security finding': what changed in the dependency declarations over iteration 2 (0e14838..be19645), recorded 2026-11-02T05:49:52Z
+# backend: git diff 0e14838..be19645 -- build.gradle.kts settings.gradle.kts gradle/ (added/removed lines that declare plugins or dependencies)
+  +    id("com.github.spotbugs") version "6.5.13"
+  +// runs inside the application, so each of its dependencies keeps the version it asked for.
+  +    resolutionStrategy.eachDependency {
+  +        val asked = requested.version
+  +            useVersion(asked)
+# backend dependency/plugin lines added or removed in total: 0  (implementation/runtimeOnly/compileOnly/annotationProcessor)
+# sidecar: require lines in sidecar/go.mod at be19645: 0 ; go directive: go 1.25
+# frontend: dependency changes in frontend/package.json 0e14838..be19645:
+  +  },
+  +  "overrides": {
+  +    "minimatch": "^11.0.1"
+# scanners: the backend SBOM scan and govulncheck need the network (blocked here: backend ev/07, sidecar ev-a/10); npm audit ran (ev-a/11: 0 and 0)

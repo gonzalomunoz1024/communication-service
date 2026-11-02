@@ -1,0 +1,191 @@
+# 21 - backend replays: the verifier's scripts (copied, re-pointed to auditor ports/databases) against the same jar
+# jar scratchpad/communication-service-iter2.jar (sha256 491438c7..., identical to build/libs of be19645)
+# instance map (verifier -> auditor): :8080 -> :19711 (default config, db au2_shared), stub :19160 -> :19716,
+#   pair :19100/:19101 -> :19712/:19713 (au2_pair), :19110 on vb2-mongo -> :19714 on au2-mongo3 (:19729, db au2_down),
+#   :19120 -> :19704 (au2_gaps), :19130 -> :19703 (au2_pods), :19190 -> :19719 (au2_cookbook). sweeps 2 s / 1 s, grace 0 on the private ones
+
+## raw job logs
+--- job1.out
+### 05:10:29 check_a_publishing_feed_admin.py
+A: publishing, feed, admin (auditor replay on :19711): 108/113 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-20-check_a.txt
+   FAIL A-18b F-18 live frame names in order: ['snapshot', 'created', 'created', 'updated', 'retired']
+   FAIL A-20b F-20 replayed frames: ['created', 'updated', 'retired']
+   FAIL A-20c F-20 ?lastEventId= -> 200 ['created', 'updated', 'retired']
+   FAIL A-23b F-23 cross-tenant by publisher: tenants=[]
+   FAIL A-24 F-24 tenant summary [{'tenantId': 'au2-a-c3aeb4', 'counts': {'SCHEDULED': 1, 'ACTIVE': 6, 'EXPIRED': 1, 'RETIRED': 6}, 'total': 14}] vs listing total=14 by={'RETIRED': 6, 'EXPIRED': 1, 'ACTIVE': 6, 'SCHEDU
+### 05:11:22 check_a2_tenants.py
+A2: admin tenants (auditor replay): 3/3 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-20b-check_a2.txt
+### 05:11:22 check_a23.py
+A23: admin publisher filter (auditor replay): 2/2 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-20c-check_a23.txt
+### 05:11:22 check_b_health.py
+B: health contracts (auditor replay on :19711 + stub :19716): 80/80 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-21-check_b.txt
+### 05:11:37 check_g29_externalref_openapi.py
+G-2-9 externalRef/OpenAPI (auditor replay on :19711): 17/17 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-22g-check_g29.txt
+### 05:11:37 JOB1 DONE
+--- job2.out
+### 05:10:29 check_c_private.py
+C: two instances on one database (auditor replay :19712/:19713): 18/19 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-25-check_c.txt
+   FAIL C-48a F-48 one pod left, one silent -> UP 'UP (1 of 1 pod UP)' notice body=''
+### 05:11:53 check_g26_reopen.py
+G-2-6 reopen threshold (auditor replay :19712): 10/10 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-22d-check_g26.txt
+### 05:11:54 check_g27_probe_race.py
+G-2-7 forced probe vs scheduler (auditor replay pair): 3/3 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-22e-check_g27.txt
+### 05:13:45 check_g28_snapshot_head.py
+G-2-8 snapshot id = log head (auditor replay pair): 4/4 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-22f-check_g28.txt
+### 05:14:37 JOB2 DONE
+--- job3.out
+### 05:18:32 check_d_gaps.py
+D: iteration-1 gap re-checks (auditor replay :19711 + :19704): 41/42 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-22-check_d.txt
+   FAIL D-6-c F-48/G-1-6 scaled-to-zero ignored by the valve: silent=UP, zero=UP (UNKNOWN (no live pod reports))
+### 05:19:29 check_g25_valve.py
+G-2-5 stale forget-after (auditor replay :19704): 5/5 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-22c-check_g25.txt
+### 05:20:05 check_c3_pods.py
+C3: pods (auditor replay :19703): 3/3 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-25c-check_c3.txt
+### 05:20:15 JOB3 DONE
+### 05:20:15 check_g24_mongo_down.py
+G-2-4 Mongo down (auditor replay :19714 / au2-mongo3): 12/13 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-27-check_g24.txt
+   FAIL G24-f F-89/G-2-4 one WARN per skipped sweep, no stack trace 32s of outage: 3 health-sweep WARN, 3 status-sweep WARN, 3 503 access WARN, other WARN 7, ERROR 0, stack-trace lines 86; sample: '2026-11-02T05:20:22.198Z  WARN 7
+### 05:21:48 check_g24b_stream_during_outage.py
+G-2-4 stream during outage (auditor replay :19714): 4/4 passed -> /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/audit2/backend/out-27b-check_g24b.txt
+### 05:22:07 JOB4 DONE
+
+## totals: auditor vs verifier
+script                             auditor   verifier  FAIL ids (auditor | verifier)
+check_a_publishing_feed_admin      108/113   108/113   A-18b A-20b A-20c A-23b A-24 | A-18b A-20b A-20c A-23b A-24
+check_a2_tenants                   3/3       3/3       - | -
+check_a23                          2/2       2/2       - | -
+check_b_health                     80/80     79/80     - | B-34a   <- differs
+check_d_gaps                       41/42     41/42     D-6-c | D-6-c
+check_g25_valve                    5/5       5/5       - | -
+check_g26_reopen                   10/10     10/10     - | -
+check_g27_probe_race               3/3       3/3       - | -
+check_g28_snapshot_head            4/4       4/4       - | -
+check_g29_externalref_openapi      17/17     17/17     - | -
+check_c_private                    18/19     18/19     C-48a | C-48a
+check_c3_pods                      3/3       3/3       - | -
+check_g24_mongo_down               12/13     12/13     G24-f | G24-f
+check_g24b_stream_during_outage    4/4       4/4       - | -
+notes: B-34a (verifier FAIL, coincident scheduler probe; its 8/8 re-check in the addendum) PASSED here: the race did not occur in this run.
+       A-18b/A-20b/A-20c/A-23b/A-24 = the verifier's script artefacts (its addendum); C-48a and D-6-c = valve population of a reused database (verifier addenda; C-48a cleared on a fresh db in its ev/25c).
+       G24-f = GAP-backend2-6 (stack traces during the outage), identical counts: 3/3/3 WARN, other WARN 7, ERROR 0, 86 stack-trace lines.
+
+## the check ids the sampled feature rows cite (auditor run)
+| A-06a | F-06 | PASS | retire -> 200 RETIRED last={'at': '2026-11-02T05:10:34.834457257Z', 'actor': 'au2-admin', 'action': 'ACTIVE -> RETIRED: resolved by test'} 
+| A-06b | F-06 | PASS | idempotent -> 200 history len 3->3 
+| A-06c | F-06 | PASS | retire without body: actor defaults to publisher -> {'at': '2026-11-02T05:10:34.879933669Z', 'actor': 'au2-sre', 'action': 'ACTIVE -> RETIRED'} 
+| A-07 | F-07 tenantId missing | PASS | 400 {"error": "tenantId: must not be blank"} 
+| A-07 | F-07 publisher missing | PASS | 400 {"error": "publisher: must not be blank"} 
+| A-07 | F-07 title missing | PASS | 400 {"error": "title: must not be blank"} 
+| A-07 | F-07 title too long | PASS | 400 {"error": "title: size must be between 0 and 200"} 
+| A-07 | F-07 body too big | PASS | 400 {"error": "body: size must be between 0 and 16384"} 
+| A-07 | F-07 affectedServices > 20 | PASS | 400 {"error": "affectedServices: size must be between 0 and 20"} 
+| A-07 | F-07 MAINTENANCE without endsAt | PASS | 400 {"error": "MAINTENANCE requires endsAt"} 
+| A-07 | F-07 OUTAGE with INFO severity | PASS | 400 {"error": "OUTAGE requires severity MINOR or higher"} 
+| A-07 | F-07 endsAt before startsAt | PASS | 400 {"error": "endsAt must be after startsAt"} 
+| A-07 | F-07 expiresAt before startsAt | PASS | 400 {"error": "expiresAt must be after startsAt"} 
+| A-07 | F-07 ticket without number | PASS | 400 {"error": "ticket.number: must not be blank"} 
+| A-11a | F-11 | PASS | history=['created (ACTIVE)', 'updated', 'updated', 'ACTIVE -> RETIRED: done'] 
+| A-11b | F-11 | PASS | after 60 updates history len=50 
+| A-11c | F-11 | PASS | actor fallback -> {'at': '2026-11-02T05:10:36.582377293Z', 'actor': 'p', 'action': 'ACTIVE -> RETIRED: no actor given, publisher p'} 
+| A-18a | F-18 | PASS | first frame is snapshot of pre-existing: ['snapshot:1337f1c5', 'created:1337f1c5'] 
+| A-18b | F-18 | FAIL | live frame names in order: ['snapshot', 'created', 'created', 'updated', 'retired'] 
+| A-18c | F-18 | PASS | ids monotonic: [92, 92, 93, 95, 96] 
+| A-18d | F-18 payload | PASS | frame payload keys=['at', 'communication', 'seq', 'type'] 
+| A-20a | F-20 | PASS | reconnect with Last-Event-ID=92 -> HTTP 200 [{'id': '93', 'event': 'created', 'data': '{"seq":93,"type":"CREATED","at":"2026-11-02T05:10:40.982Z","co
+| A-18e | F-18 | PASS | keepalive comments in 17s: [':connected', ':keepalive'] frames=0 
+| A-25 | F-25 | PASS | admin retire -> 200 RETIRED stream=['snapshot', 'snapshot', 'created', 'retired'] 
+| A-29a | F-29 | PASS | api-docs paths=16 missing=[] extra=[] 
+| A-29b | F-29 | PASS | securitySchemes={'X-Client-Id': {'type': 'apiKey', 'description': 'Click Authorize and paste the repository name of the system you are calling from (
+| A-29c | F-29 | PASS | swagger ui index -> 200 
+| B-34a | F-34/F-37 | PASS | probe UP -> 200 state={'lastStatus': 'UP', 'lastReportAt': '2026-11-02T05:11:22.937112872Z', 'lastProbeAt': '2026-11-02T05:11:22.937112872Z', 'lastSu
+| B-34b | F-34 | PASS | probe push-only -> 409 {'error': 'monitor c6a28263-4188-4542-957f-40afe13daf3c is push-only (no url) and cannot be probed'} 
+| B-38 | F-38 blank status rejected by bean validation (API contract) | PASS | -> 400 {'error': 'status: must not be blank'} 
+| B-38 | F-38 status=OK | PASS | -> UP 
+| B-38 | F-38 status=HEALTHY | PASS | -> UP 
+| B-38 | F-38 status=OUT_OF_SERVICE | PASS | -> DOWN 
+| B-38 | F-38 status=FATAL | PASS | -> DOWN 
+| B-38 | F-38 status=UNHEALTHY | PASS | -> DOWN 
+| B-38 | F-38 status=WARN | PASS | -> DEGRADED 
+| B-38 | F-38 status=WEIRD | PASS | -> DEGRADED 
+| B-38 | F-38 status='UNKNOWN' carries no information | PASS | -> UNKNOWN streaks={'lastStatus': 'UNKNOWN', 'lastReportAt': '2026-11-02T05:11:31.849323649Z', 'lastSummary': 'UNKNOWN', 'unhealthyStreak': 0, 'healt
+| B-47e | F-47 | PASS | UNKNOWN pod live but not tallied -> 'DOWN (0 of 6 pods UP (DOWN: pod-a, pod-b, pod-c, pod-d, pod-e; 1 starting))' 
+| D-4-s | F-18/G-1-4 | PASS | shared :19711: status 200, headers after 0.016s, first line ':connected' after 0.016s 
+| D-4-p | F-18/G-1-4 | PASS | private :19704: status 200, headers after 0.075s, first line ':connected' after 0.090s 
+| D-1-b | F-20/G-1-1 | PASS | Last-Event-ID: 131 -> 200, frames [('retired', 'b99315ae'), ('created', '052300b2')] 
+| D-20-b | F-06/G-1-20 | PASS | retire after expiresAt (before sweep) -> 409 {'error': 'communication ae24174e-1313-4339-90f4-69b087571895 already expired; retiring would rewrite hi
+| D-20-d | F-11 | PASS | history untouched: ['created (ACTIVE)'] 
+| D-21-a | F-07/F-28 | PASS | unknown enum -> 400 {'error': "type: 'BOGUS' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"} 
+| D-21-b | F-07/F-28 | PASS | bad timestamp -> 400 {'error': "expiresAt: 'tomorrow' is not an ISO-8601 UTC timestamp like 2026-11-01T12:00:00Z"} 
+| D-21-c | F-28 | PASS | malformed JSON -> 400 {'error': 'malformed JSON at line 1, column 19: Unexpected end-of-input within/between Object entries'} 
+| D-21-d | F-28 | PASS | 300 KB body -> 413 {'error': 'request body exceeds the limit of 256 KB (spring.codec.max-in-memory-size)'} 
+| D-21-e | F-28 | PASS | unknown path -> 404 {'error': 'no such endpoint: GET /v1/nothing (the API is documented at /swagger-ui.html)'} 
+| D-21-f | F-28 | PASS | wrong verb -> 405 Allow=POST,GET {'error': 'DELETE is not allowed on /v1/communications; allowed: GET, POST'} 
+| D-21-g | F-28 | PASS | text/plain -> 415 {'error': "Content-Type 'text/plain' is not supported here; send application/json or application/*+json or application/x-ndjson"} 
+| D-21-h | F-14/F-28 | PASS | bad query enum -> 400 {'error': "type: 'BOGUS' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"} 
+| D-21-i | F-07 | PASS | string for array -> 400 {'error': 'affectedServices: expected a JSON array'} 
+| D-6-a | F-44/F-45/G-1-6 | PASS | 1 silent of 3: s1 state {'lastStatus': 'DOWN', 'lastReportAt': '2026-11-02T05:18:48.609Z', 'lastSummary': 'DOWN (no health report received since 2026
+| D-6-b | F-44 | PASS | feed titles ['s1 is down'] 
+| C-13a | F-13/F-06 | PASS | retire a stored-EXPIRED item -> 409 {'error': 'communication 0738e8cf-620f-4726-9684-bb940d242499 already expired; retiring would rewrite history'} 
+| C-44a | F-44 | PASS | silent 9s with staleAfterSeconds=5 -> state=DOWN summary='DOWN (no health report received since 2026-11-02T05:11:09.427Z)' notice body='Automated hea
+| C-44b | F-44 | PASS | UP report -> notice RETIRED ('ACTIVE -> RETIRED: recovered: UP') 
+| C3-48a | F-48 | PASS | one pod left cleanly, one went silent (window 5s, waited 9s) -> DOWN 'DOWN (1 pod has not reported since 2026-11-02T05:20:05.907Z (pod-b))' notice ty
+| G24-a | F-28/G-2-4 GET while Mongo is down | PASS | GET feed -> 503 '{"error":"database unavailable"}' after 5.02s 
+| G24-j | F-18/F-92 stream opened before the outage survives it | PASS | stream frames: [('snapshot', 'before'), ('created', 'before'), ('created', 'after recovery')]; keepalive comments: 6 
+| G24-l | stream opened during the outage | PASS | HTTP 200; comments=[':connected']; frames=[]; connection lasted <= 5.0s (the reader was given 12 s) 
+| G24-m | resume requested during the outage | PASS | HTTP 200; comments=[':connected']; frames=[] 
+| G25-a | F-44/F-45/G-2-5 abandoned monitors do not pause the valve | PASS | 14 monitors silent for 2 days around it: fresh monitor silent 11 s -> DOWN 'DOWN (no health report received since 2026-11-02T05:19:40.702Z)'; feed=['
+| G26-2-b | F-06 | PASS | operator retire -> 200 
+| G26-3-b | F-06 | PASS | operator retire -> 200 
+| G27-a | F-34/G-2-7 30 sequential forced probes during the scheduler | PASS | codes: 200 x30, 409 x0, other []; 93.7s for 30 probes of a 3 s endpoint; monitor lastStatus=UP probeCount~{'lastStatus': 'UP', 'lastReportAt': '2026-
+| G28-a | F-18/G-2-8 snapshot id = log head | PASS | head=25; snapshot ids=[25] (3 frames) 
+| G28-b | F-20 resume from the snapshot id | PASS | resume after 25: [('created', 'item 3 (on B)')] 
+| G28-d | G-2-8 head after the burst | PASS | head=41, snapshot id=41 
+| G29-a | F-08 409 body | PASS | first 201; duplicate 409: "externalRef 'INC0099001' is already used by notice edbb74a0-8b79-4e70-a737-ca0988b1fbba in tenant au2-g29-a6299f. external
+| G29-b | F-08 body shape | PASS | body keys ['error']; no advice to retire 
+| G29-c | F-08 permanent after retire | PASS | retire 200; republish 409: "externalRef 'INC0099001' is already used by notice edbb74a0-8b79-4e70-a737-ca0988b1fbba in tenant au2-g29-a6299f. externa
+| G29-d | F-08 follow-up value | PASS | follow-up with the suggested value -> 201 
+| G29-e | F-09/F-08 ticket duplicate | PASS | ticket publish 201 ref=INC0099002; duplicate 409: "externalRef 'INC0099002' is already used by notice 0fe622f6-3cc4-460c-9202-a8d5197f0865 in tenant 
+| G29-f | F-08 per tenant | PASS | other tenant -> 201 
+| G29-g | F-29 paths | PASS | 16 /v1 paths, 20 operations: ['/v1/admin/communications', '/v1/admin/communications/{id}', '/v1/admin/communications/{id}/retire', '/v1/admin/tenants
+| G29-h | F-29 security | PASS | schemes=['X-Client-Id'] global security=[{'X-Client-Id': []}] desc='Click Authorize and paste the repository name of the system you are calling from'
+| G29-i | F-29 401 documented | PASS | operations without a documented 401: [] 
+| G29-j | F-29/G-2-9 externalRef schema | PASS | externalRef: {'type': 'string', 'description': 'Permanent idempotency key, usable once per tenant for the life of the store (retired and expired noti
+| G29-k | F-29/G-2-9 expectedVersion schema | PASS | expectedVersion: {'type': 'integer', 'format': 'int64', 'description': "The version you last read: every answer and GET /v1/communications/{id} carry
+| G29-l | F-29/G-2-9 409 responses | PASS | POST 409: 'externalRef already used in this tenant. It is a permanent idempotency key: repeat it only to retry the same publish; gi'; PUT 409: 'expec
+| G29-m | contract text = live text | PASS | live 409 and the documented example share the sentence 
+| G29-n | F-29 swagger ui | PASS | /swagger-ui.html -> 200 at http://localhost:19711/swagger-ui/index.html 
+
+## cmd-21 replay: log review
+### shared backend log (read-only grep of scratchpad/logs/backend-iter2.log at 2026-11-02T05:33:20Z; the verifier read it at 03:59Z)
+  ERROR 0
+  WARN  3
+  INFO  1219
+  DEBUG 0
+  stack-trace frames: 0
+  2026-11-02T03:49:50.004Z WARN o.s.core.events.SpringDocAppInitializer SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdo
+  2026-11-02T03:49:50.005Z WARN o.s.core.events.SpringDocAppInitializer SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'spri
+  2026-11-02T03:54:51.806Z WARN c.a.c.h.application.HealthSweepUseCase 24 of 25 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clust
+### private instances (auditor) vs the verifier's addendum in ev/30
+  auditor port (role)            ERROR WARN INFO stack-frames | verifier counterpart
+  :19712  (pair node 1)                  0   25  199     0 | 19100 ERROR=0 WARN=24 INFO=194 
+  :19713  (pair node 2)                  0   22   65     0 | 19101 ERROR=0 WARN=22 INFO=66 
+  :19714  (Mongo outage)                 4   27   64   241 | 19110 ERROR=4 WARN=27 INFO=65 
+  :19704  (gaps/valve)                   0    4  148     0 | 19120 ERROR=0 WARN=4 INFO=146 
+  :19703  (pods)                         0    2   31     0 | 19130 ERROR=0 WARN=2 INFO=29 
+  :19711  (default-config stand-in)      0    3  481     0 | :8080 (shared log above)
+  :19719  (config cmd-22)                0    2   12     0 | -  
+  :19700  (sidecar verifier's private backend (sidecar cmd-21))     0    2  536     0 | ev/43 528 INFO / 2 WARN / 0 ERROR, 0 stack frames 
+  password= fields in all private logs: only the Mongo driver's 'ProxySettings{... password=null}'; no Mongo URI with userinfo
+
+### GAP-backend2-1 signature in :19714 during check_g24b (two ERROR blocks per stream attempt, the response already committed)
+243:2026-11-02T05:21:53.532Z ERROR 7316 --- [communication-service] [or-http-epoll-4] o.s.w.s.adapter.HttpWebHandlerAdapter    : [34d481fe-14] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=au2-down2-
+244:2026-11-02T05:21:53.536Z ERROR 7316 --- [communication-service] [or-http-epoll-4] r.n.http.server.HttpServerOperations     : [34d481fe-1, L:/127.0.0.1:19714 - R:/127.0.0.1:48480] Error finishing response. Closing connection
+250:	*__checkpoint ⇢ Exception handler com.atlas.communication.config.GlobalExceptionHandler#handleDatabaseUnavailable(RuntimeException, ServerWebExchange), error="...
+305:2026-11-02T05:21:58.557Z ERROR 7316 --- [communication-service] [or-http-epoll-1] o.s.w.s.adapter.HttpWebHandlerAdapter    : [2fbf7440-15] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=au2-down2-
+306:2026-11-02T05:21:58.558Z ERROR 7316 --- [communication-service] [or-http-epoll-1] r.n.http.server.HttpServerOperations     : [2fbf7440-1, L:/127.0.0.1:19714 - R:/127.0.0.1:53456] Error finishing response. Closing connection
+312:	*__checkpoint ⇢ Exception handler com.atlas.communication.config.GlobalExceptionHandler#handleDatabaseUnavailable(RuntimeException, ServerWebExchange), error="...
+### GAP-backend2-6 signature in :19714 during check_g24 (one readiness request during the outage)
+98:2026-11-02T05:20:31.909Z  WARN 7316 --- [communication-service] [c39073a109575e0] o.s.b.a.d.m.MongoReactiveHealthIndicator : Mongo health check failed
+99-
+100-org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is 
+  driver INFO 'Exception in monitor thread' lines: 6; stack-trace frames in the whole outage log: 241

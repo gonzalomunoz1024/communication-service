@@ -1,0 +1,19 @@
+# A2: admin tenants (auditor replay)
+
+Checks: 3/3 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| A-24a | F-24 shape | PASS | keys=['counts', 'tenantId', 'total'] |
+| A-24b | F-24 sorted by tenant | PASS | 4 tenants, first=au2-a-c3aeb4 last=au2-sse-c3aeb4 |
+| A-24c | F-24 counts match the publisher listing (stored status) | PASS | checked be-a-* tenants; mismatches=[] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+GET http://localhost:19711/v1/admin/tenants body= -> 200 [{"tenantId":"au2-a-c3aeb4","counts":{"SCHEDULED":1,"ACTIVE":7,"EXPIRED":1,"RETIRED":6},"total":15},{"tenantId":"au2-a2-c3aeb4","counts":{"ACTIVE":1},"total":1},{"tenantId":"au2-feed-c3aeb4","counts":{"SCHEDULED":2,"ACTIVE":4},"total":6},{"tenantId":"au2-sse-c3aeb4","counts":{"ACTIVE":2,"RETIRED":1},"total":3}]
+  [PASS] A-24a (F-24 shape): keys=['counts', 'tenantId', 'total']
+  [PASS] A-24b (F-24 sorted by tenant): 4 tenants, first=au2-a-c3aeb4 last=au2-sse-c3aeb4
+GET http://localhost:19711/v1/communications?tenantId=au2-a-c3aeb4&size=100 body= -> 200 {"items":[{"id":"1a34cd43-db5a-4e41-a583-18f27a8e854a","tenantId":"au2-a-c3aeb4","publisher":"au2-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T06:10:30Z","ticket":{"system":"servicenow","number":"INC0099999"},"createdAt":"2026-11-02T05:10:30.522Z","updatedAt":"2026-11-02T05:10:36.674Z",
+  [PASS] A-24c (F-24 counts match the publisher listing (stored status)): checked be-a-* tenants; mismatches=[]
+```

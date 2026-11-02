@@ -1,0 +1,24 @@
+# 56 - the auditor's private E2E stack (scripts/stack-up.sh copied from the E2E Verifier, image rebuild lines removed; images fakeapp:e2e and health-sidecar:au2)
+## 2026-11-02T05:01:45.055Z private stack up (head 33451c3)
+docker: Error response from daemon: Conflict. The container name "/au2-mongo" is already in use by container "8f7716543ac1bace9b7be903387c955345dbd39e6a15751d5a2947df92f09715". You have to remove (or rename) that container to be able to reuse that name.
+
+Run 'docker run --help' for more information
+2026-11-02T05:01:45.797Z mongo answers ping
+backend A pid 4814
+backend B pid 4820
+2026-11-02T05:01:56.316Z backend A readiness ready after 11 s
+2026-11-02T05:01:56.611Z backend B readiness ready after 0 s
+2026-11-02T05:01:57.644Z vite preview (frontend/dist) -> A ready after 1 s
+au2-netns started
+au2-app started (fakeapp:e2e)
+au2-sidecar started (health-sidecar:au2, uid 1000660000, read-only, cap-drop ALL, no-new-privileges)
+au2-stub started (pull-probe target)
+2026-11-02T05:01:58.689Z fake app in the pod ready after 0 s
+2026-11-02T05:01:59.712Z sidecar reported ready after 1 s
+2026-11-02T05:01:59.746Z backend A sees monitor ve2/ve2-app UP ready after 0 s
+## 2026-11-02T05:01:59.749Z private stack up: A :19701 B :19702 UI :19730 pod app :19740 status :19741 stub :19751 mongo :19727
+au2-stub	fakeapp:e2e	Up 1 second	127.0.0.1:19751->8080/tcp
+au2-sidecar	health-sidecar:au2	Up 1 second	
+au2-app	fakeapp:e2e	Up 1 second	
+au2-netns	golang:1.24	Up 2 seconds	127.0.0.1:19740->8080/tcp, 127.0.0.1:19741->9465/tcp
+au2-mongo	mongo:7.0	Up 4 minutes	127.0.0.1:19727->27017/tcp

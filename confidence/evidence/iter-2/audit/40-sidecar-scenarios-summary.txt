@@ -1,0 +1,131 @@
+# 40 - sidecar scenario replays: the Sidecar Verifier's ev/scripts (copied; tenant/container prefix au2-s-, ports 197xx, image health-sidecar:au2)
+# private backend :19700 (db au2_sidecar; valve disabled with stale-pause-min-silent=1000, sweeps 1 s / 2 s) stands in for the verifier's :19300;
+# 16-failure-paths uses its own au2-s-mongo (:19728) + backend :19706 (db au2_s_mdown), removed by the script at the end.
+
+## chains
+### 05:12:26 10-lifecycle
+### 05:16:19 10-lifecycle exit 0
+### 05:16:19 15-backend-contract
+### 05:17:59 15-backend-contract exit 0
+### CHAIN1 DONE
+### 05:12:26 20-manifests
+### 05:12:36 20-manifests exit 0
+### 05:12:36 11b-tls-port-and-redirect
+### 05:12:50 11b-tls-port-and-redirect exit 0
+### 05:12:50 14-tls
+### 05:13:26 14-tls exit 0
+### 05:13:26 11-ladder
+### 05:15:11 11-ladder exit 0
+### 05:15:11 15b-rollup-and-ids
+### 05:16:15 15b-rollup-and-ids exit 0
+### 05:16:15 16-failure-paths
+### 05:18:40 16-failure-paths exit 0
+### 05:18:40 13-variants
+### 05:20:33 13-variants exit 0
+### 05:20:33 12-send-policy
+### 05:23:04 12-send-policy exit 0
+### CHAIN2 DONE
+
+## sampled claims
+--- cmd-9 11b-tls-port-and-redirect (verifier: TLS-only app port found; /health 302 not followed)
+[05:12:36.901] (i) actuator stub served over TLS on 9006 (self-signed, CN=localhost) is the only app port
+  status=UP target='https://127.0.0.1:9006/actuator/health' lastTarget='https://127.0.0.1:9006/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"pi
+[05:12:43.503] (ii) stub 'redirect' on 9007: /health -> 302 /elsewhere, everything else 404
+  status=UP target='http://127.0.0.1:9007/health' lastTarget='http://127.0.0.1:9007/health' upSeen=True msg=None comps=None sent=1 sendErr=None
+  requests recorded by the redirect stub target? (the sidecar must not have followed to /elsewhere): sidecar log lines mentioning elsewhere: 0
+[05:12:50.342] DONE
+--- cmd-12 14-tls (verifier: CASE 1 x509 error, 2 CA file OK, 3 skip-verify OK, 3b empty CA exit 2, 4b dead proxy proxyconnect, 5b NO_PROXY OK, 6 TLS floor)
+[05:12:51.181] certs: subject=CN = localhost X509v3 Subject Alternative Name:      IP Address:127.0.0.1, DNS:localhost 
+[05:12:52.992] CASE 1: https endpoint, no CA configured -> x509 send error, reports fail
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='post https://127.0.0.1:9100/v1/health/reports: Post "https://127.0.0.1:9100/v1/health/reports": tls: failed to verify certifi
+[05:12:59.381] CASE 2: CS_CA_FILE=/certs/ca.pem (read-only mount) -> reports accepted
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=2
+[05:13:05.889] CASE 3: CS_INSECURE_SKIP_VERIFY=true -> reports accepted
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=2
+[05:13:12.462] CASE 3b: CS_CA_FILE pointing at a file with no certificate -> exit 2 before running
+  exit=2
+[05:13:12.823] CASE 4b: HTTP_PROXY/HTTPS_PROXY = dead proxy, NON-loopback endpoint (the private backend at http://172.17.0.1:19700) -> probe unaffected (UP), reports fail with proxyconnect
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='post http://172.17.0.1:19700/v1/health/reports: Post "http://172.17.0.1:19700/v1/health/reports": proxyconnect tcp: dial tcp 
+[05:13:19.384] CASE 5b: same with NO_PROXY=172.17.0.1 -> reports accepted
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=2
+[05:13:25.894] CASE 6: the sidecar's TLS floor: what the stub negotiated (TLS 1.3 expected; Go refuses < 1.2 by MinVersion report/client.go:65)
+  stub saw 4 requests (cases 2 and 3)
+[05:13:26.396] DONE
+--- cmd-15 16-failure-paths and O-1 (verifier: Mongo paused -> direct POST 503 after 20.1 s)
+[05:16:17.195] CASE 1 (slow backend): stub delays every answer 7000 ms > CS_REPORT_TIMEOUT=5s (default) -> timeout error, backoff; delay removed -> accepted
+[05:16:45.576] CASE 2 (backend down, then back): stop the stub container -> connection refused with 1,2,4,8 s backoff; start it -> next retry accepted
+"msg":"report failed; will retry",http://127.0.0.1:9100/v1/health/reports\": dial tcp 127.0.0.1:9100: connect: connection refused","in":"1
+"msg":"report failed; will retry",http://127.0.0.1:9100/v1/health/reports\": dial tcp 127.0.0.1:9100: connect: connection refused","in":"2
+"msg":"report failed; will retry",http://127.0.0.1:9100/v1/health/reports\": dial tcp 127.0.0.1:9100: connect: connection refused","in":"4
+"msg":"report failed; will retry",http://127.0.0.1:9100/v1/health/reports\": dial tcp 127.0.0.1:9100: connect: connection refused","in":"8
+[05:17:14.672] CASE 3 (Mongo down behind the service): private Mongo au2-s-mongo (:19728) + private backend :19706 (db au2_s_mdown); pause Mongo -> service answers 503 -> sidecar retries (not permanent); unpause -> accep
+  monitor before:   monitor {"id":"cdb26504-9887-48c5-a9e0-e9f0dbfa4f42","service":"fail-app"} state: {"lastStatus":"UP","lastSummary":"UP (1 of 1 pod UP)"}
+  [05:17:37.065] Mongo paused
+  direct POST while Mongo is paused: 503 {"error":"database unavailable"} after 20.1 s
+  [05:18:17.475] Mongo unpaused
+  monitor after:   monitor {"id":"cdb26504-9887-48c5-a9e0-e9f0dbfa4f42","service":"fail-app"} state: {"lastStatus":"UP","lastSummary":"UP (1 of 1 pod UP)"}
+[05:18:40.639] DONE (backend :19706 and au2-s-mongo removed)
+--- cmd-16 20-manifests: normalised diff against the verifier's ev/20 (paths, times):
+1c1
+< == 2026-11-02TTZ head be19645 | (devel) | v3.16 | kubeconform development
+---
+> == 2026-11-02TTZ head 33451c3 | (devel) | v3.16 | kubeconform development
+  (only the HEAD line differs: 33451c3 vs be19645; sidecar/deploy is unchanged between them)
+--- cmd-21 backend-side lines (:19700 log): ERROR=0 WARN=2 INFO=536 stack-frames=0  (verifier ev/43: 528 INFO / 2 WARN / 0 ERROR, 0 stack frames)
+--- F-27 recorded requests in 11-ladder (verifier: all 21 POSTs carry X-Client-Id = CS_CLIENT_ID, UA health-sidecar/<version>, JSON)
+  sidecar/11-ladder: POSTs=21 with client id + UA + JSON=21 leaving=True: 1
+  out/11-ladder: POSTs=21 with client id + UA + JSON=21 leaving=True: 1
+--- F-36 / F-38 (15-backend-contract)
+  X-Client-Id: 'bad id!' -> 400 {"error":"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}
+[05:16:20.070] F-36: first report auto-registers a push-only monitor; status missing/blank -> 400; tenant/service missing -> 400
+  no status -> 400 {"error":"status: must not be blank"}
+  blank status -> 400 {"error":"status: must not be blank"}
+  no tenant -> 400 {"error":"tenantId: must not be blank"}
+  no service -> 400 {"error":"service: must not be blank"}
+   voc-DEGRADED     lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-DEGRADED-0))'
+   voc-DOWN         lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-DOWN-0))'
+   voc-FATAL        lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-FATAL-0))'
+   voc-FOO          lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-FOO-0))'
+   voc-HEALTHY      lastStatus=UP        summary='UP (1 of 1 pod UP)'
+   voc-NESTED       lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-NESTED-0)): db.primary DOWN, cache.redis DOWN'
+   voc-OK           lastStatus=UP        summary='UP (1 of 1 pod UP)'
+   voc-OUT_OF_SERVICE lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-OUT_OF_SERVICE-0))'
+   voc-PASS         lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-PASS-0))'
+   voc-UNHEALTHY    lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-UNHEALTHY-0))'
+   voc-UNKNOWN      lastStatus=UNKNOWN   summary='UNKNOWN (1 pod starting, none reporting yet)'
+   voc-UP           lastStatus=UP        summary='UP (1 of 1 pod UP)'
+   voc-WARN         lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-WARN-0))'
+  UP -> 202
+  UP              -> 202
+  OK              -> 202
+  HEALTHY         -> 202
+  DOWN            -> 202
+  OUT_OF_SERVICE  -> 202
+  FATAL           -> 202
+  UNHEALTHY       -> 202
+  UNKNOWN         -> 202
+  WARN            -> 202
+  DEGRADED        -> 202
+  PASS            -> 202
+  FOO             -> 202
+  normalised diff against ev/15 ignoring truncated 202 bodies: only the window wait line (verifier 307 s after the kill, auditor 100 s after an explicit 95 s wait) and the order of two notices
+--- F-72 and GAP-sidecar-3 (10-lifecycle STEP F; verifier: 101 reports by the never-UP sidecar in 3.7 min at CS_INTERVAL=2s)
+[05:16:18.950] STEP F (F-72): the two startup rules after a 20 s grace (side pods started with STEP A)
+  never-UP pod (no app): status=UNKNOWN target=None lastTarget=None upSeen=False msg='no health target found after 20s: no listening port answered; set CS_PORT and CS_PATH' comps=None sent=105 sendErr=None
+{"time":"2026-11-02T05:12:27.978104511Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-02T05:12:49.877296705Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found after 20s: no listening port answered; set CS_PORT and CS_PATH"}
+  pinned CS_PORT=9999 never answering: status=UNKNOWN target='http://127.0.0.1:9999/actuator/health' lastTarget='http://127.0.0.1:9999/actuator/health' upSeen=False msg='health target http://127.0.0.1:9999/actuator/health never an
+{"time":"2026-11-02T05:12:29.479827882Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the first healthy answer from http://127.0.0.1:9999/actuator/health"}
+{"time":"2026-11-02T05:12:52.107047927Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"health target http://127.0.0.1:9999/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME"}
+  reports sent by the never-UP sidecar so far (UNKNOWN is sent every probe): 105
+  backend monitors for the tenant now:
+  monitor {"id":"56dca919-2123-4aca-b11d-56060b885a61","service":"au2-s-app"} state: {"lastStatus":"UP","lastSummary":"UNKNOWN (no live pod reports)"}
+  monitor {"id":"1063a40d-2187-4e90-bc1a-bb90b10506d4","service":"au2-s-never-up"} state: {"lastStatus":"UNKNOWN","lastSummary":"UNKNOWN (1 pod starting, none reporting yet)"}
+  monitor {"id":"c88dc703-1584-4f91-a140-79483a0ecf22","service":"au2-s-pinned"} state: {"lastStatus":"UNKNOWN","lastSummary":"UNKNOWN (1 pod starting, none reporting yet)"}
+  feed items: 0
+--- GAP-sidecar-3 (12-send-policy PHASE 5; verifier: 5 UNKNOWN reports in ~16 s, gaps 3.3/3.0/3.2/3.4)
+[05:22:47.589] PHASE 5 (UNKNOWN during the startup grace): sidecar with every port ignored, CS_STARTUP_GRACE=5m -> UNKNOWN 'starting' is sent every probe
+  status=UNKNOWN target=None lastTarget=None upSeen=False msg='starting: waiting for the app to listen' comps=None sent=5 sendErr=None
+  reports in ~16 s (CS_INTERVAL=3s): 5
+  recorded: 5 statuses: UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN | gaps(s): [3.1, 3.2, 3.5, 3.0]
+[05:23:04.503] DONE

@@ -1,0 +1,130 @@
+# 12 - frontend browser replays: the Frontend Verifier's Playwright scripts (copied, tenant prefix au2-, client id au2-auditor)
+# topology: Vite dev :19731 -> backend A :19701 (stand-in for the shared :3000/:8080 the verifier's v1-v6 defaulted to);
+#   private UI :19737 -> :19709 (servicenow.instance-url=https://au2.service-now.com, stand-in for the verifier's :3200 -> :19200);
+#   dead-backend UI :19736; env builds served by rp.js on :19732 (VITE_DEFAULT_TENANT=au2-default), :19733 (VITE_API_BASE=http://127.0.0.1:19701),
+#   :19734 (VITE_CLIENT_ID='bad id!'); production bundle via vite preview :19730. v5 uses the verifier's @axe-core/playwright 4.10.2 install.
+
+## totals: auditor vs verifier
+  v1-shell-theme-form      auditor: v1-shell-theme-form: 62 checks, 0 failed verifier: v1-shell-theme-form: 62 checks, 0 failed
+  v2-publish-errors        auditor: v2-publish-errors: 42 checks, 0 failed   verifier: v2-publish-errors: 42 checks, 0 failed
+  v3-feed                  auditor: v3-feed: 54 checks, 0 failed             verifier: v3-feed: 54 checks, 1 failed
+  v3b-snapshot-per-open    auditor: v3b-snapshot-per-open: 3 checks, 0 failed verifier: v3b-snapshot-per-open: 3 checks, 0 failed
+  v5-a11y                  auditor: v5-a11y: 33 checks, 0 failed             verifier: v5-a11y: 33 checks, 0 failed
+  v6-builds                auditor: v6-builds: 8 checks, 0 failed            verifier: v6-builds: 8 checks, 0 failed
+  v3: the verifier's one miss (its own double subscription, F-18) did not occur here; v6 needed two re-runs for auditor harness ports (see below).
+
+## per sampled feature: PASS/FAIL counts (auditor | verifier)
+  F-02   v2-publish-errors        5/0 | 5/0
+  F-06   v3-feed                  3/0 | 3/0
+  F-07   v2-publish-errors        2/0 | 2/0
+  F-55   v1-shell-theme-form      15/0 | 15/0
+  F-15   v3-feed                  3/0 | 3/0
+  F-18   v3-feed                  2/0 | 1/1
+  F-18   v3b-snapshot-per-open    3/0 | 3/0
+  F-52   v1-shell-theme-form      16/0 | 16/0
+  F-52   v6-builds                2/0 | 2/0
+  F-65   v5-a11y                  33/0 | 33/0
+
+## the sampled checks (auditor run lines)
+PASS [F-02] Save as draft sends draft:true → 201 DRAFT; card says Draft saved / not visible until published; no View in feed button :: {"status":"DRAFT","text":"Draft savedConsumers will not see it until it is published.Major390d35dc-2e0c-42b2-8e07-cf0c275f3176Publish another"}
+PASS [F-02] draft is absent from the feed and the permalink answers 404 :: {"feedItems":0,"permalink":404}
+PASS [F-02] UI feed shows All clear for a tenant whose only item is a draft :: All clear shown
+PASS [F-02] POST /publish moves the draft to ACTIVE (200); publishing again → 409 :: {"first":200,"status":"ACTIVE","second":409,"err":"only DRAFT communications can be published; 390d35dc-2e0c-42b2-8e07-cf0c275f3176 is ACTIVE"}
+PASS [F-02] the published draft appears live in the open feed (CREATED event) :: card appeared without refresh
+PASS [F-07] server-side invariant (OUTAGE at INFO, forced past the client) → 400 and its message is shown with the rejected prefix :: {"status":400,"banner":"The service rejected this. OUTAGE requires severity MINOR or higher"}
+PASS [F-07] bean validation (blank title, 25 services) → 400 naming the fields, shown in the banner :: {"status":400,"banner":"The service rejected this. affectedServices: size must be between 0 and 20; title: must not be blank"}
+PASS [F-18] on open the browser receives one lower-cased `snapshot` frame per visible item (the pre-existing notice), with a numeric id :: [{"at":1793597124414,"name":"snapshot","id":"95","title":"present before the stream opened"}]
+PASS [F-18] the live frames are named created/updated/retired (lower-cased event type) with ascending numeric ids, all greater than the snapshot id :: {"live":[{"at":1793597125650,"name":"created","id":"96","title":"live created"},{"at":1793597126133,"name":"updated","id":"97","title":"live updated 
+PASS [F-15] after expiresAt the server feed excludes the item at once and the permalink says EXPIRED :: {"inFeed":false,"permalink":"EXPIRED"}
+PASS [F-15] the UI drops the expired card by its own timer at expiresAt (gone 99 ms after expiresAt, before the 30 s sweeper) :: {"msAfterExpiresAt":99}
+PASS [F-15] with Live updates off the card still leaves at expiresAt (no stream, no new GET) :: {"msAfterExpiresAt":491,"feedRequestsSinceRefresh":0,"badge":"Paused"}
+PASS [F-06] server: status RETIRED and the audit history carries the actor and note :: {"status":"RETIRED","last":{"at":"2026-11-02T05:25:47.536Z","actor":"au2-resolver","action":"ACTIVE -> RETIRED: fixed by failover"}}
+PASS [F-06] resolving an item already retired elsewhere → 200 (idempotent) and the card is gone :: status=200
+PASS [F-06] retiring an EXPIRED item (past expiresAt, sweeper not yet run) → 409 :: {"status":409,"error":"communication a209a38c-7186-4c4b-82b7-9bd0ea021e79 already expired; retiring would rewrite history"}
+PASS [F-18] one subscription (tenant set once, default filter): exactly one lower-cased `snapshot` frame per visible item, numeric ids, no live frame for items already in the log :: {"streamOpens":1,"frames":[{"name":"snapshot","id":"231","title":"snap two"},{"name":"snapshot","id":"231","title":"sn
+PASS [F-18] a notice published while the stream is open arrives exactly once as `created`; the UI shows one card :: {"frames":[{"name":"created","id":"232","title":"snap three"}],"cardsThree":1,"ms":812}
+PASS [F-18] observation (G-2-8): a stream opened right after a publish gets snapshot frames stamped with the log head (= the seq of that publish); the live tail may then deliver the same `created` seq once more (at-least-once, documented); the UI dedupes by id and shows one card :: {"framesAfterReop
+--- G-2-12 (v1, v3, v6)
+PASS [F-52] G-2-12/UX-13: a first visit pre-fills NO tenant (value ''), 'acme' is only the placeholder, the input's title is the prompt :: {"value":"","placeholder":"acme","titleAttr":"Enter the tenant your consumers read; the service owners assign it.","storedAtStart":""}
+PASS [F-52] G-2-12: with no tenant the page shows the prompt line and the feed's 'Choose a tenant' state :: {"promptShown":1,"chooser":1}
+PASS [F-52] G-2-12: the prompt disappears once a tenant is typed; the tenant is saved in comm-tenant and remembered after a reload :: {"promptGone":0,"stored":"au2-shell-mvytdyyc","afterReload":"au2-shell-mvytdyyc"}
+PASS [F-52] G-2-12: the form's Tenant field mirrors the header (and is empty, placeholder 'acme', when no tenant is set) :: {"formTenant":"au2-shell-mvytdyyc","formTenantEmpty":"","formPlaceholder":"acme"}
+PASS [F-54] G-2-12/UX-10: the incident hint no longer promises a link unconditionally ('…consumers see it as a chip on the notice, linked when the service knows your ServiceNow instance.') :: Optional. The INC tracking this; consumers see it as a chip on the notice, linked when the service knows y
+PASS [F-54] G-2-12/UX-15: the Save-as-draft row (label) is at least 24 px tall and clicking its text toggles the switch (the switch itself stays 30×18) :: {"row":{"w":288,"h":28},"switch":{"w":30,"h":18},"afterRowClick":"true","afterSecond":"false"}
+PASS [F-63] G-2-12/UX-12: an upcoming card's capsule reads 'Scheduled' (sentence case, no CSS capitalisation) and 'Starts in …' appears once, in the footer line :: {"capsuleText":"Scheduled","capsuleTransform":"none","capsuleRendered":"Scheduled","startsInCount":1,"scheduledCount":1,"text":"Schedu
+PASS [F-62] G-2-12/UX-8: the Resolve confirmation names the actor and the tenant: 'Resolve as <publisher>? It leaves tenant <tenant>'s feed at once and cannot be reopened.' :: Resolve as au2-resolver? It leaves tenant au2-resolve-mvytep3s's feed at once and cannot be reopened.
+PASS [F-62] G-2-12/UX-8: Withdraw confirmation names actor and tenant: 'Withdraw as <publisher>? Withdrawing retires it before it starts: tenant <tenant>'s consumers never see it and it cannot be reopened.' with placeholder 'Reason (optional)' :: Withdraw as au2-resolver? Withdrawing retires it befo
+PASS [F-52] G-2-12: a build with VITE_DEFAULT_TENANT=au2-default opens on that tenant (input value, GET /v1/feed?tenantId=au2-default, its items listed, no prompt) :: {"value":"au2-default","listed":true,"query":"?tenantId=au2-default&type=OUTAGE&page=0&size=100","prompt":0}
+PASS [F-52] G-2-12: the build default wins over the tenant remembered in localStorage (as documented in frontend/README.md) :: {"value2":"au2-default"}
+--- v5 (cmd-18): axe and contrast
+PASS [F-65] axe feed tab with a confirm row open (light) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"incomplete":[]}
+PASS [F-65] axe feed tab (light), best-practice rules [best-practice]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 (informational) :: {"violations":[],"passes":14,"incomplete":[]}
+PASS [F-65] axe publish tab, timing open (light) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"incomplete":["color-cont
+PASS [F-65] axe publish tab (light), best-practice rules [best-practice]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 (informational) :: {"violations":[],"passes":14,"incomplete":[]}
+PASS [F-65] axe publish tab with validation errors + summary (light) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"inco
+PASS [F-65] axe publish tab with the server-error banner focused (light) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"
+PASS [F-65] axe feed tab with a confirm row open (dark) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"incomplete":[]}
+PASS [F-65] axe publish tab, timing open (dark) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"incomplete":["color-contr
+PASS [F-65] axe publish tab with validation errors + summary (dark) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"incom
+PASS [F-65] axe publish tab with the server-error banner focused (dark) [wcag2a,wcag2aa,wcag21a,wcag21aa]: 0 violation rule(s), 0 serious/critical, color-contrast: 0 :: {"violations":[],"passes":24,"i
+PASS [F-65] sampled contrast ratios feed-light: every sampled text at or above AA (4.5:1 normal, 3:1 large) :: {"tertiary text (captions, hints, meta)":{"sampled":12,"min":4.66,"belowAA":0,"worst":[{"
+PASS [F-65] sampled contrast ratios publish-light: every sampled text at or above AA (4.5:1 normal, 3:1 large) :: {"tertiary text (captions, hints, meta)":{"sampled":11,"min":5.07,"belowAA":0,"worst":
+PASS [F-65] sampled contrast ratios publish-errors-light: every sampled text at or above AA (4.5:1 normal, 3:1 large) :: {"tertiary text (captions, hints, meta)":{"sampled":8,"min":5.07,"belowAA":0,"w
+PASS [F-65] sampled contrast ratios feed-dark: every sampled text at or above AA (4.5:1 normal, 3:1 large) :: {"tertiary text (captions, hints, meta)":{"sampled":12,"min":5.93,"belowAA":0,"worst":[{"t
+PASS [F-65] sampled contrast ratios publish-dark: every sampled text at or above AA (4.5:1 normal, 3:1 large) :: {"tertiary text (captions, hints, meta)":{"sampled":11,"min":7.31,"belowAA":0,"worst":[
+PASS [F-65] sampled contrast ratios publish-errors-dark: every sampled text at or above AA (4.5:1 normal, 3:1 large) :: {"tertiary text (captions, hints, meta)":{"sampled":8,"min":7.31,"belowAA":0,"wo
+PASS [F-65] the page has exactly one h1, 'Outage Notifications' :: ["Outage Notifications"]
+PASS [F-65] publish tab: every input/textarea/select has a label[for], wrapping label or aria-label; every aria-describedby points at an existing note :: [{"id":"acme","named":true,"how":"aria-label",
+PASS [F-65] roles: tabs, two radiogroups named 'Type' and 'Severity' with aria-checked radios, switch with aria-label + aria-checked, card headings are h2 :: {"tablist":2,"radiogroups":["Type","Severi
+PASS [F-65] Tab order from the header: theme toggle → selected tab (roving) → type → severity → title → details → services → ticket → tenant → publisher → audience → ref → sche
+PASS [F-65] roving tabindex: exactly one tabbable radio per group and one tabbable tab :: {"radios":[0,-1,-1,-1,-1,-1,0,-1],"tabs":[-1,0]}
+PASS [F-65] segmented control: ArrowRight/End/Home/ArrowLeft(wrap) move the selection and focus :: {"afterRight":"true","afterEnd":"true","afterHome":"true","wrap":"true","focus":"button[radio]:Change
+PASS [F-65] tabs: ArrowRight from Publish wraps to Feed and selects it :: {"feedSel":"true","url":"http://127.0.0.1:19731/#/feed","focus":"button[tab]:Feed3"}
+PASS [F-65] switch toggles with Space and Enter (aria-checked follows) :: {"sw":"true","sw2":"false"}
+PASS [F-65] Enter in a text field submits; validation errors are role=alert and inputs aria-invalid :: {"alerts":3}
+PASS [F-65] keyboard focus is visible (focus-visible ring: outline or box-shadow) :: {"el":"Switch to dark mode","matchesFocusVisible":true,"outline":"solid 3px","boxShadow":"none"}
+PASS [F-65] feed tab: filter controls have accessible names via label association or aria-label (not placeholder only) :: [{"id":"acme","how":"aria-label"},{"id":"_r_0_-service","how":"label[for]"},{"
+PASS [F-65] connection badge has a text label :: Live
+PASS [F-65] a polite live region exists on the feed for resolve/withdraw announcements :: count=1
+PASS [F-65] card action buttons have text names (Resolve) :: ["Resolve"]
+PASS [F-65] G-2-10: the results wrapper is focusable programmatically (tabindex=-1) without entering the Tab order :: div[tabindex=-1] count=1
+PASS [F-65] narrow viewport (375 px): feed has no horizontal overflow, the h1 is still in the document (visually hidden) :: {"scrollWidth":375,"innerWidth":375,"h1":1}
+PASS [F-65] narrow viewport (375 px): publish form (timing open) has no horizontal overflow and no interactive control (or its labelled row) under 24 px tall :: {"fit2":{"scrollWidth":375,"innerWidth"
+
+## v6 harness incidents (auditor's own errors, not product findings)
+  run 1: my copy still fetched the production index.html from the verifier's :3205 -> ECONNREFUSED after 4/4 PASS (kept as v6-builds-run1-harness-port)
+  run 2: the dev-proxy identity checks went to :19731 but the same-origin assertion still compared with 'http://127.0.0.1:3000' -> one FAIL whose own detail shows header, accept, ?clientId= and origin all correct
+  run 3 (both constants re-pointed): 8 checks, 0 failed
+
+## cmd-21 replay: v7b expired lastEventId (backend :19708 on mongo7 db au2_cfg; events deleted to emulate the TTL)
+tenant au2-exp-1793596854 on backend C (http://127.0.0.1:19708, db au2_mongodown)
+publish: 201 201 201
+event seqs of the tenant: 1 2 3
+before deletion: ?lastEventId=0 -> id:1 event:created id:2 event:created id:3 event:created 
+before deletion: ?lastEventId=1 -> id:2 event:created id:3 event:created 
+deleted every event with seq <= 2: {"acknowledged":true,"deletedCount":2}; oldest retained seq is now Long('3') (expected 3)
+after deletion (gap no longer retained): ?lastEventId=1 -> id:3 event:snapshot id:3 event:snapshot id:3 event:snapshot 
+after deletion (gap no longer retained): Last-Event-ID: 1 header -> id:3 event:snapshot id:3 event:snapshot id:3 event:snapshot 
+after deletion (boundary, whole gap retained): ?lastEventId=2 -> id:3 event:created 
+after deletion (nothing missed): ?lastEventId=3 -> 
+never issued: ?lastEventId=999999999 -> id:3 event:snapshot id:3 event:snapshot id:3 event:snapshot 
+expected: ids below oldest-1 and never-issued ids -> three snapshot frames (one per notice, stamped with the head), no created; boundary -> created#3 only; nothing missed -> no frames
+exit 0
+
+## cmd-24 replay: SSE keepalive (backend :19709)
+# curl -sN --max-time 17 -i http://127.0.0.1:19709/v1/feed/stream?tenantId=au2-keepalive-1793596879&clientId=au2-auditor (started 05:21:19.291)
+05:21:19.406 +25s HTTP/1.1 200 OK
+05:21:19.409 +25s transfer-encoding: chunked
+05:21:19.414 +25s Content-Type: text/event-stream;charset=UTF-8
+05:21:19.418 +25s 
+05:21:19.420 +25s :connected
+05:21:19.422 +25s 
+05:21:34.418 +40s :keepalive
+05:21:34.419 +40s 
+curl pipeline exit 28
+
+## cmd-25 replay: the verifier's aggregate.py run read-only over its raw results (scratchpad/frontend2/results/*.json)
+  diff against confidence/evidence/iter-2/frontend/results/aggregate.txt (blank lines ignored): 0 lines
+| **total** | **236** | **2** |
+
+note (added at write-up): the echo label "db au2_mongodown" in the v7b output above is a stale label copied with the verifier's script; every mongosh call in the script (event lookup, deleteMany, oldest seq) ran against au2_cfg, the database of backend :19708, and found the tenant's events 1 2 3 there.

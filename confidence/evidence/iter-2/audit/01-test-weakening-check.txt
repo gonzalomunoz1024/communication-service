@@ -1,0 +1,347 @@
+# Test-weakening check, iteration 2 (auditor). Ranges: 0e14838..908598a (the 22 iteration-2 fix commits + merge commit) and 191a0c5..908598a (whole branch). Generated 2026-11-02T04:55:38Z.
+
+## A. git diff --stat 0e14838..908598a over test paths
+ 39 files changed, 2527 insertions(+), 55 deletions(-)
+## A2. same, whole branch 191a0c5..908598a
+ 52 files changed, 4783 insertions(+), 31 deletions(-)
+
+## B. deleted or renamed test files (--diff-filter=DR), both ranges
+(none listed above = none)
+
+## C. skip/ignore/xfail/only/timeout markers ADDED to test code in 0e14838..908598a
+79:+  await expect(card(watcher, title)).toBeVisible({ timeout: 10_000 })
+104:+  await expect(card(watcher, title)).toHaveCount(0, { timeout: 10_000 })
+158:+    await expect(notice).toBeVisible({ timeout: 15_000 })
+176:+  await expect(card(page, TITLE)).toHaveCount(0, { timeout: 15_000 })
+203:+  await expect(card(page, before.title)).toBeVisible({ timeout: 10_000 })
+206:+  const resume = page.waitForRequest(/\/v1\/feed\/stream\?.*lastEventId=\d+/, { timeout: 90_000 })
+212:+  await expect(page.getByText(/^Reconnecting/)).toBeVisible({ timeout: 30_000 })
+224:+    await expect(card(page, after.title)).toBeVisible({ timeout: 90_000 })
+260:+  const { stdout } = await execFileAsync(path.join(E2E_DIR, 'stack.sh'), args, { cwd: E2E_DIR, timeout: 180_000 })
+292:+  await expect(page.getByText('Live', { exact: true })).toBeVisible({ timeout: 15_000 })
+1483:+		time.Sleep(10 * time.Millisecond)
+1921:+			time.Sleep(300 * time.Millisecond)
+2176:+        assertThat(settings.getClusterSettings().getServerSelectionTimeout(TimeUnit.MILLISECONDS))
+2177:+                .as("server selection timeout").isEqualTo(5000);
+2178:+        assertThat(settings.getSocketSettings().getConnectTimeout(TimeUnit.MILLISECONDS))
+2179:+                .as("connect timeout").isEqualTo(5000);
+2180:+        assertThat(settings.getSocketSettings().getReadTimeout(TimeUnit.MILLISECONDS))
+2181:+                .as("socket read timeout").isEqualTo(15000);
+2254:+import com.mongodb.MongoTimeoutException;
+2285:+                    new MongoTimeoutException(DRIVER_MESSAGE)));
+2288:+        @GetMapping("/v1/raw-timeout")
+2289:+        Mono<String> rawTimeout() {
+2290:+            return Mono.error(new MongoTimeoutException(DRIVER_MESSAGE));
+2312:+            for (String path : List.of("/v1/translated", "/v1/raw-timeout", "/v1/raw-socket")) {
+2402:+    private final MongoClientSettingsBuilderCustomizer customizer = new MongoClientConfig().mongoTimeouts(
+2403:+            new MongoTimeoutProperties(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15)));
+2406:+    void appliesTheConfiguredTimeoutsToTheClient() {
+2411:+        assertThat(settings.getClusterSettings().getServerSelectionTimeout(TimeUnit.MILLISECONDS)).isEqualTo(5000);
+2412:+        assertThat(settings.getSocketSettings().getConnectTimeout(TimeUnit.MILLISECONDS)).isEqualTo(5000);
+2413:+        assertThat(settings.getSocketSettings().getReadTimeout(TimeUnit.MILLISECONDS)).isEqualTo(15000);
+2420:+                new ConnectionString("mongodb://localhost:27017/x?serverSelectionTimeoutMS=30000&connectTimeoutMS=20000"));
+2424:+        assertThat(settings.getClusterSettings().getServerSelectionTimeout(TimeUnit.MILLISECONDS)).isEqualTo(5000);
+2425:+        assertThat(settings.getSocketSettings().getConnectTimeout(TimeUnit.MILLISECONDS)).isEqualTo(5000);
+2840:+        String timeout = "Timed out while waiting for a server that matches ReadPreferenceServerSelector"
+2842:+        when(repository.dueForActivation(NOW)).thenReturn(Flux.error(new DataAccessResourceFailureException(timeout)));
+2852:+                    .isEqualTo("status sweep skipped: database unavailable: " + timeout);
+(end of markers)
+
+## C2. same markers added over the whole branch 191a0c5..908598a
+2530:+		t.Skip("kustomize not on PATH")
+(end)
+
+## D. every REMOVED line in test code, 0e14838..908598a, with file and hunk header
++++ b/e2e/tests/01-api-contract.spec.ts
+@@ -0,0 +1,32 @@
++++ b/e2e/tests/02-f90-publish-live-resolve.spec.ts
+@@ -0,0 +1,70 @@
++++ b/e2e/tests/03-f91-sidecar-auto-notice.spec.ts
+@@ -0,0 +1,69 @@
++++ b/e2e/tests/04-f92-backend-restart.spec.ts
+@@ -0,0 +1,39 @@
++++ b/e2e/tests/helpers.ts
+@@ -0,0 +1,66 @@
++++ b/frontend/src/test/App.test.tsx
+@@ -58 +58,4 @@ describe('App', () => {
+-  afterEach(() => vi.unstubAllGlobals())
+@@ -62,0 +66 @@ describe('App', () => {
+@@ -86,0 +91,33 @@ describe('App', () => {
++++ b/frontend/src/test/OutageCard.test.tsx
+@@ -51,0 +52,24 @@ describe('OutageCard', () => {
++++ b/frontend/src/test/OutageFeed.test.tsx
+@@ -78,0 +79,14 @@ describe('OutageFeed', () => {
++++ b/frontend/src/test/PublishOutageForm.test.tsx
+@@ -2 +2 @@
+-import { render, screen } from '@testing-library/react'
+@@ -10,0 +11,15 @@ const client = (): CommunicationClient => ({ publish: vi.fn(), feed: vi.fn(), re
+@@ -84,0 +100,24 @@ describe('PublishOutageForm server errors', () => {
+@@ -95,0 +135,21 @@ describe('PublishOutageForm accessibility', () => {
+@@ -120 +179,0 @@ describe('PublishOutageForm accessibility', () => {
+-})
+@@ -122,2 +181 @@ describe('PublishOutageForm accessibility', () => {
+-describe('PublishOutageForm duplicate reference', () => {
+-  it('explains a 409 for a reused incident number', async () => {
+@@ -126 +184 @@ describe('PublishOutageForm duplicate reference', () => {
+-    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, "duplicate externalRef 'INC0012345' for tenant 'acme'"))
+@@ -128,0 +187,14 @@ describe('PublishOutageForm duplicate reference', () => {
+@@ -131,2 +203,9 @@ describe('PublishOutageForm duplicate reference', () => {
+-    expect(await screen.findByRole('alert')).toHaveTextContent(
+-      'The service rejected this. A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external refere
+@@ -133,0 +213,13 @@ describe('PublishOutageForm duplicate reference', () => {
++++ b/frontend/src/test/Segmented.test.tsx
+@@ -0,0 +1,146 @@
++++ b/frontend/src/test/StateTag.test.tsx
+@@ -0,0 +1,22 @@
++++ b/frontend/src/test/Tabs.test.tsx
+@@ -0,0 +1,107 @@
++++ b/frontend/src/test/errors.test.ts
+@@ -3 +3 @@ import { ApiError, createCommunicationClient, isApiError } from '../outages/api'
+-import { UNREACHABLE_MESSAGE, explainError, explainPublishError, isUnreachable } from '../outages/errors'
+@@ -27,0 +28,15 @@ describe('explainError', () => {
+@@ -31 +46 @@ describe('explainPublishError', () => {
+-  it("puts the duplicate-externalRef 409 in the form's terms", () => {
+@@ -33,2 +48,3 @@ describe('explainPublishError', () => {
+-    expect(explainPublishError(e)).toBe(
+-      'A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.',
+@@ -35,0 +52,6 @@ describe('explainPublishError', () => {
+@@ -50,0 +73,15 @@ describe('client with the service down', () => {
++++ b/frontend/src/test/format.test.ts
+@@ -0,0 +1,162 @@
++++ b/frontend/src/test/job-state.test.ts
+@@ -0,0 +1,29 @@
++++ b/frontend/src/test/kit-layout.test.tsx
+@@ -0,0 +1,171 @@
++++ b/frontend/src/test/stream.test.ts
+@@ -49,2 +49,3 @@ describe('reconnectDelay', () => {
+-  it('doubles from one second and caps at thirty', () => {
+-    expect([1, 2, 3, 4, 5, 6, 7, 20].map(reconnectDelay)).toEqual([1_000, 2_000, 4_000, 8_000, 16_000, 30_000, 30_000, RECONNECT_MAX_MS])
+@@ -99,2 +100,2 @@ describe('stream liveness', () => {
+-    // the resume never opened (service still down, or it refused the replay): the next attempt
+-    // starts from a fresh snapshot rather than retrying a request that may never succeed
+@@ -104 +105 @@ describe('stream liveness', () => {
+-    expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web')
+@@ -108,0 +110 @@ describe('stream liveness', () => {
+@@ -119,0 +122,37 @@ describe('stream liveness', () => {
++++ b/sidecar/cmd/health-sidecar/main_test.go
+@@ -0,0 +1,216 @@
++++ b/sidecar/deploy/deploy_test.go
+@@ -1,3 +1,5 @@
+-// Package deploy holds tests for the Kustomize snippets under deploy/kustomize. They need the
+-// kustomize binary (and use kubeconform when it is installed) and skip otherwise, so
+-// `go test ./...` stays green on a plain checkout and runs the checks wherever the tools exist.
+@@ -15 +17,16 @@ import (
+-// kustomizeBuild renders a kustomization directory, skipping the test when kustomize is absent.
+@@ -18,2 +35,2 @@ func kustomizeBuild(t *testing.T, dir string) string {
+-	bin, err := exec.LookPath("kustomize")
+-	if err != nil {
+@@ -31,2 +48,3 @@ func kustomizeBuild(t *testing.T, dir string) string {
+-// kubeconform validates rendered manifests against the given Kubernetes version when the tool
+-// is installed; a missing tool only logs, because the structural assertions already ran.
+@@ -35,2 +53,2 @@ func kubeconform(t *testing.T, manifests, version string) {
+-	bin, err := exec.LookPath("kubeconform")
+-	if err != nil {
++++ b/sidecar/deploy/dockerfile_test.go
+@@ -0,0 +1,187 @@
++++ b/sidecar/internal/agent/agent_test.go
+@@ -3,0 +4 @@ import (
+@@ -4,0 +6 @@ import (
+@@ -13,0 +16,2 @@ import (
+@@ -359,0 +364,4 @@ func TestAppThatStopsListeningStaysDownUntilItIsBack(t *testing.T) {
+@@ -449,0 +458,252 @@ func TestHandler(t *testing.T) {
++++ b/src/test/java/com/atlas/communication/CommunicationServiceE2EIT.java
+@@ -294,2 +294,2 @@ class CommunicationServiceE2EIT {
+-        // duplicate externalRef -> 409
+-        publishOutage("INC-e2e-dup");
+@@ -301 +301,4 @@ class CommunicationServiceE2EIT {
+-                .expectStatus().isEqualTo(409);
++++ b/src/test/java/com/atlas/communication/LogCapture.java
+@@ -0,0 +1,49 @@
++++ b/src/test/java/com/atlas/communication/OpenApiContractIT.java
+@@ -14,2 +14,3 @@ import com.fasterxml.jackson.databind.JsonNode;
+- * fills, says what to paste, every operation documents the 401 for a missing id, and the spec
+- * covers every /v1 surface.
+@@ -39,0 +41,28 @@ class OpenApiContractIT {
+@@ -51 +80 @@ class OpenApiContractIT {
+-        paths.fields().forEachRemaining(path -> path.getValue().fields().forEachRemaining(op -> {
++++ b/src/test/java/com/atlas/communication/OperationsEndpointsIT.java
+@@ -5,0 +6 @@ import java.time.Duration;
+@@ -7,0 +9 @@ import org.junit.jupiter.api.Test;
+@@ -13,0 +16 @@ import org.springframework.boot.actuate.health.Status;
+@@ -16,0 +20,2 @@ import org.springframework.test.web.reactive.server.WebTestClient;
+@@ -34,0 +40,2 @@ class OperationsEndpointsIT {
+@@ -75,0 +83,17 @@ class OperationsEndpointsIT {
++++ b/src/test/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapterTest.java
+@@ -118,0 +119,10 @@ class MongoCommunicationEventsAdapterTest {
++++ b/src/test/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapterIT.java
+@@ -72 +72,4 @@ class MongoCommunicationRepositoryAdapterIT {
+-                        .hasMessageContaining("duplicate externalRef"))
+@@ -77,0 +81,15 @@ class MongoCommunicationRepositoryAdapterIT {
++++ b/src/test/java/com/atlas/communication/config/GlobalExceptionHandlerTest.java
+@@ -0,0 +1,150 @@
++++ b/src/test/java/com/atlas/communication/config/MongoClientConfigTest.java
+@@ -0,0 +1,41 @@
++++ b/src/test/java/com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapterTest.java
+@@ -2,0 +3 @@ package com.atlas.communication.feed.adapters.inbound;
+@@ -9,0 +11 @@ import java.util.List;
+@@ -14,0 +17 @@ import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+@@ -15,0 +19 @@ import org.springframework.http.MediaType;
+@@ -72,0 +77,28 @@ class RestControllerFeedAdapterTest {
++++ b/src/test/java/com/atlas/communication/feed/application/FeedUseCaseTest.java
+@@ -20,0 +21 @@ import org.mockito.ArgumentCaptor;
+@@ -159 +160 @@ class FeedUseCaseTest {
+-    void streamEmitsMatchingLiveEventsAndASnapshotStampedWithThePosition() {
+@@ -165 +166 @@ class FeedUseCaseTest {
+-        when(events.position()).thenReturn(42L);
+@@ -184,0 +186,21 @@ class FeedUseCaseTest {
+@@ -209,0 +232 @@ class FeedUseCaseTest {
+@@ -214 +237,4 @@ class FeedUseCaseTest {
+-                .assertNext(e -> assertThat(e.type()).isEqualTo(CommunicationEventType.SNAPSHOT))
++++ b/src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java
+@@ -174 +174,2 @@ class HealthMonitoringE2EIT {
+-        // the monitor notices on its next observation and starts counting from zero again...
+@@ -177,2 +178 @@ class HealthMonitoringE2EIT {
+-        assertThat(noticed.state().unhealthyStreak()).isZero();
+-        assertThat(probe(monitor.id()).state().openCommunicationId()).isNull();
+@@ -181 +181,2 @@ class HealthMonitoringE2EIT {
+-        // ...so the threshold opens a fresh notice, incident #2, instead of silence for ever
++++ b/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapterIT.java
+@@ -37 +37 @@ class MongoHealthInstanceRepositoryAdapterIT {
+-        template.indexOps(HealthInstanceDocument.class).ensureIndex(new Index()
++++ b/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthMonitorRepositoryAdapterIT.java
+@@ -44 +44 @@ class MongoHealthMonitorRepositoryAdapterIT {
+-        template.indexOps(HealthMonitorDocument.class).ensureIndex(new CompoundIndexDefinition(
++++ b/src/test/java/com/atlas/communication/health/application/HealthMonitorUseCaseTest.java
+@@ -52 +52 @@ class HealthMonitorUseCaseTest {
+-            new HealthProperties.Defaults("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
+@@ -151 +151 @@ class HealthMonitorUseCaseTest {
+-                .thenReturn(Mono.empty(), Mono.just(winner));
+@@ -205,0 +206,46 @@ class HealthMonitorUseCaseTest {
+@@ -305,3 +351,3 @@ class HealthMonitorUseCaseTest {
+-        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
+-                Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently")),
+-                Mono.just(monitor));
+@@ -341,2 +387,3 @@ class HealthMonitorUseCaseTest {
+-        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
+-                conflict, conflict, conflict, conflict, Mono.just(monitor));
++++ b/src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java
+@@ -230 +230,2 @@ class HealthObservationUseCaseTest {
+-                    assertThat(m.state().unhealthyStreak()).isZero();
+@@ -246 +247 @@ class HealthObservationUseCaseTest {
+-        assertThat(cleared.state().unhealthyStreak()).isZero();
+@@ -261,0 +263,37 @@ class HealthObservationUseCaseTest {
++++ b/src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java
+@@ -3,0 +4,2 @@ import static org.assertj.core.api.Assertions.assertThat;
+@@ -5,0 +8 @@ import static org.mockito.ArgumentMatchers.anyString;
+@@ -6,0 +10 @@ import static org.mockito.ArgumentMatchers.eq;
+@@ -11,0 +16 @@ import java.time.Clock;
+@@ -13,0 +19 @@ import java.time.ZoneOffset;
+@@ -21,0 +28 @@ import org.mockito.junit.jupiter.MockitoExtension;
+@@ -22,0 +30 @@ import org.mockito.junit.jupiter.MockitoExtension;
+@@ -32,0 +41,2 @@ import com.atlas.communication.health.ports.outbound.HealthMonitorRepositoryPort
+@@ -40,0 +51,4 @@ class HealthSweepUseCaseTest {
+@@ -44 +58,2 @@ class HealthSweepUseCaseTest {
+-    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 0, 0.3, 2, DEFAULTS);
+@@ -134,0 +150,29 @@ class HealthSweepUseCaseTest {
+@@ -140 +184,2 @@ class HealthSweepUseCaseTest {
+-                new HealthProperties(5000, 300_000, 0.3, 2, DEFAULTS), Clock.fixed(NOW, ZoneOffset.UTC));
+@@ -221,0 +267,65 @@ class HealthSweepUseCaseTest {
++++ b/src/test/java/com/atlas/communication/health/domain/HealthMonitorTest.java
+@@ -174,0 +175 @@ class HealthMonitorTest {
+@@ -177 +178 @@ class HealthMonitorTest {
+-        assertThat(byOperator.state().unhealthyStreak()).isZero();
+@@ -182,0 +184,19 @@ class HealthMonitorTest {
++++ b/src/test/java/com/atlas/communication/publishing/application/StatusSweepUseCaseTest.java
+@@ -3,0 +4,2 @@ import static org.assertj.core.api.Assertions.assertThat;
+@@ -20,0 +23 @@ import org.mockito.junit.jupiter.MockitoExtension;
+@@ -23,0 +27 @@ import org.springframework.web.server.ResponseStatusException;
+@@ -32,0 +37,2 @@ import com.atlas.communication.common.ports.outbound.CommunicationRepositoryPort
+@@ -105,0 +112,31 @@ class StatusSweepUseCaseTest {
+
+## E. commits touching each PRE-EXISTING test file (existed at 0e14838) in 0e14838..908598a (regenerated by the auditor at 2026-11-02T05:40:38Z)
+--- frontend/src/test/App.test.tsx
+    8e644ce Fix G-2-12: six review findings from the SRE's seat (UX-13, UX-10, UX-12, UX-15, UX-19, UX-8)
+--- frontend/src/test/OutageCard.test.tsx
+    8e644ce Fix G-2-12: six review findings from the SRE's seat (UX-13, UX-10, UX-12, UX-15, UX-19, UX-8)
+--- frontend/src/test/OutageFeed.test.tsx
+    290c2ad Fix G-2-10: keep keyboard focus on the page after a resolve, "Publish another" and a server error
+--- frontend/src/test/PublishOutageForm.test.tsx
+    8e644ce Fix G-2-12: six review findings from the SRE's seat (UX-13, UX-10, UX-12, UX-15, UX-19, UX-8)
+    290c2ad Fix G-2-10: keep keyboard focus on the page after a resolve, "Publish another" and a server error
+    eac1d0a Fix G-2-9: say that a reused reference is permanent instead of asking to retire the notice
+--- frontend/src/test/errors.test.ts
+    8e644ce Fix G-2-12: six review findings from the SRE's seat (UX-13, UX-10, UX-12, UX-15, UX-19, UX-8)
+    eac1d0a Fix G-2-9: say that a reused reference is permanent instead of asking to retire the notice
+--- frontend/src/test/stream.test.ts
+    7bb0b6c Fix G-2-11: notice a restart within ten seconds and resume from the last event after it
+--- sidecar/deploy/deploy_test.go
+    e54fe6a Fix G-2-15: fail the manifest tests in CI without the tools, pin the /status contract, test main's wiring
+--- sidecar/internal/agent/agent_test.go
+    7006692 Fix G-2-16: send every probe while the app is not UP, log transitions at INFO, one "not listening" message
+    e54fe6a Fix G-2-15: fail the manifest tests in CI without the tools, pin the /status contract, test main's wiring
+--- src/test/java/com/atlas/communication/CommunicationServiceE2EIT.java
+    6fd1088 Fix G-2-9: say that externalRef is permanent, name its holder, document it
+--- src/test/java/com/atlas/communication/OpenApiContractIT.java
+    6fd1088 Fix G-2-9: say that externalRef is permanent, name its holder, document it
+    37e6ad4 Fix G-2-1: replace ensureIndex with createIndex and fail the build on javac warnings
+--- src/test/java/com/atlas/communication/OperationsEndpointsIT.java
+    00433c3 Fix G-2-4: answer 503 within seconds while Mongo is unreachable
+--- src/test/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapterTest.java
+    908598a Fix G-2-7, G-2-8: chain the consecutive stubbings so the G-2-1 -Werror gate accepts the new tests
+    a08dfaf Fix G-2-8: stamp snapshot frames with the log head, not the fan-out cursor
+--- src/test/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapterIT.java
+    6fd1088 Fix G-2-9: say that externalRef is permanent, name its holder, document it
+--- src/test/java/com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapterTest.java
+    b0a71ef Fix G-2-2: gate the build on SpotBugs and JaCoCo, fix the findings they report
+--- src/test/java/com/atlas/communication/feed/application/FeedUseCaseTest.java
+    a08dfaf Fix G-2-8: stamp snapshot frames with the log head, not the fan-out cursor
+--- src/test/java/com/atlas/communication/health/HealthMonitoringE2EIT.java
+    dce5f89 Fix G-2-6: reopen a retired auto notice on the threshold-th failing observation
+--- src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapterIT.java
+    37e6ad4 Fix G-2-1: replace ensureIndex with createIndex and fail the build on javac warnings
+--- src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthMonitorRepositoryAdapterIT.java
+    37e6ad4 Fix G-2-1: replace ensureIndex with createIndex and fail the build on javac warnings
+--- src/test/java/com/atlas/communication/health/application/HealthMonitorUseCaseTest.java
+    908598a Fix G-2-7, G-2-8: chain the consecutive stubbings so the G-2-1 -Werror gate accepts the new tests
+    d3ac7eb Fix G-2-7: apply an on-demand probe again when it loses the race with the scheduler
+    851a1e4 Fix G-2-5: forget monitors silent for longer than stale-forget-after
+    37e6ad4 Fix G-2-1: replace ensureIndex with createIndex and fail the build on javac warnings
+--- src/test/java/com/atlas/communication/health/application/HealthObservationUseCaseTest.java
+    dce5f89 Fix G-2-6: reopen a retired auto notice on the threshold-th failing observation
+--- src/test/java/com/atlas/communication/health/application/HealthSweepUseCaseTest.java
+    851a1e4 Fix G-2-5: forget monitors silent for longer than stale-forget-after
+    00433c3 Fix G-2-4: answer 503 within seconds while Mongo is unreachable
+--- src/test/java/com/atlas/communication/health/domain/HealthMonitorTest.java
+    dce5f89 Fix G-2-6: reopen a retired auto notice on the threshold-th failing observation
+--- src/test/java/com/atlas/communication/publishing/application/StatusSweepUseCaseTest.java
+    00433c3 Fix G-2-4: answer 503 within seconds while Mongo is unreachable
+
+## F. test counts: @Test annotations at 0e14838 vs 908598a; vitest it(/test( at both; Go top-level Test funcs at both
+0e14838: @Test 227 ; @ParameterizedTest 0; vitest it/test calls 73; Go top-level Test funcs 33
+908598a: @Test 250 ; @ParameterizedTest 0; vitest it/test calls 136; Go top-level Test funcs 42
+
+## G. verdict per removed assertion-like line, 0e14838..908598a (auditor)
+backend (src/test) - 8 removed assertion lines; the backend verifier's ev/06 lists 7 (its grep missed the repository IT's message assertion, #2 below)
+  1 CommunicationServiceE2EIT  .expectStatus().isEqualTo(409);  -> same status kept and chained with .jsonPath("$.error") contains "permanent", the holder id
+    and "INC-e2e-dup-2" (6fd1088, G-2-9): stronger
+  2 MongoCommunicationRepositoryAdapterIT  .hasMessageContaining("duplicate externalRef")  -> hasMessageContaining("externalRef 'INC1' is already used by notice
+    c1 in tenant vmforge"), "permanent idempotency key", "INC1-2" (6fd1088, G-2-9): stronger
+  3 FeedUseCaseTest  .assertNext(... SNAPSHOT)  -> snapshot frames asserted with seq == log head, InOrder head() before query (a08dfaf, G-2-8): stronger
+  4-8 HealthMonitoringE2EIT / HealthObservationUseCaseTest / HealthMonitorTest  unhealthyStreak().isZero() x4 and openCommunicationId().isNull() x1
+    -> isEqualTo(1) ("this failing observation is the first of the new count") and the reopen asserted at the threshold-th observation
+    (reopened ... isNotNull().isNotEqualTo(first)); the old values encoded the G-2-6 defect (dce5f89 message: "Existing tests changed, minimally,
+    because they encoded the defect"): changed expectation, justified, not loosened
+  stubbing-only changes: events.position() -> head() (a08dfaf); thenReturn(a, b) -> thenReturn(a).thenReturn(b) (908598a, 37e6ad4: "No assertion changed")
+frontend (src/test) - 4 removed expect lines
+  stream.test.ts  reconnectDelay table 16_000, 30_000, 30_000 -> 10_000 x3 (7bb0b6c, G-2-11: cap lowered to 10 s as documented); reopen URL now asserted
+    WITH &lastEventId=12 plus new attempt-by-attempt tests (stronger)
+  errors.test.ts / PublishOutageForm.test.tsx  the old 409 "retire it" wording -> the permanent-key wording plus a negative assertion that the text no longer
+    tells the user to retire (eac1d0a, G-2-9; 8e644ce for the 500 text): changed expectation, justified
+sidecar - no assertion removed; deploy_test.go's skip-when-missing helper became fail-when-CI (e54fe6a, G-2-15): stronger
+e2e - new suite only (no removed lines)
+timeouts: only the explicit timeouts of the NEW e2e specs and sleeps inside NEW Go tests; no existing timeout was raised
+fixes.md names 20 of the 23 files (19 by class or file name in its tables and lists, agent_test.go by its test name
+TestAppThatStopsListeningStaysDownUntilItIsBack; e54fe6a only added TestStatusJSONMatchesTheDocumentedContract there). Not named in fixes.md:
+MongoHealthInstanceRepositoryAdapterIT and MongoHealthMonitorRepositoryAdapterIT (one setup line each, ensureIndex -> createIndex, 37e6ad4 G-2-1) and
+deploy_test.go (skip -> fail under CI, described in the G-2-15 row of the fixes table and in e54fe6a's message). The two ITs change no assertion;
+deploy_test.go tightens a skip into a CI failure, justified in e54fe6a and in the G-2-15 row of fixes.md. Every touching commit is a "Fix G-2-..." commit whose message explains the change. Verdict: nothing deleted, skipped, xfail'd or loosened without justification -> hard gate not tripped.

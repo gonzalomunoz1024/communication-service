@@ -1,0 +1,25 @@
+# G-2-4 stream during outage (auditor replay :19714)
+
+Checks: 4/4 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| G24-l | stream opened during the outage | PASS | HTTP 200; comments=[':connected']; frames=[]; connection lasted <= 5.0s (the reader was given 12 s) |
+| G24-m | resume requested during the outage | PASS | HTTP 200; comments=[':connected']; frames=[] |
+| G24-n | sidecar report during the outage | PASS | POST /v1/health/reports -> 503 {'error': 'database unavailable'} |
+| G24-o | stream after recovery | PASS | frames=['snapshot'] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:19714/v1/communications body={"tenantId": "au2-down2-c5ee76", "publisher": "p", "type": "OUTAGE", "severity": "MAJOR", "title": "x"} -> 201 {"id":"e5034d17-3c5f-4c40-a700-968004212b16","tenantId":"au2-down2-c5ee76","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"x","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T05:21:48.172543131Z","createdAt":"2026-11-02T05:21:48.172543131Z","updatedAt":"2026-11-02T05:21:48.172543131Z","version":0,"history":[{"at":"2026-11-02T05:21:48.172543131Z","ac
+SSE http://localhost:19714/v1/feed/stream?tenantId=au2-down2-c5ee76 hdr=None -> 200, 0 frames, 1 comments
+  [PASS] G24-l (stream opened during the outage): HTTP 200; comments=[':connected']; frames=[]; connection lasted <= 5.0s (the reader was given 12 s)
+SSE http://localhost:19714/v1/feed/stream?tenantId=au2-down2-c5ee76&lastEventId=1 hdr=None -> 200, 0 frames, 1 comments
+  [PASS] G24-m (resume requested during the outage): HTTP 200; comments=[':connected']; frames=[]
+POST http://localhost:19714/v1/health/reports body={"tenantId": "au2-down2-c5ee76", "service": "s", "status": "UP"} -> 503 {"error":"database unavailable"}
+  [PASS] G24-n (sidecar report during the outage): POST /v1/health/reports -> 503 {'error': 'database unavailable'}
+GET http://localhost:19714/actuator/health/readiness body= -> 200 {"status":"UP"}
+SSE http://localhost:19714/v1/feed/stream?tenantId=au2-down2-c5ee76 hdr=None -> 200, 1 frames, 1 comments
+  [PASS] G24-o (stream after recovery): frames=['snapshot']
+```

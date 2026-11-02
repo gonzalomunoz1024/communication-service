@@ -1,0 +1,26 @@
+# auditor replay of cmd-22 (ev/31) on :19719, db au2_cookbook; started 2026-11-02T05:18:09Z
+before:
+[
+  [
+    'events_ttl_idx',
+    86400
+  ]
+]
+pid 26296
+readiness 200 after ~12 s
+after start with retention PT2H:
+[
+  [
+    'events_ttl_idx',
+    7200
+  ]
+]
+2026-11-02T05:18:19.110Z  INFO 26296 --- [communication-service] [ntLoopGroup-3-5] .c.c.a.o.MongoCommunicationEventsAdapter : events_ttl_idx now expires events after PT2H
+
+client-id.required=false: GET /v1/feed?tenantId=au2-cfg without X-Client-Id -> 200
+default-config stand-in :19711 (client-id.required default true), same request -> 401
+
+servicenow.instance-url set: publish with ticket INC0000777 ->
+{"status": "ACTIVE", "externalRef": "INC0000777", "ticket": {"system": "servicenow", "number": "INC0000777", "url": "https://au2.service-now.com/nav_to.do?uri=incident.do%3Fsysparm_query%3Dnumber%3DINC0000777"}}
+bad number -> {"error":"ticket.number 'INC12' is not a ServiceNow incident number (like INC0012345)"}
+instance :19719 stopped 2026-11-02T05:18:28Z

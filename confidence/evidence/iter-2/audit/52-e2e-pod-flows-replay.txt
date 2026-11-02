@@ -1,0 +1,81 @@
+# 52 - E2E pod flows: scripts/pod_flows.js down degraded sigterm deadapp ordering capture pull logs (same scenario list as the verifier's run 1)
+# pod = au2-netns (shared netns, app :19740, sidecar /status :19741) + au2-app (fakeapp:e2e) + au2-sidecar (health-sidecar:au2,
+#   CS_INTERVAL=3s CS_HEARTBEAT=10s CS_RETRY_DELAY=1s CS_STARTUP_GRACE=30s; --user 1000660000:0 --read-only --cap-drop ALL --security-opt no-new-privileges)
+# verifier run 1: 50 pass, 1 FAIL (F-74 'retry succeeds': the script looked for an INFO 'reported' line that G-2-16 moved to DEBUG; stub log shows 202 2.3 s after the last failure)
+
+=================== pod_flows.js (auditor run 1)
+## down: app DOWN -> sidecar -> OUTAGE in the UI, with the new send policy (2026-11-02T05:20:45.556Z)
+2026-11-02T05:20:45.601Z PASS F-91 the pod auto-registered a push-only monitor (url absent, publisher health-sidecar, thresholds 2/2) and is UP :: id=ebc2fccd-6e81-4b30-8576-35b9aa869858 summary=UP (1 of 1 pod UP) staleAfter=90 minHealthy=50
+2026-11-02T05:20:45.601Z PASS F-75 the instance record carries the Downward API identity and the sidecar version from the real sidecar :: {"monitorId":"ebc2fccd-6e81-4b30-8576-35b9aa869858","instanceId":"ve2-app-6d4f8b7c9-ab12c","status":"UP","components":[],"namespace":"ve2-ns","node":"worker-7","cluster":"sandbox","version":"2.1.0","sidecar":"1.0.0-au2","left":false,"lastSeenAt":"2026-11-02T05:20:37.241Z"}
+2026-11-02T05:20:52.783Z PASS F-91 first DOWN report left the sidecar within the probe interval + retry delay :: first DOWN report 2275 ms after the flip (reportsSent 95 -> 96, message="health document reports DOWN")
+2026-11-02T05:20:52.785Z PASS F-91 OUTAGE notice opened and its card appeared live in the UI :: notice 4383 ms and card 4832 ms after the first DOWN report; from the flip: card at 7118 ms
+2026-11-02T05:20:52.785Z PASS F-91 G-2-16: the second DOWN observation came one probe interval later (3 s), not at the heartbeat (10 s): notice < 7 s after the first DOWN report :: notice after 4383 ms; reports sent since the flip: 2
+2026-11-02T05:20:52.790Z PASS F-91 the card is an Outage, Major, service tag ve2-app, publisher health-sidecar, body names the pod :: Active Major Outage health:ebc2fccd-6e81-4b30-8576-35b9aa869858:1 Updated just now ve2-app is down Automated health check reported **DOWN** at 2026-11-02T05:20:52.154213176Z (rolled up from the service's pods). 0 of 1 pod UP (DOWN: ve2-app-6d4f8b7c9-ab12c) Failing components: - db: DOW
+2026-11-02T05:20:52.863Z PASS F-91 the instance record is DOWN with the sidecar message, not left :: {"monitorId":"ebc2fccd-6e81-4b30-8576-35b9aa869858","instanceId":"ve2-app-6d4f8b7c9-ab12c","status":"DOWN","components":[{"name":"db","status":"DOWN","detail":"database=PostgreSQL"}],"message":"health document reports DOWN","namespace":"ve2-ns","node":"worker-7","cluster":"sandbox","version":"2.1.0","sidecar":"1.0.0-a
+2026-11-02T05:20:52.906Z PASS F-89 G-2-16 logging: the DOWN transition is logged once at INFO while several DOWN reports were sent (repeats at DEBUG, hidden at the default level) :: INFO reported-DOWN lines=1, reports sent=2; new log lines: INFO reported DOWN
+2026-11-02T05:21:08.738Z PASS F-91 app UP -> notice retired and the card leaves the UI (recovery threshold 2: the second UP arrives at the heartbeat, 10 s) :: first UP report 2381 ms after the flip; retired 13257 ms and card gone 13440 ms after the flip
+2026-11-02T05:21:08.745Z PASS F-91 the notice's permalink reads RETIRED and the history says recovered :: RETIRED body=Automated health check reported **DOWN** at 2026-11-02T05:20:52.154213176Z (rolled up from the service's pods). 0 of 1 pod UP (DOWN: ve2-app-6d4f8b7c9-ab12c) Fa
+2026-11-02T05:21:08.746Z PASS F-89 backend logged the open and the retire at INFO :: opened OUTAGE 4224d456-4b7f-49b7-add6-cb4c2fb60e76 for ve2/ve2-app || retired notice 4224d456-4b7f-49b7-add6-cb4c2fb60e76: recovered: UP (1 of 1 pod UP)
+## degraded: UP with a failing component, then WARN (2026-11-02T05:21:08.746Z)
+2026-11-02T05:21:24.782Z PASS F-38 sidecar status UP with component db DOWN -> backend DEGRADED :: report after 2886 ms (status UP, db DOWN); monitor DEGRADED after 8 ms
+2026-11-02T05:21:24.782Z PASS F-91 HEALTH notice 've2-app is degraded' (MINOR) in the UI after the second observation :: notice 12967 ms after the flip (observation: sidecar status is UP, so the 2nd report waits for the heartbeat); reports since flip 2
+2026-11-02T05:21:24.786Z PASS F-91 the degraded card is type Health, severity Minor, names db :: Active Minor Health health:ebc2fccd-6e81-4b30-8576-35b9aa869858:2 Updated just now ve2-app is degraded Automated health check reported **DEGRADED** at 2026-11-02T05:21:24.560225683Z (rolled up from the service's pods). 0 of 1 pod UP (DEGRAD
+2026-11-02T05:21:28.752Z PASS F-70 app says WARN -> sidecar reports 'WARN' -> backend instance DEGRADED :: sidecar lastReport.status=WARN; instance={"monitorId":"ebc2fccd-6e81-4b30-8576-35b9aa869858","instanceId":"ve2-app-6d4f8b7c9-ab12c","status":"DEGRADED","components":[],"message":"health document reports WARN","namespace":"ve2-ns","node":"wor
+2026-11-02T05:21:45.211Z PASS F-91 back to UP -> degraded notice retired, card gone :: retired 16144 ms after the flip
+## sigterm: docker stop (SIGTERM) -> leaving report (2026-11-02T05:21:45.212Z)
+2026-11-02T05:21:45.586Z PASS F-76 SIGTERM: 'leaving report sent', exit code 0, well under the 30 s grace :: stop took 178 ms exit=0 lines=leaving report sent | health sidecar stopped
+2026-11-02T05:21:45.586Z PASS F-48 the instance is marked left at once and the rollup has no live pod; no notice opened :: left=true message=instance shutting down monitor=UP summary=UNKNOWN (no live pod reports)
+2026-11-02T05:21:49.603Z PASS F-48 a service whose only pod left cleanly is not declared DOWN (scaled to zero, 4 s later) :: monitor=UP summary=UNKNOWN (no live pod reports)
+2026-11-02T05:21:49.816Z PASS F-88 restarted sidecar -> UP again, left=false, no notice :: back after 17 ms summary=UP (1 of 1 pod UP)
+## deadapp: the app process dies while the sidecar keeps running in the pod (2026-11-02T05:21:49.816Z)
+2026-11-02T05:21:54.311Z PASS F-88 DOWN reported from the first failed probe with 'app is not listening (last target …)' (G-2-16), target cleared, lastTarget kept :: after 4295 ms: message="app is not listening (last target http://127.0.0.1:8080/actuator/health)" target="undefined" lastTarget="http://127.0.0.1:8080/actuator/health"
+2026-11-02T05:21:59.337Z PASS F-88 OUTAGE naming the pod in the UI; the instance record carries the not-listening message :: notice 4551 ms after the first DOWN report; instance.message="app is not listening (last target http://127.0.0.1:8080/actuator/health)"
+2026-11-02T05:21:59.439Z PASS F-89 log: 'health target gone; will rediscover' and one INFO 'reported' DOWN with the not-listening message :: INFO health target gone; will rediscover   | INFO reported DOWN app is not listening (last target http://127.0.0.1
+2026-11-02T05:22:15.757Z PASS F-88 app back -> 'health target found' -> UP -> notice retired, card gone :: rediscovered 2694 ms, retired 12978 ms after the start
+## ordering: a second pod whose sidecar starts before its app; 1 of 2 pods DOWN keeps the service UP (2026-11-02T05:22:15.757Z)
+2026-11-02T05:22:16.883Z PASS F-72 sidecar before the app: reports UNKNOWN 'starting: waiting for the app to listen'; the service stays UP, no notice :: after 10 ms: "starting: waiting for the app to listen" monitor=UP summary=UP (1 of 2 pods UP (1 starting))
+2026-11-02T05:22:20.432Z PASS F-88 app started after the sidecar: found and UP; rollup '2 of 2 pods UP' :: UP after 1820 ms; summary=UP (2 of 2 pods UP)
+2026-11-02T05:22:31.625Z PASS F-91 one of two pods DOWN: service still UP ('1 of 2 pods UP'), no notice (minHealthyPercent 50) :: summary=UP (1 of 2 pods UP (DOWN: ve2-app-6d4f8b7c9-cd34e)) open=none
+2026-11-02T05:22:33.230Z PASS F-88 sidecar SIGKILL + restart (liveness restart): back UP, no new notice, app unaffected :: kill exit=137 back after 43 ms summary=UP (2 of 2 pods UP)
+2026-11-02T05:22:33.347Z PASS F-48 pod 2 leaves cleanly: left=true, rollup back to '1 of 1 pod UP', no notice :: summary=UP (1 of 1 pod UP)
+## capture: the sidecar's wire contract through a recording stub, then the slow / permanent-4xx / 5xx paths (2026-11-02T05:22:33.654Z)
+2026-11-02T05:22:34.800Z PASS F-75 wire: POST /v1/health/reports, Content-Type/Accept application/json, X-Client-Id = CS_CLIENT_ID, User-Agent health-sidecar/<version> :: {"method":"POST","url":"/v1/health/reports","ct":"application/json","accept":"application/json","cid":"ve2-cap-repo","ua":"health-sidecar/1.0.0-au2"}
+2026-11-02T05:22:34.800Z PASS F-75 wire body: tenantId, service, status, components, observedAt (UTC ms), publisher health-sidecar, instance{id, namespace, node, cluster, version, sidecar}, no leaving :: {"tenantId":"ve2cap","service":"ve2-cap","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T05:22:34.593Z","publisher":"health-sideca
+2026-11-02T05:22:34.818Z PASS F-75 the captured request replayed verbatim to the real backend -> 202 (monitor ve2cap/ve2-cap, instance ve2-cap-0) :: 202 {"lastStatus":"UP","lastReportAt":"2026-11-02T05:22:34.807069021Z","lastSummary":"UP (1 of 1 pod UP)","unhealthyStreak":
+2026-11-02T05:22:34.833Z PASS F-75 instance id 253 chars -> 202, 254 -> 400 naming the field :: 202 / 400 {"error":"instance.id: size must be between 0 and 253"}
+2026-11-02T05:22:39.893Z PASS F-92 slow backend: CS_REPORT_TIMEOUT (1 s) fires -> 'report failed; will retry' with the deadline error and a backoff :: after 5019 ms: error="post http://172.17.0.1:19760/v1/health/reports: Post "http://172.17.0.1:19760/v1/health/reports": context deadline excee" in=1s
+2026-11-02T05:22:49.744Z PASS F-74 permanent 4xx: ERROR 'report rejected', no retry within 3 s (next send at the 4 s heartbeat), no backoff state :: rejected after 2259 ms error="report rejected: HTTP 400 {"error":"stub says 400"}"; requests in the 3 s after: 0
+2026-11-02T05:22:53.081Z PASS F-74 5xx: 'report failed; will retry' with exponential backoff (in 1s, then 2s) :: 1s:post http://172.17.0.1:19760/v1/health/r | 2s:post http://172.17.0.1:19760/v1/health/r
+2026-11-02T05:23:08.114Z FAIL F-74 backend healthy again -> the retry succeeds, backoff cleared :: reported 15031 ms after the stub recovered
+2026-11-02T05:23:08.674Z PASS F-92 bad input from the sidecar: the real backend's 400 is logged as 'report rejected' (permanent), the message names the problem :: error="report rejected: HTTP 400 {"error":"instance.id: size must be between 0 and 253"}"
+## pull: a URL monitor against a stub flipping UP / DEGRADED / DOWN (2026-11-02T05:23:08.916Z)
+2026-11-02T05:23:08.927Z PASS F-91 register a pull monitor -> 201 with the policy echoed :: 201 {"publisher":"ve2-monitor","intervalSeconds":5,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","au
+2026-11-02T05:23:09.614Z PASS F-91 first probe -> UP with lastProbeAt :: after 687 ms summary=UP (HTTP 200)
+2026-11-02T05:23:19.701Z PASS F-91 stub UP with db DOWN -> DEGRADED after 2 probes -> HEALTH notice 'pull-svc is degraded' (Minor) in the UI naming db :: notice 9873 ms after the flip; Active Minor Health health:838e0c0c-ddde-4b6e-ba4b-c7dcb21553f3:1 Updated just now pull-svc is degraded Automated health check reported **DEGRADED** at 2026-11-02T05:23:19.399377426Z (probe of http://
+2026-11-02T05:23:29.731Z PASS F-91 stub DOWN -> the streak restarts -> OUTAGE 'pull-svc is down' replaces the HEALTH notice (which is retired) :: outage 9809 ms after the flip; previous notice RETIRED
+2026-11-02T05:23:29.803Z PASS F-91 POST /probe applies a probe at once (200, lastProbeAt advances) :: 200 2026-11-02T05:23:29.795054046Z
+2026-11-02T05:23:40.821Z PASS F-91 stub UP -> recovered after 2 probes -> notice retired, card gone :: retired 11013 ms after the flip
+2026-11-02T05:23:40.828Z PASS F-91 DELETE the monitor -> 204 :: 204
+## logs: JSON slog from the sidecar, INFO lines from the backend (2026-11-02T05:23:40.829Z)
+2026-11-02T05:23:40.867Z PASS F-89 every sidecar log line is JSON; start line names version/service/tenant/instance/endpoint :: lines=17 non-json=0 start={"time":"2026-11-02T05:01:58.263134493Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-au2","service":"ve2-app","tenant":"ve2","instance":"ve2-app-6d4f8b7c9-ab12c","endpoint":"http:/
+2026-11-02T05:23:40.867Z PASS F-89 sidecar messages present: starting, target found, reported, leaving report sent, target gone :: msgs=health sidecar starting | health target found | reported | leaving report sent | health sidecar stopped | health target gone; will rediscover
+2026-11-02T05:23:40.867Z PASS F-89 no DEBUG noise at the default level; WARN only for send failures :: {"INFO":17}
+2026-11-02T05:23:40.871Z PASS F-89 backend: INFO access log per identified request (sidecar POSTs), notice open/retire at INFO, no ERROR with stack traces :: sidecar access lines=124 opened=5 retired=6 ERROR=0 stacktrace-lines=0 WARN kinds=SpringDoc /v#/api-docs endpoint is enabled by default. To disable it in production, set th || SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production
+2026-11-02T05:23:40.872Z PASS F-89 no secrets or Mongo URIs with credentials in the logs :: 
+2026-11-02T05:23:40.872Z PASS F-91 no page errors / console errors in the UI during the pod flows :: 
+## summary: 50 pass, 1 fail at 2026-11-02T05:23:40.907Z
+exit 1
+
+## capture stub request log (the F-74 recovery the FAIL above is about): mode per request
+   2026-11-02T05:22:34.601Z POST /v1/health/reports answered: ok
+   2026-11-02T05:22:38.859Z POST /v1/health/reports answered: slow
+   2026-11-02T05:22:42.109Z POST /v1/health/reports answered: ok
+   2026-11-02T05:22:46.615Z POST /v1/health/reports answered: 400
+   2026-11-02T05:22:50.751Z POST /v1/health/reports answered: 500
+   2026-11-02T05:22:53.061Z POST /v1/health/reports answered: 500
+   2026-11-02T05:22:55.268Z POST /v1/health/reports answered: ok
+   2026-11-02T05:22:59.878Z POST /v1/health/reports answered: ok
+   2026-11-02T05:23:04.525Z POST /v1/health/reports answered: ok
+  -> the retry after the second 500 (05:22:53.061Z, backoff 2 s) was answered 'ok' at 05:22:55.268Z = 2.2 s after the last failure (verifier: 2.3 s)
+
+note (added at write-up): in the degraded scenario the script starts the notice timer only after the first report and the DEGRADED state were seen (pod_flows.js:94-96, waitFor measures from its own start), so "notice 12967 ms after the flip" above is the time from the first report (the flip was ~2.9 s earlier); the verifier's "notice 10168 ms after the flip" (e2e/30-pod-flows-run1.txt:15) is likewise 10.2 s after its first report. Both lie in the window agent.go:311 allows for the heartbeat send (>= CS_HEARTBEAT 10 s after the last send, at the next 3 s probe tick). In the down scenario both timers start at the first DOWN report (pod_flows.js:60-62), as labelled.
