@@ -9,6 +9,8 @@ const TENANT_KEY = 'comm-tenant'
 const PUBLISHER_KEY = 'comm-publisher'
 /** Shown while no tenant is set: on a first visit, or after the field was cleared. */
 const TENANT_PROMPT = 'Enter the tenant your consumers read; the service owners assign it.'
+/** How long typing in the header's tenant field pauses before the feed follows it (Enter or leaving the field: at once). */
+const TENANT_SETTLE_MS = 400
 
 function readStored(key: string, fallback: string): string {
   try {
@@ -32,7 +34,10 @@ export default function App() {
   const { mode, cycle } = useTheme()
   const client = useMemo(() => createCommunicationClient(import.meta.env.VITE_API_BASE ?? '', { clientId: import.meta.env.VITE_CLIENT_ID }), [])
   const [tab, setTab] = useState<Tab>(tabFromHash)
-  const [tenantId, setTenantId] = useState(initialTenant)
+  // the header field and the tenant the page shows: the feed and the form follow the field once typing
+  // pauses, so typing "ux2-sre" is one load and one stream subscription, not one per keystroke
+  const [tenantInput, setTenantInput] = useState(initialTenant)
+  const [tenantId, setTenantId] = useState(tenantInput)
   const [publisher, setPublisher] = useState(() => readStored(PUBLISHER_KEY, ''))
   // the feed's type filter when the tab opens; "View in feed" points it at what was just published
   const [feedType, setFeedType] = useState<CommunicationType | ''>('OUTAGE')
@@ -54,12 +59,22 @@ export default function App() {
   }, [tab])
 
   useEffect(() => {
+    if (tenantInput === tenantId) return
+    const t = setTimeout(() => setTenantId(tenantInput), TENANT_SETTLE_MS)
+    return () => clearTimeout(t)
+  }, [tenantInput, tenantId])
+  const showTenant = (tenant: string) => {
+    setTenantInput(tenant)
+    setTenantId(tenant)
+  }
+
+  useEffect(() => {
     try {
-      localStorage.setItem(TENANT_KEY, tenantId)
+      localStorage.setItem(TENANT_KEY, tenantInput)
     } catch {
       /* private mode */
     }
-  }, [tenantId])
+  }, [tenantInput])
 
   const tabs: TabItem<Tab>[] = [
     { id: 'feed', label: 'Feed', icon: 'bell', count: activeCount },
@@ -85,10 +100,14 @@ export default function App() {
               mono
               aria-label="Tenant"
               className="w-28 sm:w-40"
-              value={tenantId}
+              value={tenantInput}
               placeholder="acme"
               title={TENANT_PROMPT}
-              onChange={(e) => setTenantId(e.target.value)}
+              onChange={(e) => setTenantInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') showTenant(e.currentTarget.value)
+              }}
+              onBlur={(e) => showTenant(e.currentTarget.value)}
             />
           </label>
         }
@@ -96,7 +115,7 @@ export default function App() {
       />
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
-        {!tenantId.trim() && (
+        {!tenantInput.trim() && (
           <p className="mb-5 flex items-center gap-2.5 rounded-md border border-stroke-light bg-surface px-4 py-3 text-sm text-secondary">
             <Icon name="info" size={16} className="shrink-0 text-accent" />
             {TENANT_PROMPT}
@@ -120,7 +139,7 @@ export default function App() {
             }}
             onViewFeed={(c) => {
               // land on the feed that shows it: its tenant, filtered to its type
-              setTenantId(c.tenantId)
+              showTenant(c.tenantId)
               setFeedType(c.type)
               go('feed')
             }}

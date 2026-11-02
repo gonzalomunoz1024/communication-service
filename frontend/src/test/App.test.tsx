@@ -9,11 +9,17 @@ class StubEventSource {
   static readonly CONNECTING = 0
   static readonly OPEN = 1
   static readonly CLOSED = 2
+  /** every stream the page opened, in order */
+  static opened: string[] = []
   readyState = 0
-  constructor(readonly url: string) {}
+  constructor(readonly url: string) {
+    StubEventSource.opened.push(url)
+  }
   addEventListener() {}
   close() {}
 }
+
+const tenantOf = (url: string) => new URL(url, 'http://ui').searchParams.get('tenantId')
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 
@@ -52,6 +58,7 @@ function stubService() {
 describe('App', () => {
   beforeEach(() => {
     vi.stubGlobal('EventSource', StubEventSource)
+    StubEventSource.opened = []
     localStorage.clear()
     window.location.hash = ''
   })
@@ -87,6 +94,42 @@ describe('App', () => {
     expect(await screen.findByText('New checkout flow')).toBeInTheDocument()
     await waitFor(() => expect(svc.calls.some((c) => /GET \/v1\/feed\?tenantId=other&type=CHANGE/.test(c))).toBe(true))
     expect(window.location.hash).toBe('#/feed')
+  })
+
+  describe('the header tenant field', () => {
+    const feedGets = (calls: string[]) => calls.filter((c) => c.startsWith('GET /v1/feed?')).map((c) => tenantOf(c.slice(4)))
+
+    it('loads the feed and opens the stream once for a tenant typed, not once per keystroke', async () => {
+      const svc = stubService()
+      vi.stubGlobal('fetch', svc.fetchMock)
+      const user = userEvent.setup({ delay: 40 }) // a quick typist
+      render(<App />)
+      await user.type(screen.getByRole('textbox', { name: 'Tenant' }), 'ux2-sre')
+      // the feed follows once typing pauses
+      await waitFor(() => expect(feedGets(svc.calls)).toEqual(['ux2-sre']))
+      expect(StubEventSource.opened.map(tenantOf)).toEqual(['ux2-sre'])
+      await new Promise((r) => setTimeout(r, 600))
+      expect(feedGets(svc.calls)).toEqual(['ux2-sre'])
+      expect(StubEventSource.opened.map(tenantOf)).toEqual(['ux2-sre'])
+      // the tenant is still remembered for the next visit
+      expect(localStorage.getItem('comm-tenant')).toBe('ux2-sre')
+    })
+
+    it('follows at once on Enter and when the field loses focus', async () => {
+      const svc = stubService()
+      vi.stubGlobal('fetch', svc.fetchMock)
+      const user = userEvent.setup()
+      render(<App />)
+      const tenant = screen.getByRole('textbox', { name: 'Tenant' })
+      await user.type(tenant, 'acme{Enter}')
+      expect(feedGets(svc.calls)).toEqual(['acme'])
+      await user.type(tenant, '-eu')
+      await user.tab()
+      expect(feedGets(svc.calls)).toEqual(['acme', 'acme-eu'])
+      await new Promise((r) => setTimeout(r, 600))
+      expect(feedGets(svc.calls)).toEqual(['acme', 'acme-eu'])
+      expect(StubEventSource.opened.map(tenantOf)).toEqual(['acme', 'acme-eu'])
+    })
   })
 
   describe('the tenant the page opens on', () => {

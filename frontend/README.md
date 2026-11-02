@@ -29,7 +29,9 @@ The live stream passes the same id as `?clientId=`, because `EventSource` cannot
 The page opens on the tenant named by `VITE_DEFAULT_TENANT` at build time; when that is unset
 (the default) on the tenant used last in that browser (`localStorage`, saved on every change);
 and on a first visit on none, with a prompt to enter the tenant the consumers read, which the
-service owners assign.
+service owners assign. The feed and the form follow the header's tenant field once typing pauses
+(400 ms), on Enter, or when the field loses focus, so a tenant name costs one feed request and
+one stream subscription rather than one per keystroke.
 
 The browser keeps the stream open by itself and retries a dropped socket with `Last-Event-ID`,
 but it gives up for good once a retry is answered with anything other than 200 (a restart or a
