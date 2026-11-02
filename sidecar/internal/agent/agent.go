@@ -1,6 +1,6 @@
 // Package agent runs the sidecar's loop: find the app, probe it, smooth the result and report
-// it to the communication service: changes plus a heartbeat while the app is UP, every probe
-// while it is not.
+// it to the communication service: changes plus a heartbeat while the app is UP or UNKNOWN,
+// every probe while it is DOWN or degraded.
 package agent
 
 import (
@@ -57,14 +57,15 @@ type Agent struct {
 	upSeen     bool
 	last       report.Report
 	// lastSig and lastMessage are the status/components signature and the message of the last
-	// report the service answered; a change in either is logged at INFO, a repeat at DEBUG.
+	// report the service answered; a change in either is sent at once and logged at INFO, a
+	// repeat at DEBUG.
 	lastSig     string
 	lastMessage string
 	lastSend    time.Time
 	sendErr     string
 	dirty       bool
 	// rejected is set while the last report was refused as permanent (4xx): the same body is
-	// then retried only at the heartbeat or on a change, even while the status is not UP.
+	// then retried only at the heartbeat or on a change, even while the report is DOWN or degraded.
 	rejected bool
 	backoff  time.Duration
 	nextSend time.Time
@@ -295,13 +296,14 @@ func (a *Agent) instance(leaving bool) *report.Instance {
 	}
 }
 
-// send posts when the status changed, the heartbeat is due, a failed send is being retried, or
-// the report is not UP for the service (see notUp): the service opens a notice after
-// failureThreshold consecutive observations, so while the app is not UP every probe is sent and
-// the threshold is reached one probe interval after the first failure rather than one heartbeat
-// later. Failures back off exponentially up to a minute, keeping only the latest report. A
-// transition (a new status, set of failing components or message) is logged at INFO, the sends
-// in between at DEBUG.
+// send posts when the report changed (its status, failing components or message), the
+// heartbeat is due, a failed send is being retried, or the service counts the report as DOWN or
+// DEGRADED (notUp, UNKNOWN aside): the service opens a notice after failureThreshold consecutive
+// observations, so while the app is failing every probe is sent and the threshold is reached one
+// probe interval after the first failure rather than one heartbeat later. UNKNOWN, which the
+// service ignores, is sent like UP, on a change and at the heartbeat, so a pod that never becomes
+// UP does not post after every probe forever. Failures back off exponentially up to a minute,
+// keeping only the latest report. A change is logged at INFO, the sends in between at DEBUG.
 func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 	a.mu.Lock()
 	sig := signature(rep)
@@ -309,9 +311,9 @@ func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 		a.mu.Unlock()
 		return
 	}
-	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
-		(notUp(rep) && !a.rejected)
 	changed := sig != a.lastSig || rep.Message != a.lastMessage
+	due := a.dirty || changed || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
+		(notUp(rep) && rep.Status != probe.UNKNOWN && !a.rejected)
 	a.mu.Unlock()
 	if !due {
 		return

@@ -640,6 +640,7 @@ func TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat(t *testing.T) {
 		want         []int // reports sent after each tick
 	}{
 		{"DOWN app: one report per probe", "DOWN", []int{1, 2, 3, 4, 5, 6}},
+		{"WARN app (a degraded status): one report per probe", "WARN", []int{1, 2, 3, 4, 5, 6}},
 		{"UP app: the first report, then one per heartbeat", "UP", []int{1, 1, 2, 2, 3, 3}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -686,6 +687,63 @@ func TestUpWithAFailingComponentIsSentEveryProbe(t *testing.T) {
 			}
 		})
 	}
+}
+
+// G-3-18: UNKNOWN carries nothing the service acts on (it ignores UNKNOWN), so it is sent like
+// UP: when it first appears or changes, then at the heartbeat, not after every probe. A pod that
+// never becomes UP used to post every probe forever (GAP-sidecar-3: 101 reports in 3.7 min at
+// 2 s). A new message is still sent at once: the end of the startup grace below goes out on the
+// first probe after it, not one heartbeat later.
+func TestUnknownIsSentAtTheHeartbeat(t *testing.T) {
+	heartbeat := []int{1, 1, 2, 2, 3, 3}
+	for _, tc := range []struct {
+		name     string
+		grace    time.Duration
+		pinned   bool     // CS_PORT pinned to an app that answers DOWN; otherwise nothing listens
+		want     []int    // reports sent after each tick (15 s interval plus jitter, 30 s heartbeat)
+		messages []string // what the reports say, in order
+	}{
+		{"nothing listens, after the grace", 0, false, heartbeat,
+			repeat("no health target found after 0s: no listening port answered; set CS_PORT and CS_PATH", 3)},
+		{"nothing listens, during the grace", 5 * time.Minute, false, heartbeat,
+			repeat("starting: waiting for the app to listen", 3)},
+		{"pinned port never UP, after the grace", 0, true, heartbeat,
+			repeat("never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME", 3)},
+		{"the grace ends at 45 s: the new message is sent on the first probe after it", 45 * time.Second, false,
+			[]int{1, 1, 2, 3, 3, 4},
+			append(repeat("starting: waiting for the app to listen", 2),
+				repeat("no health target found after 45s: no listening port answered; set CS_PORT and CS_PATH", 2)...)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := baseConfig()
+			cfg.StartupGrace = tc.grace
+			var h *harness
+			if tc.pinned {
+				app := newFakeApp(t, "DOWN")
+				cfg.ProbeMode, cfg.Port = config.ModeActuator, app.port
+				h = newHarness(t, cfg, app.port)
+			} else {
+				h = newHarness(t, cfg) // nothing listens
+			}
+			sent := runOnTheClock(t, h, tc.want)
+			if len(sent) != len(tc.messages) {
+				t.Fatalf("%d reports, want %d", len(sent), len(tc.messages))
+			}
+			for i, r := range sent {
+				if r.Status != "UNKNOWN" || !strings.Contains(r.Message, tc.messages[i]) {
+					t.Errorf("report %d: %s %q, want UNKNOWN %q", i, r.Status, r.Message, tc.messages[i])
+				}
+			}
+		})
+	}
+}
+
+func repeat(s string, n int) []string {
+	out := make([]string, n)
+	for i := range out {
+		out[i] = s
+	}
+	return out
 }
 
 // G-2-16: the UP->DOWN and DOWN->UP transitions are logged at INFO with the message and the

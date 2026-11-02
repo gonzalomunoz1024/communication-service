@@ -105,16 +105,18 @@ management.endpoint.health.show-details: always
 - Every 15 s (`CS_INTERVAL`) it probes; a non-UP answer is probed once more after 2 s before it
   counts, so a GC pause or a restart in progress is not an outage.
 - What is sent when:
-  - a change of the status or of the components that are not UP is sent at once;
-  - while the report is not UP for the service, it is sent after every probe: a status other
-    than UP (DOWN, a degraded status, UNKNOWN), or UP with a failing component, nested ones
-    included (DOWN, `OUT_OF_SERVICE` or another word such as `WARN`), which the service
-    classifies as DEGRADED. Its `failureThreshold` of consecutive observations is then reached
-    one probe interval after the first failure, not one heartbeat later;
-  - an UP report whose components are all UP (or UNKNOWN) is repeated only as a heartbeat
-    every 30 s (`CS_HEARTBEAT`).
+  - a change of the status, of the components that are not UP or of the message is sent at once;
+  - while the service counts the report as DOWN or DEGRADED, it is sent after every probe: a
+    status other than UP and UNKNOWN (DOWN, a degraded status), or UP with a failing component,
+    nested ones included (DOWN, `OUT_OF_SERVICE` or another word such as `WARN`), which the
+    service classifies as DEGRADED. Its `failureThreshold` of consecutive observations is then
+    reached one probe interval after the first failure, not one heartbeat later;
+  - an UP report whose components are all UP (or UNKNOWN), and an UNKNOWN report, are repeated
+    only as a heartbeat every 30 s (`CS_HEARTBEAT`). The service ignores UNKNOWN, so a pod that
+    never becomes UP costs no more requests than a healthy one.
 
-  1,000 healthy pods are about 33 requests/s; 1,000 failing ones about 67.
+  1,000 healthy pods, or 1,000 that never become UP, are about 33 requests/s; 1,000 failing
+  ones about 67.
 - Until the app has answered UP once, and for at most 5 minutes (`CS_STARTUP_GRACE`), it
   reports UNKNOWN, which the service ignores: slow starts and rolling deploys never open notices.
   The same applies to a service that boots unhealthy (its endpoint answers but never UP): it is
@@ -159,7 +161,7 @@ The report body is Actuator's vocabulary plus the instance:
 | `CS_PORT`, `CS_PATH`, `CS_SCHEME` | discovered | pin the target; `CS_PORT` is required for a non-auto mode |
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
 | `CS_IGNORE_PORTS` | `15000-15099` | ports discovery skips, e.g. `15000-15099,9090` |
-| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component (any other report is sent every probe, see [What it reports and when](#what-it-reports-and-when)) |
+| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component, or UNKNOWN (a DOWN or degraded report is sent every probe, see [What it reports and when](#what-it-reports-and-when)) |
 | `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `5s` | per probe / per report |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
 | `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |
@@ -183,8 +185,8 @@ curl -s localhost:9465/status | jq .
 
 A `reported` line is logged at INFO when the status, the failing components or the message
 change (UP → DOWN, DOWN → UP, a new cause); the sends in between (heartbeats, and the sends
-repeated after every probe while the report is not UP) are logged at DEBUG, below the default
-level, so a dead app shows as one DOWN line and then its recovery.
+repeated after every probe while the report is DOWN or degraded) are logged at DEBUG, below the
+default level, so a dead app shows as one DOWN line and then its recovery.
 
 `/status` answers with:
 
