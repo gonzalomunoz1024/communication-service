@@ -96,7 +96,7 @@ off for local experiments.
 | GET | `/v1/communications?tenantId=…&status=&type=&page=&size=` | publisher's own list |
 | PUT | `/v1/communications/{id}` | partial update + required `expectedVersion`; 409 on conflict/terminal |
 | POST | `/v1/communications/{id}/publish` | DRAFT → SCHEDULED/ACTIVE; 409 if not DRAFT |
-| POST | `/v1/communications/{id}/retire` | optional `{actor, note}`; idempotent on RETIRED; 409 on EXPIRED |
+| POST | `/v1/communications/{id}/retire` | optional `{actor, note}`; idempotent on RETIRED; 409 once past `expiresAt` (whether or not the sweeper has run) |
 
 ### Consumer feed
 

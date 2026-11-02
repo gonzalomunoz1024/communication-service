@@ -89,9 +89,12 @@ public class PublishingUseCase implements PublishingInboundPort {
         Instant now = clock.instant();
         return get(id)
                 .flatMap(current -> {
-                    if (current.status().terminal()) {
+                    // the effective status, not the stored one: an item past expiresAt is
+                    // EXPIRED for every reader even before the sweeper has caught up
+                    CommunicationStatus status = current.effectiveStatus(now);
+                    if (status.terminal()) {
                         return Mono.error(conflict("communication " + id + " is "
-                                + current.status() + " and can no longer be updated"));
+                                + status + " and can no longer be updated"));
                     }
                     if (!current.version().equals(cmd.expectedVersion())) {
                         return Mono.error(conflict("expectedVersion " + cmd.expectedVersion()
@@ -128,7 +131,7 @@ public class PublishingUseCase implements PublishingInboundPort {
         Instant now = clock.instant();
         RetireRequest req = request == null ? RetireRequest.EMPTY : request;
         return get(id)
-                .flatMap(current -> switch (current.status()) {
+                .flatMap(current -> switch (current.effectiveStatus(now)) { // not the stored status
                     case RETIRED -> Mono.just(current); // idempotent no-op
                     case EXPIRED -> Mono.error(conflict(
                             "communication " + id + " already expired; retiring would rewrite history"));

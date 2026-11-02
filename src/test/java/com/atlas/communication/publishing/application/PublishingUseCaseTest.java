@@ -85,6 +85,17 @@ class PublishingUseCaseTest {
                 c.history());
     }
 
+    /** A persisted, published communication with an expiry, stored as ACTIVE (the sweeper has not run). */
+    private static Communication savedExpiring(Instant startsAt, Instant expiresAt) {
+        Communication c = Communication.create("c1", "vmforge", "vmforge-sre",
+                CommunicationType.OUTAGE, Severity.MAJOR, "API degradation", "details",
+                List.of("vm-api"), null, false, startsAt, null, expiresAt, "INC1", startsAt);
+        return new Communication(c.id(), c.tenantId(), c.publisher(), c.type(), c.severity(),
+                c.title(), c.body(), c.affectedServices(), c.audience(), c.status(), c.startsAt(),
+                c.endsAt(), c.expiresAt(), c.externalRef(), c.ticket(), c.createdAt(), c.updatedAt(), 0L,
+                c.history());
+    }
+
     @Test
     void createPersistsActiveCommunicationAndEmitsCreated() {
         when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
@@ -317,5 +328,53 @@ class PublishingUseCaseTest {
                 .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(HttpStatus.CONFLICT))
                 .verify();
+    }
+
+    @Test
+    void retireAfterExpiresAtButBeforeTheSweepIs409() {
+        // still ACTIVE in the store (the sweeper has not caught up) but past expiresAt: the feed
+        // already says EXPIRED, so retiring would rewrite history just like for a swept item
+        Communication lapsed = savedExpiring(NOW.minusSeconds(7200), NOW.minusSeconds(3600));
+        assertThat(lapsed.status()).isEqualTo(CommunicationStatus.ACTIVE);
+        when(repository.findById("c1")).thenReturn(Mono.just(lapsed));
+
+        StepVerifier.create(useCase.retire("c1", new RetireRequest("admin", "late")))
+                .expectErrorSatisfies(ex -> {
+                    ResponseStatusException conflict = (ResponseStatusException) ex;
+                    assertThat(conflict.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(conflict.getReason()).contains("already expired");
+                })
+                .verify();
+        verify(repository, never()).save(any());
+        verify(events, never()).emit(any(), any());
+    }
+
+    @Test
+    void updateAfterExpiresAtButBeforeTheSweepIs409() {
+        Communication lapsed = savedExpiring(NOW.minusSeconds(7200), NOW.minusSeconds(3600));
+        when(repository.findById("c1")).thenReturn(Mono.just(lapsed));
+
+        UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(null, "t", null, null,
+                null, null, null, null, null, "sre", lapsed.version());
+        StepVerifier.create(useCase.update("c1", cmd))
+                .expectErrorSatisfies(ex -> {
+                    ResponseStatusException conflict = (ResponseStatusException) ex;
+                    assertThat(conflict.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(conflict.getReason()).contains("is EXPIRED");
+                })
+                .verify();
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void retireBeforeExpiresAtIsStillAllowed() {
+        when(repository.findById("c1"))
+                .thenReturn(Mono.just(savedExpiring(NOW.minusSeconds(3600), NOW.plusSeconds(3600))));
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(useCase.retire("c1", new RetireRequest("admin", "done")))
+                .assertNext(c -> assertThat(c.status()).isEqualTo(CommunicationStatus.RETIRED))
+                .verifyComplete();
+        verify(events).emit(eq(CommunicationEventType.RETIRED), any());
     }
 }
