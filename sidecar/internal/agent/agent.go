@@ -41,7 +41,8 @@ type Agent struct {
 	log     *slog.Logger
 	version string
 
-	// Now and Sleep are replaceable for tests.
+	// Now and Sleep are replaceable for tests. Sleep paces the loop (Run's wait between ticks)
+	// and the second look at a non-UP answer; it returns early when the context ends.
 	Now   func() time.Time
 	Sleep func(context.Context, time.Duration)
 	// ProcRoot is where /proc/net/tcp is read from.
@@ -79,21 +80,24 @@ func New(cfg config.Config, prober *probe.Prober, sender Sender, log *slog.Logge
 		log:      log,
 		version:  version,
 		Now:      time.Now,
+		Sleep:    sleep,
 		ProcRoot: "/proc",
-	}
-	a.Sleep = func(ctx context.Context, d time.Duration) {
-		t := time.NewTimer(d)
-		defer t.Stop()
-		select {
-		case <-ctx.Done():
-		case <-t.C:
-		}
 	}
 	if cfg.Fixed() {
 		t := fixedTarget(cfg)
 		a.target, a.lastTarget = &t, &t
 	}
 	return a
+}
+
+// sleep waits for d, or less when ctx ends first.
+func sleep(ctx context.Context, d time.Duration) {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+	case <-t.C:
+	}
 }
 
 func fixedTarget(cfg config.Config) probe.Target {
@@ -134,14 +138,10 @@ func (a *Agent) Run(ctx context.Context) {
 		"probe", a.cfg.ProbeMode)
 	for {
 		a.Tick(ctx)
-		wait := a.cfg.Interval + time.Duration(rand.Float64()*jitter*float64(a.cfg.Interval))
-		timer := time.NewTimer(wait)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
+		a.Sleep(ctx, a.cfg.Interval+time.Duration(rand.Float64()*jitter*float64(a.cfg.Interval)))
+		if ctx.Err() != nil {
 			a.leave()
 			return
-		case <-timer.C:
 		}
 	}
 }

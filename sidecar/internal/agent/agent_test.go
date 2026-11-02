@@ -293,6 +293,7 @@ func TestSendFailuresBackOffAndKeepLatest(t *testing.T) {
 func TestRunSendsLeavingReportOnShutdown(t *testing.T) {
 	app := newFakeApp(t, "UP")
 	h := newHarness(t, baseConfig(), app.port)
+	h.agent.Sleep = sleep // Run waits between ticks with Sleep: the real wait, as in production
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
@@ -566,47 +567,75 @@ func documentedStatusFields(t *testing.T) map[string]bool {
 	return fields
 }
 
+// runOnTheClock drives the agent's real loop, Run, on the harness clock. Run waits between
+// ticks through Sleep, which here checks the reports sent so far against want (the running
+// count after each tick) and that the tick's reports carry its own clock (they were composed by
+// that probe, not left over), checks the wait is the probe interval plus less than 20 % jitter,
+// and moves the clock on by it. After the last tick it cancels instead, so Run sends the leaving
+// report and returns. It returns the reports before the leaving one. Sleep is also the second
+// look at a non-UP answer, so the config must keep CS_RETRY_DELAY at 0 (baseConfig does).
+func runOnTheClock(t *testing.T, h *harness, want []int) []report.Report {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	interval := h.agent.cfg.Interval
+	ticks, seen := 0, 0
+	h.agent.Sleep = func(_ context.Context, d time.Duration) {
+		if ticks == len(want) {
+			t.Fatal("Run ticked again after its context was cancelled")
+		}
+		ticks++
+		sent := h.sender.all()
+		if len(sent) != want[ticks-1] {
+			t.Fatalf("after tick %d: %d reports sent, want %d (running counts %v)", ticks, len(sent), want[ticks-1], want)
+		}
+		observed := h.clock.UTC().Truncate(time.Millisecond)
+		for _, r := range sent[seen:] {
+			if !r.ObservedAt.Equal(observed) {
+				t.Errorf("tick %d sent a report observed at %v, want the tick's own clock %v", ticks, r.ObservedAt, observed)
+			}
+		}
+		seen = len(sent)
+		if d < interval || d >= interval+interval/5 {
+			t.Errorf("Run waited %v after tick %d, want the %v interval plus less than 20 %% jitter", d, ticks, interval)
+		}
+		if ticks == len(want) {
+			cancel() // SIGTERM: Run sends the leaving report and returns
+			return
+		}
+		h.advance(d)
+	}
+	h.agent.Run(ctx)
+	if ticks != len(want) {
+		t.Fatalf("Run returned after waiting %d times, want a wait after each of its %d ticks", ticks, len(want))
+	}
+	sent := h.sender.all()
+	if len(sent) != seen+1 || sent[seen].Instance == nil || !sent[seen].Instance.Leaving {
+		t.Fatalf("after the %d reports Run should send exactly one leaving report, got %+v", seen, sent[seen:])
+	}
+	return sent[:seen]
+}
+
 // G-2-16: while the app is not UP every probe is sent, so the service reaches its failure
 // threshold one probe interval after the first DOWN instead of one heartbeat later; an UP app
-// keeps the change-or-heartbeat cadence. Real time through Run: interval 50 ms, heartbeat 10 s,
-// 300 ms of running.
+// sends its first report, nothing more inside the heartbeat window, then one report per
+// heartbeat. G-3-19: driven through Run on the harness clock (15 s interval plus jitter, 30 s
+// heartbeat, six ticks) instead of 300 ms of wall-clock time, with the exact count after every
+// tick instead of a range.
 func TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat(t *testing.T) {
 	for _, tc := range []struct {
 		name, status string
-		min, max     int
+		want         []int // reports sent after each tick
 	}{
-		{"DOWN app: one report per probe", "DOWN", 3, 20},
-		{"UP app: the first report, then nothing before the heartbeat", "UP", 1, 1},
+		{"DOWN app: one report per probe", "DOWN", []int{1, 2, 3, 4, 5, 6}},
+		{"UP app: the first report, then one per heartbeat", "UP", []int{1, 1, 2, 2, 3, 3}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := newFakeApp(t, tc.status)
 			cfg := baseConfig()
-			cfg.Interval, cfg.Heartbeat, cfg.StartupGrace = 50*time.Millisecond, 10*time.Second, 0
+			cfg.StartupGrace = 0
 			h := newHarness(t, cfg, app.port)
-			h.agent.Now = time.Now // Run's timers are real, so the heartbeat clock must be too
-			ctx, cancel := context.WithCancel(context.Background())
-			done := make(chan struct{})
-			go func() {
-				h.agent.Run(ctx)
-				close(done)
-			}()
-			time.Sleep(300 * time.Millisecond)
-			cancel()
-			select {
-			case <-done:
-			case <-time.After(5 * time.Second):
-				t.Fatal("Run did not return after cancellation")
-			}
-			var sent []report.Report
-			for _, r := range h.sender.all() {
-				if r.Instance == nil || !r.Instance.Leaving {
-					sent = append(sent, r)
-				}
-			}
-			if len(sent) < tc.min || len(sent) > tc.max {
-				t.Fatalf("%d reports in 300 ms at a 50 ms interval, want between %d and %d", len(sent), tc.min, tc.max)
-			}
-			for i, r := range sent {
+			for i, r := range runOnTheClock(t, h, tc.want) {
 				if r.Status != tc.status {
 					t.Errorf("report %d: status %s, want %s", i, r.Status, tc.status)
 				}
