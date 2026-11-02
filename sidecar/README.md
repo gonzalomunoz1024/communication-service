@@ -194,6 +194,10 @@ The report body is Actuator's vocabulary plus the instance:
 }
 ```
 
+The service reads the status words, overall and per component, the same way the sidecar does;
+the one list of them is in the service's README under
+[Health monitoring (automated publishing)](../README.md#health-monitoring-automated-publishing).
+
 `X-Client-Id` carries `CS_CLIENT_ID` (defaults to the service name).
 
 ## Configuration
