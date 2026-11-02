@@ -40,6 +40,11 @@ class ClientIdWebFilterTest {
         Mono<String> docs() {
             return Mono.just("docs");
         }
+
+        @GetMapping("/actuator/health/readiness")
+        Mono<String> readiness() {
+            return Mono.just("{\"status\":\"UP\"}");
+        }
     }
 
     private static WebTestClient client(boolean required) {
@@ -94,6 +99,14 @@ class ClientIdWebFilterTest {
                 .expectBody(String.class).isEqualTo("docs");
         client(true).options().uri("/v1/echo").exchange()
                 .expectStatus().isOk();
+    }
+
+    @Test
+    void letsProbesReachTheHealthEndpointWithoutAnId() {
+        // kubelet probes cannot send X-Client-Id; /actuator/** is outside the identified surface
+        client(true).get().uri("/actuator/health/readiness").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"status\":\"UP\"}");
     }
 
     @Test

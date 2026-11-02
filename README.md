@@ -37,6 +37,18 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 ./gradlew check             # both (also run by `build`)
 ```
 
+### Operations
+
+Only the health endpoint is exposed, and it sits outside `/v1`, so probes need no `X-Client-Id`:
+
+| Probe | Path | Meaning |
+|---|---|---|
+| liveness | `GET /actuator/health/liveness` | the process is alive; `DOWN` only when the application context is broken, so a failing database never restarts the pod |
+| readiness | `GET /actuator/health/readiness` | ready for traffic: the context is up **and** MongoDB answers; `503 {"status":"DOWN"}` while Mongo is unreachable, so a Service stops routing to the pod until it recovers |
+| overall | `GET /actuator/health` | the same two plus every indicator, without details (the endpoint is unauthenticated) |
+
+Nothing else under `/actuator` is served (404).
+
 ## Core semantics
 
 - **Lifecycle**: `DRAFT → (publish) → SCHEDULED/ACTIVE → EXPIRED` (by time) or `RETIRED`
