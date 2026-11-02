@@ -35,8 +35,8 @@ export interface PublishOutageFormProps {
   /** prefilled publisher (team or person) */
   publisher?: string
   onPublished?: (communication: Communication) => void
-  /** "View in feed" on the confirmation */
-  onViewFeed?: () => void
+  /** "View in feed" on the confirmation; the host should show that tenant's feed, filtered to that type */
+  onViewFeed?: (communication: Communication) => void
 }
 
 /** Publish an outage (or incident, maintenance, change) to communication-service. */
@@ -300,7 +300,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
   )
 }
 
-function Published({ communication: c, onAnother, onViewFeed }: { communication: Communication; onAnother: () => void; onViewFeed?: () => void }) {
+function Published({ communication: c, onAnother, onViewFeed }: { communication: Communication; onAnother: () => void; onViewFeed?: (communication: Communication) => void }) {
   const live = c.status === 'ACTIVE'
   return (
     <Card className="animate-scale-in">
@@ -334,7 +334,7 @@ function Published({ communication: c, onAnother, onViewFeed }: { communication:
             Publish another
           </Button>
           {onViewFeed && c.status !== 'DRAFT' && (
-            <Button variant="primary" onClick={onViewFeed} iconRight="external">
+            <Button variant="primary" onClick={() => onViewFeed(c)} iconRight="external">
               View in feed
             </Button>
           )}

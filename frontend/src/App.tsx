@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AppHeader, Icon, Input, Tabs, ThemeToggle, useTheme, type TabItem } from './ui'
-import { OutageFeed, PublishOutageForm, createCommunicationClient } from './outages'
+import { OutageFeed, PublishOutageForm, createCommunicationClient, type CommunicationType } from './outages'
 
 type Tab = 'feed' | 'publish'
 
@@ -27,6 +27,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>(tabFromHash)
   const [tenantId, setTenantId] = useState(() => readStored(TENANT_KEY, 'acme'))
   const [publisher, setPublisher] = useState(() => readStored(PUBLISHER_KEY, ''))
+  // the feed's type filter when the tab opens; "View in feed" points it at what was just published
+  const [feedType, setFeedType] = useState<CommunicationType | ''>('OUTAGE')
   const [activeCount, setActiveCount] = useState(0)
 
   // the tab lives in the hash so a reload (or a shared link) lands on the same one
@@ -88,7 +90,7 @@ export default function App() {
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
         <Tabs<Tab> ariaLabel="Sections" tabs={tabs} value={tab} onChange={go} className="mb-5" />
         {tab === 'feed' ? (
-          <OutageFeed client={client} tenantId={tenantId} actor={publisher || undefined} onCount={setActiveCount} />
+          <OutageFeed client={client} tenantId={tenantId} actor={publisher || undefined} defaultType={feedType} onCount={setActiveCount} />
         ) : (
           <PublishOutageForm
             client={client}
@@ -102,7 +104,12 @@ export default function App() {
                 /* private mode */
               }
             }}
-            onViewFeed={() => go('feed')}
+            onViewFeed={(c) => {
+              // land on the feed that shows it: its tenant, filtered to its type
+              setTenantId(c.tenantId)
+              setFeedType(c.type)
+              go('feed')
+            }}
           />
         )}
       </main>
