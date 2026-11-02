@@ -120,16 +120,34 @@ describe('PublishOutageForm accessibility', () => {
 })
 
 describe('PublishOutageForm duplicate reference', () => {
-  it('explains a 409 for a reused incident number', async () => {
+  const publishIncident = async (c: CommunicationClient) => {
     const user = userEvent.setup()
-    const c = client()
-    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, "duplicate externalRef 'INC0012345' for tenant 'acme'"))
-    render(<PublishOutageForm client={c} tenantId="acme" publisher="oncall" />)
+    render(<PublishOutageForm client={c} tenantId="acme" publisher="oncall" onViewFeed={() => {}} />)
     await user.type(screen.getByLabelText(/^Title/), 'Payments API returning 503s')
     await user.type(screen.getByLabelText(/^ServiceNow incident/), 'INC0012345')
     await user.click(screen.getByRole('button', { name: 'Publish outage' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'The service rejected this. A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.',
+    return screen.findByRole('alert')
+  }
+
+  it('explains a 409 for a reused incident number: the reference is permanent, a follow-up needs a new one', async () => {
+    const c = client()
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, "duplicate externalRef 'INC0012345' for tenant 'acme'"))
+    const alert = await publishIncident(c)
+    expect(alert).toHaveTextContent(
+      'The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2.',
     )
+    // the key is a permanent idempotency index: retiring the other notice would not free it
+    expect(alert.textContent).not.toMatch(/\bRetire\b|retire (that|it|the) notice/)
+    // the input is kept for the correction
+    expect(screen.getByLabelText(/^ServiceNow incident/)).toHaveValue('INC0012345')
+  })
+
+  it("shows the service's own words when its 409 already explains the permanent key and names the notice", async () => {
+    const c = client()
+    const explained = "externalRef 'INC0012345' is already used in tenant 'acme' by communication c42 (RETIRED); the key is permanent, so a follow-up needs another externalRef"
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, explained))
+    const alert = await publishIncident(c)
+    expect(alert).toHaveTextContent(`The service rejected this. ${explained}`)
+    expect(alert).not.toHaveTextContent(/retire that/i)
   })
 })

@@ -65,7 +65,10 @@ the live stream as well as reloading the list.
 
 An optional **ServiceNow incident** field ties a notice to the ticket behind it (`ticket.number`,
 `INC0012345`). The service upper-cases the number and, when it knows the instance, adds a link;
-the feed card shows the ticket as a chip that opens the incident.
+the feed card shows the ticket as a chip that opens the incident. The number also becomes the
+notice's `externalRef` unless **External reference** is filled in, and that key is permanent per
+tenant (a retired notice keeps it): a second notice for the same incident needs another External
+reference, which is what the 409 banner says.
 
 ## Porting to another UI
 

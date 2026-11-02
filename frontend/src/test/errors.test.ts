@@ -28,11 +28,18 @@ describe('explainError', () => {
 })
 
 describe('explainPublishError', () => {
-  it("puts the duplicate-externalRef 409 in the form's terms", () => {
+  it("explains a bare duplicate-externalRef 409 in the form's terms: the key is permanent, so a follow-up needs a new reference", () => {
     const e = new ApiError(409, "duplicate externalRef 'INC0012345' for tenant 'acme'")
-    expect(explainPublishError(e)).toBe(
-      'A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.',
+    const text = explainPublishError(e)
+    expect(text).toBe(
+      'INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2.',
     )
+    expect(text).not.toMatch(/retire that/i)
+  })
+  it("shows the service's own explanation of a duplicate reference when it sends one", () => {
+    const explained =
+      "externalRef 'INC0012345' is already used in tenant 'acme' by communication c42 (RETIRED); the key is permanent, so a follow-up needs another externalRef"
+    expect(explainPublishError(new ApiError(409, explained))).toBe(explained)
   })
   it('leaves every other error to explainError', () => {
     expect(explainPublishError(new ApiError(409, 'communication c1 was modified concurrently; reload and retry'))).toBe('communication c1 was modified concurrently; reload and retry')

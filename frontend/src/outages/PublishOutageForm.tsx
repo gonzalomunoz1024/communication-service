@@ -227,7 +227,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
               options={AUDIENCES.map((a) => ({ value: a, label: titleCase(a) }))}
             />
           </Field>
-          <Field label="External reference" htmlFor={f('ref')} hint="Idempotency key, optional; defaults to the incident number.">
+          <Field label="External reference" htmlFor={f('ref')} hint="Optional idempotency key, permanent per tenant; defaults to the incident number.">
             <Input id={f('ref')} aria-describedby={note('ref')} mono value={draft.externalRef} placeholder="payments-2026-11-01" onChange={(e) => set('externalRef', e.target.value)} />
           </Field>
         </div>

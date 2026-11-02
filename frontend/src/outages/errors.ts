@@ -19,18 +19,22 @@ export function explainError(e: unknown): string {
   return String(e)
 }
 
-const DUPLICATE_REF = /duplicate externalRef '([^']*)' for tenant '([^']*)'/
+/** The service's bare 409 for a reused key: only the key and the tenant, no explanation. */
+const BARE_DUPLICATE_REF = /^duplicate externalRef '([^']*)' for tenant '([^']*)'$/
 
 /**
- * explainError for a publish: the service's 409 for a reused externalRef is put in the form's
- * terms, because the field people filled in is the ServiceNow incident number, which doubles as
- * the reference.
+ * explainError for a publish. `(tenantId, externalRef)` is a permanent idempotency key: a retired
+ * notice keeps its reference, so nothing can be retired to free it and a follow-up for the same
+ * incident needs another value. When the service's 409 already says so (and names the notice
+ * that holds the key) its text is shown as it is; when it sends only the bare key, the
+ * explanation is given here, in the form's terms, because the field people filled in is the
+ * ServiceNow incident number, which doubles as the reference.
  */
 export function explainPublishError(e: unknown): string {
   if (e instanceof ApiError && e.status === 409) {
-    const m = DUPLICATE_REF.exec(e.message)
+    const m = BARE_DUPLICATE_REF.exec(e.message.trim())
     if (m) {
-      return `A notice with the reference ${m[1]} already exists for tenant ${m[2]} (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.`
+      return `${m[1]} is already the reference of a notice in tenant ${m[2]} (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as ${m[1]}-2.`
     }
   }
   return explainError(e)
