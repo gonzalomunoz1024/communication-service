@@ -1,7 +1,9 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.4.1"
+    id("org.springframework.boot") version "3.5.16"
     id("io.spring.dependency-management") version "1.1.7"
+    // software bill of materials for a dependency scanner: ./gradlew cyclonedxBom -> build/reports/cyclonedx/
+    id("org.cyclonedx.bom") version "3.5.1"
 }
 
 group = "com.atlas"
@@ -18,7 +20,7 @@ repositories {
     mavenCentral()
 }
 
-val springdocVersion = "2.8.5"
+val springdocVersion = "2.8.17"
 val flapdoodleVersion = "4.20.0"
 
 dependencies {
