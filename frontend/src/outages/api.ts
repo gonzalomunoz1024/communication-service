@@ -157,18 +157,27 @@ export function createCommunicationClient(
       const open = () => {
         // EventSource cannot set headers, so the stream identifies itself in the query instead
         const extra: Record<string, string | number> = { clientId }
-        if (lastSeq !== undefined) extra.lastEventId = lastSeq
+        const resume = lastSeq !== undefined
+        if (resume) extra.lastEventId = lastSeq as number
         const es = new EventSource(`${root}/v1/feed/stream?${feedQuery(filter, extra)}`)
         source = es
+        let opened = false
         EVENT_TYPES.forEach((t) => es.addEventListener(t.toLowerCase(), listener))
         es.onopen = () => {
+          opened = true
           attempt = 0
           onConnection?.(true)
         }
         es.onerror = () => {
           onConnection?.(false)
           // CONNECTING: the browser retries on its own; CLOSED: it gave up, so we take over
-          if (es.readyState === EventSource.CLOSED && !stopped && source === es) reopen()
+          if (es.readyState === EventSource.CLOSED && !stopped && source === es) {
+            // a resume that never opened (the service refused or could not serve the replay) must not
+            // keep the page off the air: the next attempt starts from a fresh snapshot instead, and
+            // useOutageFeed reloads the list once the stream is back anyway
+            if (resume && !opened) lastSeq = undefined
+            reopen()
+          }
         }
       }
 

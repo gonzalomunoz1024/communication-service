@@ -96,18 +96,39 @@ describe('stream liveness', () => {
     expect(FakeEventSource.instances).toHaveLength(2)
     expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=12')
 
+    // the resume never opened (service still down, or it refused the replay): the next attempt
+    // starts from a fresh snapshot rather than retrying a request that may never succeed
     latest().giveUp()
     expect(onRetry).toHaveBeenLastCalledWith(2, 2_000)
     vi.advanceTimersByTime(2_000)
+    expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web')
     latest().giveUp()
     expect(onRetry).toHaveBeenLastCalledWith(3, 4_000)
     vi.advanceTimersByTime(4_000)
     expect(FakeEventSource.instances).toHaveLength(4)
 
-    // a successful open resets the backoff
+    // a successful open resets the backoff, and frames seen on it are resumed from next time
     latest().open()
+    latest().frame('created', { seq: 20, type: 'CREATED' })
     latest().giveUp()
     expect(onRetry).toHaveBeenLastCalledWith(1, 1_000)
+    vi.advanceTimersByTime(1_000)
+    expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=20')
+    stop()
+  })
+
+  it('keeps resuming while a resumed connection does open', () => {
+    const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {} })
+    latest().open()
+    latest().frame('snapshot', { seq: 3, type: 'SNAPSHOT' })
+    latest().giveUp()
+    vi.advanceTimersByTime(1_000)
+    expect(latest().url).toContain('lastEventId=3')
+    latest().open() // the replay was served
+    latest().frame('updated', { seq: 4, type: 'UPDATED' })
+    latest().giveUp()
+    vi.advanceTimersByTime(1_000)
+    expect(latest().url).toContain('lastEventId=4')
     stop()
   })
 
