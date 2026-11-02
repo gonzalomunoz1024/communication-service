@@ -406,7 +406,7 @@ tomorrow03=$(date -u -d 'tomorrow 03:00' +%FT%TZ 2>/dev/null || date -u -v+1d -v
 # publish an outage tied to its ServiceNow incident (externalRef defaults to the number), expiring in two hours
 curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{
   "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR",
-  "title":"API degradation in eu-west","body":"We are investigating **elevated errors**.",
+  "title":"API degradation in eu-west","body":"We are investigating elevated errors.",
   "affectedServices":["vm-api"],"ticket":{"number":"INC0012345"},
   "expiresAt":"'"$in2h"'"}'
 
