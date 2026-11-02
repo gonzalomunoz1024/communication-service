@@ -1,0 +1,665 @@
+{
+  "generatedAt": "2026-11-02T13:04:08.290Z",
+  "ui": "http://127.0.0.1:3300",
+  "api": "http://localhost:18300",
+  "journeys": [
+    {
+      "id": "publish",
+      "title": "Publish an outage and watch it land",
+      "summary": "Sam publishes an outage from the screen; a second screen sees it live; Sam resolves it and it leaves everywhere.",
+      "steps": [
+        {
+          "who": "Outage screens",
+          "text": "First visit: no tenant is pre-filled. The header asks for the tenant your consumers read.",
+          "image": "img/publish-01.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "A second screen (Team B) already watches tenant journeys: the feed is empty and the badge says Live.",
+          "image": "img/publish-02.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "Pressing Publish with an empty form: the first invalid field gets focus and an error summary lists what is missing. Nothing was sent.",
+          "image": "img/publish-03.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "Sam fills in the outage: tenant, title, details, affected services, publisher.",
+          "image": "img/publish-04.png"
+        },
+        {
+          "who": "The service",
+          "text": "What the screen sent and what came back (201 in the browser's own request).",
+          "transcript": "POST /v1/communications\nX-Client-Id: communication-frontend\n\n{\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"OUTAGE\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Card payments failing t00y\",\n  \"body\": \"Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.\",\n  \"affectedServices\": [\n    \"orders-api\",\n    \"checkout-web\"\n  ],\n  \"audience\": \"CUSTOMERS\"\n}\n\n→ 201 Created\n{\n  \"id\": \"84dfc82c-2cd0-4f85-8a6b-d9067abecde1\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"OUTAGE\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Card payments failing t00y\",\n  \"body\": \"Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.\",\n  \"affectedServices\": [\n    \"orders-api\",\n    \"checkout-web\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"ACTIVE\",\n  \"startsAt\": \"2026-11-02T13:04:18.586907231Z\",\n  \"createdAt\": \"2026-11-02T13:04:18.586907231Z\",\n  \"updatedAt\": \"2026-11-02T13:04:18.586907231Z\",\n  \"version\": 0,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:04:18.586907231Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"created (ACTIVE)\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Outage screens",
+          "text": "Published: the confirmation offers View in feed and Publish another.",
+          "image": "img/publish-05.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Team B's screen shows the outage within a second, over the live stream, without reloading.",
+          "image": "img/publish-06.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "View in feed switches Sam to the feed of the tenant just published to, filtered to that type.",
+          "image": "img/publish-07.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "Resolve asks for confirmation and says who acts and what consumers see; a note is optional.",
+          "image": "img/publish-08.png"
+        },
+        {
+          "who": "The service",
+          "text": "The retire call the screen made.",
+          "transcript": "POST /v1/communications/84dfc82c-2cd0-4f85-8a6b-d9067abecde1/retire\nX-Client-Id: communication-frontend\n\n{\n  \"actor\": \"sam-oncall\",\n  \"note\": \"Payment provider failover completed\"\n}\n\n→ 200\n{\n  \"id\": \"84dfc82c-2cd0-4f85-8a6b-d9067abecde1\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"OUTAGE\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Card payments failing t00y\",\n  \"body\": \"Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.\",\n  \"affectedServices\": [\n    \"orders-api\",\n    \"checkout-web\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"RETIRED\",\n  \"startsAt\": \"2026-11-02T13:04:18.586Z\",\n  \"createdAt\": \"2026-11-02T13:04:18.586Z\",\n  \"updatedAt\": \"2026-11-02T13:04:20.832891115Z\",\n  \"version\": 1,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:04:18.586Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"created (ACTIVE)\"\n    },\n    {\n      \"at\": \"2026-11-02T13:04:20.832891115Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"ACTIVE -> RETIRED: Payment provider failover completed\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Outage screens",
+          "text": "Resolved: the card leaves and a status message confirms it; focus stays on the list.",
+          "image": "img/publish-09.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Team B's screen drops the card at the same moment.",
+          "image": "img/publish-10.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "A reload of the feed no longer lists it; the permalink still tells the story.",
+          "transcript": "GET /v1/feed?tenantId=journeys\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (15 ms)\n{\n  \"items\": [],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 0,\n  \"hasNext\": false\n}\n\nGET /v1/communications/84dfc82c-2cd0-4f85-8a6b-d9067abecde1\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (11 ms)\n{\n  \"id\": \"84dfc82c-2cd0-4f85-8a6b-d9067abecde1\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"OUTAGE\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Card payments failing t00y\",\n  \"body\": \"Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.\",\n  \"affectedServices\": [\n    \"orders-api\",\n    \"checkout-web\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"RETIRED\",\n  \"startsAt\": \"2026-11-02T13:04:18.586Z\",\n  \"createdAt\": \"2026-11-02T13:04:18.586Z\",\n  \"updatedAt\": \"2026-11-02T13:04:20.832Z\",\n  \"version\": 1,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:04:18.586Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"created (ACTIVE)\"\n    },\n    {\n      \"at\": \"2026-11-02T13:04:20.832Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"ACTIVE -> RETIRED: Payment provider failover completed\"\n    }\n  ]\n}",
+          "lang": "http"
+        }
+      ]
+    },
+    {
+      "id": "maintenance",
+      "title": "Schedule a maintenance window",
+      "summary": "A maintenance window is published ahead of time, shows as Scheduled with a countdown, is turned active by the clock and closed at its end; another one is withdrawn before it starts.",
+      "steps": [
+        {
+          "who": "Outage screens",
+          "text": "Maintenance needs a start and an end (here a short window so the whole life cycle fits in this walkthrough; normally days ahead).",
+          "image": "img/maintenance-11.png"
+        },
+        {
+          "who": "The service",
+          "text": "Stored as SCHEDULED, not live yet.",
+          "transcript": "POST /v1/communications → 201\n{\n  \"id\": \"27cbc2ad-8981-49af-9074-7a3e4248a127\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"MAINTENANCE\",\n  \"severity\": \"MINOR\",\n  \"title\": \"Database maintenance t00y\",\n  \"body\": \"Primary database failover test. Expect 2 minutes of read-only mode.\",\n  \"affectedServices\": [\n    \"orders-api\",\n    \"checkout-web\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"SCHEDULED\",\n  \"startsAt\": \"2026-11-02T13:05:00Z\",\n  \"endsAt\": \"2026-11-02T13:06:00Z\",\n  \"expiresAt\": \"2026-11-02T13:06:00Z\",\n  \"createdAt\": \"2026-11-02T13:04:29.985819716Z\",\n  \"updatedAt\": \"2026-11-02T13:04:29.985819716Z\",\n  \"version\": 0,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:04:29.985819716Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"created (SCHEDULED)\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Upcoming maintenance within the 7-day window shows as Scheduled with a countdown and a Withdraw action.",
+          "image": "img/maintenance-12.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "A window that has not started offers Withdraw instead of Resolve; the confirmation says consumers never see it.",
+          "image": "img/maintenance-13.png"
+        },
+        {
+          "who": "The clock",
+          "text": "Waiting for the first window to start (the clock checks every 30 seconds)…"
+        },
+        {
+          "who": "The clock",
+          "text": "The clock moved it SCHEDULED → ACTIVE and wrote the history line; listeners got an `activated` frame.",
+          "transcript": "GET /v1/communications/27cbc2ad-8981-49af-9074-7a3e4248a127\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (9 ms)\n{\n  \"id\": \"27cbc2ad-8981-49af-9074-7a3e4248a127\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"MAINTENANCE\",\n  \"severity\": \"MINOR\",\n  \"title\": \"Database maintenance t00y\",\n  \"body\": \"Primary database failover test. Expect 2 minutes of read-only mode.\",\n  \"affectedServices\": [\n    \"orders-api\",\n    \"checkout-web\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"ACTIVE\",\n  \"startsAt\": \"2026-11-02T13:05:00Z\",\n  \"endsAt\": \"2026-11-02T13:06:00Z\",\n  \"expiresAt\": \"2026-11-02T13:06:00Z\",\n  \"createdAt\": \"2026-11-02T13:04:29.985Z\",\n  \"updatedAt\": \"2026-11-02T13:04:29.985Z\",\n  \"version\": 0,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:04:29.985Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"created (SCHEDULED)\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The card turned active by itself (the screen also flips at the start time on its own).",
+          "image": "img/maintenance-14.png"
+        },
+        {
+          "who": "The clock",
+          "text": "At the end time: ACTIVE → EXPIRED; retiring it now would answer 409 \"already expired\".",
+          "transcript": "GET /v1/communications/27cbc2ad-8981-49af-9074-7a3e4248a127\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (14 ms)\n{\n  \"id\": \"27cbc2ad-8981-49af-9074-7a3e4248a127\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"MAINTENANCE\",\n  \"severity\": \"MINOR\",\n  \"title\": \"Database maintenance t00y\",\n  \"body\": \"Primary database failover test. Expect 2 minutes of read-only mode.\",\n  \"affectedServices\": [\n    \"orders-api\",\n    \"checkout-web\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"EXPIRED\",\n  \"startsAt\": \"2026-11-02T13:05:00Z\",\n  \"endsAt\": \"2026-11-02T13:06:00Z\",\n  \"expiresAt\": \"2026-11-02T13:06:00Z\",\n  \"createdAt\": \"2026-11-02T13:04:29.985Z\",\n  \"updatedAt\": \"2026-11-02T13:05:28.666Z\",\n  \"version\": 1,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:04:29.985Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"created (SCHEDULED)\"\n    },\n    {\n      \"at\": \"2026-11-02T13:05:28.666Z\",\n      \"actor\": \"sweeper\",\n      \"action\": \"SCHEDULED -> ACTIVE\"\n    }\n  ]\n}\n\nPOST /v1/communications/27cbc2ad-8981-49af-9074-7a3e4248a127/retire\nX-Client-Id: journeys-walkthrough\nContent-Type: application/json\n\n{\n  \"actor\": \"sam-oncall\",\n  \"note\": \"too late\"\n}\n\n→ 409 Conflict (29 ms)\n{\n  \"error\": \"communication 27cbc2ad-8981-49af-9074-7a3e4248a127 already expired; retiring would rewrite history\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The window left the feed when it ended.",
+          "image": "img/maintenance-15.png"
+        }
+      ]
+    },
+    {
+      "id": "api-publish",
+      "title": "A system publishes through the API, safely twice",
+      "summary": "A deployment tool publishes with its own reference; a retry is answered with the same notice; a second notice under the same reference is refused with an explanation; an update names the version it edits.",
+      "steps": [
+        {
+          "who": "A publishing system",
+          "text": "First publish with reference INC-t00y-1.",
+          "transcript": "POST /v1/communications\nX-Client-Id: deploy-tool\nContent-Type: application/json\n\n{\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"deploy-tool\",\n  \"type\": \"INCIDENT\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Deploy 2026.44 rolled back t00y\",\n  \"body\": \"Elevated error rate after the 14:00 deploy; rolled back at 14:12.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"externalRef\": \"INC-t00y-1\"\n}\n\n→ 201 Created (33 ms)\nLocation: /v1/communications/1960c36a-2fbe-4949-822d-7b42b41758fb\n{\n  \"id\": \"1960c36a-2fbe-4949-822d-7b42b41758fb\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"deploy-tool\",\n  \"type\": \"INCIDENT\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Deploy 2026.44 rolled back t00y\",\n  \"body\": \"Elevated error rate after the 14:00 deploy; rolled back at 14:12.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"ACTIVE\",\n  \"startsAt\": \"2026-11-02T13:06:02.233147267Z\",\n  \"externalRef\": \"INC-t00y-1\",\n  \"createdAt\": \"2026-11-02T13:06:02.233147267Z\",\n  \"updatedAt\": \"2026-11-02T13:06:02.233147267Z\",\n  \"version\": 0,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:06:02.233147267Z\",\n      \"actor\": \"deploy-tool\",\n      \"action\": \"created (ACTIVE)\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "The service",
+          "text": "The exact same request again (a retry): 409, the same notice id (different!); nothing duplicated.",
+          "transcript": "POST /v1/communications\nX-Client-Id: deploy-tool\nContent-Type: application/json\n\n{\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"deploy-tool\",\n  \"type\": \"INCIDENT\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Deploy 2026.44 rolled back t00y\",\n  \"body\": \"Elevated error rate after the 14:00 deploy; rolled back at 14:12.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"externalRef\": \"INC-t00y-1\"\n}\n\n→ 409 Conflict (33 ms)\n{\n  \"error\": \"externalRef 'INC-t00y-1' is already used by notice 1960c36a-2fbe-4949-822d-7b42b41758fb in tenant journeys. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC-t00y-2, which is still free).\",\n  \"suggestedExternalRef\": \"INC-t00y-2\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "The service",
+          "text": "A different notice under the same reference is refused (409), naming the holder and, in `suggestedExternalRef`, the first follow-up value still free.",
+          "transcript": "POST /v1/communications\nX-Client-Id: deploy-tool\nContent-Type: application/json\n\n{\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"deploy-tool\",\n  \"type\": \"INCIDENT\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Incident reopened\",\n  \"body\": \"Elevated error rate after the 14:00 deploy; rolled back at 14:12.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"externalRef\": \"INC-t00y-1\"\n}\n\n→ 409 Conflict (16 ms)\n{\n  \"error\": \"externalRef 'INC-t00y-1' is already used by notice 1960c36a-2fbe-4949-822d-7b42b41758fb in tenant journeys. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC-t00y-2, which is still free).\",\n  \"suggestedExternalRef\": \"INC-t00y-2\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "A publishing system",
+          "text": "The follow-up under the suggested reference.",
+          "transcript": "POST /v1/communications\nX-Client-Id: deploy-tool\nContent-Type: application/json\n\n{\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"deploy-tool\",\n  \"type\": \"INCIDENT\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Deploy 2026.44 rolled back, second occurrence t00y\",\n  \"body\": \"Elevated error rate after the 14:00 deploy; rolled back at 14:12.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"externalRef\": \"INC-t00y-1-2\"\n}\n\n→ 201 Created (14 ms)\nLocation: /v1/communications/f0bdb17c-14fe-41ad-8f90-dd06bd99e4ef\n{\n  \"id\": \"f0bdb17c-14fe-41ad-8f90-dd06bd99e4ef\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"deploy-tool\",\n  \"type\": \"INCIDENT\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Deploy 2026.44 rolled back, second occurrence t00y\",\n  \"body\": \"Elevated error rate after the 14:00 deploy; rolled back at 14:12.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"ACTIVE\",\n  \"startsAt\": \"2026-11-02T13:06:02.309635674Z\",\n  \"externalRef\": \"INC-t00y-1-2\",\n  \"createdAt\": \"2026-11-02T13:06:02.309635674Z\",\n  \"updatedAt\": \"2026-11-02T13:06:02.309635674Z\",\n  \"version\": 0,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:06:02.309635674Z\",\n      \"actor\": \"deploy-tool\",\n      \"action\": \"created (ACTIVE)\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "The service",
+          "text": "An update that names the wrong version is refused (409), so two editors cannot overwrite each other.",
+          "transcript": "PUT /v1/communications/1960c36a-2fbe-4949-822d-7b42b41758fb\nX-Client-Id: deploy-tool\nContent-Type: application/json\n\n{\n  \"expectedVersion\": 7,\n  \"title\": \"Deploy 2026.44 rolled back t00y\",\n  \"body\": \"Root cause: connection pool exhaustion.\"\n}\n\n→ 409 Conflict (31 ms)\n{\n  \"error\": \"expectedVersion 7 does not match current version 0\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "The service",
+          "text": "With the current version the edit is applied and the version moves on.",
+          "transcript": "PUT /v1/communications/1960c36a-2fbe-4949-822d-7b42b41758fb\nX-Client-Id: deploy-tool\nContent-Type: application/json\n\n{\n  \"expectedVersion\": 0,\n  \"title\": \"Deploy 2026.44 rolled back t00y\",\n  \"body\": \"Root cause: connection pool exhaustion. Fix deployed.\"\n}\n\n→ 200 OK (24 ms)\n{\n  \"id\": \"1960c36a-2fbe-4949-822d-7b42b41758fb\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"deploy-tool\",\n  \"type\": \"INCIDENT\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Deploy 2026.44 rolled back t00y\",\n  \"body\": \"Root cause: connection pool exhaustion. Fix deployed.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"ACTIVE\",\n  \"startsAt\": \"2026-11-02T13:06:02.233Z\",\n  \"externalRef\": \"INC-t00y-1\",\n  \"createdAt\": \"2026-11-02T13:06:02.233Z\",\n  \"updatedAt\": \"2026-11-02T13:06:02.359005633Z\",\n  \"version\": 1,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:06:02.233Z\",\n      \"actor\": \"deploy-tool\",\n      \"action\": \"created (ACTIVE)\"\n    },\n    {\n      \"at\": \"2026-11-02T13:06:02.359005633Z\",\n      \"actor\": \"deploy-tool\",\n      \"action\": \"updated\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Outage screens",
+          "text": "The same mistake from the screen: the banner explains that references are permanent and suggests the free value the service named.",
+          "image": "img/api-publish-16.png"
+        }
+      ]
+    },
+    {
+      "id": "consume",
+      "title": "A dependent system reads the feed and stays current",
+      "summary": "Team B's app loads the feed once, opens the live stream, and after a dropped line resumes from the last event id it saw.",
+      "steps": [
+        {
+          "who": "Dependent systems",
+          "text": "The first page of what is live for the tenant, narrowed to one service.",
+          "transcript": "GET /v1/feed?tenantId=journeys&service=search-api\nX-Client-Id: team-b-app\n\n→ 200 OK (9 ms)\n{\n  \"items\": [\n    {\n      \"id\": \"20a12138-f2ce-49bc-84fa-943ef250156c\",\n      \"tenantId\": \"journeys\",\n      \"publisher\": \"sam-oncall\",\n      \"type\": \"OUTAGE\",\n      \"severity\": \"MAJOR\",\n      \"title\": \"Search index rebuild t00y\",\n      \"affectedServices\": [\n        \"search-api\"\n      ],\n      \"audience\": \"CUSTOMERS\",\n      \"status\": \"ACTIVE\",\n      \"startsAt\": \"2026-11-02T13:06:04.355Z\",\n      \"updatedAt\": \"2026-11-02T13:06:04.355Z\"\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"hasNext\": false\n}",
+          "lang": "http"
+        },
+        {
+          "who": "The service",
+          "text": "The live line: `: connected` at once, a snapshot, then a `created` and a `retired` frame as they happened (keepalive comments every 15 s when quiet).",
+          "transcript": ":connected\n\nid:12\nevent:snapshot\ndata:{\"seq\":12,\"type\":\"SNAPSHOT\",\"at\":\"2026-11-02T13:06:04.380178453Z\",\"communication\":{\"id\":\"20a12138-f2ce-49bc-84fa-943ef250156c\",\"tenantId\":\"journeys\",\"publisher\":\"sam-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Search index rebuild t00y\",\"affectedServices\":[\"search-api\"],\"audience\":\"CUSTOMERS\",\"status\":\"ACTIVE\",\"startsAt\":\"2026-11-02T13:06:04.355Z\",\"createdAt\":\"2026-11-02T13:06:04.355Z\",\"updatedAt\":\"2026-11-02T13:06:04.355Z\",\"version\":0,\"history\":[{\"at\":\"2026-11-02T13:06:04.355Z\",\"actor\":\"sam-oncall\",\"action\":\"created (ACTIVE)\"}]}}\n\nid:10\nevent:retired\ndata:{\"seq\":10,\"type\":\"RETIRED\",\"at\":\"2026-11-02T13:06:04.324Z\",\"communication\":{\"id\":\"1960c36a-2fbe-4949-822d-7b42b41758fb\",\"tenantId\":\"journeys\",\"publisher\":\"deploy-tool\",\"type\":\"INCIDENT\",\"severity\":\"MAJOR\",\"title\":\"Deploy 2026.44 rolled back t00y\",\"body\":\"Root cause: connection pool exhaustion. Fix deployed.\",\"affectedServices\":[\"orders-api\"],\"audience\":\"CUSTOMERS\",\"status\":\"RETIRED\",\"startsAt\":\"2026-11-02T13:06:02.233Z\",\"externalRef\":\"INC-t00y-1\",\"createdAt\":\"2026-11-02T13:06:02.233Z\",\"updatedAt\":\"2026-11-02T13:06:04.309Z\",\"version\":2,\"history\":[{\"at\":\"2026-11-02T13:06:02.233Z\",\"actor\":\"deploy-tool\",\"action\":\"created (ACTIVE)\"},{\"at\":\"2026-11-02T13:06:02.359Z\",\"actor\":\"deploy-tool\",\"action\":\"updated\"},{\"at\":\"2026-11-02T13:06:04.309Z\",\"actor\":\"deploy-tool\",\"action\":\"ACTIVE -> RETIRED: walkthrough\"}]}}\n\nid:11\nevent:retired\ndata:{\"seq\":11,\"type\":\"RETIRED\",\"at\":\"2026-11-02T13:06:04.345Z\",\"communication\":{\"id\":\"f0bdb17c-14fe-41ad-8f90-dd06bd99e4ef\",\"tenantId\":\"journeys\",\"publisher\":\"deploy-tool\",\"type\":\"INCIDENT\",\"severity\":\"MAJOR\",\"title\":\"Deploy 2026.44 rolled back, second occurrence t00y\",\"body\":\"Elevated error rate after the 14:00 deploy; rolled back at 14:12.\",\"affectedServices\":[\"orders-api\"],\"audience\":\"CUSTOMERS\",\"status\":\"RETIRED\",\"startsAt\":\"2026-11-02T13:06:02.309Z\",\"externalRef\":\"INC-t00y-1-2\",\"createdAt\":\"2026-11-02T13:06:02.309Z\",\"updatedAt\":\"2026-11-02T13:06:04.336Z\",\"version\":1,\"history\":[{\"at\":\"2026-11-02T13:06:02.309Z\",\"actor\":\"deploy-tool\",\"action\":\"created (ACTIVE)\"},{\"at\":\"2026-11-02T13:06:04.336Z\",\"actor\":\"deploy-tool\",\"action\":\"ACTIVE -> RETIRED: walkthrough\"}]}}\n\nid:12\nevent:created\ndata:{\"seq\":12,\"type\":\"CREATED\",\"at\":\"2026-11-02T13:06:04.360Z\",\"communication\":{\"id\":\"20a12138-f2ce-49bc-84fa-943ef250156c\",\"tenantId\":\"journeys\",\"publisher\":\"sam-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Search index rebuild t00y\",\"affectedServices\":\n… (trimmed)",
+          "lang": "sse"
+        },
+        {
+          "who": "The service",
+          "text": "Reopening with lastEventId=0 (what a client sends after a dropped line) replays the events after that id instead of starting over.",
+          "transcript": ":connected\n\nid:1\nevent:created\ndata:{\"seq\":1,\"type\":\"CREATED\",\"at\":\"2026-11-02T13:04:18.676Z\",\"communication\":{\"id\":\"84dfc82c-2cd0-4f85-8a6b-d9067abecde1\",\"tenantId\":\"journeys\",\"publisher\":\"sam-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Card payments failing t00y\",\"body\":\"Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.\",\"affectedServices\":[\"orders-api\",\"checkout-web\"],\"audience\":\"CUSTOMERS\",\"status\":\"ACTIVE\",\"startsAt\":\"2026-11-02T13:04:18.586Z\",\"createdAt\":\"2026-11-02T13:04:18.586Z\",\"updatedAt\":\"2026-11-02T13:04:18.586Z\",\"version\":0,\"history\":[{\"at\":\"2026-11-02T13:04:18.586Z\",\"actor\":\"sam-oncall\",\"action\":\"created (ACTIVE)\"}]}}\n\nid:2\nevent:retired\ndata:{\"seq\":2,\"type\":\"RETIRED\",\"at\":\"2026-11-02T13:04:20.865Z\",\"communication\":{\"id\":\"84dfc82c-2cd0-4f85-8a6b-d9067abecde1\",\"tenantId\":\"journeys\",\"publisher\":\"sam-oncall\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"title\":\"Card payments failing t00y\",\"body\":\"Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.\",\"affectedServices\":[\"orders-api\",\"checkout-web\"],\"audience\":\"CUSTOMERS\",\"status\":\"RETIRED\",\"startsAt\":\"2026-11-02T13:04:18.586Z\",\"createdAt\":\"2026-11-02T13:04:18.586Z\",\"updatedAt\":\"2026-11-02T13:04:20.832Z\",\"version\":1,\"history\":[{\"at\":\"2026-11-02T13:04:18.586Z\",\"actor\":\"sam-oncall\",\"action\":\"created (ACTIVE)\"},{\"at\":\"2026-11-02T13:04:20.832Z\",\"actor\":\"sam-oncall\",\"action\":\"ACTIVE -> RETIRED: Payment provider failover completed\"}]}}\n\nid:3\nevent:created\ndata:{\"seq\":3,\"type\":\"CREATED\",\"at\":\"2026-11-02T13:04:29.999Z\",\"communication\":{\"id\":\"27cbc2ad-8981-49af-9074-7a3e4248a127\",\"tenantId\":\"journeys\",\"publisher\":\"sam-oncall\",\"type\":\"MAINTENANCE\",\"severity\":\"MINOR\",\"title\":\"Database maintenance t00y\",\"body\":\"Primary database failover test. Expect 2 minutes of read-only mode.\",\"affectedServices\":[\"orders-api\",\"checkout-web\"],\"audience\":\"CUSTOMERS\",\"status\":\"SCHEDULED\",\"startsAt\":\"2026-11-02T13:05:00Z\",\"endsAt\":\"2026-11-02T13:06:00Z\",\"expiresAt\":\"2026-11-02T13:06:00Z\",\"createdAt\":\"2026-11-02T13:04:29.985Z\",\"updatedAt\":\"2026-11-02T13:04:29.985Z\",\"version\":0,\"history\":[{\"at\":\"2026-11-02T13:04:29.985Z\",\"actor\":\"sam-oncall\",\"action\":\"created (SCHEDULED)\"}]}}\n\nid:4\nevent:created\ndata:{\"seq\":4,\"type\":\"CREATED\",\"at\":\"2026-11-02T13:04:31.277Z\",\"communication\":{\"id\":\"c7ff0210-8511-4900-8bc9-5438451bca1e\",\"tenantId\":\"journeys\",\"publisher\":\"sam-oncall\",\"type\":\"MAINTENANCE\",\"severity\":\"MINOR\",\"title\":\"Cache cluster upgrade t00y\",\"affected\n… (trimmed)",
+          "lang": "sse"
+        },
+        {
+          "who": "The service",
+          "text": "An id the log no longer holds (events are kept 24 hours) gets a fresh snapshot instead of a replay; this stack is younger than that, so it is not shown here."
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "title": "A new system calls the API for the first time",
+      "summary": "Without a name the API answers 401 and says what is missing; with X-Client-Id the same call works and the name appears in the access log; the Swagger UI explorer uses the same header.",
+      "steps": [
+        {
+          "who": "A publishing system",
+          "text": "No X-Client-Id header.",
+          "transcript": "GET /v1/feed?tenantId=journeys\n\n\n→ 401 Unauthorized (6 ms)\n{\n  \"error\": \"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "The service",
+          "text": "With the repository name as X-Client-Id.",
+          "transcript": "GET /v1/feed?tenantId=journeys\nX-Client-Id: billing-portal\n\n→ 200 OK (8 ms)\n{\n  \"items\": [],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 0,\n  \"hasNext\": false\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "The access log names the caller on every line.",
+          "transcript": "2026-11-02T13:06:12.942Z  INFO 4354 --- [communication-service] [or-http-epoll-3] c.a.c.config.ClientIdWebFilter           : rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)\n2026-11-02T13:06:12.953Z  INFO 4354 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=billing-portal GET /v1/feed -> 200 (5 ms)",
+          "lang": "log"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "The API explorer lists every route; Authorize takes the X-Client-Id value.",
+          "image": "img/identity-17.png"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "Authorize: the X-Client-Id scheme is the only credential the API asks for today.",
+          "image": "img/identity-18.png"
+        }
+      ]
+    },
+    {
+      "id": "ticket",
+      "title": "Tie a notice to its ServiceNow incident",
+      "summary": "The incident number typed on the screen is tidied, linked when the service knows the ServiceNow address, shown as a chip, and doubles as the notice's reference.",
+      "steps": [
+        {
+          "who": "Outage screens",
+          "text": "The optional ServiceNow incident field, typed in lower case on purpose.",
+          "image": "img/ticket-19.png"
+        },
+        {
+          "who": "The service",
+          "text": "Stored upper-cased, with the deep link when `communication.servicenow.instance-url` is configured; the number became the externalRef.",
+          "transcript": "POST /v1/communications → 201\n{\n  \"id\": \"172edfd7-f3a2-4be6-afc5-71b5527439ac\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"sam-oncall\",\n  \"type\": \"OUTAGE\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"Login failures after certificate rotation t00y\",\n  \"body\": \"SSO logins fail with a certificate error; rotation in progress.\",\n  \"affectedServices\": [\n    \"sso-gateway\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"ACTIVE\",\n  \"startsAt\": \"2026-11-02T13:06:25.871549671Z\",\n  \"externalRef\": \"INC0012345\",\n  \"ticket\": {\n    \"system\": \"servicenow\",\n    \"number\": \"INC0012345\",\n    \"url\": \"https://example.service-now.com/nav_to.do?uri=incident.do%3Fsysparm_query%3Dnumber%3DINC0012345\"\n  },\n  \"createdAt\": \"2026-11-02T13:06:25.871549671Z\",\n  \"updatedAt\": \"2026-11-02T13:06:25.871549671Z\",\n  \"version\": 0,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:06:25.871549671Z\",\n      \"actor\": \"sam-oncall\",\n      \"action\": \"created (ACTIVE)\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Outage screens",
+          "text": "The confirmation shows the ticket chip.",
+          "image": "img/ticket-20.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Consumers see the chip on the card; it opens the incident when linked.",
+          "image": "img/ticket-21.png"
+        }
+      ]
+    },
+    {
+      "id": "sidecar-outage",
+      "title": "The sidecar notices the team's app is down",
+      "summary": "A pod starts with the sidecar beside the app; the app's database fails; the service opens an outage with the detail and closes it when the app recovers. Settings here are shortened (probe every 5 s) so the walkthrough fits in minutes.",
+      "steps": [
+        {
+          "who": "Health sidecar",
+          "text": "The sidecar started before the app (as a native sidecar does): no target yet, reports UNKNOWN during the startup grace.",
+          "transcript": "{\n  \"version\": \"ci-iter4\",\n  \"service\": \"orders-api\",\n  \"tenant\": \"journeys\",\n  \"instance\": \"orders-api-6c9f7d8b4-ab12c\",\n  \"upSeen\": false,\n  \"lastReport\": {\n    \"tenantId\": \"journeys\",\n    \"service\": \"orders-api\",\n    \"status\": \"UNKNOWN\",\n    \"message\": \"starting: waiting for the app to listen\",\n    \"observedAt\": \"2026-11-02T13:06:27.621Z\",\n    \"publisher\": \"health-sidecar\",\n    \"instance\": {\n      \"id\": \"orders-api-6c9f7d8b4-ab12c\",\n      \"namespace\": \"retail-orders\",\n      \"node\": \"worker-2\",\n      \"cluster\": \"ocp-east\",\n      \"version\": \"1.4.2\",\n      \"sidecar\": \"ci-iter4\"\n    }\n  },\n  \"lastSendAt\": \"2026-11-02T13:06:27.621704191Z\",\n  \"reportsSent\": 1\n}",
+          "lang": "json"
+        },
+        {
+          "who": "Health sidecar",
+          "text": "The app is up: discovered on :8080 /actuator/health, UP reported.",
+          "transcript": "{\n  \"version\": \"ci-iter4\",\n  \"service\": \"orders-api\",\n  \"tenant\": \"journeys\",\n  \"instance\": \"orders-api-6c9f7d8b4-ab12c\",\n  \"target\": \"http://127.0.0.1:8080/actuator/health\",\n  \"lastTarget\": \"http://127.0.0.1:8080/actuator/health\",\n  \"upSeen\": true,\n  \"lastReport\": {\n    \"tenantId\": \"journeys\",\n    \"service\": \"orders-api\",\n    \"status\": \"UP\",\n    \"components\": {\n      \"db\": {\n        \"details\": {\n          \"database\": \"PostgreSQL\"\n        },\n        \"status\": \"UP\"\n      },\n      \"ping\": {\n        \"status\": \"UP\"\n      }\n    },\n    \"observedAt\": \"2026-11-02T13:06:33.61Z\",\n    \"publisher\": \"health-sidecar\",\n    \"instance\": {\n      \"id\": \"orders-api-6c9f7d8b4-ab12c\",\n      \"namespace\": \"retail-orders\",\n      \"node\": \"worker-2\",\n      \"cluster\": \"ocp-east\",\n      \"version\": \"1.4.2\",\n      \"sidecar\": \"ci-iter4\"\n    }\n  },\n  \"lastSendAt\": \"2026-11-02T13:06:33.610151135Z\",\n  \"reportsSent\": 2\n}",
+          "lang": "json"
+        },
+        {
+          "who": "Health desk",
+          "text": "The first report registered the service automatically (push-only monitor, publisher health-sidecar).",
+          "transcript": "GET /v1/health/monitors?tenantId=journeys\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (13 ms)\n[\n  {\n    \"id\": \"152850af-1157-473a-a54d-badc64546426\",\n    \"tenantId\": \"journeys\",\n    \"service\": \"orders-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThreshold\": 2,\n      \"recoveryThreshold\": 2,\n      \"downSeverity\": \"MAJOR\",\n      \"degradedSeverity\": \"MINOR\",\n      \"audience\": \"CUSTOMERS\",\n      \"staleAfterSeconds\": 90,\n      \"minHealthyPercent\": 50\n    },\n    \"state\": {\n      \"lastStatus\": \"UP\",\n      \"lastReportAt\": \"2026-11-02T13:06:33.617Z\",\n      \"lastSummary\": \"UP (1 of 1 pod UP)\",\n      \"unhealthyStreak\": 0,\n      \"healthyStreak\": 1,\n      \"incidents\": 0\n    },\n    \"createdAt\": \"2026-11-02T13:06:27.658Z\",\n    \"updatedAt\": \"2026-11-02T13:06:33.617Z\",\n    \"version\": 2\n  }\n]",
+          "lang": "http"
+        },
+        {
+          "who": "Health desk",
+          "text": "Every pod that reported, with its node, cluster and version.",
+          "transcript": "GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426/instances\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (17 ms)\n[\n  {\n    \"monitorId\": \"152850af-1157-473a-a54d-badc64546426\",\n    \"instanceId\": \"orders-api-6c9f7d8b4-ab12c\",\n    \"status\": \"UP\",\n    \"components\": [],\n    \"namespace\": \"retail-orders\",\n    \"node\": \"worker-2\",\n    \"cluster\": \"ocp-east\",\n    \"version\": \"1.4.2\",\n    \"sidecar\": \"ci-iter4\",\n    \"left\": false,\n    \"lastSeenAt\": \"2026-11-02T13:06:33.617Z\"\n  }\n]",
+          "lang": "http"
+        },
+        {
+          "who": "The team's app",
+          "text": "The app's database fails; its health page now answers 503 with the failing component.",
+          "transcript": "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nDate: Mon, 02 Nov 2026 13:06:41 GMT\r\nContent-Length: 115\r\n\r\n{\"components\":{\"db\":{\"details\":{\"database\":\"PostgreSQL\"},\"status\":\"DOWN\"},\"ping\":{\"status\":\"UP\"}},\"status\":\"DOWN\"}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The outage opened by itself: \"orders-api is down\", publisher health-sidecar, the failing component named.",
+          "image": "img/sidecar-outage-22.png"
+        },
+        {
+          "who": "Health sidecar",
+          "text": "The sidecar's log for the episode: the DOWN transition at INFO, a report after every probe while down.",
+          "transcript": "{\"time\":\"2026-11-02T13:06:45.86347331Z\",\"level\":\"INFO\",\"msg\":\"reported\",\"status\":\"DOWN\",\"message\":\"health document reports DOWN\"}",
+          "lang": "log"
+        },
+        {
+          "who": "Health desk",
+          "text": "The monitor now holds the open notice and the streak.",
+          "transcript": "GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (10 ms)\n{\n  \"id\": \"152850af-1157-473a-a54d-badc64546426\",\n  \"tenantId\": \"journeys\",\n  \"service\": \"orders-api\",\n  \"policy\": {\n    \"publisher\": \"health-sidecar\",\n    \"intervalSeconds\": 30,\n    \"timeoutMs\": 5000,\n    \"failureThreshold\": 2,\n    \"recoveryThreshold\": 2,\n    \"downSeverity\": \"MAJOR\",\n    \"degradedSeverity\": \"MINOR\",\n    \"audience\": \"CUSTOMERS\",\n    \"staleAfterSeconds\": 90,\n    \"minHealthyPercent\": 50\n  },\n  \"state\": {\n    \"lastStatus\": \"DOWN\",\n    \"lastReportAt\": \"2026-11-02T13:06:52.680Z\",\n    \"lastSummary\": \"DOWN (0 of 1 pod UP (DOWN: orders-api-6c9f7d8b4-ab12c)): db DOWN\",\n    \"unhealthyStreak\": 2,\n    \"healthyStreak\": 0,\n    \"openCommunicationId\": \"d6ba9b70-d349-42db-9a26-2b6cbe2861b6\",\n    \"openStatus\": \"DOWN\",\n    \"openSignature\": \"DOWN[db=DOWN]\",\n    \"incidents\": 1\n  },\n  \"createdAt\": \"2026-11-02T13:06:27.658Z\",\n  \"updatedAt\": \"2026-11-02T13:06:52.680Z\",\n  \"version\": 4\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The database is back: after two healthy reports the service closed the outage by itself.",
+          "image": "img/sidecar-outage-25.png"
+        },
+        {
+          "who": "Health desk",
+          "text": "Monitor back to UP, nothing open.",
+          "transcript": "GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (10 ms)\n{\n  \"id\": \"152850af-1157-473a-a54d-badc64546426\",\n  \"tenantId\": \"journeys\",\n  \"service\": \"orders-api\",\n  \"policy\": {\n    \"publisher\": \"health-sidecar\",\n    \"intervalSeconds\": 30,\n    \"timeoutMs\": 5000,\n    \"failureThreshold\": 2,\n    \"recoveryThreshold\": 2,\n    \"downSeverity\": \"MAJOR\",\n    \"degradedSeverity\": \"MINOR\",\n    \"audience\": \"CUSTOMERS\",\n    \"staleAfterSeconds\": 90,\n    \"minHealthyPercent\": 50\n  },\n  \"state\": {\n    \"lastStatus\": \"UP\",\n    \"lastReportAt\": \"2026-11-02T13:07:27.708Z\",\n    \"lastSummary\": \"UP (1 of 1 pod UP)\",\n    \"unhealthyStreak\": 0,\n    \"healthyStreak\": 2,\n    \"incidents\": 2\n  },\n  \"createdAt\": \"2026-11-02T13:06:27.658Z\",\n  \"updatedAt\": \"2026-11-02T13:07:27.708Z\",\n  \"version\": 8\n}",
+          "lang": "http"
+        }
+      ]
+    },
+    {
+      "id": "operator-retire",
+      "title": "Alex resolves an automatic outage by hand",
+      "summary": "Alex retires the automatic outage while the app is still failing; the service respects it, keeps counting and reopens a new outage when the failures continue.",
+      "steps": [
+        {
+          "who": "Service operator (Alex)",
+          "text": "Retiring the automatic notice with a note.",
+          "transcript": "POST /v1/communications/d6ba9b70-d349-42db-9a26-2b6cbe2861b6/retire\nX-Client-Id: alex-cli\nContent-Type: application/json\n\n{\n  \"actor\": \"alex\",\n  \"note\": \"read replica only, customers unaffected\"\n}\n\n→ 200 OK (17 ms)\n{\n  \"id\": \"d6ba9b70-d349-42db-9a26-2b6cbe2861b6\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"health-sidecar\",\n  \"type\": \"OUTAGE\",\n  \"severity\": \"MAJOR\",\n  \"title\": \"orders-api is down\",\n  \"body\": \"orders-api is DOWN as of 2026-11-02 13:06:52 UTC.\\nReported by its pods: 0 of 1 pod UP (DOWN: orders-api-6c9f7d8b4-ab12c).\\n\\nFailing components:\\ndb: DOWN (database=PostgreSQL)\\n\\nThis notice is managed automatically and is retired once the service reports healthy again.\",\n  \"affectedServices\": [\n    \"orders-api\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"RETIRED\",\n  \"startsAt\": \"2026-11-02T13:06:52.695Z\",\n  \"externalRef\": \"health:152850af-1157-473a-a54d-badc64546426:1\",\n  \"createdAt\": \"2026-11-02T13:06:52.695Z\",\n  \"updatedAt\": \"2026-11-02T13:06:53.568208528Z\",\n  \"version\": 1,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:06:52.695Z\",\n      \"actor\": \"health-sidecar\",\n      \"action\": \"created (ACTIVE)\"\n    },\n    {\n      \"at\": \"2026-11-02T13:06:53.568208528Z\",\n      \"actor\": \"alex\",\n      \"action\": \"ACTIVE -> RETIRED: read replica only, customers unaffected\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The outage left the feed.",
+          "image": "img/operator-retire-23.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The app kept failing, so after the threshold a new outage opened (a new card, the old one stays retired).",
+          "image": "img/operator-retire-24.png"
+        },
+        {
+          "who": "Health desk",
+          "text": "The monitor: a fresh notice id, streak counted again from the observation that noticed the retire.",
+          "transcript": "GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (10 ms)\n{\n  \"id\": \"152850af-1157-473a-a54d-badc64546426\",\n  \"tenantId\": \"journeys\",\n  \"service\": \"orders-api\",\n  \"policy\": {\n    \"publisher\": \"health-sidecar\",\n    \"intervalSeconds\": 30,\n    \"timeoutMs\": 5000,\n    \"failureThreshold\": 2,\n    \"recoveryThreshold\": 2,\n    \"downSeverity\": \"MAJOR\",\n    \"degradedSeverity\": \"MINOR\",\n    \"audience\": \"CUSTOMERS\",\n    \"staleAfterSeconds\": 90,\n    \"minHealthyPercent\": 50\n  },\n  \"state\": {\n    \"lastStatus\": \"DOWN\",\n    \"lastReportAt\": \"2026-11-02T13:07:05.145Z\",\n    \"lastSummary\": \"DOWN (0 of 1 pod UP (DOWN: orders-api-6c9f7d8b4-ab12c)): db DOWN\",\n    \"unhealthyStreak\": 2,\n    \"healthyStreak\": 0,\n    \"openCommunicationId\": \"c143c996-0b5a-447e-b1ce-9da3c6f96a52\",\n    \"openStatus\": \"DOWN\",\n    \"openSignature\": \"DOWN[db=DOWN]\",\n    \"incidents\": 2\n  },\n  \"createdAt\": \"2026-11-02T13:06:27.658Z\",\n  \"updatedAt\": \"2026-11-02T13:07:05.145Z\",\n  \"version\": 6\n}",
+          "lang": "http"
+        }
+      ]
+    },
+    {
+      "id": "sidecar-crash",
+      "title": "The app crashes, or the pod disappears",
+      "summary": "The app process stops listening; the sidecar says so at once and an outage opens; a clean pod shutdown sends a leaving report instead.",
+      "steps": [
+        {
+          "who": "Health sidecar",
+          "text": "The app process is gone: \"app is not listening (last target …)\" from the first failed probe; `lastTarget` keeps where it was.",
+          "transcript": "{\n  \"version\": \"ci-iter4\",\n  \"service\": \"orders-api\",\n  \"tenant\": \"journeys\",\n  \"instance\": \"orders-api-6c9f7d8b4-ab12c\",\n  \"lastTarget\": \"http://127.0.0.1:8080/actuator/health\",\n  \"upSeen\": true,\n  \"lastReport\": {\n    \"tenantId\": \"journeys\",\n    \"service\": \"orders-api\",\n    \"status\": \"DOWN\",\n    \"message\": \"app is not listening (last target http://127.0.0.1:8080/actuator/health)\",\n    \"observedAt\": \"2026-11-02T13:07:33.492Z\",\n    \"publisher\": \"health-sidecar\",\n    \"instance\": {\n      \"id\": \"orders-api-6c9f7d8b4-ab12c\",\n      \"namespace\": \"retail-orders\",\n      \"node\": \"worker-2\",\n      \"cluster\": \"ocp-east\",\n      \"version\": \"1.4.2\",\n      \"sidecar\": \"ci-iter4\"\n    }\n  },\n  \"lastSendAt\": \"2026-11-02T13:07:33.492448437Z\",\n  \"reportsSent\": 9\n}",
+          "lang": "json"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The outage for a crashed app, with the reason.",
+          "image": "img/sidecar-crash-26.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "The app is back (rediscovered on the same port) and the outage closed.",
+          "image": "img/sidecar-crash-27.png"
+        },
+        {
+          "who": "Health sidecar",
+          "text": "The sidecar log across crash and recovery.",
+          "transcript": "{\"time\":\"2026-11-02T13:07:34.495604313Z\",\"level\":\"INFO\",\"msg\":\"health target gone; will rediscover\",\"target\":\"http://127.0.0.1:8080/actuator/health\"}\n{\"time\":\"2026-11-02T13:07:34.518762187Z\",\"level\":\"INFO\",\"msg\":\"reported\",\"status\":\"DOWN\",\"message\":\"app is not listening (last target http://127.0.0.1:8080/actuator/health)\"}\n{\"time\":\"2026-11-02T13:07:46.446886461Z\",\"level\":\"INFO\",\"msg\":\"health target found\",\"target\":\"http://127.0.0.1:8080/actuator/health\",\"status\":\"UP\"}\n{\"time\":\"2026-11-02T13:07:46.471997662Z\",\"level\":\"INFO\",\"msg\":\"reported\",\"status\":\"UP\",\"message\":\"\"}",
+          "lang": "log"
+        }
+      ]
+    },
+    {
+      "id": "rollout",
+      "title": "Several pods and a rolling deploy",
+      "summary": "A second pod of the same service joins; one unhealthy pod of two keeps the service healthy (50 % threshold); both unhealthy opens the outage; a pod that leaves cleanly is dropped from the count at once.",
+      "steps": [
+        {
+          "who": "Health desk",
+          "text": "Two pods under one monitor.",
+          "transcript": "GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426/instances\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (15 ms)\n[\n  {\n    \"monitorId\": \"152850af-1157-473a-a54d-badc64546426\",\n    \"instanceId\": \"orders-api-6c9f7d8b4-ab12c\",\n    \"status\": \"UP\",\n    \"components\": [],\n    \"namespace\": \"retail-orders\",\n    \"node\": \"worker-2\",\n    \"cluster\": \"ocp-east\",\n    \"version\": \"1.4.2\",\n    \"sidecar\": \"ci-iter4\",\n    \"left\": false,\n    \"lastSeenAt\": \"2026-11-02T13:08:03.243Z\"\n  },\n  {\n    \"monitorId\": \"152850af-1157-473a-a54d-badc64546426\",\n    \"instanceId\": \"orders-api-6c9f7d8b4-zz9yk\",\n    \"status\": \"UP\",\n    \"components\": [],\n    \"namespace\": \"retail-orders\",\n    \"node\": \"worker-2\",\n    \"cluster\": \"ocp-east\",\n    \"version\": \"1.4.2\",\n    \"sidecar\": \"ci-iter4\",\n    \"left\": false,\n    \"lastSeenAt\": \"2026-11-02T13:08:05.027Z\"\n  }\n]",
+          "lang": "http"
+        },
+        {
+          "who": "Health desk",
+          "text": "One of two pods DOWN for 25 s: the rollup stays UP (1 of 2 = 50 %), no notice.",
+          "transcript": "GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (11 ms)\n{\n  \"id\": \"152850af-1157-473a-a54d-badc64546426\",\n  \"tenantId\": \"journeys\",\n  \"service\": \"orders-api\",\n  \"policy\": {\n    \"publisher\": \"health-sidecar\",\n    \"intervalSeconds\": 30,\n    \"timeoutMs\": 5000,\n    \"failureThreshold\": 2,\n    \"recoveryThreshold\": 2,\n    \"downSeverity\": \"MAJOR\",\n    \"degradedSeverity\": \"MINOR\",\n    \"audience\": \"CUSTOMERS\",\n    \"staleAfterSeconds\": 90,\n    \"minHealthyPercent\": 50\n  },\n  \"state\": {\n    \"lastStatus\": \"UP\",\n    \"lastReportAt\": \"2026-11-02T13:08:30.476Z\",\n    \"lastSummary\": \"UP (1 of 2 pods UP (DOWN: orders-api-6c9f7d8b4-zz9yk))\",\n    \"unhealthyStreak\": 0,\n    \"healthyStreak\": 8,\n    \"incidents\": 3\n  },\n  \"createdAt\": \"2026-11-02T13:06:27.658Z\",\n  \"updatedAt\": \"2026-11-02T13:08:30.476Z\",\n  \"version\": 18\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Nothing on the feed with one pod down.",
+          "image": "img/rollout-28.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Both pods down: the outage opens and names the pods.",
+          "image": "img/rollout-29.png"
+        },
+        {
+          "who": "Health sidecar",
+          "text": "SIGTERM to the second pod's sidecar: one last report with `leaving: true`.",
+          "transcript": "{\"time\":\"2026-11-02T13:08:43.222681604Z\",\"level\":\"INFO\",\"msg\":\"leaving report sent\"}\n{\"time\":\"2026-11-02T13:08:43.222879518Z\",\"level\":\"INFO\",\"msg\":\"health sidecar stopped\"}",
+          "lang": "log"
+        },
+        {
+          "who": "Health desk",
+          "text": "The pod is marked left at once; it no longer counts.",
+          "transcript": "GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426/instances\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (17 ms)\n[\n  {\n    \"monitorId\": \"152850af-1157-473a-a54d-badc64546426\",\n    \"instanceId\": \"orders-api-6c9f7d8b4-ab12c\",\n    \"status\": \"UP\",\n    \"components\": [],\n    \"namespace\": \"retail-orders\",\n    \"node\": \"worker-2\",\n    \"cluster\": \"ocp-east\",\n    \"version\": \"1.4.2\",\n    \"sidecar\": \"ci-iter4\",\n    \"left\": false,\n    \"lastSeenAt\": \"2026-11-02T13:08:42.003Z\"\n  },\n  {\n    \"monitorId\": \"152850af-1157-473a-a54d-badc64546426\",\n    \"instanceId\": \"orders-api-6c9f7d8b4-zz9yk\",\n    \"status\": \"UP\",\n    \"components\": [],\n    \"message\": \"instance shutting down\",\n    \"namespace\": \"retail-orders\",\n    \"node\": \"worker-2\",\n    \"cluster\": \"ocp-east\",\n    \"version\": \"1.4.2\",\n    \"sidecar\": \"ci-iter4\",\n    \"left\": true,\n    \"lastSeenAt\": \"2026-11-02T13:08:43.203Z\"\n  }\n]",
+          "lang": "http"
+        }
+      ]
+    },
+    {
+      "id": "onboard",
+      "title": "A team attaches the sidecar to its app",
+      "summary": "What the team adds to its manifests, and what it reads when the service does not show up.",
+      "steps": [
+        {
+          "who": "Publisher team (Priya)",
+          "text": "The Kustomize example rendered: the component adds the container and nothing else changes in the Deployment.",
+          "transcript": "apiVersion: v1\ndata:\n  CS_CLUSTER: ocp-east\n  CS_ENDPOINT: https://communication.apps.example.com\n  CS_TENANT: retail\nkind: ConfigMap\nmetadata:\n  name: cs-health-sidecar\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app.kubernetes.io/name: payments-api\n  name: payments-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: payments-api\n  template:\n    metadata:\n      labels:\n        app.kubernetes.io/name: payments-api\n        app.kubernetes.io/version: 1.4.2\n    spec:\n      containers:\n      - image: registry.example.com/retail/payments-api:1.4.2\n        name: payments-api\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /actuator/health/readiness\n            port: 8080\n      - env:\n        - name: POD_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.name\n        - name: POD_NAMESPACE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.namespace\n        - name: NODE_NAME\n          valueFrom:\n            fieldRef:\n              fieldPath: spec.nodeName\n        - name: CS_SERVICE\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.labels['app.kubernetes.io/name']\n        - name: CS_VERSION\n          valueFrom:\n            fieldRef:\n              fieldPath: metadata.labels['app.kubernetes.io/version']\n        envFrom:\n        - configMapRef:\n            name: cs-health-sidecar\n        image: registry.example.com/platform/health-sidecar:1.0.0\n        imagePullPolicy: IfNotPresent\n        livenessProbe:\n          httpGet:\n            path: /healthz\n            port: cs-status\n          periodSeconds: 30\n        name: health-sidecar\n        ports:\n        - containerPort: 9465\n          name: cs-status\n          protocol: TCP\n        resources:\n          limits:\n            cpu: 50m\n            memory: 32Mi\n          requests:\n            cpu: 10m\n            memory: 16Mi\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n          readOnlyRootFilesystem: true\n          runAsNonRoot: true\n          seccompProfile:\n            type: RuntimeDefault",
+          "lang": "yaml"
+        },
+        {
+          "who": "Health sidecar",
+          "text": "\"My service does not show up\": the sidecar's own status page answers first.",
+          "transcript": "{\n  \"version\": \"ci-iter4\",\n  \"service\": \"orders-api\",\n  \"tenant\": \"journeys\",\n  \"instance\": \"orders-api-6c9f7d8b4-ab12c\",\n  \"target\": \"http://127.0.0.1:8080/actuator/health\",\n  \"lastTarget\": \"http://127.0.0.1:8080/actuator/health\",\n  \"upSeen\": true,\n  \"lastReport\": {\n    \"tenantId\": \"journeys\",\n    \"service\": \"orders-api\",\n    \"status\": \"UP\",\n    \"components\": {\n      \"db\": {\n        \"details\": {\n          \"database\": \"PostgreSQL\"\n        },\n        \"status\": \"UP\"\n      },\n      \"ping\": {\n        \"status\": \"UP\"\n      }\n    },\n    \"observedAt\": \"2026-11-02T13:08:41.998Z\",\n    \"publisher\": \"health-sidecar\",\n    \"instance\": {\n      \"id\": \"orders-api-6c9f7d8b4-ab12c\",\n      \"namespace\": \"retail-orders\",\n      \"node\": \"worker-2\",\n      \"cluster\": \"ocp-east\",\n      \"version\": \"1.4.2\",\n      \"sidecar\": \"ci-iter4\"\n    }\n  },\n  \"lastSendAt\": \"2026-11-02T13:08:41.998483498Z\",\n  \"reportsSent\": 15\n}",
+          "lang": "json"
+        },
+        {
+          "who": "Health desk",
+          "text": "On the service side: the monitor for the tenant, then its pods.",
+          "transcript": "GET /v1/health/monitors?tenantId=journeys\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (10 ms)\n[\n  {\n    \"id\": \"152850af-1157-473a-a54d-badc64546426\",\n    \"tenantId\": \"journeys\",\n    \"service\": \"orders-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThreshold\": 2,\n      \"recoveryThreshold\": 2,\n      \"downSeverity\": \"MAJOR\",\n      \"degradedSeverity\": \"MINOR\",\n      \"audience\": \"CUSTOMERS\",\n      \"staleAfterSeconds\": 90,\n      \"minHealthyPercent\": 50\n    },\n    \"state\": {\n      \"lastStatus\": \"UP\",\n      \"lastReportAt\": \"2026-11-02T13:08:43.203Z\",\n      \"lastSummary\": \"UP (1 of 1 pod UP)\",\n      \"unhealthyStreak\": 0,\n      \"healthyStreak\": 3,\n      \"incidents\": 4\n    },\n    \"createdAt\": \"2026-11-02T13:06:27.658Z\",\n    \"updatedAt\": \"2026-11-02T13:08:43.203Z\",\n    \"version\": 23\n  }\n]",
+          "lang": "http"
+        }
+      ]
+    },
+    {
+      "id": "pull-monitor",
+      "title": "The service probes an app itself",
+      "summary": "Alex registers an app's health page; the service probes it, opens a health notice when it degrades, turns it into an outage when it is down, and closes it on recovery.",
+      "steps": [
+        {
+          "who": "Service operator (Alex)",
+          "text": "Registering the health page (short interval for the walkthrough).",
+          "transcript": "POST /v1/health/monitors\nX-Client-Id: alex-cli\nContent-Type: application/json\n\n{\n  \"tenantId\": \"journeys\",\n  \"service\": \"legacy-api\",\n  \"url\": \"http://127.0.0.1:18180/actuator/health\",\n  \"intervalSeconds\": 5,\n  \"timeoutMs\": 2000\n}\n\n→ 201 Created (25 ms)\nLocation: /v1/health/monitors/ab913c99-c3d1-4123-8cb6-8ef5eeed569f\n{\n  \"id\": \"ab913c99-c3d1-4123-8cb6-8ef5eeed569f\",\n  \"tenantId\": \"journeys\",\n  \"service\": \"legacy-api\",\n  \"url\": \"http://127.0.0.1:18180/actuator/health\",\n  \"policy\": {\n    \"publisher\": \"health-monitor\",\n    \"intervalSeconds\": 5,\n    \"timeoutMs\": 2000,\n    \"failureThreshold\": 2,\n    \"recoveryThreshold\": 2,\n    \"downSeverity\": \"MAJOR\",\n    \"degradedSeverity\": \"MINOR\",\n    \"audience\": \"CUSTOMERS\",\n    \"minHealthyPercent\": 50\n  },\n  \"state\": {\n    \"lastStatus\": \"UNKNOWN\",\n    \"unhealthyStreak\": 0,\n    \"healthyStreak\": 0,\n    \"incidents\": 0\n  },\n  \"createdAt\": \"2026-11-02T13:08:47.373453779Z\",\n  \"updatedAt\": \"2026-11-02T13:08:47.373453779Z\",\n  \"version\": 0\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Health desk",
+          "text": "A probe on demand.",
+          "transcript": "POST /v1/health/monitors/ab913c99-c3d1-4123-8cb6-8ef5eeed569f/probe\nX-Client-Id: alex-cli\n\n→ 200 OK (109 ms)\n{\n  \"id\": \"ab913c99-c3d1-4123-8cb6-8ef5eeed569f\",\n  \"tenantId\": \"journeys\",\n  \"service\": \"legacy-api\",\n  \"url\": \"http://127.0.0.1:18180/actuator/health\",\n  \"policy\": {\n    \"publisher\": \"health-monitor\",\n    \"intervalSeconds\": 5,\n    \"timeoutMs\": 2000,\n    \"failureThreshold\": 2,\n    \"recoveryThreshold\": 2,\n    \"downSeverity\": \"MAJOR\",\n    \"degradedSeverity\": \"MINOR\",\n    \"audience\": \"CUSTOMERS\",\n    \"minHealthyPercent\": 50\n  },\n  \"state\": {\n    \"lastStatus\": \"UP\",\n    \"lastReportAt\": \"2026-11-02T13:08:47.386030194Z\",\n    \"lastProbeAt\": \"2026-11-02T13:08:47.386030194Z\",\n    \"lastSummary\": \"UP (HTTP 200)\",\n    \"unhealthyStreak\": 0,\n    \"healthyStreak\": 1,\n    \"incidents\": 0\n  },\n  \"createdAt\": \"2026-11-02T13:08:47.373Z\",\n  \"updatedAt\": \"2026-11-02T13:08:47.386030194Z\",\n  \"version\": 1\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Degraded twice in a row: a HEALTH notice (minor), not an outage.",
+          "image": "img/pull-monitor-30.png"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Down twice: the health notice was retired (\"reclassified as DOWN\") and an outage (major) took its place.",
+          "image": "img/pull-monitor-31.png"
+        },
+        {
+          "who": "Health desk",
+          "text": "The monitor during the outage.",
+          "transcript": "GET /v1/health/monitors/ab913c99-c3d1-4123-8cb6-8ef5eeed569f\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (8 ms)\n{\n  \"id\": \"ab913c99-c3d1-4123-8cb6-8ef5eeed569f\",\n  \"tenantId\": \"journeys\",\n  \"service\": \"legacy-api\",\n  \"url\": \"http://127.0.0.1:18180/actuator/health\",\n  \"policy\": {\n    \"publisher\": \"health-monitor\",\n    \"intervalSeconds\": 5,\n    \"timeoutMs\": 2000,\n    \"failureThreshold\": 2,\n    \"recoveryThreshold\": 2,\n    \"downSeverity\": \"MAJOR\",\n    \"degradedSeverity\": \"MINOR\",\n    \"audience\": \"CUSTOMERS\",\n    \"minHealthyPercent\": 50\n  },\n  \"state\": {\n    \"lastStatus\": \"DOWN\",\n    \"lastReportAt\": \"2026-11-02T13:09:14.037Z\",\n    \"lastProbeAt\": \"2026-11-02T13:09:14.037Z\",\n    \"lastSummary\": \"DOWN (HTTP 503): db DOWN\",\n    \"unhealthyStreak\": 2,\n    \"healthyStreak\": 0,\n    \"openCommunicationId\": \"9e6f0187-5e25-4ab5-ad21-681bafa2cbe3\",\n    \"openStatus\": \"DOWN\",\n    \"openSignature\": \"DOWN[db=DOWN]\",\n    \"incidents\": 2\n  },\n  \"createdAt\": \"2026-11-02T13:08:47.373Z\",\n  \"updatedAt\": \"2026-11-02T13:09:14.037Z\",\n  \"version\": 11\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Dependent systems",
+          "text": "Healthy twice: closed by itself.",
+          "image": "img/pull-monitor-32.png"
+        }
+      ]
+    },
+    {
+      "id": "restart",
+      "title": "The service restarts while screens are open",
+      "summary": "The service is stopped and started again while a feed is open: the badge says Reconnecting, the cards stay, a notice published meanwhile arrives through replay, and the badge is Live again without a reload.",
+      "steps": [
+        {
+          "who": "Outage screens",
+          "text": "Before: the feed is Live with one card.",
+          "image": "img/restart-33.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "The service is down: the badge says Reconnecting (n) and the card stays on screen.",
+          "image": "img/restart-34.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "Back: the new notice arrived (replayed from the log) and the badge is Live again; nothing was reloaded.",
+          "image": "img/restart-35.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "The stream requests the screen made: the first open, then reopen attempts carrying lastEventId.",
+          "transcript": "13:09:25.926 /v1/feed/stream?tenantId=journeys&clientId=communication-frontend\n13:09:41.903 /v1/feed/stream?tenantId=journeys&clientId=communication-frontend\n13:09:41.903 /v1/feed/stream?tenantId=journeys&clientId=communication-frontend&lastEventId=31\n13:09:41.903 /v1/feed/stream?tenantId=journeys&clientId=communication-frontend&lastEventId=31\n13:09:43.092 /v1/feed/stream?tenantId=journeys&clientId=communication-frontend&lastEventId=31",
+          "lang": "log"
+        }
+      ]
+    },
+    {
+      "id": "mongo-down",
+      "title": "The record book is unreachable",
+      "summary": "The database goes away twice. Stopped (connections refused): the API answers 503 \"database unavailable\" within seconds, a feed opened meanwhile says Service degraded, readiness turns 503 while liveness stays 200, and everything resumes by itself. Frozen (connections hang): the open gap GAP-backend4-1, shown as it happens.",
+      "steps": [
+        {
+          "who": "The record book",
+          "text": "The database container is stopped (jr-mongo): connections are refused."
+        },
+        {
+          "who": "The service",
+          "text": "A request while the database refuses connections: 503 after 5022 ms, with a plain message.",
+          "transcript": "GET /v1/feed?tenantId=journeys\nX-Client-Id: journeys-walkthrough\n\n→ 503 Service Unavailable (5022 ms)\n{\n  \"error\": \"database unavailable\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "The cluster",
+          "text": "Readiness says not ready in 811 ms (take the pod out of traffic); liveness says alive (do not restart it).",
+          "transcript": "GET /actuator/health/readiness\n\n\n→ 503 Service Unavailable (811 ms)\n{\n  \"status\": \"DOWN\"\n}\n\nGET /actuator/health/liveness\n\n\n→ 200 OK (7 ms)\n{\n  \"status\": \"UP\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Outage screens",
+          "text": "Publishing now: the banner says the service cannot reach its database and recovers on its own; it took focus.",
+          "image": "img/mongo-down-36.png"
+        },
+        {
+          "who": "Outage screens",
+          "text": "A feed opened during the outage: the badge says Service degraded (not Live) and the load error is announced as an alert.",
+          "image": "img/mongo-down-37.png"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "The log: one WARN line per failed request, per skipped sweep and for the readiness change; no stack traces.",
+          "transcript": "2026-11-02T13:10:30.943Z  WARN 8103 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]\n2026-11-02T13:10:35.936Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]\n2026-11-02T13:10:40.946Z  WARN 8103 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]\n2026-11-02T13:10:43.684Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]\n2026-11-02T13:10:46.539Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]",
+          "lang": "log"
+        },
+        {
+          "who": "The service",
+          "text": "The database is back: ready again, nothing restarted.",
+          "transcript": "GET /actuator/health/readiness\n\n\n→ 200 OK (473 ms)\n{\n  \"status\": \"UP\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Outage screens",
+          "text": "After Try again the list loads and the badge goes back to Live.",
+          "image": "img/mongo-down-38.png"
+        },
+        {
+          "who": "The record book",
+          "text": "Now the database is frozen instead (docker pause): connections open but nothing answers."
+        },
+        {
+          "who": "The service",
+          "text": "Six requests while the database hangs: 503 after 20030 ms, 503 after 20031 ms, 503 after 20022 ms, 503 after 5014 ms, 503 after 5013 ms, 503 after 5010 ms. A 500 here is the open gap GAP-backend4-1: the driver pauses its connection pool and the error handler does not recognise that error, so the answer carries the driver's message, database address included.",
+          "transcript": "GET /v1/feed?tenantId=journeys\nX-Client-Id: journeys-walkthrough\n\n→ 503 Service Unavailable (5010 ms)\n{\n  \"error\": \"database unavailable\"\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "The log during the freeze.",
+          "transcript": "2026-11-02T13:11:11.603Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.data.mongodb.UncategorizedMongoDbException: Connection pool for ServerId{clusterId=ClusterId{value='6ae88b924e8acfcbb7c1eb26', description='null'}, address=localhost:27118} is paused because another operation failed\n2026-11-02T13:11:11.607Z ERROR 8103 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task\norg.springframework.data.mongodb.UncategorizedMongoDbException: Connection pool for ServerId{clusterId=ClusterId{value='6ae88b924e8acfcbb7c1eb26', description='null'}, address=localhost:27118} is paused because another operation failed\nCaused by: com.mongodb.MongoConnectionPoolClearedException: Connection pool for ServerId{clusterId=ClusterId{value='6ae88b924e8acfcbb7c1eb26', description='null'}, address=localhost:27118} is paused because another operation failed",
+          "lang": "log"
+        },
+        {
+          "who": "The service",
+          "text": "Unfrozen: ready again by itself.",
+          "transcript": "GET /actuator/health/readiness\n\n\n→ 200 OK (12 ms)\n{\n  \"status\": \"UP\"\n}",
+          "lang": "http"
+        }
+      ]
+    },
+    {
+      "id": "valve",
+      "title": "Many sidecars fall silent at once",
+      "summary": "Four services report once and then go silent together (a network cut): after the staleness window the service pauses the \"no news is bad news\" rule instead of declaring four outages, and says so in its log.",
+      "steps": [
+        {
+          "who": "Health desk",
+          "text": "Four push-only monitors, each with one pod, all UP.",
+          "transcript": "GET /v1/health/monitors?tenantId=journeys-valve\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (17 ms)\n[\n  {\n    \"id\": \"bae8a38d-3e75-4f27-b541-c2ee66697c13\",\n    \"tenantId\": \"journeys-valve\",\n    \"service\": \"inventory-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThreshold\": 2,\n      \"recoveryThreshold\": 2,\n      \"downSeverity\": \"MAJOR\",\n      \"degradedSeverity\": \"MINOR\",\n      \"audience\": \"CUSTOMERS\",\n      \"staleAfterSeconds\": 90,\n      \"minHealthyPercent\": 50\n    },\n    \"state\": {\n      \"lastStatus\": \"UP\",\n      \"lastReportAt\": \"2026-11-02T13:11:29.639Z\",\n      \"lastSummary\": \"UP (1 of 1 pod UP)\",\n      \"unhealthyStreak\": 0,\n      \"healthyStreak\": 1,\n      \"incidents\": 0\n    },\n    \"createdAt\": \"2026-11-02T13:11:29.644Z\",\n    \"updatedAt\": \"2026-11-02T13:11:29.639Z\",\n    \"version\": 1\n  },\n  {\n    \"id\": \"dace1d14-864d-4500-9beb-7526f5d3726d\",\n    \"tenantId\": \"journeys-valve\",\n    \"service\": \"pricing-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThreshold\": 2,\n      \"recoveryThreshold\": 2,\n      \"downSeverity\": \"MAJOR\",\n      \"degradedSeverity\": \"MINOR\",\n      \"audience\": \"CUSTOMERS\",\n      \"staleAfterSeconds\": 90,\n      \"minHealthyPercent\": 50\n    },\n    \"state\": {\n      \"lastStatus\": \"UP\",\n      \"lastReportAt\": \"2026-11-02T13:11:29.672Z\",\n      \"lastSummary\": \"UP (1 of 1 pod UP)\",\n      \"unhealthyStreak\": 0,\n      \"healthyStreak\": 1,\n      \"incidents\": 0\n    },\n    \"createdAt\": \"2026-11-02T13:11:29.677Z\",\n    \"updatedAt\": \"2026-11-02T13:11:29.672Z\",\n    \"version\": 1\n  },\n  {\n    \"id\": \"7bbe50c6-5d11-4896-9105-060c8934931f\",\n    \"tenantId\": \"journeys-valve\",\n    \"service\": \"returns-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThr\n… (trimmed)",
+          "lang": "http"
+        },
+        {
+          "who": "Health desk",
+          "text": "Waiting 100 seconds without any report (the staleness window is 90 s)…"
+        },
+        {
+          "who": "Health desk",
+          "text": "After the window: all four are silent, and none was declared DOWN. More than 30 % of the monitors that can go stale fell silent together, so the rule paused.",
+          "transcript": "GET /v1/health/monitors?tenantId=journeys-valve\nX-Client-Id: journeys-walkthrough\n\n→ 200 OK (15 ms)\n[\n  {\n    \"id\": \"bae8a38d-3e75-4f27-b541-c2ee66697c13\",\n    \"tenantId\": \"journeys-valve\",\n    \"service\": \"inventory-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThreshold\": 2,\n      \"recoveryThreshold\": 2,\n      \"downSeverity\": \"MAJOR\",\n      \"degradedSeverity\": \"MINOR\",\n      \"audience\": \"CUSTOMERS\",\n      \"staleAfterSeconds\": 90,\n      \"minHealthyPercent\": 50\n    },\n    \"state\": {\n      \"lastStatus\": \"UP\",\n      \"lastReportAt\": \"2026-11-02T13:11:29.639Z\",\n      \"lastSummary\": \"UP (1 of 1 pod UP)\",\n      \"unhealthyStreak\": 0,\n      \"healthyStreak\": 1,\n      \"incidents\": 0\n    },\n    \"createdAt\": \"2026-11-02T13:11:29.644Z\",\n    \"updatedAt\": \"2026-11-02T13:11:29.639Z\",\n    \"version\": 1\n  },\n  {\n    \"id\": \"dace1d14-864d-4500-9beb-7526f5d3726d\",\n    \"tenantId\": \"journeys-valve\",\n    \"service\": \"pricing-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThreshold\": 2,\n      \"recoveryThreshold\": 2,\n      \"downSeverity\": \"MAJOR\",\n      \"degradedSeverity\": \"MINOR\",\n      \"audience\": \"CUSTOMERS\",\n      \"staleAfterSeconds\": 90,\n      \"minHealthyPercent\": 50\n    },\n    \"state\": {\n      \"lastStatus\": \"UP\",\n      \"lastReportAt\": \"2026-11-02T13:11:29.672Z\",\n      \"lastSummary\": \"UP (1 of 1 pod UP)\",\n      \"unhealthyStreak\": 0,\n      \"healthyStreak\": 1,\n      \"incidents\": 0\n    },\n    \"createdAt\": \"2026-11-02T13:11:29.677Z\",\n    \"updatedAt\": \"2026-11-02T13:11:29.672Z\",\n    \"version\": 1\n  },\n  {\n    \"id\": \"7bbe50c6-5d11-4896-9105-060c8934931f\",\n    \"tenantId\": \"journeys-valve\",\n    \"service\": \"returns-api\",\n    \"policy\": {\n      \"publisher\": \"health-sidecar\",\n      \"intervalSeconds\": 30,\n      \"timeoutMs\": 5000,\n      \"failureThr\n… (trimmed)",
+          "lang": "http"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "The log line that explains the pause.",
+          "transcript": "Caused by: com.mongodb.MongoConnectionPoolClearedException: Connection pool for ServerId{clusterId=ClusterId{value='6ae88b924e8acfcbb7c1eb26', description='null'}, address=localhost:27118} is paused because another operation failed\n\tat com.mongodb.internal.connection.DefaultConnectionPool$StateAndGeneration.lambda$pauseAndIncrementGeneration$0(DefaultConnectionPool.java:1541) ~[mongodb-driver-core-5.6.5.jar!/:na]\n\tat com.mongodb.internal.connection.ConcurrentPool$StateAndPermits.throwIfClosedOrPaused(ConcurrentPool.java:447) ~[mongodb-driver-core-5.6.5.jar!/:na]",
+          "lang": "log"
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "title": "Alex tidies up across tenants",
+      "summary": "Tenants and their counts, a search across tenants, retiring a notice on someone's behalf, and deleting one for good.",
+      "steps": [
+        {
+          "who": "Service operator (Alex)",
+          "text": "Which tenants exist and how much each has published.",
+          "transcript": "GET /v1/admin/tenants\nX-Client-Id: alex-cli\n\n→ 200 OK (40 ms)\n[\n  {\n    \"tenantId\": \"journeys\",\n    \"counts\": {\n      \"ACTIVE\": 1,\n      \"EXPIRED\": 1,\n      \"RETIRED\": 15\n    },\n    \"total\": 17\n  }\n]",
+          "lang": "http"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "A search across every tenant, here by publisher (tenant, status, type, publisher and a time range can be combined).",
+          "transcript": "GET /v1/admin/communications?publisher=demo-user&status=ACTIVE\nX-Client-Id: alex-cli\n\n→ 200 OK (13 ms)\n{\n  \"items\": [\n    {\n      \"id\": \"7a4a99d1-e2bc-421b-8b25-5971bde77310\",\n      \"tenantId\": \"journeys\",\n      \"publisher\": \"demo-user\",\n      \"type\": \"OUTAGE\",\n      \"severity\": \"MINOR\",\n      \"title\": \"test please ignore t00y\",\n      \"affectedServices\": [\n        \"demo\"\n      ],\n      \"audience\": \"CUSTOMERS\",\n      \"status\": \"ACTIVE\",\n      \"startsAt\": \"2026-11-02T13:13:09.970Z\",\n      \"createdAt\": \"2026-11-02T13:13:09.970Z\",\n      \"updatedAt\": \"2026-11-02T13:13:09.970Z\",\n      \"version\": 0,\n      \"history\": [\n        {\n          \"at\": \"2026-11-02T13:13:09.970Z\",\n          \"actor\": \"demo-user\",\n          \"action\": \"created (ACTIVE)\"\n        }\n      ]\n    }\n  ],\n  \"page\": 0,\n  \"size\": 20,\n  \"totalElements\": 1,\n  \"hasNext\": false\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "Retiring it on the publisher's behalf, with Alex as the actor.",
+          "transcript": "POST /v1/admin/communications/7a4a99d1-e2bc-421b-8b25-5971bde77310/retire\nX-Client-Id: alex-cli\nContent-Type: application/json\n\n{\n  \"actor\": \"alex\",\n  \"note\": \"left over from a demo\"\n}\n\n→ 200 OK (16 ms)\n{\n  \"id\": \"7a4a99d1-e2bc-421b-8b25-5971bde77310\",\n  \"tenantId\": \"journeys\",\n  \"publisher\": \"demo-user\",\n  \"type\": \"OUTAGE\",\n  \"severity\": \"MINOR\",\n  \"title\": \"test please ignore t00y\",\n  \"affectedServices\": [\n    \"demo\"\n  ],\n  \"audience\": \"CUSTOMERS\",\n  \"status\": \"RETIRED\",\n  \"startsAt\": \"2026-11-02T13:13:09.970Z\",\n  \"createdAt\": \"2026-11-02T13:13:09.970Z\",\n  \"updatedAt\": \"2026-11-02T13:13:10.043159113Z\",\n  \"version\": 1,\n  \"history\": [\n    {\n      \"at\": \"2026-11-02T13:13:09.970Z\",\n      \"actor\": \"demo-user\",\n      \"action\": \"created (ACTIVE)\"\n    },\n    {\n      \"at\": \"2026-11-02T13:13:10.043159113Z\",\n      \"actor\": \"alex\",\n      \"action\": \"ACTIVE -> RETIRED: left over from a demo\"\n    }\n  ]\n}",
+          "lang": "http"
+        },
+        {
+          "who": "Service operator (Alex)",
+          "text": "Deleting it for good; the permalink answers 404 afterwards.",
+          "transcript": "DELETE /v1/admin/communications/7a4a99d1-e2bc-421b-8b25-5971bde77310\nX-Client-Id: alex-cli\n\n→ 204 No Content (7 ms)\n\n\nGET /v1/communications/7a4a99d1-e2bc-421b-8b25-5971bde77310\nX-Client-Id: journeys-walkthrough\n\n→ 404 Not Found (9 ms)\n{\n  \"error\": \"communication 7a4a99d1-e2bc-421b-8b25-5971bde77310 not found\"\n}",
+          "lang": "http"
+        }
+      ]
+    }
+  ]
+}

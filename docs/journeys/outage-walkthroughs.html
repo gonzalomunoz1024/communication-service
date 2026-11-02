@@ -1,0 +1,1581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Outage Walkthroughs</title>
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a sticky strip of journey chips, then one section per journey; each step is a frame (screen or transcript) under a lane chip. */
+:root {
+  --board: #f2f3ef; --dot: #c9ccc2; --ink: #23262b; --ink-soft: #565b63; --event: #1c62c9; --warn: #9a4b00;
+  --card: #fbfbf8; --frame: #e6e7e1; --term: #1f2227; --term-ink: #e8e5de;
+  --hand: "Shantell Sans", "Comic Neue", "Segoe Print", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --board: #1b1e22; --dot: #343941; --ink: #e8e5de; --ink-soft: #a8acb3; --event: #7cb3ff; --warn: #ffb36b; --card: #24282d; --frame: #2d3137; --term: #121417; --term-ink: #e8e5de; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --board: #1b1e22; --dot: #343941; --ink: #e8e5de; --ink-soft: #a8acb3; --event: #7cb3ff; --warn: #ffb36b; --card: #24282d; --frame: #2d3137; --term: #121417; --term-ink: #e8e5de; color-scheme: dark; }
+body { background: var(--board); color: var(--ink); font-family: var(--hand); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--board); }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; max-width: 1100px; margin: 0 auto; display: grid; gap: 30px; }
+header { display: grid; gap: 12px; }
+h1 { font-size: clamp(28px, 4vw, 40px); margin: 0; text-wrap: balance; }
+h2 { font-size: 26px; margin: 0; text-wrap: balance; }
+.lede { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink-soft); max-width: 75ch; }
+.how { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-soft); max-width: 80ch; }
+.how code, .sum code, .cap code { font-family: var(--mono); font-size: 0.86em; background: color-mix(in srgb, var(--ink) 8%, transparent); padding: 1px 5px; border-radius: 4px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; font-size: 14px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--board); padding-block: 10px; z-index: 5; border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips a { font-size: 13px; color: inherit; text-decoration: none; padding: 4px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); }
+.chips a:hover { border-color: var(--ink); }
+.spacer { flex: 1; }
+.seg { display: inline-flex; border: 1.5px solid var(--ink); border-radius: 999px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; background: transparent; color: var(--ink); border: 0; padding: 6px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--board); }
+.seg button:focus-visible, a:focus-visible, .shot:focus-visible, dialog button:focus-visible { outline: 2px solid var(--event); outline-offset: 2px; }
+.boards { font-size: 15px; margin: 0; }
+.boards a { color: inherit; }
+.toc { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.card { display: grid; gap: 6px; padding: 14px 16px; background: var(--card); border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); border-radius: 10px; color: inherit; text-decoration: none; min-width: 0; align-content: start; }
+.card:hover { border-color: var(--ink); }
+.ct { font-weight: 700; font-size: 17px; }
+.cs { font-size: 14px; line-height: 1.45; color: var(--ink-soft); }
+.cm { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+.journey { display: grid; gap: 14px; scroll-margin-top: 80px; }
+.sum { margin: 0; font-size: 16px; line-height: 1.55; max-width: 80ch; color: var(--ink-soft); }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+.step { display: grid; gap: 8px; min-width: 0; }
+.who { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--paper-ink, #2a2622); }
+.who .n { font-family: var(--mono); font-weight: 600; font-size: 12px; color: var(--ink-soft); min-width: 2.2em; }
+.who .tag { background: var(--lane); color: #2a2622; padding: 3px 10px; border-radius: 4px; box-shadow: 0 1px 0 rgba(0,0,0,.18); transform: rotate(-0.6deg); }
+.cap { margin: 0; font-size: 15px; line-height: 1.5; max-width: 80ch; }
+.cap.note { color: var(--ink-soft); font-style: italic; }
+.cap.err { color: var(--warn); }
+.frame { background: var(--frame); border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); border-radius: 10px; overflow: hidden; max-width: 100%; }
+.frame .tb { display: flex; align-items: center; gap: 6px; padding: 7px 10px; font-family: var(--mono); font-size: 11px; color: var(--ink-soft); border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); }
+.frame .tb i { width: 9px; height: 9px; border-radius: 50%; background: var(--dot); display: inline-block; }
+.frame .tb span { margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot { display: block; width: 100%; height: auto; background: #fff; cursor: zoom-in; border: 0; padding: 0; }
+.term { background: var(--term); color: var(--term-ink); border-radius: 10px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); }
+.term .tb { display: flex; justify-content: space-between; gap: 10px; padding: 6px 12px; font-family: var(--mono); font-size: 11px; color: color-mix(in srgb, var(--term-ink) 65%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--term-ink) 12%, transparent); }
+.term pre { margin: 0; padding: 12px 14px; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; overflow-x: auto; max-height: 440px; overflow-y: auto; white-space: pre; tab-size: 2; }
+.term pre .st { color: #9fe3a1; } .term pre .er { color: #ffb0a3; } .term pre .hd { color: #9ec5ff; }
+.light .term pre .st { color: #9fe3a1; }
+dialog { border: 0; padding: 0; background: transparent; max-width: min(96vw, 1600px); max-height: 96vh; }
+dialog::backdrop { background: rgba(10, 12, 15, .82); }
+dialog img { display: block; max-width: 96vw; max-height: 90vh; width: auto; height: auto; border-radius: 8px; background: #fff; }
+dialog form { display: grid; gap: 8px; justify-items: end; }
+dialog button { font: inherit; font-family: var(--hand); background: var(--card); color: var(--ink); border: 1px solid var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+dialog .dcap { font-size: 14px; color: #fff; justify-self: start; max-width: 90vw; line-height: 1.45; }
+.hide-tech .step[data-kind="transcript"] { display: none; }
+.hide-tech .step[data-kind="note"] .cap::before { content: ""; }
+.empty { font-size: 14px; color: var(--ink-soft); }
+@media (max-width: 640px) { h2 { font-size: 22px; } .term pre { font-size: 11.5px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Communication service, step by step</h1>
+<p class="lede">Every way the outage service gets used, shown as it happened: the screens people see, the answers systems get, and what the health sidecar and the service wrote while it ran.</p>
+<p class="how">Captured 2026-11-02 13:04 UTC by driving the real stack: the React screens at 1280×800 in headless Chromium, the API over HTTP with the <code>X-Client-Id</code> header, the Go health sidecar in its container next to a stand-in app, and the service's own log. Nothing here is mocked; the short timers (probe every 5 s, a 75 s maintenance window) are walkthrough settings, the defaults are stated in each step. Code at commit <code>1cd3f13</code>.</p>
+<p class="boards">The same journeys as sticky swim lanes, with a plain and a technical view: <a href="outage-journeys.html">Communication service journeys</a>.</p>
+</header>
+<nav class="bar" aria-label="Journeys">
+<div class="chips"><a href="#publish">Publish an outage and watch it land</a><a href="#maintenance">Schedule a maintenance window</a><a href="#api-publish">A system publishes through the API, safely twice</a><a href="#consume">A dependent system reads the feed and stays current</a><a href="#identity">A new system calls the API for the first time</a><a href="#ticket">Tie a notice to its ServiceNow incident</a><a href="#sidecar-outage">The sidecar notices the team&#x27;s app is down</a><a href="#operator-retire">Alex resolves an automatic outage by hand</a><a href="#sidecar-crash">The app crashes, or the pod disappears</a><a href="#rollout">Several pods and a rolling deploy</a><a href="#onboard">A team attaches the sidecar to its app</a><a href="#pull-monitor">The service probes an app itself</a><a href="#restart">The service restarts while screens are open</a><a href="#mongo-down">The record book is unreachable</a><a href="#valve">Many sidecars fall silent at once</a><a href="#admin">Alex tidies up across tenants</a></div>
+<span class="spacer"></span>
+<div class="seg" role="group" aria-label="What to show"><button type="button" data-v="all" aria-pressed="true">Screens and transcripts</button><button type="button" data-v="screens" aria-pressed="false">Screens only</button></div>
+</nav>
+<div class="toc"><a class="card" href="#publish"><span class="ct">Publish an outage and watch it land</span><span class="cs">Sam publishes an outage from the screen; a second screen sees it live; Sam resolves it and it leaves everywhere.</span><span class="cm">10 screens · 3 transcripts</span></a><a class="card" href="#maintenance"><span class="ct">Schedule a maintenance window</span><span class="cs">A maintenance window is published ahead of time, shows as Scheduled with a countdown, is turned active by the clock and closed at its end; another one is withdrawn before it starts.</span><span class="cm">5 screens · 3 transcripts</span></a><a class="card" href="#api-publish"><span class="ct">A system publishes through the API, safely twice</span><span class="cs">A deployment tool publishes with its own reference; a retry is answered with the same notice; a second notice under the same reference is refused with an explanation; an update names the version it edits.</span><span class="cm">1 screen · 6 transcripts</span></a><a class="card" href="#consume"><span class="ct">A dependent system reads the feed and stays current</span><span class="cs">Team B&#x27;s app loads the feed once, opens the live stream, and after a dropped line resumes from the last event id it saw.</span><span class="cm">0 screens · 3 transcripts</span></a><a class="card" href="#identity"><span class="ct">A new system calls the API for the first time</span><span class="cs">Without a name the API answers 401 and says what is missing; with X-Client-Id the same call works and the name appears in the access log; the Swagger UI explorer uses the same header.</span><span class="cm">2 screens · 3 transcripts</span></a><a class="card" href="#ticket"><span class="ct">Tie a notice to its ServiceNow incident</span><span class="cs">The incident number typed on the screen is tidied, linked when the service knows the ServiceNow address, shown as a chip, and doubles as the notice&#x27;s reference.</span><span class="cm">3 screens · 1 transcript</span></a><a class="card" href="#sidecar-outage"><span class="ct">The sidecar notices the team&#x27;s app is down</span><span class="cs">A pod starts with the sidecar beside the app; the app&#x27;s database fails; the service opens an outage with the detail and closes it when the app recovers. Settings here are shortened (probe every 5 s) so the walkthrough fits in minutes.</span><span class="cm">2 screens · 8 transcripts</span></a><a class="card" href="#operator-retire"><span class="ct">Alex resolves an automatic outage by hand</span><span class="cs">Alex retires the automatic outage while the app is still failing; the service respects it, keeps counting and reopens a new outage when the failures continue.</span><span class="cm">2 screens · 2 transcripts</span></a><a class="card" href="#sidecar-crash"><span class="ct">The app crashes, or the pod disappears</span><span class="cs">The app process stops listening; the sidecar says so at once and an outage opens; a clean pod shutdown sends a leaving report instead.</span><span class="cm">2 screens · 2 transcripts</span></a><a class="card" href="#rollout"><span class="ct">Several pods and a rolling deploy</span><span class="cs">A second pod of the same service joins; one unhealthy pod of two keeps the service healthy (50 % threshold); both unhealthy opens the outage; a pod that leaves cleanly is dropped from the count at once.</span><span class="cm">2 screens · 4 transcripts</span></a><a class="card" href="#onboard"><span class="ct">A team attaches the sidecar to its app</span><span class="cs">What the team adds to its manifests, and what it reads when the service does not show up.</span><span class="cm">0 screens · 3 transcripts</span></a><a class="card" href="#pull-monitor"><span class="ct">The service probes an app itself</span><span class="cs">Alex registers an app&#x27;s health page; the service probes it, opens a health notice when it degrades, turns it into an outage when it is down, and closes it on recovery.</span><span class="cm">3 screens · 3 transcripts</span></a><a class="card" href="#restart"><span class="ct">The service restarts while screens are open</span><span class="cs">The service is stopped and started again while a feed is open: the badge says Reconnecting, the cards stay, a notice published meanwhile arrives through replay, and the badge is Live again without a reload.</span><span class="cm">3 screens · 1 transcript</span></a><a class="card" href="#mongo-down"><span class="ct">The record book is unreachable</span><span class="cs">The database goes away twice. Stopped (connections refused): the API answers 503 &quot;database unavailable&quot; within seconds, a feed opened meanwhile says Service degraded, readiness turns 503 while liveness stays 200, and everything resumes by itself. Frozen (connections hang): the open gap GAP-backend4-1, shown as it happens.</span><span class="cm">3 screens · 7 transcripts</span></a><a class="card" href="#valve"><span class="ct">Many sidecars fall silent at once</span><span class="cs">Four services report once and then go silent together (a network cut): after the staleness window the service pauses the &quot;no news is bad news&quot; rule instead of declaring four outages, and says so in its log.</span><span class="cm">0 screens · 3 transcripts</span></a><a class="card" href="#admin"><span class="ct">Alex tidies up across tenants</span><span class="cs">Tenants and their counts, a search across tenants, retiring a notice on someone&#x27;s behalf, and deleting one for good.</span><span class="cm">0 screens · 4 transcripts</span></a></div>
+<section class="journey" id="publish"><h2>Publish an outage and watch it land</h2><p class="sum">Sam publishes an outage from the screen; a second screen sees it live; Sam resolves it and it leaves everywhere.</p><ol class="steps"><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">01</span><span class="tag">Outage screens</span></div><p class="cap">First visit: no tenant is pre-filled. The header asks for the tenant your consumers read.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/publish-01.png" data-cap="First visit: no tenant is pre-filled. The header asks for the tenant your consumers read." aria-label="Outage screens: First visit: no tenant is pre-filled. The header asks for the tenant your consumers read."><img src="img/publish-01.png" alt="Outage screens: First visit: no tenant is pre-filled. The header asks for the tenant your consumers read." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">02</span><span class="tag">Dependent systems</span></div><p class="cap">A second screen (Team B) already watches tenant journeys: the feed is empty and the badge says Live.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/publish-02.png" data-cap="A second screen (Team B) already watches tenant journeys: the feed is empty and the badge says Live." aria-label="Dependent systems: A second screen (Team B) already watches tenant journeys: the feed is empty and the badge says Live."><img src="img/publish-02.png" alt="Dependent systems: A second screen (Team B) already watches tenant journeys: the feed is empty and the badge says Live." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">03</span><span class="tag">Outage screens</span></div><p class="cap">Pressing Publish with an empty form: the first invalid field gets focus and an error summary lists what is missing. Nothing was sent.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/publish-03.png" data-cap="Pressing Publish with an empty form: the first invalid field gets focus and an error summary lists what is missing. Nothing was sent." aria-label="Outage screens: Pressing Publish with an empty form: the first invalid field gets focus and an error summary lists what is missing. Nothing was sent."><img src="img/publish-03.png" alt="Outage screens: Pressing Publish with an empty form: the first invalid field gets focus and an error summary lists what is missing. Nothing was sent." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">04</span><span class="tag">Outage screens</span></div><p class="cap">Sam fills in the outage: tenant, title, details, affected services, publisher.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/publish-04.png" data-cap="Sam fills in the outage: tenant, title, details, affected services, publisher." aria-label="Outage screens: Sam fills in the outage: tenant, title, details, affected services, publisher."><img src="img/publish-04.png" alt="Outage screens: Sam fills in the outage: tenant, title, details, affected services, publisher." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">05</span><span class="tag">The service</span></div><p class="cap">What the screen sent and what came back (201 in the browser&#x27;s own request).</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">POST /v1/communications</span>
+X-Client-Id: communication-frontend
+
+{
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;OUTAGE&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Card payments failing t00y&quot;,
+  &quot;body&quot;: &quot;Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;,
+    &quot;checkout-web&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;
+}
+
+<span class="st">→ 201 Created</span>
+{
+  &quot;id&quot;: &quot;84dfc82c-2cd0-4f85-8a6b-d9067abecde1&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;OUTAGE&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Card payments failing t00y&quot;,
+  &quot;body&quot;: &quot;Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;,
+    &quot;checkout-web&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;ACTIVE&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:04:18.586907231Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:04:18.586907231Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:04:18.586907231Z&quot;,
+  &quot;version&quot;: 0,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:18.586907231Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">06</span><span class="tag">Outage screens</span></div><p class="cap">Published: the confirmation offers View in feed and Publish another.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/publish-05.png" data-cap="Published: the confirmation offers View in feed and Publish another." aria-label="Outage screens: Published: the confirmation offers View in feed and Publish another."><img src="img/publish-05.png" alt="Outage screens: Published: the confirmation offers View in feed and Publish another." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">07</span><span class="tag">Dependent systems</span></div><p class="cap">Team B&#x27;s screen shows the outage within a second, over the live stream, without reloading.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/publish-06.png" data-cap="Team B&#x27;s screen shows the outage within a second, over the live stream, without reloading." aria-label="Dependent systems: Team B&#x27;s screen shows the outage within a second, over the live stream, without reloading."><img src="img/publish-06.png" alt="Dependent systems: Team B&#x27;s screen shows the outage within a second, over the live stream, without reloading." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">08</span><span class="tag">Outage screens</span></div><p class="cap">View in feed switches Sam to the feed of the tenant just published to, filtered to that type.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/publish-07.png" data-cap="View in feed switches Sam to the feed of the tenant just published to, filtered to that type." aria-label="Outage screens: View in feed switches Sam to the feed of the tenant just published to, filtered to that type."><img src="img/publish-07.png" alt="Outage screens: View in feed switches Sam to the feed of the tenant just published to, filtered to that type." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">09</span><span class="tag">Outage screens</span></div><p class="cap">Resolve asks for confirmation and says who acts and what consumers see; a note is optional.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/publish-08.png" data-cap="Resolve asks for confirmation and says who acts and what consumers see; a note is optional." aria-label="Outage screens: Resolve asks for confirmation and says who acts and what consumers see; a note is optional."><img src="img/publish-08.png" alt="Outage screens: Resolve asks for confirmation and says who acts and what consumers see; a note is optional." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">10</span><span class="tag">The service</span></div><p class="cap">The retire call the screen made.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">POST /v1/communications/84dfc82c-2cd0-4f85-8a6b-d9067abecde1/retire</span>
+X-Client-Id: communication-frontend
+
+{
+  &quot;actor&quot;: &quot;sam-oncall&quot;,
+  &quot;note&quot;: &quot;Payment provider failover completed&quot;
+}
+
+<span class="st">→ 200</span>
+{
+  &quot;id&quot;: &quot;84dfc82c-2cd0-4f85-8a6b-d9067abecde1&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;OUTAGE&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Card payments failing t00y&quot;,
+  &quot;body&quot;: &quot;Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;,
+    &quot;checkout-web&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;RETIRED&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:04:18.586Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:04:18.586Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:04:20.832891115Z&quot;,
+  &quot;version&quot;: 1,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:18.586Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    },
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:20.832891115Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;ACTIVE -&gt; RETIRED: Payment provider failover completed&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">11</span><span class="tag">Outage screens</span></div><p class="cap">Resolved: the card leaves and a status message confirms it; focus stays on the list.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/publish-09.png" data-cap="Resolved: the card leaves and a status message confirms it; focus stays on the list." aria-label="Outage screens: Resolved: the card leaves and a status message confirms it; focus stays on the list."><img src="img/publish-09.png" alt="Outage screens: Resolved: the card leaves and a status message confirms it; focus stays on the list." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">12</span><span class="tag">Dependent systems</span></div><p class="cap">Team B&#x27;s screen drops the card at the same moment.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/publish-10.png" data-cap="Team B&#x27;s screen drops the card at the same moment." aria-label="Dependent systems: Team B&#x27;s screen drops the card at the same moment."><img src="img/publish-10.png" alt="Dependent systems: Team B&#x27;s screen drops the card at the same moment." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#c9ecc7"><span class="n">13</span><span class="tag">Dependent systems</span></div><p class="cap">A reload of the feed no longer lists it; the permalink still tells the story.</p><div class="term"><div class="tb"><span>Dependent systems</span><span>http</span></div><pre><span class="hd">GET /v1/feed?tenantId=journeys</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (15 ms)</span>
+{
+  &quot;items&quot;: [],
+  &quot;page&quot;: 0,
+  &quot;size&quot;: 20,
+  &quot;totalElements&quot;: 0,
+  &quot;hasNext&quot;: false
+}
+
+<span class="hd">GET /v1/communications/84dfc82c-2cd0-4f85-8a6b-d9067abecde1</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (11 ms)</span>
+{
+  &quot;id&quot;: &quot;84dfc82c-2cd0-4f85-8a6b-d9067abecde1&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;OUTAGE&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Card payments failing t00y&quot;,
+  &quot;body&quot;: &quot;Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;,
+    &quot;checkout-web&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;RETIRED&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:04:18.586Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:04:18.586Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:04:20.832Z&quot;,
+  &quot;version&quot;: 1,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:18.586Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    },
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:20.832Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;ACTIVE -&gt; RETIRED: Payment provider failover completed&quot;
+    }
+  ]
+}</pre></div></li></ol></section><section class="journey" id="maintenance"><h2>Schedule a maintenance window</h2><p class="sum">A maintenance window is published ahead of time, shows as Scheduled with a countdown, is turned active by the clock and closed at its end; another one is withdrawn before it starts.</p><ol class="steps"><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">01</span><span class="tag">Outage screens</span></div><p class="cap">Maintenance needs a start and an end (here a short window so the whole life cycle fits in this walkthrough; normally days ahead).</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/maintenance-11.png" data-cap="Maintenance needs a start and an end (here a short window so the whole life cycle fits in this walkthrough; normally days ahead)." aria-label="Outage screens: Maintenance needs a start and an end (here a short window so the whole life cycle fits in this walkthrough; normally days ahead)."><img src="img/maintenance-11.png" alt="Outage screens: Maintenance needs a start and an end (here a short window so the whole life cycle fits in this walkthrough; normally days ahead)." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">02</span><span class="tag">The service</span></div><p class="cap">Stored as SCHEDULED, not live yet.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">POST /v1/communications → 201</span>
+{
+  &quot;id&quot;: &quot;27cbc2ad-8981-49af-9074-7a3e4248a127&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;MAINTENANCE&quot;,
+  &quot;severity&quot;: &quot;MINOR&quot;,
+  &quot;title&quot;: &quot;Database maintenance t00y&quot;,
+  &quot;body&quot;: &quot;Primary database failover test. Expect 2 minutes of read-only mode.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;,
+    &quot;checkout-web&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;SCHEDULED&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:05:00Z&quot;,
+  &quot;endsAt&quot;: &quot;2026-11-02T13:06:00Z&quot;,
+  &quot;expiresAt&quot;: &quot;2026-11-02T13:06:00Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:04:29.985819716Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:04:29.985819716Z&quot;,
+  &quot;version&quot;: 0,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:29.985819716Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;created (SCHEDULED)&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">03</span><span class="tag">Dependent systems</span></div><p class="cap">Upcoming maintenance within the 7-day window shows as Scheduled with a countdown and a Withdraw action.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/maintenance-12.png" data-cap="Upcoming maintenance within the 7-day window shows as Scheduled with a countdown and a Withdraw action." aria-label="Dependent systems: Upcoming maintenance within the 7-day window shows as Scheduled with a countdown and a Withdraw action."><img src="img/maintenance-12.png" alt="Dependent systems: Upcoming maintenance within the 7-day window shows as Scheduled with a countdown and a Withdraw action." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">04</span><span class="tag">Outage screens</span></div><p class="cap">A window that has not started offers Withdraw instead of Resolve; the confirmation says consumers never see it.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/maintenance-13.png" data-cap="A window that has not started offers Withdraw instead of Resolve; the confirmation says consumers never see it." aria-label="Outage screens: A window that has not started offers Withdraw instead of Resolve; the confirmation says consumers never see it."><img src="img/maintenance-13.png" alt="Outage screens: A window that has not started offers Withdraw instead of Resolve; the confirmation says consumers never see it." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="note"><div class="who" style="--lane:#e6e0c8"><span class="n">05</span><span class="tag">The clock</span></div><p class="cap note">Waiting for the first window to start (the clock checks every 30 seconds)…</p></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#e6e0c8"><span class="n">06</span><span class="tag">The clock</span></div><p class="cap">The clock moved it SCHEDULED → ACTIVE and wrote the history line; listeners got an <code>activated</code> frame.</p><div class="term"><div class="tb"><span>The clock</span><span>http</span></div><pre><span class="hd">GET /v1/communications/27cbc2ad-8981-49af-9074-7a3e4248a127</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (9 ms)</span>
+{
+  &quot;id&quot;: &quot;27cbc2ad-8981-49af-9074-7a3e4248a127&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;MAINTENANCE&quot;,
+  &quot;severity&quot;: &quot;MINOR&quot;,
+  &quot;title&quot;: &quot;Database maintenance t00y&quot;,
+  &quot;body&quot;: &quot;Primary database failover test. Expect 2 minutes of read-only mode.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;,
+    &quot;checkout-web&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;ACTIVE&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:05:00Z&quot;,
+  &quot;endsAt&quot;: &quot;2026-11-02T13:06:00Z&quot;,
+  &quot;expiresAt&quot;: &quot;2026-11-02T13:06:00Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:04:29.985Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:04:29.985Z&quot;,
+  &quot;version&quot;: 0,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:29.985Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;created (SCHEDULED)&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">07</span><span class="tag">Dependent systems</span></div><p class="cap">The card turned active by itself (the screen also flips at the start time on its own).</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/maintenance-14.png" data-cap="The card turned active by itself (the screen also flips at the start time on its own)." aria-label="Dependent systems: The card turned active by itself (the screen also flips at the start time on its own)."><img src="img/maintenance-14.png" alt="Dependent systems: The card turned active by itself (the screen also flips at the start time on its own)." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#e6e0c8"><span class="n">08</span><span class="tag">The clock</span></div><p class="cap">At the end time: ACTIVE → EXPIRED; retiring it now would answer 409 &quot;already expired&quot;.</p><div class="term"><div class="tb"><span>The clock</span><span>http</span></div><pre><span class="hd">GET /v1/communications/27cbc2ad-8981-49af-9074-7a3e4248a127</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (14 ms)</span>
+{
+  &quot;id&quot;: &quot;27cbc2ad-8981-49af-9074-7a3e4248a127&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;MAINTENANCE&quot;,
+  &quot;severity&quot;: &quot;MINOR&quot;,
+  &quot;title&quot;: &quot;Database maintenance t00y&quot;,
+  &quot;body&quot;: &quot;Primary database failover test. Expect 2 minutes of read-only mode.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;,
+    &quot;checkout-web&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;EXPIRED&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:05:00Z&quot;,
+  &quot;endsAt&quot;: &quot;2026-11-02T13:06:00Z&quot;,
+  &quot;expiresAt&quot;: &quot;2026-11-02T13:06:00Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:04:29.985Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:05:28.666Z&quot;,
+  &quot;version&quot;: 1,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:04:29.985Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;created (SCHEDULED)&quot;
+    },
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:05:28.666Z&quot;,
+      &quot;actor&quot;: &quot;sweeper&quot;,
+      &quot;action&quot;: &quot;SCHEDULED -&gt; ACTIVE&quot;
+    }
+  ]
+}
+
+<span class="hd">POST /v1/communications/27cbc2ad-8981-49af-9074-7a3e4248a127/retire</span>
+X-Client-Id: journeys-walkthrough
+Content-Type: application/json
+
+{
+  &quot;actor&quot;: &quot;sam-oncall&quot;,
+  &quot;note&quot;: &quot;too late&quot;
+}
+
+<span class="er">→ 409 Conflict (29 ms)</span>
+{
+  &quot;error&quot;: &quot;communication 27cbc2ad-8981-49af-9074-7a3e4248a127 already expired; retiring would rewrite history&quot;
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">09</span><span class="tag">Dependent systems</span></div><p class="cap">The window left the feed when it ended.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/maintenance-15.png" data-cap="The window left the feed when it ended." aria-label="Dependent systems: The window left the feed when it ended."><img src="img/maintenance-15.png" alt="Dependent systems: The window left the feed when it ended." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li></ol></section><section class="journey" id="api-publish"><h2>A system publishes through the API, safely twice</h2><p class="sum">A deployment tool publishes with its own reference; a retry is answered with the same notice; a second notice under the same reference is refused with an explanation; an update names the version it edits.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#d7dce8"><span class="n">01</span><span class="tag">A publishing system</span></div><p class="cap">First publish with reference INC-t00y-1.</p><div class="term"><div class="tb"><span>A publishing system</span><span>http</span></div><pre><span class="hd">POST /v1/communications</span>
+X-Client-Id: deploy-tool
+Content-Type: application/json
+
+{
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;deploy-tool&quot;,
+  &quot;type&quot;: &quot;INCIDENT&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back t00y&quot;,
+  &quot;body&quot;: &quot;Elevated error rate after the 14:00 deploy; rolled back at 14:12.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;externalRef&quot;: &quot;INC-t00y-1&quot;
+}
+
+<span class="st">→ 201 Created (33 ms)</span>
+Location: /v1/communications/1960c36a-2fbe-4949-822d-7b42b41758fb
+{
+  &quot;id&quot;: &quot;1960c36a-2fbe-4949-822d-7b42b41758fb&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;deploy-tool&quot;,
+  &quot;type&quot;: &quot;INCIDENT&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back t00y&quot;,
+  &quot;body&quot;: &quot;Elevated error rate after the 14:00 deploy; rolled back at 14:12.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;ACTIVE&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:06:02.233147267Z&quot;,
+  &quot;externalRef&quot;: &quot;INC-t00y-1&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:02.233147267Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:06:02.233147267Z&quot;,
+  &quot;version&quot;: 0,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:06:02.233147267Z&quot;,
+      &quot;actor&quot;: &quot;deploy-tool&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">02</span><span class="tag">The service</span></div><p class="cap">The exact same request again (a retry): 409, the same notice id (different!); nothing duplicated.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">POST /v1/communications</span>
+X-Client-Id: deploy-tool
+Content-Type: application/json
+
+{
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;deploy-tool&quot;,
+  &quot;type&quot;: &quot;INCIDENT&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back t00y&quot;,
+  &quot;body&quot;: &quot;Elevated error rate after the 14:00 deploy; rolled back at 14:12.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;externalRef&quot;: &quot;INC-t00y-1&quot;
+}
+
+<span class="er">→ 409 Conflict (33 ms)</span>
+{
+  &quot;error&quot;: &quot;externalRef &#x27;INC-t00y-1&#x27; is already used by notice 1960c36a-2fbe-4949-822d-7b42b41758fb in tenant journeys. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC-t00y-2, which is still free).&quot;,
+  &quot;suggestedExternalRef&quot;: &quot;INC-t00y-2&quot;
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">03</span><span class="tag">The service</span></div><p class="cap">A different notice under the same reference is refused (409), naming the holder and, in <code>suggestedExternalRef</code>, the first follow-up value still free.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">POST /v1/communications</span>
+X-Client-Id: deploy-tool
+Content-Type: application/json
+
+{
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;deploy-tool&quot;,
+  &quot;type&quot;: &quot;INCIDENT&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Incident reopened&quot;,
+  &quot;body&quot;: &quot;Elevated error rate after the 14:00 deploy; rolled back at 14:12.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;externalRef&quot;: &quot;INC-t00y-1&quot;
+}
+
+<span class="er">→ 409 Conflict (16 ms)</span>
+{
+  &quot;error&quot;: &quot;externalRef &#x27;INC-t00y-1&#x27; is already used by notice 1960c36a-2fbe-4949-822d-7b42b41758fb in tenant journeys. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC-t00y-2, which is still free).&quot;,
+  &quot;suggestedExternalRef&quot;: &quot;INC-t00y-2&quot;
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#d7dce8"><span class="n">04</span><span class="tag">A publishing system</span></div><p class="cap">The follow-up under the suggested reference.</p><div class="term"><div class="tb"><span>A publishing system</span><span>http</span></div><pre><span class="hd">POST /v1/communications</span>
+X-Client-Id: deploy-tool
+Content-Type: application/json
+
+{
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;deploy-tool&quot;,
+  &quot;type&quot;: &quot;INCIDENT&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back, second occurrence t00y&quot;,
+  &quot;body&quot;: &quot;Elevated error rate after the 14:00 deploy; rolled back at 14:12.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;externalRef&quot;: &quot;INC-t00y-1-2&quot;
+}
+
+<span class="st">→ 201 Created (14 ms)</span>
+Location: /v1/communications/f0bdb17c-14fe-41ad-8f90-dd06bd99e4ef
+{
+  &quot;id&quot;: &quot;f0bdb17c-14fe-41ad-8f90-dd06bd99e4ef&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;deploy-tool&quot;,
+  &quot;type&quot;: &quot;INCIDENT&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back, second occurrence t00y&quot;,
+  &quot;body&quot;: &quot;Elevated error rate after the 14:00 deploy; rolled back at 14:12.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;ACTIVE&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:06:02.309635674Z&quot;,
+  &quot;externalRef&quot;: &quot;INC-t00y-1-2&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:02.309635674Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:06:02.309635674Z&quot;,
+  &quot;version&quot;: 0,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:06:02.309635674Z&quot;,
+      &quot;actor&quot;: &quot;deploy-tool&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">05</span><span class="tag">The service</span></div><p class="cap">An update that names the wrong version is refused (409), so two editors cannot overwrite each other.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">PUT /v1/communications/1960c36a-2fbe-4949-822d-7b42b41758fb</span>
+X-Client-Id: deploy-tool
+Content-Type: application/json
+
+{
+  &quot;expectedVersion&quot;: 7,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back t00y&quot;,
+  &quot;body&quot;: &quot;Root cause: connection pool exhaustion.&quot;
+}
+
+<span class="er">→ 409 Conflict (31 ms)</span>
+{
+  &quot;error&quot;: &quot;expectedVersion 7 does not match current version 0&quot;
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">06</span><span class="tag">The service</span></div><p class="cap">With the current version the edit is applied and the version moves on.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">PUT /v1/communications/1960c36a-2fbe-4949-822d-7b42b41758fb</span>
+X-Client-Id: deploy-tool
+Content-Type: application/json
+
+{
+  &quot;expectedVersion&quot;: 0,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back t00y&quot;,
+  &quot;body&quot;: &quot;Root cause: connection pool exhaustion. Fix deployed.&quot;
+}
+
+<span class="st">→ 200 OK (24 ms)</span>
+{
+  &quot;id&quot;: &quot;1960c36a-2fbe-4949-822d-7b42b41758fb&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;deploy-tool&quot;,
+  &quot;type&quot;: &quot;INCIDENT&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Deploy 2026.44 rolled back t00y&quot;,
+  &quot;body&quot;: &quot;Root cause: connection pool exhaustion. Fix deployed.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;ACTIVE&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:06:02.233Z&quot;,
+  &quot;externalRef&quot;: &quot;INC-t00y-1&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:02.233Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:06:02.359005633Z&quot;,
+  &quot;version&quot;: 1,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:06:02.233Z&quot;,
+      &quot;actor&quot;: &quot;deploy-tool&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    },
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:06:02.359005633Z&quot;,
+      &quot;actor&quot;: &quot;deploy-tool&quot;,
+      &quot;action&quot;: &quot;updated&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">07</span><span class="tag">Outage screens</span></div><p class="cap">The same mistake from the screen: the banner explains that references are permanent and suggests the free value the service named.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/api-publish-16.png" data-cap="The same mistake from the screen: the banner explains that references are permanent and suggests the free value the service named." aria-label="Outage screens: The same mistake from the screen: the banner explains that references are permanent and suggests the free value the service named."><img src="img/api-publish-16.png" alt="Outage screens: The same mistake from the screen: the banner explains that references are permanent and suggests the free value the service named." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li></ol></section><section class="journey" id="consume"><h2>A dependent system reads the feed and stays current</h2><p class="sum">Team B&#x27;s app loads the feed once, opens the live stream, and after a dropped line resumes from the last event id it saw.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#c9ecc7"><span class="n">01</span><span class="tag">Dependent systems</span></div><p class="cap">The first page of what is live for the tenant, narrowed to one service.</p><div class="term"><div class="tb"><span>Dependent systems</span><span>http</span></div><pre><span class="hd">GET /v1/feed?tenantId=journeys&amp;service=search-api</span>
+X-Client-Id: team-b-app
+
+<span class="st">→ 200 OK (9 ms)</span>
+{
+  &quot;items&quot;: [
+    {
+      &quot;id&quot;: &quot;20a12138-f2ce-49bc-84fa-943ef250156c&quot;,
+      &quot;tenantId&quot;: &quot;journeys&quot;,
+      &quot;publisher&quot;: &quot;sam-oncall&quot;,
+      &quot;type&quot;: &quot;OUTAGE&quot;,
+      &quot;severity&quot;: &quot;MAJOR&quot;,
+      &quot;title&quot;: &quot;Search index rebuild t00y&quot;,
+      &quot;affectedServices&quot;: [
+        &quot;search-api&quot;
+      ],
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;status&quot;: &quot;ACTIVE&quot;,
+      &quot;startsAt&quot;: &quot;2026-11-02T13:06:04.355Z&quot;,
+      &quot;updatedAt&quot;: &quot;2026-11-02T13:06:04.355Z&quot;
+    }
+  ],
+  &quot;page&quot;: 0,
+  &quot;size&quot;: 20,
+  &quot;totalElements&quot;: 1,
+  &quot;hasNext&quot;: false
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">02</span><span class="tag">The service</span></div><p class="cap">The live line: <code>: connected</code> at once, a snapshot, then a <code>created</code> and a <code>retired</code> frame as they happened (keepalive comments every 15 s when quiet).</p><div class="term"><div class="tb"><span>The service</span><span>sse</span></div><pre>:connected
+
+id:12
+event:snapshot
+data:{&quot;seq&quot;:12,&quot;type&quot;:&quot;SNAPSHOT&quot;,&quot;at&quot;:&quot;2026-11-02T13:06:04.380178453Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;20a12138-f2ce-49bc-84fa-943ef250156c&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;sam-oncall&quot;,&quot;type&quot;:&quot;OUTAGE&quot;,&quot;severity&quot;:&quot;MAJOR&quot;,&quot;title&quot;:&quot;Search index rebuild t00y&quot;,&quot;affectedServices&quot;:[&quot;search-api&quot;],&quot;audience&quot;:&quot;CUSTOMERS&quot;,&quot;status&quot;:&quot;ACTIVE&quot;,&quot;startsAt&quot;:&quot;2026-11-02T13:06:04.355Z&quot;,&quot;createdAt&quot;:&quot;2026-11-02T13:06:04.355Z&quot;,&quot;updatedAt&quot;:&quot;2026-11-02T13:06:04.355Z&quot;,&quot;version&quot;:0,&quot;history&quot;:[{&quot;at&quot;:&quot;2026-11-02T13:06:04.355Z&quot;,&quot;actor&quot;:&quot;sam-oncall&quot;,&quot;action&quot;:&quot;created (ACTIVE)&quot;}]}}
+
+id:10
+event:retired
+data:{&quot;seq&quot;:10,&quot;type&quot;:&quot;RETIRED&quot;,&quot;at&quot;:&quot;2026-11-02T13:06:04.324Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;1960c36a-2fbe-4949-822d-7b42b41758fb&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;deploy-tool&quot;,&quot;type&quot;:&quot;INCIDENT&quot;,&quot;severity&quot;:&quot;MAJOR&quot;,&quot;title&quot;:&quot;Deploy 2026.44 rolled back t00y&quot;,&quot;body&quot;:&quot;Root cause: connection pool exhaustion. Fix deployed.&quot;,&quot;affectedServices&quot;:[&quot;orders-api&quot;],&quot;audience&quot;:&quot;CUSTOMERS&quot;,&quot;status&quot;:&quot;RETIRED&quot;,&quot;startsAt&quot;:&quot;2026-11-02T13:06:02.233Z&quot;,&quot;externalRef&quot;:&quot;INC-t00y-1&quot;,&quot;createdAt&quot;:&quot;2026-11-02T13:06:02.233Z&quot;,&quot;updatedAt&quot;:&quot;2026-11-02T13:06:04.309Z&quot;,&quot;version&quot;:2,&quot;history&quot;:[{&quot;at&quot;:&quot;2026-11-02T13:06:02.233Z&quot;,&quot;actor&quot;:&quot;deploy-tool&quot;,&quot;action&quot;:&quot;created (ACTIVE)&quot;},{&quot;at&quot;:&quot;2026-11-02T13:06:02.359Z&quot;,&quot;actor&quot;:&quot;deploy-tool&quot;,&quot;action&quot;:&quot;updated&quot;},{&quot;at&quot;:&quot;2026-11-02T13:06:04.309Z&quot;,&quot;actor&quot;:&quot;deploy-tool&quot;,&quot;action&quot;:&quot;ACTIVE -&gt; RETIRED: walkthrough&quot;}]}}
+
+id:11
+event:retired
+data:{&quot;seq&quot;:11,&quot;type&quot;:&quot;RETIRED&quot;,&quot;at&quot;:&quot;2026-11-02T13:06:04.345Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;f0bdb17c-14fe-41ad-8f90-dd06bd99e4ef&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;deploy-tool&quot;,&quot;type&quot;:&quot;INCIDENT&quot;,&quot;severity&quot;:&quot;MAJOR&quot;,&quot;title&quot;:&quot;Deploy 2026.44 rolled back, second occurrence t00y&quot;,&quot;body&quot;:&quot;Elevated error rate after the 14:00 deploy; rolled back at 14:12.&quot;,&quot;affectedServices&quot;:[&quot;orders-api&quot;],&quot;audience&quot;:&quot;CUSTOMERS&quot;,&quot;status&quot;:&quot;RETIRED&quot;,&quot;startsAt&quot;:&quot;2026-11-02T13:06:02.309Z&quot;,&quot;externalRef&quot;:&quot;INC-t00y-1-2&quot;,&quot;createdAt&quot;:&quot;2026-11-02T13:06:02.309Z&quot;,&quot;updatedAt&quot;:&quot;2026-11-02T13:06:04.336Z&quot;,&quot;version&quot;:1,&quot;history&quot;:[{&quot;at&quot;:&quot;2026-11-02T13:06:02.309Z&quot;,&quot;actor&quot;:&quot;deploy-tool&quot;,&quot;action&quot;:&quot;created (ACTIVE)&quot;},{&quot;at&quot;:&quot;2026-11-02T13:06:04.336Z&quot;,&quot;actor&quot;:&quot;deploy-tool&quot;,&quot;action&quot;:&quot;ACTIVE -&gt; RETIRED: walkthrough&quot;}]}}
+
+id:12
+event:created
+data:{&quot;seq&quot;:12,&quot;type&quot;:&quot;CREATED&quot;,&quot;at&quot;:&quot;2026-11-02T13:06:04.360Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;20a12138-f2ce-49bc-84fa-943ef250156c&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;sam-oncall&quot;,&quot;type&quot;:&quot;OUTAGE&quot;,&quot;severity&quot;:&quot;MAJOR&quot;,&quot;title&quot;:&quot;Search index rebuild t00y&quot;,&quot;affectedServices&quot;:
+… (trimmed)</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">03</span><span class="tag">The service</span></div><p class="cap">Reopening with lastEventId=0 (what a client sends after a dropped line) replays the events after that id instead of starting over.</p><div class="term"><div class="tb"><span>The service</span><span>sse</span></div><pre>:connected
+
+id:1
+event:created
+data:{&quot;seq&quot;:1,&quot;type&quot;:&quot;CREATED&quot;,&quot;at&quot;:&quot;2026-11-02T13:04:18.676Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;84dfc82c-2cd0-4f85-8a6b-d9067abecde1&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;sam-oncall&quot;,&quot;type&quot;:&quot;OUTAGE&quot;,&quot;severity&quot;:&quot;MAJOR&quot;,&quot;title&quot;:&quot;Card payments failing t00y&quot;,&quot;body&quot;:&quot;Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.&quot;,&quot;affectedServices&quot;:[&quot;orders-api&quot;,&quot;checkout-web&quot;],&quot;audience&quot;:&quot;CUSTOMERS&quot;,&quot;status&quot;:&quot;ACTIVE&quot;,&quot;startsAt&quot;:&quot;2026-11-02T13:04:18.586Z&quot;,&quot;createdAt&quot;:&quot;2026-11-02T13:04:18.586Z&quot;,&quot;updatedAt&quot;:&quot;2026-11-02T13:04:18.586Z&quot;,&quot;version&quot;:0,&quot;history&quot;:[{&quot;at&quot;:&quot;2026-11-02T13:04:18.586Z&quot;,&quot;actor&quot;:&quot;sam-oncall&quot;,&quot;action&quot;:&quot;created (ACTIVE)&quot;}]}}
+
+id:2
+event:retired
+data:{&quot;seq&quot;:2,&quot;type&quot;:&quot;RETIRED&quot;,&quot;at&quot;:&quot;2026-11-02T13:04:20.865Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;84dfc82c-2cd0-4f85-8a6b-d9067abecde1&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;sam-oncall&quot;,&quot;type&quot;:&quot;OUTAGE&quot;,&quot;severity&quot;:&quot;MAJOR&quot;,&quot;title&quot;:&quot;Card payments failing t00y&quot;,&quot;body&quot;:&quot;Card payments fail for about a third of requests; retries succeed. Next update in 30 minutes.&quot;,&quot;affectedServices&quot;:[&quot;orders-api&quot;,&quot;checkout-web&quot;],&quot;audience&quot;:&quot;CUSTOMERS&quot;,&quot;status&quot;:&quot;RETIRED&quot;,&quot;startsAt&quot;:&quot;2026-11-02T13:04:18.586Z&quot;,&quot;createdAt&quot;:&quot;2026-11-02T13:04:18.586Z&quot;,&quot;updatedAt&quot;:&quot;2026-11-02T13:04:20.832Z&quot;,&quot;version&quot;:1,&quot;history&quot;:[{&quot;at&quot;:&quot;2026-11-02T13:04:18.586Z&quot;,&quot;actor&quot;:&quot;sam-oncall&quot;,&quot;action&quot;:&quot;created (ACTIVE)&quot;},{&quot;at&quot;:&quot;2026-11-02T13:04:20.832Z&quot;,&quot;actor&quot;:&quot;sam-oncall&quot;,&quot;action&quot;:&quot;ACTIVE -&gt; RETIRED: Payment provider failover completed&quot;}]}}
+
+id:3
+event:created
+data:{&quot;seq&quot;:3,&quot;type&quot;:&quot;CREATED&quot;,&quot;at&quot;:&quot;2026-11-02T13:04:29.999Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;27cbc2ad-8981-49af-9074-7a3e4248a127&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;sam-oncall&quot;,&quot;type&quot;:&quot;MAINTENANCE&quot;,&quot;severity&quot;:&quot;MINOR&quot;,&quot;title&quot;:&quot;Database maintenance t00y&quot;,&quot;body&quot;:&quot;Primary database failover test. Expect 2 minutes of read-only mode.&quot;,&quot;affectedServices&quot;:[&quot;orders-api&quot;,&quot;checkout-web&quot;],&quot;audience&quot;:&quot;CUSTOMERS&quot;,&quot;status&quot;:&quot;SCHEDULED&quot;,&quot;startsAt&quot;:&quot;2026-11-02T13:05:00Z&quot;,&quot;endsAt&quot;:&quot;2026-11-02T13:06:00Z&quot;,&quot;expiresAt&quot;:&quot;2026-11-02T13:06:00Z&quot;,&quot;createdAt&quot;:&quot;2026-11-02T13:04:29.985Z&quot;,&quot;updatedAt&quot;:&quot;2026-11-02T13:04:29.985Z&quot;,&quot;version&quot;:0,&quot;history&quot;:[{&quot;at&quot;:&quot;2026-11-02T13:04:29.985Z&quot;,&quot;actor&quot;:&quot;sam-oncall&quot;,&quot;action&quot;:&quot;created (SCHEDULED)&quot;}]}}
+
+id:4
+event:created
+data:{&quot;seq&quot;:4,&quot;type&quot;:&quot;CREATED&quot;,&quot;at&quot;:&quot;2026-11-02T13:04:31.277Z&quot;,&quot;communication&quot;:{&quot;id&quot;:&quot;c7ff0210-8511-4900-8bc9-5438451bca1e&quot;,&quot;tenantId&quot;:&quot;journeys&quot;,&quot;publisher&quot;:&quot;sam-oncall&quot;,&quot;type&quot;:&quot;MAINTENANCE&quot;,&quot;severity&quot;:&quot;MINOR&quot;,&quot;title&quot;:&quot;Cache cluster upgrade t00y&quot;,&quot;affected
+… (trimmed)</pre></div></li><li class="step" data-kind="note"><div class="who" style="--lane:#ffe98a"><span class="n">04</span><span class="tag">The service</span></div><p class="cap note">An id the log no longer holds (events are kept 24 hours) gets a fresh snapshot instead of a replay; this stack is younger than that, so it is not shown here.</p></li></ol></section><section class="journey" id="identity"><h2>A new system calls the API for the first time</h2><p class="sum">Without a name the API answers 401 and says what is missing; with X-Client-Id the same call works and the name appears in the access log; the Swagger UI explorer uses the same header.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#d7dce8"><span class="n">01</span><span class="tag">A publishing system</span></div><p class="cap">No X-Client-Id header.</p><div class="term"><div class="tb"><span>A publishing system</span><span>http</span></div><pre><span class="hd">GET /v1/feed?tenantId=journeys</span>
+
+
+<span class="er">→ 401 Unauthorized (6 ms)</span>
+{
+  &quot;error&quot;: &quot;missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)&quot;
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">02</span><span class="tag">The service</span></div><p class="cap">With the repository name as X-Client-Id.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">GET /v1/feed?tenantId=journeys</span>
+X-Client-Id: billing-portal
+
+<span class="st">→ 200 OK (8 ms)</span>
+{
+  &quot;items&quot;: [],
+  &quot;page&quot;: 0,
+  &quot;size&quot;: 20,
+  &quot;totalElements&quot;: 0,
+  &quot;hasNext&quot;: false
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">03</span><span class="tag">Service operator (Alex)</span></div><p class="cap">The access log names the caller on every line.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>log</span></div><pre>2026-11-02T13:06:12.942Z  INFO 4354 --- [communication-service] [or-http-epoll-3] c.a.c.config.ClientIdWebFilter           : rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)
+2026-11-02T13:06:12.953Z  INFO 4354 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=billing-portal GET /v1/feed -&gt; 200 (5 ms)</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#cfe8e6"><span class="n">04</span><span class="tag">Service operator (Alex)</span></div><p class="cap">The API explorer lists every route; Authorize takes the X-Client-Id value.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Service operator (Alex)</span></div><button class="shot" type="button" data-full="img/identity-17.png" data-cap="The API explorer lists every route; Authorize takes the X-Client-Id value." aria-label="Service operator (Alex): The API explorer lists every route; Authorize takes the X-Client-Id value."><img src="img/identity-17.png" alt="Service operator (Alex): The API explorer lists every route; Authorize takes the X-Client-Id value." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#cfe8e6"><span class="n">05</span><span class="tag">Service operator (Alex)</span></div><p class="cap">Authorize: the X-Client-Id scheme is the only credential the API asks for today.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Service operator (Alex)</span></div><button class="shot" type="button" data-full="img/identity-18.png" data-cap="Authorize: the X-Client-Id scheme is the only credential the API asks for today." aria-label="Service operator (Alex): Authorize: the X-Client-Id scheme is the only credential the API asks for today."><img src="img/identity-18.png" alt="Service operator (Alex): Authorize: the X-Client-Id scheme is the only credential the API asks for today." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li></ol></section><section class="journey" id="ticket"><h2>Tie a notice to its ServiceNow incident</h2><p class="sum">The incident number typed on the screen is tidied, linked when the service knows the ServiceNow address, shown as a chip, and doubles as the notice&#x27;s reference.</p><ol class="steps"><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">01</span><span class="tag">Outage screens</span></div><p class="cap">The optional ServiceNow incident field, typed in lower case on purpose.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/ticket-19.png" data-cap="The optional ServiceNow incident field, typed in lower case on purpose." aria-label="Outage screens: The optional ServiceNow incident field, typed in lower case on purpose."><img src="img/ticket-19.png" alt="Outage screens: The optional ServiceNow incident field, typed in lower case on purpose." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">02</span><span class="tag">The service</span></div><p class="cap">Stored upper-cased, with the deep link when <code>communication.servicenow.instance-url</code> is configured; the number became the externalRef.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">POST /v1/communications → 201</span>
+{
+  &quot;id&quot;: &quot;172edfd7-f3a2-4be6-afc5-71b5527439ac&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;sam-oncall&quot;,
+  &quot;type&quot;: &quot;OUTAGE&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;Login failures after certificate rotation t00y&quot;,
+  &quot;body&quot;: &quot;SSO logins fail with a certificate error; rotation in progress.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;sso-gateway&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;ACTIVE&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:06:25.871549671Z&quot;,
+  &quot;externalRef&quot;: &quot;INC0012345&quot;,
+  &quot;ticket&quot;: {
+    &quot;system&quot;: &quot;servicenow&quot;,
+    &quot;number&quot;: &quot;INC0012345&quot;,
+    &quot;url&quot;: &quot;https://example.service-now.com/nav_to.do?uri=incident.do%3Fsysparm_query%3Dnumber%3DINC0012345&quot;
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:25.871549671Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:06:25.871549671Z&quot;,
+  &quot;version&quot;: 0,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:06:25.871549671Z&quot;,
+      &quot;actor&quot;: &quot;sam-oncall&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">03</span><span class="tag">Outage screens</span></div><p class="cap">The confirmation shows the ticket chip.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/ticket-20.png" data-cap="The confirmation shows the ticket chip." aria-label="Outage screens: The confirmation shows the ticket chip."><img src="img/ticket-20.png" alt="Outage screens: The confirmation shows the ticket chip." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">04</span><span class="tag">Dependent systems</span></div><p class="cap">Consumers see the chip on the card; it opens the incident when linked.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/ticket-21.png" data-cap="Consumers see the chip on the card; it opens the incident when linked." aria-label="Dependent systems: Consumers see the chip on the card; it opens the incident when linked."><img src="img/ticket-21.png" alt="Dependent systems: Consumers see the chip on the card; it opens the incident when linked." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li></ol></section><section class="journey" id="sidecar-outage"><h2>The sidecar notices the team&#x27;s app is down</h2><p class="sum">A pod starts with the sidecar beside the app; the app&#x27;s database fails; the service opens an outage with the detail and closes it when the app recovers. Settings here are shortened (probe every 5 s) so the walkthrough fits in minutes.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#ddd0f5"><span class="n">01</span><span class="tag">Health sidecar</span></div><p class="cap">The sidecar started before the app (as a native sidecar does): no target yet, reports UNKNOWN during the startup grace.</p><div class="term"><div class="tb"><span>Health sidecar</span><span>json</span></div><pre>{
+  &quot;version&quot;: &quot;ci-iter4&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;tenant&quot;: &quot;journeys&quot;,
+  &quot;instance&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+  &quot;upSeen&quot;: false,
+  &quot;lastReport&quot;: {
+    &quot;tenantId&quot;: &quot;journeys&quot;,
+    &quot;service&quot;: &quot;orders-api&quot;,
+    &quot;status&quot;: &quot;UNKNOWN&quot;,
+    &quot;message&quot;: &quot;starting: waiting for the app to listen&quot;,
+    &quot;observedAt&quot;: &quot;2026-11-02T13:06:27.621Z&quot;,
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;instance&quot;: {
+      &quot;id&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+      &quot;namespace&quot;: &quot;retail-orders&quot;,
+      &quot;node&quot;: &quot;worker-2&quot;,
+      &quot;cluster&quot;: &quot;ocp-east&quot;,
+      &quot;version&quot;: &quot;1.4.2&quot;,
+      &quot;sidecar&quot;: &quot;ci-iter4&quot;
+    }
+  },
+  &quot;lastSendAt&quot;: &quot;2026-11-02T13:06:27.621704191Z&quot;,
+  &quot;reportsSent&quot;: 1
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ddd0f5"><span class="n">02</span><span class="tag">Health sidecar</span></div><p class="cap">The app is up: discovered on :8080 /actuator/health, UP reported.</p><div class="term"><div class="tb"><span>Health sidecar</span><span>json</span></div><pre>{
+  &quot;version&quot;: &quot;ci-iter4&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;tenant&quot;: &quot;journeys&quot;,
+  &quot;instance&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+  &quot;target&quot;: &quot;http://127.0.0.1:8080/actuator/health&quot;,
+  &quot;lastTarget&quot;: &quot;http://127.0.0.1:8080/actuator/health&quot;,
+  &quot;upSeen&quot;: true,
+  &quot;lastReport&quot;: {
+    &quot;tenantId&quot;: &quot;journeys&quot;,
+    &quot;service&quot;: &quot;orders-api&quot;,
+    &quot;status&quot;: &quot;UP&quot;,
+    &quot;components&quot;: {
+      &quot;db&quot;: {
+        &quot;details&quot;: {
+          &quot;database&quot;: &quot;PostgreSQL&quot;
+        },
+        &quot;status&quot;: &quot;UP&quot;
+      },
+      &quot;ping&quot;: {
+        &quot;status&quot;: &quot;UP&quot;
+      }
+    },
+    &quot;observedAt&quot;: &quot;2026-11-02T13:06:33.61Z&quot;,
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;instance&quot;: {
+      &quot;id&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+      &quot;namespace&quot;: &quot;retail-orders&quot;,
+      &quot;node&quot;: &quot;worker-2&quot;,
+      &quot;cluster&quot;: &quot;ocp-east&quot;,
+      &quot;version&quot;: &quot;1.4.2&quot;,
+      &quot;sidecar&quot;: &quot;ci-iter4&quot;
+    }
+  },
+  &quot;lastSendAt&quot;: &quot;2026-11-02T13:06:33.610151135Z&quot;,
+  &quot;reportsSent&quot;: 2
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">03</span><span class="tag">Health desk</span></div><p class="cap">The first report registered the service automatically (push-only monitor, publisher health-sidecar).</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors?tenantId=journeys</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (13 ms)</span>
+[
+  {
+    &quot;id&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+    &quot;tenantId&quot;: &quot;journeys&quot;,
+    &quot;service&quot;: &quot;orders-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThreshold&quot;: 2,
+      &quot;recoveryThreshold&quot;: 2,
+      &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+      &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;staleAfterSeconds&quot;: 90,
+      &quot;minHealthyPercent&quot;: 50
+    },
+    &quot;state&quot;: {
+      &quot;lastStatus&quot;: &quot;UP&quot;,
+      &quot;lastReportAt&quot;: &quot;2026-11-02T13:06:33.617Z&quot;,
+      &quot;lastSummary&quot;: &quot;UP (1 of 1 pod UP)&quot;,
+      &quot;unhealthyStreak&quot;: 0,
+      &quot;healthyStreak&quot;: 1,
+      &quot;incidents&quot;: 0
+    },
+    &quot;createdAt&quot;: &quot;2026-11-02T13:06:27.658Z&quot;,
+    &quot;updatedAt&quot;: &quot;2026-11-02T13:06:33.617Z&quot;,
+    &quot;version&quot;: 2
+  }
+]</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">04</span><span class="tag">Health desk</span></div><p class="cap">Every pod that reported, with its node, cluster and version.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426/instances</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (17 ms)</span>
+[
+  {
+    &quot;monitorId&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+    &quot;instanceId&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+    &quot;status&quot;: &quot;UP&quot;,
+    &quot;components&quot;: [],
+    &quot;namespace&quot;: &quot;retail-orders&quot;,
+    &quot;node&quot;: &quot;worker-2&quot;,
+    &quot;cluster&quot;: &quot;ocp-east&quot;,
+    &quot;version&quot;: &quot;1.4.2&quot;,
+    &quot;sidecar&quot;: &quot;ci-iter4&quot;,
+    &quot;left&quot;: false,
+    &quot;lastSeenAt&quot;: &quot;2026-11-02T13:06:33.617Z&quot;
+  }
+]</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#f8c8dc"><span class="n">05</span><span class="tag">The team&#x27;s app</span></div><p class="cap">The app&#x27;s database fails; its health page now answers 503 with the failing component.</p><div class="term"><div class="tb"><span>The team&#x27;s app</span><span>http</span></div><pre><span class="hd">HTTP/1.1 503 Service Unavailable</span>
+Content-Type: application/json
+Date: Mon, 02 Nov 2026 13:06:41 GMT
+Content-Length: 115
+
+{&quot;components&quot;:{&quot;db&quot;:{&quot;details&quot;:{&quot;database&quot;:&quot;PostgreSQL&quot;},&quot;status&quot;:&quot;DOWN&quot;},&quot;ping&quot;:{&quot;status&quot;:&quot;UP&quot;}},&quot;status&quot;:&quot;DOWN&quot;}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">06</span><span class="tag">Dependent systems</span></div><p class="cap">The outage opened by itself: &quot;orders-api is down&quot;, publisher health-sidecar, the failing component named.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/sidecar-outage-22.png" data-cap="The outage opened by itself: &quot;orders-api is down&quot;, publisher health-sidecar, the failing component named." aria-label="Dependent systems: The outage opened by itself: &quot;orders-api is down&quot;, publisher health-sidecar, the failing component named."><img src="img/sidecar-outage-22.png" alt="Dependent systems: The outage opened by itself: &quot;orders-api is down&quot;, publisher health-sidecar, the failing component named." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ddd0f5"><span class="n">07</span><span class="tag">Health sidecar</span></div><p class="cap">The sidecar&#x27;s log for the episode: the DOWN transition at INFO, a report after every probe while down.</p><div class="term"><div class="tb"><span>Health sidecar</span><span>log</span></div><pre>{&quot;time&quot;:&quot;2026-11-02T13:06:45.86347331Z&quot;,&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:&quot;reported&quot;,&quot;status&quot;:&quot;DOWN&quot;,&quot;message&quot;:&quot;health document reports DOWN&quot;}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">08</span><span class="tag">Health desk</span></div><p class="cap">The monitor now holds the open notice and the streak.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (10 ms)</span>
+{
+  &quot;id&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;policy&quot;: {
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;intervalSeconds&quot;: 30,
+    &quot;timeoutMs&quot;: 5000,
+    &quot;failureThreshold&quot;: 2,
+    &quot;recoveryThreshold&quot;: 2,
+    &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+    &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+    &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+    &quot;staleAfterSeconds&quot;: 90,
+    &quot;minHealthyPercent&quot;: 50
+  },
+  &quot;state&quot;: {
+    &quot;lastStatus&quot;: &quot;DOWN&quot;,
+    &quot;lastReportAt&quot;: &quot;2026-11-02T13:06:52.680Z&quot;,
+    &quot;lastSummary&quot;: &quot;DOWN (0 of 1 pod UP (DOWN: orders-api-6c9f7d8b4-ab12c)): db DOWN&quot;,
+    &quot;unhealthyStreak&quot;: 2,
+    &quot;healthyStreak&quot;: 0,
+    &quot;openCommunicationId&quot;: &quot;d6ba9b70-d349-42db-9a26-2b6cbe2861b6&quot;,
+    &quot;openStatus&quot;: &quot;DOWN&quot;,
+    &quot;openSignature&quot;: &quot;DOWN[db=DOWN]&quot;,
+    &quot;incidents&quot;: 1
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:27.658Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:06:52.680Z&quot;,
+  &quot;version&quot;: 4
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">09</span><span class="tag">Dependent systems</span></div><p class="cap">The database is back: after two healthy reports the service closed the outage by itself.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/sidecar-outage-25.png" data-cap="The database is back: after two healthy reports the service closed the outage by itself." aria-label="Dependent systems: The database is back: after two healthy reports the service closed the outage by itself."><img src="img/sidecar-outage-25.png" alt="Dependent systems: The database is back: after two healthy reports the service closed the outage by itself." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">10</span><span class="tag">Health desk</span></div><p class="cap">Monitor back to UP, nothing open.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (10 ms)</span>
+{
+  &quot;id&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;policy&quot;: {
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;intervalSeconds&quot;: 30,
+    &quot;timeoutMs&quot;: 5000,
+    &quot;failureThreshold&quot;: 2,
+    &quot;recoveryThreshold&quot;: 2,
+    &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+    &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+    &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+    &quot;staleAfterSeconds&quot;: 90,
+    &quot;minHealthyPercent&quot;: 50
+  },
+  &quot;state&quot;: {
+    &quot;lastStatus&quot;: &quot;UP&quot;,
+    &quot;lastReportAt&quot;: &quot;2026-11-02T13:07:27.708Z&quot;,
+    &quot;lastSummary&quot;: &quot;UP (1 of 1 pod UP)&quot;,
+    &quot;unhealthyStreak&quot;: 0,
+    &quot;healthyStreak&quot;: 2,
+    &quot;incidents&quot;: 2
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:27.658Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:07:27.708Z&quot;,
+  &quot;version&quot;: 8
+}</pre></div></li></ol></section><section class="journey" id="operator-retire"><h2>Alex resolves an automatic outage by hand</h2><p class="sum">Alex retires the automatic outage while the app is still failing; the service respects it, keeps counting and reopens a new outage when the failures continue.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">01</span><span class="tag">Service operator (Alex)</span></div><p class="cap">Retiring the automatic notice with a note.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>http</span></div><pre><span class="hd">POST /v1/communications/d6ba9b70-d349-42db-9a26-2b6cbe2861b6/retire</span>
+X-Client-Id: alex-cli
+Content-Type: application/json
+
+{
+  &quot;actor&quot;: &quot;alex&quot;,
+  &quot;note&quot;: &quot;read replica only, customers unaffected&quot;
+}
+
+<span class="st">→ 200 OK (17 ms)</span>
+{
+  &quot;id&quot;: &quot;d6ba9b70-d349-42db-9a26-2b6cbe2861b6&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;health-sidecar&quot;,
+  &quot;type&quot;: &quot;OUTAGE&quot;,
+  &quot;severity&quot;: &quot;MAJOR&quot;,
+  &quot;title&quot;: &quot;orders-api is down&quot;,
+  &quot;body&quot;: &quot;orders-api is DOWN as of 2026-11-02 13:06:52 UTC.\nReported by its pods: 0 of 1 pod UP (DOWN: orders-api-6c9f7d8b4-ab12c).\n\nFailing components:\ndb: DOWN (database=PostgreSQL)\n\nThis notice is managed automatically and is retired once the service reports healthy again.&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;orders-api&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;RETIRED&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:06:52.695Z&quot;,
+  &quot;externalRef&quot;: &quot;health:152850af-1157-473a-a54d-badc64546426:1&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:52.695Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:06:53.568208528Z&quot;,
+  &quot;version&quot;: 1,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:06:52.695Z&quot;,
+      &quot;actor&quot;: &quot;health-sidecar&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    },
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:06:53.568208528Z&quot;,
+      &quot;actor&quot;: &quot;alex&quot;,
+      &quot;action&quot;: &quot;ACTIVE -&gt; RETIRED: read replica only, customers unaffected&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">02</span><span class="tag">Dependent systems</span></div><p class="cap">The outage left the feed.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/operator-retire-23.png" data-cap="The outage left the feed." aria-label="Dependent systems: The outage left the feed."><img src="img/operator-retire-23.png" alt="Dependent systems: The outage left the feed." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">03</span><span class="tag">Dependent systems</span></div><p class="cap">The app kept failing, so after the threshold a new outage opened (a new card, the old one stays retired).</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/operator-retire-24.png" data-cap="The app kept failing, so after the threshold a new outage opened (a new card, the old one stays retired)." aria-label="Dependent systems: The app kept failing, so after the threshold a new outage opened (a new card, the old one stays retired)."><img src="img/operator-retire-24.png" alt="Dependent systems: The app kept failing, so after the threshold a new outage opened (a new card, the old one stays retired)." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">04</span><span class="tag">Health desk</span></div><p class="cap">The monitor: a fresh notice id, streak counted again from the observation that noticed the retire.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (10 ms)</span>
+{
+  &quot;id&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;policy&quot;: {
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;intervalSeconds&quot;: 30,
+    &quot;timeoutMs&quot;: 5000,
+    &quot;failureThreshold&quot;: 2,
+    &quot;recoveryThreshold&quot;: 2,
+    &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+    &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+    &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+    &quot;staleAfterSeconds&quot;: 90,
+    &quot;minHealthyPercent&quot;: 50
+  },
+  &quot;state&quot;: {
+    &quot;lastStatus&quot;: &quot;DOWN&quot;,
+    &quot;lastReportAt&quot;: &quot;2026-11-02T13:07:05.145Z&quot;,
+    &quot;lastSummary&quot;: &quot;DOWN (0 of 1 pod UP (DOWN: orders-api-6c9f7d8b4-ab12c)): db DOWN&quot;,
+    &quot;unhealthyStreak&quot;: 2,
+    &quot;healthyStreak&quot;: 0,
+    &quot;openCommunicationId&quot;: &quot;c143c996-0b5a-447e-b1ce-9da3c6f96a52&quot;,
+    &quot;openStatus&quot;: &quot;DOWN&quot;,
+    &quot;openSignature&quot;: &quot;DOWN[db=DOWN]&quot;,
+    &quot;incidents&quot;: 2
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:27.658Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:07:05.145Z&quot;,
+  &quot;version&quot;: 6
+}</pre></div></li></ol></section><section class="journey" id="sidecar-crash"><h2>The app crashes, or the pod disappears</h2><p class="sum">The app process stops listening; the sidecar says so at once and an outage opens; a clean pod shutdown sends a leaving report instead.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#ddd0f5"><span class="n">01</span><span class="tag">Health sidecar</span></div><p class="cap">The app process is gone: &quot;app is not listening (last target …)&quot; from the first failed probe; <code>lastTarget</code> keeps where it was.</p><div class="term"><div class="tb"><span>Health sidecar</span><span>json</span></div><pre>{
+  &quot;version&quot;: &quot;ci-iter4&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;tenant&quot;: &quot;journeys&quot;,
+  &quot;instance&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+  &quot;lastTarget&quot;: &quot;http://127.0.0.1:8080/actuator/health&quot;,
+  &quot;upSeen&quot;: true,
+  &quot;lastReport&quot;: {
+    &quot;tenantId&quot;: &quot;journeys&quot;,
+    &quot;service&quot;: &quot;orders-api&quot;,
+    &quot;status&quot;: &quot;DOWN&quot;,
+    &quot;message&quot;: &quot;app is not listening (last target http://127.0.0.1:8080/actuator/health)&quot;,
+    &quot;observedAt&quot;: &quot;2026-11-02T13:07:33.492Z&quot;,
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;instance&quot;: {
+      &quot;id&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+      &quot;namespace&quot;: &quot;retail-orders&quot;,
+      &quot;node&quot;: &quot;worker-2&quot;,
+      &quot;cluster&quot;: &quot;ocp-east&quot;,
+      &quot;version&quot;: &quot;1.4.2&quot;,
+      &quot;sidecar&quot;: &quot;ci-iter4&quot;
+    }
+  },
+  &quot;lastSendAt&quot;: &quot;2026-11-02T13:07:33.492448437Z&quot;,
+  &quot;reportsSent&quot;: 9
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">02</span><span class="tag">Dependent systems</span></div><p class="cap">The outage for a crashed app, with the reason.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/sidecar-crash-26.png" data-cap="The outage for a crashed app, with the reason." aria-label="Dependent systems: The outage for a crashed app, with the reason."><img src="img/sidecar-crash-26.png" alt="Dependent systems: The outage for a crashed app, with the reason." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">03</span><span class="tag">Dependent systems</span></div><p class="cap">The app is back (rediscovered on the same port) and the outage closed.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/sidecar-crash-27.png" data-cap="The app is back (rediscovered on the same port) and the outage closed." aria-label="Dependent systems: The app is back (rediscovered on the same port) and the outage closed."><img src="img/sidecar-crash-27.png" alt="Dependent systems: The app is back (rediscovered on the same port) and the outage closed." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ddd0f5"><span class="n">04</span><span class="tag">Health sidecar</span></div><p class="cap">The sidecar log across crash and recovery.</p><div class="term"><div class="tb"><span>Health sidecar</span><span>log</span></div><pre>{&quot;time&quot;:&quot;2026-11-02T13:07:34.495604313Z&quot;,&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:&quot;health target gone; will rediscover&quot;,&quot;target&quot;:&quot;http://127.0.0.1:8080/actuator/health&quot;}
+{&quot;time&quot;:&quot;2026-11-02T13:07:34.518762187Z&quot;,&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:&quot;reported&quot;,&quot;status&quot;:&quot;DOWN&quot;,&quot;message&quot;:&quot;app is not listening (last target http://127.0.0.1:8080/actuator/health)&quot;}
+{&quot;time&quot;:&quot;2026-11-02T13:07:46.446886461Z&quot;,&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:&quot;health target found&quot;,&quot;target&quot;:&quot;http://127.0.0.1:8080/actuator/health&quot;,&quot;status&quot;:&quot;UP&quot;}
+{&quot;time&quot;:&quot;2026-11-02T13:07:46.471997662Z&quot;,&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:&quot;reported&quot;,&quot;status&quot;:&quot;UP&quot;,&quot;message&quot;:&quot;&quot;}</pre></div></li></ol></section><section class="journey" id="rollout"><h2>Several pods and a rolling deploy</h2><p class="sum">A second pod of the same service joins; one unhealthy pod of two keeps the service healthy (50 % threshold); both unhealthy opens the outage; a pod that leaves cleanly is dropped from the count at once.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">01</span><span class="tag">Health desk</span></div><p class="cap">Two pods under one monitor.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426/instances</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (15 ms)</span>
+[
+  {
+    &quot;monitorId&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+    &quot;instanceId&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+    &quot;status&quot;: &quot;UP&quot;,
+    &quot;components&quot;: [],
+    &quot;namespace&quot;: &quot;retail-orders&quot;,
+    &quot;node&quot;: &quot;worker-2&quot;,
+    &quot;cluster&quot;: &quot;ocp-east&quot;,
+    &quot;version&quot;: &quot;1.4.2&quot;,
+    &quot;sidecar&quot;: &quot;ci-iter4&quot;,
+    &quot;left&quot;: false,
+    &quot;lastSeenAt&quot;: &quot;2026-11-02T13:08:03.243Z&quot;
+  },
+  {
+    &quot;monitorId&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+    &quot;instanceId&quot;: &quot;orders-api-6c9f7d8b4-zz9yk&quot;,
+    &quot;status&quot;: &quot;UP&quot;,
+    &quot;components&quot;: [],
+    &quot;namespace&quot;: &quot;retail-orders&quot;,
+    &quot;node&quot;: &quot;worker-2&quot;,
+    &quot;cluster&quot;: &quot;ocp-east&quot;,
+    &quot;version&quot;: &quot;1.4.2&quot;,
+    &quot;sidecar&quot;: &quot;ci-iter4&quot;,
+    &quot;left&quot;: false,
+    &quot;lastSeenAt&quot;: &quot;2026-11-02T13:08:05.027Z&quot;
+  }
+]</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">02</span><span class="tag">Health desk</span></div><p class="cap">One of two pods DOWN for 25 s: the rollup stays UP (1 of 2 = 50 %), no notice.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (11 ms)</span>
+{
+  &quot;id&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;policy&quot;: {
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;intervalSeconds&quot;: 30,
+    &quot;timeoutMs&quot;: 5000,
+    &quot;failureThreshold&quot;: 2,
+    &quot;recoveryThreshold&quot;: 2,
+    &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+    &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+    &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+    &quot;staleAfterSeconds&quot;: 90,
+    &quot;minHealthyPercent&quot;: 50
+  },
+  &quot;state&quot;: {
+    &quot;lastStatus&quot;: &quot;UP&quot;,
+    &quot;lastReportAt&quot;: &quot;2026-11-02T13:08:30.476Z&quot;,
+    &quot;lastSummary&quot;: &quot;UP (1 of 2 pods UP (DOWN: orders-api-6c9f7d8b4-zz9yk))&quot;,
+    &quot;unhealthyStreak&quot;: 0,
+    &quot;healthyStreak&quot;: 8,
+    &quot;incidents&quot;: 3
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:06:27.658Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:08:30.476Z&quot;,
+  &quot;version&quot;: 18
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">03</span><span class="tag">Dependent systems</span></div><p class="cap">Nothing on the feed with one pod down.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/rollout-28.png" data-cap="Nothing on the feed with one pod down." aria-label="Dependent systems: Nothing on the feed with one pod down."><img src="img/rollout-28.png" alt="Dependent systems: Nothing on the feed with one pod down." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">04</span><span class="tag">Dependent systems</span></div><p class="cap">Both pods down: the outage opens and names the pods.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/rollout-29.png" data-cap="Both pods down: the outage opens and names the pods." aria-label="Dependent systems: Both pods down: the outage opens and names the pods."><img src="img/rollout-29.png" alt="Dependent systems: Both pods down: the outage opens and names the pods." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ddd0f5"><span class="n">05</span><span class="tag">Health sidecar</span></div><p class="cap">SIGTERM to the second pod&#x27;s sidecar: one last report with <code>leaving: true</code>.</p><div class="term"><div class="tb"><span>Health sidecar</span><span>log</span></div><pre>{&quot;time&quot;:&quot;2026-11-02T13:08:43.222681604Z&quot;,&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:&quot;leaving report sent&quot;}
+{&quot;time&quot;:&quot;2026-11-02T13:08:43.222879518Z&quot;,&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:&quot;health sidecar stopped&quot;}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">06</span><span class="tag">Health desk</span></div><p class="cap">The pod is marked left at once; it no longer counts.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/152850af-1157-473a-a54d-badc64546426/instances</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (17 ms)</span>
+[
+  {
+    &quot;monitorId&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+    &quot;instanceId&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+    &quot;status&quot;: &quot;UP&quot;,
+    &quot;components&quot;: [],
+    &quot;namespace&quot;: &quot;retail-orders&quot;,
+    &quot;node&quot;: &quot;worker-2&quot;,
+    &quot;cluster&quot;: &quot;ocp-east&quot;,
+    &quot;version&quot;: &quot;1.4.2&quot;,
+    &quot;sidecar&quot;: &quot;ci-iter4&quot;,
+    &quot;left&quot;: false,
+    &quot;lastSeenAt&quot;: &quot;2026-11-02T13:08:42.003Z&quot;
+  },
+  {
+    &quot;monitorId&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+    &quot;instanceId&quot;: &quot;orders-api-6c9f7d8b4-zz9yk&quot;,
+    &quot;status&quot;: &quot;UP&quot;,
+    &quot;components&quot;: [],
+    &quot;message&quot;: &quot;instance shutting down&quot;,
+    &quot;namespace&quot;: &quot;retail-orders&quot;,
+    &quot;node&quot;: &quot;worker-2&quot;,
+    &quot;cluster&quot;: &quot;ocp-east&quot;,
+    &quot;version&quot;: &quot;1.4.2&quot;,
+    &quot;sidecar&quot;: &quot;ci-iter4&quot;,
+    &quot;left&quot;: true,
+    &quot;lastSeenAt&quot;: &quot;2026-11-02T13:08:43.203Z&quot;
+  }
+]</pre></div></li></ol></section><section class="journey" id="onboard"><h2>A team attaches the sidecar to its app</h2><p class="sum">What the team adds to its manifests, and what it reads when the service does not show up.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#f1dcb0"><span class="n">01</span><span class="tag">Publisher team (Priya)</span></div><p class="cap">The Kustomize example rendered: the component adds the container and nothing else changes in the Deployment.</p><div class="term"><div class="tb"><span>Publisher team (Priya)</span><span>yaml</span></div><pre>apiVersion: v1
+data:
+  CS_CLUSTER: ocp-east
+  CS_ENDPOINT: https://communication.apps.example.com
+  CS_TENANT: retail
+kind: ConfigMap
+metadata:
+  name: cs-health-sidecar
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: payments-api
+  name: payments-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: payments-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: payments-api
+        app.kubernetes.io/version: 1.4.2
+    spec:
+      containers:
+      - image: registry.example.com/retail/payments-api:1.4.2
+        name: payments-api
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CS_SERVICE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels[&#x27;app.kubernetes.io/name&#x27;]
+        - name: CS_VERSION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels[&#x27;app.kubernetes.io/version&#x27;]
+        envFrom:
+        - configMapRef:
+            name: cs-health-sidecar
+        image: registry.example.com/platform/health-sidecar:1.0.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: cs-status
+          periodSeconds: 30
+        name: health-sidecar
+        ports:
+        - containerPort: 9465
+          name: cs-status
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 50m
+            memory: 32Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ddd0f5"><span class="n">02</span><span class="tag">Health sidecar</span></div><p class="cap">&quot;My service does not show up&quot;: the sidecar&#x27;s own status page answers first.</p><div class="term"><div class="tb"><span>Health sidecar</span><span>json</span></div><pre>{
+  &quot;version&quot;: &quot;ci-iter4&quot;,
+  &quot;service&quot;: &quot;orders-api&quot;,
+  &quot;tenant&quot;: &quot;journeys&quot;,
+  &quot;instance&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+  &quot;target&quot;: &quot;http://127.0.0.1:8080/actuator/health&quot;,
+  &quot;lastTarget&quot;: &quot;http://127.0.0.1:8080/actuator/health&quot;,
+  &quot;upSeen&quot;: true,
+  &quot;lastReport&quot;: {
+    &quot;tenantId&quot;: &quot;journeys&quot;,
+    &quot;service&quot;: &quot;orders-api&quot;,
+    &quot;status&quot;: &quot;UP&quot;,
+    &quot;components&quot;: {
+      &quot;db&quot;: {
+        &quot;details&quot;: {
+          &quot;database&quot;: &quot;PostgreSQL&quot;
+        },
+        &quot;status&quot;: &quot;UP&quot;
+      },
+      &quot;ping&quot;: {
+        &quot;status&quot;: &quot;UP&quot;
+      }
+    },
+    &quot;observedAt&quot;: &quot;2026-11-02T13:08:41.998Z&quot;,
+    &quot;publisher&quot;: &quot;health-sidecar&quot;,
+    &quot;instance&quot;: {
+      &quot;id&quot;: &quot;orders-api-6c9f7d8b4-ab12c&quot;,
+      &quot;namespace&quot;: &quot;retail-orders&quot;,
+      &quot;node&quot;: &quot;worker-2&quot;,
+      &quot;cluster&quot;: &quot;ocp-east&quot;,
+      &quot;version&quot;: &quot;1.4.2&quot;,
+      &quot;sidecar&quot;: &quot;ci-iter4&quot;
+    }
+  },
+  &quot;lastSendAt&quot;: &quot;2026-11-02T13:08:41.998483498Z&quot;,
+  &quot;reportsSent&quot;: 15
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">03</span><span class="tag">Health desk</span></div><p class="cap">On the service side: the monitor for the tenant, then its pods.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors?tenantId=journeys</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (10 ms)</span>
+[
+  {
+    &quot;id&quot;: &quot;152850af-1157-473a-a54d-badc64546426&quot;,
+    &quot;tenantId&quot;: &quot;journeys&quot;,
+    &quot;service&quot;: &quot;orders-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThreshold&quot;: 2,
+      &quot;recoveryThreshold&quot;: 2,
+      &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+      &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;staleAfterSeconds&quot;: 90,
+      &quot;minHealthyPercent&quot;: 50
+    },
+    &quot;state&quot;: {
+      &quot;lastStatus&quot;: &quot;UP&quot;,
+      &quot;lastReportAt&quot;: &quot;2026-11-02T13:08:43.203Z&quot;,
+      &quot;lastSummary&quot;: &quot;UP (1 of 1 pod UP)&quot;,
+      &quot;unhealthyStreak&quot;: 0,
+      &quot;healthyStreak&quot;: 3,
+      &quot;incidents&quot;: 4
+    },
+    &quot;createdAt&quot;: &quot;2026-11-02T13:06:27.658Z&quot;,
+    &quot;updatedAt&quot;: &quot;2026-11-02T13:08:43.203Z&quot;,
+    &quot;version&quot;: 23
+  }
+]</pre></div></li></ol></section><section class="journey" id="pull-monitor"><h2>The service probes an app itself</h2><p class="sum">Alex registers an app&#x27;s health page; the service probes it, opens a health notice when it degrades, turns it into an outage when it is down, and closes it on recovery.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">01</span><span class="tag">Service operator (Alex)</span></div><p class="cap">Registering the health page (short interval for the walkthrough).</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>http</span></div><pre><span class="hd">POST /v1/health/monitors</span>
+X-Client-Id: alex-cli
+Content-Type: application/json
+
+{
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;legacy-api&quot;,
+  &quot;url&quot;: &quot;http://127.0.0.1:18180/actuator/health&quot;,
+  &quot;intervalSeconds&quot;: 5,
+  &quot;timeoutMs&quot;: 2000
+}
+
+<span class="st">→ 201 Created (25 ms)</span>
+Location: /v1/health/monitors/ab913c99-c3d1-4123-8cb6-8ef5eeed569f
+{
+  &quot;id&quot;: &quot;ab913c99-c3d1-4123-8cb6-8ef5eeed569f&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;legacy-api&quot;,
+  &quot;url&quot;: &quot;http://127.0.0.1:18180/actuator/health&quot;,
+  &quot;policy&quot;: {
+    &quot;publisher&quot;: &quot;health-monitor&quot;,
+    &quot;intervalSeconds&quot;: 5,
+    &quot;timeoutMs&quot;: 2000,
+    &quot;failureThreshold&quot;: 2,
+    &quot;recoveryThreshold&quot;: 2,
+    &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+    &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+    &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+    &quot;minHealthyPercent&quot;: 50
+  },
+  &quot;state&quot;: {
+    &quot;lastStatus&quot;: &quot;UNKNOWN&quot;,
+    &quot;unhealthyStreak&quot;: 0,
+    &quot;healthyStreak&quot;: 0,
+    &quot;incidents&quot;: 0
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:08:47.373453779Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:08:47.373453779Z&quot;,
+  &quot;version&quot;: 0
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">02</span><span class="tag">Health desk</span></div><p class="cap">A probe on demand.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">POST /v1/health/monitors/ab913c99-c3d1-4123-8cb6-8ef5eeed569f/probe</span>
+X-Client-Id: alex-cli
+
+<span class="st">→ 200 OK (109 ms)</span>
+{
+  &quot;id&quot;: &quot;ab913c99-c3d1-4123-8cb6-8ef5eeed569f&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;legacy-api&quot;,
+  &quot;url&quot;: &quot;http://127.0.0.1:18180/actuator/health&quot;,
+  &quot;policy&quot;: {
+    &quot;publisher&quot;: &quot;health-monitor&quot;,
+    &quot;intervalSeconds&quot;: 5,
+    &quot;timeoutMs&quot;: 2000,
+    &quot;failureThreshold&quot;: 2,
+    &quot;recoveryThreshold&quot;: 2,
+    &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+    &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+    &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+    &quot;minHealthyPercent&quot;: 50
+  },
+  &quot;state&quot;: {
+    &quot;lastStatus&quot;: &quot;UP&quot;,
+    &quot;lastReportAt&quot;: &quot;2026-11-02T13:08:47.386030194Z&quot;,
+    &quot;lastProbeAt&quot;: &quot;2026-11-02T13:08:47.386030194Z&quot;,
+    &quot;lastSummary&quot;: &quot;UP (HTTP 200)&quot;,
+    &quot;unhealthyStreak&quot;: 0,
+    &quot;healthyStreak&quot;: 1,
+    &quot;incidents&quot;: 0
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:08:47.373Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:08:47.386030194Z&quot;,
+  &quot;version&quot;: 1
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">03</span><span class="tag">Dependent systems</span></div><p class="cap">Degraded twice in a row: a HEALTH notice (minor), not an outage.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/pull-monitor-30.png" data-cap="Degraded twice in a row: a HEALTH notice (minor), not an outage." aria-label="Dependent systems: Degraded twice in a row: a HEALTH notice (minor), not an outage."><img src="img/pull-monitor-30.png" alt="Dependent systems: Degraded twice in a row: a HEALTH notice (minor), not an outage." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">04</span><span class="tag">Dependent systems</span></div><p class="cap">Down twice: the health notice was retired (&quot;reclassified as DOWN&quot;) and an outage (major) took its place.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/pull-monitor-31.png" data-cap="Down twice: the health notice was retired (&quot;reclassified as DOWN&quot;) and an outage (major) took its place." aria-label="Dependent systems: Down twice: the health notice was retired (&quot;reclassified as DOWN&quot;) and an outage (major) took its place."><img src="img/pull-monitor-31.png" alt="Dependent systems: Down twice: the health notice was retired (&quot;reclassified as DOWN&quot;) and an outage (major) took its place." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">05</span><span class="tag">Health desk</span></div><p class="cap">The monitor during the outage.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors/ab913c99-c3d1-4123-8cb6-8ef5eeed569f</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (8 ms)</span>
+{
+  &quot;id&quot;: &quot;ab913c99-c3d1-4123-8cb6-8ef5eeed569f&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;service&quot;: &quot;legacy-api&quot;,
+  &quot;url&quot;: &quot;http://127.0.0.1:18180/actuator/health&quot;,
+  &quot;policy&quot;: {
+    &quot;publisher&quot;: &quot;health-monitor&quot;,
+    &quot;intervalSeconds&quot;: 5,
+    &quot;timeoutMs&quot;: 2000,
+    &quot;failureThreshold&quot;: 2,
+    &quot;recoveryThreshold&quot;: 2,
+    &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+    &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+    &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+    &quot;minHealthyPercent&quot;: 50
+  },
+  &quot;state&quot;: {
+    &quot;lastStatus&quot;: &quot;DOWN&quot;,
+    &quot;lastReportAt&quot;: &quot;2026-11-02T13:09:14.037Z&quot;,
+    &quot;lastProbeAt&quot;: &quot;2026-11-02T13:09:14.037Z&quot;,
+    &quot;lastSummary&quot;: &quot;DOWN (HTTP 503): db DOWN&quot;,
+    &quot;unhealthyStreak&quot;: 2,
+    &quot;healthyStreak&quot;: 0,
+    &quot;openCommunicationId&quot;: &quot;9e6f0187-5e25-4ab5-ad21-681bafa2cbe3&quot;,
+    &quot;openStatus&quot;: &quot;DOWN&quot;,
+    &quot;openSignature&quot;: &quot;DOWN[db=DOWN]&quot;,
+    &quot;incidents&quot;: 2
+  },
+  &quot;createdAt&quot;: &quot;2026-11-02T13:08:47.373Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:09:14.037Z&quot;,
+  &quot;version&quot;: 11
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c9ecc7"><span class="n">06</span><span class="tag">Dependent systems</span></div><p class="cap">Healthy twice: closed by itself.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Dependent systems</span></div><button class="shot" type="button" data-full="img/pull-monitor-32.png" data-cap="Healthy twice: closed by itself." aria-label="Dependent systems: Healthy twice: closed by itself."><img src="img/pull-monitor-32.png" alt="Dependent systems: Healthy twice: closed by itself." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li></ol></section><section class="journey" id="restart"><h2>The service restarts while screens are open</h2><p class="sum">The service is stopped and started again while a feed is open: the badge says Reconnecting, the cards stay, a notice published meanwhile arrives through replay, and the badge is Live again without a reload.</p><ol class="steps"><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">01</span><span class="tag">Outage screens</span></div><p class="cap">Before: the feed is Live with one card.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/restart-33.png" data-cap="Before: the feed is Live with one card." aria-label="Outage screens: Before: the feed is Live with one card."><img src="img/restart-33.png" alt="Outage screens: Before: the feed is Live with one card." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">02</span><span class="tag">Outage screens</span></div><p class="cap">The service is down: the badge says Reconnecting (n) and the card stays on screen.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/restart-34.png" data-cap="The service is down: the badge says Reconnecting (n) and the card stays on screen." aria-label="Outage screens: The service is down: the badge says Reconnecting (n) and the card stays on screen."><img src="img/restart-34.png" alt="Outage screens: The service is down: the badge says Reconnecting (n) and the card stays on screen." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">03</span><span class="tag">Outage screens</span></div><p class="cap">Back: the new notice arrived (replayed from the log) and the badge is Live again; nothing was reloaded.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/restart-35.png" data-cap="Back: the new notice arrived (replayed from the log) and the badge is Live again; nothing was reloaded." aria-label="Outage screens: Back: the new notice arrived (replayed from the log) and the badge is Live again; nothing was reloaded."><img src="img/restart-35.png" alt="Outage screens: Back: the new notice arrived (replayed from the log) and the badge is Live again; nothing was reloaded." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#c3e1fb"><span class="n">04</span><span class="tag">Outage screens</span></div><p class="cap">The stream requests the screen made: the first open, then reopen attempts carrying lastEventId.</p><div class="term"><div class="tb"><span>Outage screens</span><span>log</span></div><pre>13:09:25.926 /v1/feed/stream?tenantId=journeys&amp;clientId=communication-frontend
+13:09:41.903 /v1/feed/stream?tenantId=journeys&amp;clientId=communication-frontend
+13:09:41.903 /v1/feed/stream?tenantId=journeys&amp;clientId=communication-frontend&amp;lastEventId=31
+13:09:41.903 /v1/feed/stream?tenantId=journeys&amp;clientId=communication-frontend&amp;lastEventId=31
+13:09:43.092 /v1/feed/stream?tenantId=journeys&amp;clientId=communication-frontend&amp;lastEventId=31</pre></div></li></ol></section><section class="journey" id="mongo-down"><h2>The record book is unreachable</h2><p class="sum">The database goes away twice. Stopped (connections refused): the API answers 503 &quot;database unavailable&quot; within seconds, a feed opened meanwhile says Service degraded, readiness turns 503 while liveness stays 200, and everything resumes by itself. Frozen (connections hang): the open gap GAP-backend4-1, shown as it happens.</p><ol class="steps"><li class="step" data-kind="note"><div class="who" style="--lane:#e6e0c8"><span class="n">01</span><span class="tag">The record book</span></div><p class="cap note">The database container is stopped (jr-mongo): connections are refused.</p></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">02</span><span class="tag">The service</span></div><p class="cap">A request while the database refuses connections: 503 after 5022 ms, with a plain message.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">GET /v1/feed?tenantId=journeys</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="er">→ 503 Service Unavailable (5022 ms)</span>
+{
+  &quot;error&quot;: &quot;database unavailable&quot;
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#e2e8d0"><span class="n">03</span><span class="tag">The cluster</span></div><p class="cap">Readiness says not ready in 811 ms (take the pod out of traffic); liveness says alive (do not restart it).</p><div class="term"><div class="tb"><span>The cluster</span><span>http</span></div><pre><span class="hd">GET /actuator/health/readiness</span>
+
+
+<span class="er">→ 503 Service Unavailable (811 ms)</span>
+{
+  &quot;status&quot;: &quot;DOWN&quot;
+}
+
+<span class="hd">GET /actuator/health/liveness</span>
+
+
+<span class="st">→ 200 OK (7 ms)</span>
+{
+  &quot;status&quot;: &quot;UP&quot;
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">04</span><span class="tag">Outage screens</span></div><p class="cap">Publishing now: the banner says the service cannot reach its database and recovers on its own; it took focus.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/mongo-down-36.png" data-cap="Publishing now: the banner says the service cannot reach its database and recovers on its own; it took focus." aria-label="Outage screens: Publishing now: the banner says the service cannot reach its database and recovers on its own; it took focus."><img src="img/mongo-down-36.png" alt="Outage screens: Publishing now: the banner says the service cannot reach its database and recovers on its own; it took focus." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">05</span><span class="tag">Outage screens</span></div><p class="cap">A feed opened during the outage: the badge says Service degraded (not Live) and the load error is announced as an alert.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/mongo-down-37.png" data-cap="A feed opened during the outage: the badge says Service degraded (not Live) and the load error is announced as an alert." aria-label="Outage screens: A feed opened during the outage: the badge says Service degraded (not Live) and the load error is announced as an alert."><img src="img/mongo-down-37.png" alt="Outage screens: A feed opened during the outage: the badge says Service degraded (not Live) and the load error is announced as an alert." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">06</span><span class="tag">Service operator (Alex)</span></div><p class="cap">The log: one WARN line per failed request, per skipped sweep and for the readiness change; no stack traces.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>log</span></div><pre>2026-11-02T13:10:30.943Z  WARN 8103 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]
+2026-11-02T13:10:35.936Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -&gt; 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]
+2026-11-02T13:10:40.946Z  WARN 8103 --- [communication-service] [   scheduling-1] c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]
+2026-11-02T13:10:43.684Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed/stream -&gt; 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]
+2026-11-02T13:10:46.539Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -&gt; 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27118, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: localhost/127.0.0.1:27118}, caused by {java.net.ConnectException: Connection refused}}]</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">07</span><span class="tag">The service</span></div><p class="cap">The database is back: ready again, nothing restarted.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">GET /actuator/health/readiness</span>
+
+
+<span class="st">→ 200 OK (473 ms)</span>
+{
+  &quot;status&quot;: &quot;UP&quot;
+}</pre></div></li><li class="step" data-kind="image"><div class="who" style="--lane:#c3e1fb"><span class="n">08</span><span class="tag">Outage screens</span></div><p class="cap">After Try again the list loads and the badge goes back to Live.</p><div class="frame"><div class="tb"><i></i><i></i><i></i><span>Outage screens</span></div><button class="shot" type="button" data-full="img/mongo-down-38.png" data-cap="After Try again the list loads and the badge goes back to Live." aria-label="Outage screens: After Try again the list loads and the badge goes back to Live."><img src="img/mongo-down-38.png" alt="Outage screens: After Try again the list loads and the badge goes back to Live." loading="lazy" width="1280" height="800" style="display:block;width:100%;height:auto"></button></div></li><li class="step" data-kind="note"><div class="who" style="--lane:#e6e0c8"><span class="n">09</span><span class="tag">The record book</span></div><p class="cap note">Now the database is frozen instead (docker pause): connections open but nothing answers.</p></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">10</span><span class="tag">The service</span></div><p class="cap">Six requests while the database hangs: 503 after 20030 ms, 503 after 20031 ms, 503 after 20022 ms, 503 after 5014 ms, 503 after 5013 ms, 503 after 5010 ms. A 500 here is the open gap GAP-backend4-1: the driver pauses its connection pool and the error handler does not recognise that error, so the answer carries the driver&#x27;s message, database address included.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">GET /v1/feed?tenantId=journeys</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="er">→ 503 Service Unavailable (5010 ms)</span>
+{
+  &quot;error&quot;: &quot;database unavailable&quot;
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">11</span><span class="tag">Service operator (Alex)</span></div><p class="cap">The log during the freeze.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>log</span></div><pre>2026-11-02T13:11:11.603Z  WARN 8103 --- [communication-service] [e8acfcbb7c1eb26] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.data.mongodb.UncategorizedMongoDbException: Connection pool for ServerId{clusterId=ClusterId{value=&#x27;6ae88b924e8acfcbb7c1eb26&#x27;, description=&#x27;null&#x27;}, address=localhost:27118} is paused because another operation failed
+2026-11-02T13:11:11.607Z ERROR 8103 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+org.springframework.data.mongodb.UncategorizedMongoDbException: Connection pool for ServerId{clusterId=ClusterId{value=&#x27;6ae88b924e8acfcbb7c1eb26&#x27;, description=&#x27;null&#x27;}, address=localhost:27118} is paused because another operation failed
+Caused by: com.mongodb.MongoConnectionPoolClearedException: Connection pool for ServerId{clusterId=ClusterId{value=&#x27;6ae88b924e8acfcbb7c1eb26&#x27;, description=&#x27;null&#x27;}, address=localhost:27118} is paused because another operation failed</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffe98a"><span class="n">12</span><span class="tag">The service</span></div><p class="cap">Unfrozen: ready again by itself.</p><div class="term"><div class="tb"><span>The service</span><span>http</span></div><pre><span class="hd">GET /actuator/health/readiness</span>
+
+
+<span class="st">→ 200 OK (12 ms)</span>
+{
+  &quot;status&quot;: &quot;UP&quot;
+}</pre></div></li></ol></section><section class="journey" id="valve"><h2>Many sidecars fall silent at once</h2><p class="sum">Four services report once and then go silent together (a network cut): after the staleness window the service pauses the &quot;no news is bad news&quot; rule instead of declaring four outages, and says so in its log.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">01</span><span class="tag">Health desk</span></div><p class="cap">Four push-only monitors, each with one pod, all UP.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors?tenantId=journeys-valve</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (17 ms)</span>
+[
+  {
+    &quot;id&quot;: &quot;bae8a38d-3e75-4f27-b541-c2ee66697c13&quot;,
+    &quot;tenantId&quot;: &quot;journeys-valve&quot;,
+    &quot;service&quot;: &quot;inventory-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThreshold&quot;: 2,
+      &quot;recoveryThreshold&quot;: 2,
+      &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+      &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;staleAfterSeconds&quot;: 90,
+      &quot;minHealthyPercent&quot;: 50
+    },
+    &quot;state&quot;: {
+      &quot;lastStatus&quot;: &quot;UP&quot;,
+      &quot;lastReportAt&quot;: &quot;2026-11-02T13:11:29.639Z&quot;,
+      &quot;lastSummary&quot;: &quot;UP (1 of 1 pod UP)&quot;,
+      &quot;unhealthyStreak&quot;: 0,
+      &quot;healthyStreak&quot;: 1,
+      &quot;incidents&quot;: 0
+    },
+    &quot;createdAt&quot;: &quot;2026-11-02T13:11:29.644Z&quot;,
+    &quot;updatedAt&quot;: &quot;2026-11-02T13:11:29.639Z&quot;,
+    &quot;version&quot;: 1
+  },
+  {
+    &quot;id&quot;: &quot;dace1d14-864d-4500-9beb-7526f5d3726d&quot;,
+    &quot;tenantId&quot;: &quot;journeys-valve&quot;,
+    &quot;service&quot;: &quot;pricing-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThreshold&quot;: 2,
+      &quot;recoveryThreshold&quot;: 2,
+      &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+      &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;staleAfterSeconds&quot;: 90,
+      &quot;minHealthyPercent&quot;: 50
+    },
+    &quot;state&quot;: {
+      &quot;lastStatus&quot;: &quot;UP&quot;,
+      &quot;lastReportAt&quot;: &quot;2026-11-02T13:11:29.672Z&quot;,
+      &quot;lastSummary&quot;: &quot;UP (1 of 1 pod UP)&quot;,
+      &quot;unhealthyStreak&quot;: 0,
+      &quot;healthyStreak&quot;: 1,
+      &quot;incidents&quot;: 0
+    },
+    &quot;createdAt&quot;: &quot;2026-11-02T13:11:29.677Z&quot;,
+    &quot;updatedAt&quot;: &quot;2026-11-02T13:11:29.672Z&quot;,
+    &quot;version&quot;: 1
+  },
+  {
+    &quot;id&quot;: &quot;7bbe50c6-5d11-4896-9105-060c8934931f&quot;,
+    &quot;tenantId&quot;: &quot;journeys-valve&quot;,
+    &quot;service&quot;: &quot;returns-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThr
+… (trimmed)</pre></div></li><li class="step" data-kind="note"><div class="who" style="--lane:#ffd3b4"><span class="n">02</span><span class="tag">Health desk</span></div><p class="cap note">Waiting 100 seconds without any report (the staleness window is 90 s)…</p></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#ffd3b4"><span class="n">03</span><span class="tag">Health desk</span></div><p class="cap">After the window: all four are silent, and none was declared DOWN. More than 30 % of the monitors that can go stale fell silent together, so the rule paused.</p><div class="term"><div class="tb"><span>Health desk</span><span>http</span></div><pre><span class="hd">GET /v1/health/monitors?tenantId=journeys-valve</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="st">→ 200 OK (15 ms)</span>
+[
+  {
+    &quot;id&quot;: &quot;bae8a38d-3e75-4f27-b541-c2ee66697c13&quot;,
+    &quot;tenantId&quot;: &quot;journeys-valve&quot;,
+    &quot;service&quot;: &quot;inventory-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThreshold&quot;: 2,
+      &quot;recoveryThreshold&quot;: 2,
+      &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+      &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;staleAfterSeconds&quot;: 90,
+      &quot;minHealthyPercent&quot;: 50
+    },
+    &quot;state&quot;: {
+      &quot;lastStatus&quot;: &quot;UP&quot;,
+      &quot;lastReportAt&quot;: &quot;2026-11-02T13:11:29.639Z&quot;,
+      &quot;lastSummary&quot;: &quot;UP (1 of 1 pod UP)&quot;,
+      &quot;unhealthyStreak&quot;: 0,
+      &quot;healthyStreak&quot;: 1,
+      &quot;incidents&quot;: 0
+    },
+    &quot;createdAt&quot;: &quot;2026-11-02T13:11:29.644Z&quot;,
+    &quot;updatedAt&quot;: &quot;2026-11-02T13:11:29.639Z&quot;,
+    &quot;version&quot;: 1
+  },
+  {
+    &quot;id&quot;: &quot;dace1d14-864d-4500-9beb-7526f5d3726d&quot;,
+    &quot;tenantId&quot;: &quot;journeys-valve&quot;,
+    &quot;service&quot;: &quot;pricing-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThreshold&quot;: 2,
+      &quot;recoveryThreshold&quot;: 2,
+      &quot;downSeverity&quot;: &quot;MAJOR&quot;,
+      &quot;degradedSeverity&quot;: &quot;MINOR&quot;,
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;staleAfterSeconds&quot;: 90,
+      &quot;minHealthyPercent&quot;: 50
+    },
+    &quot;state&quot;: {
+      &quot;lastStatus&quot;: &quot;UP&quot;,
+      &quot;lastReportAt&quot;: &quot;2026-11-02T13:11:29.672Z&quot;,
+      &quot;lastSummary&quot;: &quot;UP (1 of 1 pod UP)&quot;,
+      &quot;unhealthyStreak&quot;: 0,
+      &quot;healthyStreak&quot;: 1,
+      &quot;incidents&quot;: 0
+    },
+    &quot;createdAt&quot;: &quot;2026-11-02T13:11:29.677Z&quot;,
+    &quot;updatedAt&quot;: &quot;2026-11-02T13:11:29.672Z&quot;,
+    &quot;version&quot;: 1
+  },
+  {
+    &quot;id&quot;: &quot;7bbe50c6-5d11-4896-9105-060c8934931f&quot;,
+    &quot;tenantId&quot;: &quot;journeys-valve&quot;,
+    &quot;service&quot;: &quot;returns-api&quot;,
+    &quot;policy&quot;: {
+      &quot;publisher&quot;: &quot;health-sidecar&quot;,
+      &quot;intervalSeconds&quot;: 30,
+      &quot;timeoutMs&quot;: 5000,
+      &quot;failureThr
+… (trimmed)</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">04</span><span class="tag">Service operator (Alex)</span></div><p class="cap">The log line that explains the pause.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>log</span></div><pre>Caused by: com.mongodb.MongoConnectionPoolClearedException: Connection pool for ServerId{clusterId=ClusterId{value=&#x27;6ae88b924e8acfcbb7c1eb26&#x27;, description=&#x27;null&#x27;}, address=localhost:27118} is paused because another operation failed
+	at com.mongodb.internal.connection.DefaultConnectionPool$StateAndGeneration.lambda$pauseAndIncrementGeneration$0(DefaultConnectionPool.java:1541) ~[mongodb-driver-core-5.6.5.jar!/:na]
+	at com.mongodb.internal.connection.ConcurrentPool$StateAndPermits.throwIfClosedOrPaused(ConcurrentPool.java:447) ~[mongodb-driver-core-5.6.5.jar!/:na]</pre></div></li></ol></section><section class="journey" id="admin"><h2>Alex tidies up across tenants</h2><p class="sum">Tenants and their counts, a search across tenants, retiring a notice on someone&#x27;s behalf, and deleting one for good.</p><ol class="steps"><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">01</span><span class="tag">Service operator (Alex)</span></div><p class="cap">Which tenants exist and how much each has published.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>http</span></div><pre><span class="hd">GET /v1/admin/tenants</span>
+X-Client-Id: alex-cli
+
+<span class="st">→ 200 OK (40 ms)</span>
+[
+  {
+    &quot;tenantId&quot;: &quot;journeys&quot;,
+    &quot;counts&quot;: {
+      &quot;ACTIVE&quot;: 1,
+      &quot;EXPIRED&quot;: 1,
+      &quot;RETIRED&quot;: 15
+    },
+    &quot;total&quot;: 17
+  }
+]</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">02</span><span class="tag">Service operator (Alex)</span></div><p class="cap">A search across every tenant, here by publisher (tenant, status, type, publisher and a time range can be combined).</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>http</span></div><pre><span class="hd">GET /v1/admin/communications?publisher=demo-user&amp;status=ACTIVE</span>
+X-Client-Id: alex-cli
+
+<span class="st">→ 200 OK (13 ms)</span>
+{
+  &quot;items&quot;: [
+    {
+      &quot;id&quot;: &quot;7a4a99d1-e2bc-421b-8b25-5971bde77310&quot;,
+      &quot;tenantId&quot;: &quot;journeys&quot;,
+      &quot;publisher&quot;: &quot;demo-user&quot;,
+      &quot;type&quot;: &quot;OUTAGE&quot;,
+      &quot;severity&quot;: &quot;MINOR&quot;,
+      &quot;title&quot;: &quot;test please ignore t00y&quot;,
+      &quot;affectedServices&quot;: [
+        &quot;demo&quot;
+      ],
+      &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+      &quot;status&quot;: &quot;ACTIVE&quot;,
+      &quot;startsAt&quot;: &quot;2026-11-02T13:13:09.970Z&quot;,
+      &quot;createdAt&quot;: &quot;2026-11-02T13:13:09.970Z&quot;,
+      &quot;updatedAt&quot;: &quot;2026-11-02T13:13:09.970Z&quot;,
+      &quot;version&quot;: 0,
+      &quot;history&quot;: [
+        {
+          &quot;at&quot;: &quot;2026-11-02T13:13:09.970Z&quot;,
+          &quot;actor&quot;: &quot;demo-user&quot;,
+          &quot;action&quot;: &quot;created (ACTIVE)&quot;
+        }
+      ]
+    }
+  ],
+  &quot;page&quot;: 0,
+  &quot;size&quot;: 20,
+  &quot;totalElements&quot;: 1,
+  &quot;hasNext&quot;: false
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">03</span><span class="tag">Service operator (Alex)</span></div><p class="cap">Retiring it on the publisher&#x27;s behalf, with Alex as the actor.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>http</span></div><pre><span class="hd">POST /v1/admin/communications/7a4a99d1-e2bc-421b-8b25-5971bde77310/retire</span>
+X-Client-Id: alex-cli
+Content-Type: application/json
+
+{
+  &quot;actor&quot;: &quot;alex&quot;,
+  &quot;note&quot;: &quot;left over from a demo&quot;
+}
+
+<span class="st">→ 200 OK (16 ms)</span>
+{
+  &quot;id&quot;: &quot;7a4a99d1-e2bc-421b-8b25-5971bde77310&quot;,
+  &quot;tenantId&quot;: &quot;journeys&quot;,
+  &quot;publisher&quot;: &quot;demo-user&quot;,
+  &quot;type&quot;: &quot;OUTAGE&quot;,
+  &quot;severity&quot;: &quot;MINOR&quot;,
+  &quot;title&quot;: &quot;test please ignore t00y&quot;,
+  &quot;affectedServices&quot;: [
+    &quot;demo&quot;
+  ],
+  &quot;audience&quot;: &quot;CUSTOMERS&quot;,
+  &quot;status&quot;: &quot;RETIRED&quot;,
+  &quot;startsAt&quot;: &quot;2026-11-02T13:13:09.970Z&quot;,
+  &quot;createdAt&quot;: &quot;2026-11-02T13:13:09.970Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-11-02T13:13:10.043159113Z&quot;,
+  &quot;version&quot;: 1,
+  &quot;history&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:13:09.970Z&quot;,
+      &quot;actor&quot;: &quot;demo-user&quot;,
+      &quot;action&quot;: &quot;created (ACTIVE)&quot;
+    },
+    {
+      &quot;at&quot;: &quot;2026-11-02T13:13:10.043159113Z&quot;,
+      &quot;actor&quot;: &quot;alex&quot;,
+      &quot;action&quot;: &quot;ACTIVE -&gt; RETIRED: left over from a demo&quot;
+    }
+  ]
+}</pre></div></li><li class="step" data-kind="transcript"><div class="who" style="--lane:#cfe8e6"><span class="n">04</span><span class="tag">Service operator (Alex)</span></div><p class="cap">Deleting it for good; the permalink answers 404 afterwards.</p><div class="term"><div class="tb"><span>Service operator (Alex)</span><span>http</span></div><pre><span class="hd">DELETE /v1/admin/communications/7a4a99d1-e2bc-421b-8b25-5971bde77310</span>
+X-Client-Id: alex-cli
+
+<span class="st">→ 204 No Content (7 ms)</span>
+
+
+<span class="hd">GET /v1/communications/7a4a99d1-e2bc-421b-8b25-5971bde77310</span>
+X-Client-Id: journeys-walkthrough
+
+<span class="er">→ 404 Not Found (9 ms)</span>
+{
+  &quot;error&quot;: &quot;communication 7a4a99d1-e2bc-421b-8b25-5971bde77310 not found&quot;
+}</pre></div></li></ol></section>
+</div>
+<dialog id="zoom" aria-label="Screenshot, enlarged"><form method="dialog"><button type="submit">Close</button><img src="" alt=""><p class="dcap"></p></form></dialog>
+<script>
+(function () {
+  var root = document.documentElement;
+  var key = 'jw';
+  function apply(v) {
+    root.classList.toggle('hide-tech', v === 'screens');
+    document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === v)); });
+  }
+  var saved = null; try { saved = localStorage.getItem(key); } catch (e) {}
+  apply(saved === 'screens' ? 'screens' : 'all');
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () { apply(b.dataset.v); try { localStorage.setItem(key, b.dataset.v); } catch (e) {} });
+  });
+  var dlg = document.getElementById('zoom'), img = dlg.querySelector('img'), cap = dlg.querySelector('.dcap');
+  document.querySelectorAll('.shot').forEach(function (b) {
+    b.addEventListener('click', function () {
+      img.src = b.dataset.full; img.alt = b.getAttribute('aria-label') || ''; cap.textContent = b.dataset.cap || '';
+      if (typeof dlg.showModal === 'function') dlg.showModal();
+    });
+  });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+})();
+</script>
+</body>
+</html>
