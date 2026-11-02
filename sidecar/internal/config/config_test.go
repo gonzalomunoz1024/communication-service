@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -148,6 +149,37 @@ func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
 	vars["CS_REPORT_TIMEOUT"] = "3s"
 	if cfg, err := FromEnv(env(vars)); err != nil || cfg.ReportTimeout != 3*time.Second {
 		t.Errorf("an explicit CS_REPORT_TIMEOUT should win: %v %v", cfg.ReportTimeout, err)
+	}
+}
+
+// G-3-14: CS_LOG_LEVEL is the lowest level logged: debug, info, warn or error in any case, info
+// when empty; anything else is a named error joined with the others, so the process exits 2.
+func TestLogLevelIsReadAndValidated(t *testing.T) {
+	for value, want := range map[string]slog.Level{
+		"": slog.LevelInfo, "debug": slog.LevelDebug, " DEBUG ": slog.LevelDebug, "info": slog.LevelInfo,
+		"Warn": slog.LevelWarn, "error": slog.LevelError,
+	} {
+		cfg, err := FromEnv(env(map[string]string{
+			"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+			"POD_NAME": "payments-api-7f9c6d5b4-x2k4q", "CS_LOG_LEVEL": value,
+		}))
+		if err != nil {
+			t.Errorf("CS_LOG_LEVEL=%q: unexpected error %v", value, err)
+		} else if cfg.LogLevel != want {
+			t.Errorf("CS_LOG_LEVEL=%q: level %v, want %v", value, cfg.LogLevel, want)
+		}
+	}
+	for _, value := range []string{"loud", "trace", "warning", "DEBUG+1"} {
+		_, err := FromEnv(env(map[string]string{"CS_LOG_LEVEL": value})) // CS_ENDPOINT and CS_TENANT missing too
+		if err == nil {
+			t.Errorf("CS_LOG_LEVEL=%q: expected an error", value)
+			continue
+		}
+		for _, want := range []string{`CS_LOG_LEVEL must be debug, info, warn or error (got "` + value + `")`, "CS_ENDPOINT is required"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("CS_LOG_LEVEL=%q: error %q should contain %q", value, err, want)
+			}
+		}
 	}
 }
 

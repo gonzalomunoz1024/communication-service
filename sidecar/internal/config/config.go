@@ -7,6 +7,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"strconv"
@@ -49,6 +50,8 @@ type Config struct {
 	CAFile string
 	// InsecureSkipVerify disables TLS verification towards the endpoint (local experiments only).
 	InsecureSkipVerify bool
+	// LogLevel is the lowest level logged (CS_LOG_LEVEL); DEBUG adds a line for every report sent.
+	LogLevel slog.Level
 
 	Instance Instance
 }
@@ -126,6 +129,21 @@ func FromEnv(get func(string) string) (Config, error) {
 		errs = append(errs, fmt.Errorf("%s must be true or false (got %q)", key, v))
 		return def
 	}
+	logLevel := func(key string) slog.Level {
+		v := str(key, "info")
+		switch strings.ToLower(v) {
+		case "debug":
+			return slog.LevelDebug
+		case "info":
+			return slog.LevelInfo
+		case "warn":
+			return slog.LevelWarn
+		case "error":
+			return slog.LevelError
+		}
+		errs = append(errs, fmt.Errorf("%s must be debug, info, warn or error (got %q)", key, v))
+		return slog.LevelInfo
+	}
 
 	podName := str("POD_NAME", "")
 	if podName == "" {
@@ -153,6 +171,7 @@ func FromEnv(get func(string) string) (Config, error) {
 		Listen:             str("CS_LISTEN", ":9465"),
 		CAFile:             str("CS_CA_FILE", ""),
 		InsecureSkipVerify: boolean("CS_INSECURE_SKIP_VERIFY", false),
+		LogLevel:           logLevel("CS_LOG_LEVEL"),
 		Instance: Instance{
 			ID:        str("CS_INSTANCE_ID", podName),
 			Namespace: str("POD_NAMESPACE", ""),

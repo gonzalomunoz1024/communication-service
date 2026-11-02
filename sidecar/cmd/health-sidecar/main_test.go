@@ -90,6 +90,7 @@ func TestRunRejectsMissingEndpointWithAClearError(t *testing.T) {
 func TestRunRejectsAnUnusableValueWithExit2(t *testing.T) {
 	for _, tc := range []struct{ key, value, want string }{
 		{"CS_INSECURE_SKIP_VERIFY", "maybe", `CS_INSECURE_SKIP_VERIFY must be true or false (got "maybe")`},
+		{"CS_LOG_LEVEL", "loud", `CS_LOG_LEVEL must be debug, info, warn or error (got "loud")`},
 	} {
 		t.Run(tc.key, func(t *testing.T) {
 			// Bounded, local and blind: should the value be accepted, run stops after 2 s and
@@ -248,5 +249,95 @@ func TestRunReportsWithTheBuildVersionAndStopsCleanly(t *testing.T) {
 		if l["level"] == "ERROR" {
 			t.Errorf("unexpected ERROR line: %v", l)
 		}
+	}
+}
+
+// G-3-14: run applies CS_LOG_LEVEL to its log handler. With the heartbeat at the probe interval
+// the second report is a repeat, logged at DEBUG: at debug that line is written, at info it is
+// not although the same reports reached the service, and at warn not even the INFO lines are.
+func TestRunLogsAtTheConfiguredLevel(t *testing.T) {
+	for _, tc := range []struct {
+		level       string
+		debug, info bool // whether DEBUG and INFO lines are written
+	}{
+		{"debug", true, true},
+		{"info", false, true},
+		{"warn", false, false},
+	} {
+		t.Run(tc.level, func(t *testing.T) {
+			t.Parallel()
+			service, sent := countingService(t)
+			app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				fmt.Fprint(w, `{"status":"UP"}`)
+			}))
+			defer app.Close()
+			_, port, _ := strings.Cut(app.Listener.Addr().String(), ":")
+
+			var out logBuffer
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			done := make(chan int, 1)
+			go func() {
+				done <- run(ctx, env(map[string]string{
+					"CS_ENDPOINT": service, "CS_TENANT": "retail", "CS_SERVICE": "payments-api",
+					"POD_NAME": "payments-api-7f9c6d5b4-x2k4q", "CS_PORT": port, "CS_HOST": "127.0.0.1",
+					"CS_LISTEN": "127.0.0.1:0", "CS_INTERVAL": "1s", "CS_HEARTBEAT": "1s",
+					"CS_RETRY_DELAY": "0s", "CS_LOG_LEVEL": tc.level,
+				}), &out)
+			}()
+			deadline := time.Now().Add(10 * time.Second)
+			for sent() < 2 && time.Now().Before(deadline) {
+				time.Sleep(20 * time.Millisecond)
+			}
+			cancel()
+			select {
+			case code := <-done:
+				if code != 0 {
+					t.Errorf("exit code %d, want 0", code)
+				}
+			case <-time.After(5 * time.Second):
+				t.Fatal("run did not return after the context was cancelled")
+			}
+			if n := sent(); n < 3 { // the first report, the heartbeat and the leaving report
+				t.Fatalf("%d reports reached the service, want the first one, a heartbeat and the leaving one", n)
+			}
+
+			levels := map[string]int{}
+			debugReported := false
+			for _, l := range out.lines(t) {
+				level, _ := l["level"].(string)
+				levels[level]++
+				debugReported = debugReported || (level == "DEBUG" && l["msg"] == "reported")
+			}
+			if debugReported != tc.debug || (levels["DEBUG"] > 0) != tc.debug {
+				t.Errorf("CS_LOG_LEVEL=%s: DEBUG lines %d (a DEBUG 'reported' line: %v), want them: %v", tc.level, levels["DEBUG"], debugReported, tc.debug)
+			}
+			if (levels["INFO"] > 0) != tc.info {
+				t.Errorf("CS_LOG_LEVEL=%s: INFO lines %d, want them: %v", tc.level, levels["INFO"], tc.info)
+			}
+		})
+	}
+}
+
+// countingService is a communication service that accepts every report and counts them.
+func countingService(t *testing.T) (url string, count func() int) {
+	t.Helper()
+	var mu sync.Mutex
+	n := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/health/reports" {
+			http.NotFound(w, r)
+			return
+		}
+		mu.Lock()
+		n++
+		mu.Unlock()
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL, func() int {
+		mu.Lock()
+		defer mu.Unlock()
+		return n
 	}
 }
