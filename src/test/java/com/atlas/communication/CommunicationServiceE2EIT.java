@@ -291,14 +291,17 @@ class CommunicationServiceE2EIT {
                 .expectBody()
                 .jsonPath("$.error").value(msg -> assertThat((String) msg).contains("endsAt"));
 
-        // duplicate externalRef -> 409
-        publishOutage("INC-e2e-dup");
+        // duplicate externalRef -> 409 whose body names the notice holding it and says the key is permanent
+        Communication dupHolder = publishOutage("INC-e2e-dup");
         client.post().uri("/v1/communications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
                         "severity", "MAJOR", "title", "again", "externalRef", "INC-e2e-dup"))
                 .exchange()
-                .expectStatus().isEqualTo(409);
+                .expectStatus().isEqualTo(409)
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .contains("permanent").contains(dupHolder.id()).contains("INC-e2e-dup-2"));
 
         // invalid enum -> 400, not 500
         client.get().uri("/v1/feed?tenantId=vmforge&type=NOPE")

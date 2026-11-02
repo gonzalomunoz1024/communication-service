@@ -118,16 +118,19 @@ given on the URI.
   millisecond regardless of the background sweeper. The sweeper (every 30s, configurable via
   `communication.sweep.interval-ms`) converges stored status and pushes `activated`/`expired`
   SSE events; concurrent-save conflicts are skipped, making it safe to run multi-instance.
-- **Idempotency**: `externalRef` (e.g. an INC/CHG ticket id) is unique per tenant (partial
-  unique index); a duplicate publish returns 409.
+- **Idempotency**: `externalRef` (e.g. an INC/CHG ticket id) is a permanent idempotency key:
+  usable once per tenant for the life of the store (unique index on `(tenantId, externalRef)`,
+  retired and expired notices included). Repeating it is how a client retries the same publish
+  safely: the 409 names the notice that already holds it. A follow-up notice on the same ticket,
+  or one published after the first was retired, needs a new value (`INC0012345-2`).
 - **Tickets (optional)**: a communication can carry the ServiceNow incident behind it
   (`ticket.number`, e.g. `INC0012345`; `ticket.system` names another tracker). The number is
   trimmed, upper-cased and checked against `communication.tickets.number-pattern`; with
   `communication.servicenow.instance-url` set, `ticket.url` links straight to the incident. The
   ticket rides on the feed and SSE payloads, can be attached later with `PUT`, and `externalRef`
   defaults to its number so the same incident is not published twice by accident (set
-  `externalRef` yourself for a second notice on one ticket). Nothing calls ServiceNow; syncing
-  the ticket's status is a separate, later switch.
+  `externalRef` yourself, e.g. `INC0012345-2`, for a second notice on one ticket). Nothing calls
+  ServiceNow; syncing the ticket's status is a separate, later switch.
 - **Concurrency**: documents carry a version (`@Version`); `PUT` requires `expectedVersion`,
   the `version` you last read (every answer and `GET /v1/communications/{id}` carry it), and a
   mismatch returns 409 so two editors never overwrite each other blindly.
@@ -172,10 +175,10 @@ switches the check off for local experiments.
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/v1/communications` | 201 + Location; 400 validation (incl. a malformed `ticket.number`); 409 duplicate externalRef |
+| POST | `/v1/communications` | 201 + Location; 400 validation (incl. a malformed `ticket.number`); 409 when the tenant has already used `externalRef`: it is a permanent idempotency key, the body names the notice holding it; repeat the value only to retry the same publish, give a follow-up notice a new one |
 | GET | `/v1/communications/{id}` | any status, includes audit history; 404 |
 | GET | `/v1/communications?tenantId=…&status=&type=&page=&size=` | publisher's own list |
-| PUT | `/v1/communications/{id}` | partial update + required `expectedVersion` (the `version` you last read); 409 on conflict/terminal |
+| PUT | `/v1/communications/{id}` | partial update; `expectedVersion` is required and is the `version` you last read (every answer and `GET /v1/communications/{id}` carry it); 409 `expectedVersion N does not match current version M` means someone saved in between: re-read, re-apply, send the new version; 409 also once the item is EXPIRED/RETIRED |
 | POST | `/v1/communications/{id}/publish` | DRAFT → SCHEDULED/ACTIVE; 409 if not DRAFT |
 | POST | `/v1/communications/{id}/retire` | optional `{actor, note}`; idempotent on RETIRED; 409 once past `expiresAt` (whether or not the sweeper has run) |
 
@@ -319,6 +322,14 @@ curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications
   "title":"API degradation in eu-west","body":"We are investigating **elevated errors**.",
   "affectedServices":["vm-api"],"ticket":{"number":"INC0012345"},
   "expiresAt":"'"$in2h"'"}'
+
+# externalRef (here the ticket number) is a permanent idempotency key, usable once per tenant: sending
+# the request above again is a safe retry (409 naming the notice that holds INC0012345); a follow-up
+# notice on the same incident gets its own value
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{
+  "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR",
+  "title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],
+  "ticket":{"number":"INC0012345"},"externalRef":"INC0012345-2","expiresAt":"'"$in2h"'"}'
 
 # schedule a maintenance window for tomorrow night (expiry defaults to the window end)
 curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:8080/v1/communications -H 'Content-Type: application/json' -d '{

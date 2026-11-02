@@ -9,6 +9,7 @@ import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.domain.Ticket;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,7 +20,8 @@ import jakarta.validation.constraints.Size;
  * (maintenance windows, severity floors, time ordering) are enforced by
  * {@link com.atlas.communication.common.domain.Communication#create}. {@code ticket} optionally
  * ties the communication to the tracker ticket (ServiceNow incident) behind it; when given,
- * {@code externalRef} defaults to its number.
+ * {@code externalRef} defaults to its number. {@code externalRef} is a permanent idempotency key:
+ * usable once per tenant, for good.
  */
 public record CreateCommunicationCommand(
         @NotBlank String tenantId,
@@ -34,6 +36,10 @@ public record CreateCommunicationCommand(
         Instant startsAt,
         Instant endsAt,
         Instant expiresAt,
+        @Schema(description = "Permanent idempotency key, usable once per tenant for the life of the store "
+                + "(retired and expired notices included). Repeat it only to retry the same publish: the 409 "
+                + "names the notice that already holds it. A follow-up notice needs a new value, for example "
+                + "INC0012345-2. Defaults to ticket.number when a ticket is given.", example = "INC0012345")
         String externalRef,
         @Valid Ticket ticket) {
 

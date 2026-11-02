@@ -65,12 +65,31 @@ public class MongoCommunicationRepositoryAdapter implements CommunicationReposit
     public Mono<Communication> save(Communication communication) {
         return repository.save(CommunicationDocument.fromDomain(communication))
                 .map(CommunicationDocument::toDomain)
-                .onErrorMap(DuplicateKeyException.class, ex -> new ResponseStatusException(
-                        HttpStatus.CONFLICT, "duplicate externalRef '" + communication.externalRef()
-                                + "' for tenant '" + communication.tenantId() + "'"))
+                .onErrorResume(DuplicateKeyException.class, ex -> externalRefTaken(communication))
                 .onErrorMap(OptimisticLockingFailureException.class, ex -> new ResponseStatusException(
                         HttpStatus.CONFLICT, "communication " + communication.id()
                                 + " was modified concurrently; reload and retry"));
+    }
+
+    /**
+     * The only unique key besides the id is (tenantId, externalRef), and it is permanent: the 409
+     * names the notice that holds the reference and says how to retry the same publish or start
+     * a follow-up, so nobody retires a notice hoping to free its reference.
+     */
+    private Mono<Communication> externalRefTaken(Communication communication) {
+        String ref = communication.externalRef();
+        String tenant = communication.tenantId();
+        if (ref == null) {
+            return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT,
+                    "communication " + communication.id() + " already exists"));
+        }
+        return repository.findFirstByTenantIdAndExternalRef(tenant, ref)
+                .map(existing -> " by notice " + existing.id)
+                .defaultIfEmpty("")
+                .flatMap(holder -> Mono.<Communication>error(new ResponseStatusException(HttpStatus.CONFLICT,
+                        "externalRef '" + ref + "' is already used" + holder + " in tenant " + tenant
+                                + ". externalRef is a permanent idempotency key: repeat it only to retry the"
+                                + " same publish; give a follow-up notice a new value (for example " + ref + "-2).")));
     }
 
     @Override

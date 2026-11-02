@@ -11,8 +11,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * What a first-time API user sees in Swagger UI: the security scheme is named after the header it
- * fills, says what to paste, every operation documents the 401 for a missing id, and the spec
- * covers every /v1 surface.
+ * fills, says what to paste, every operation documents the 401 for a missing id, the spec
+ * covers every /v1 surface, and the two fields people get wrong (externalRef, expectedVersion)
+ * explain themselves where they are filled in.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class OpenApiContractIT {
@@ -35,6 +36,34 @@ class OpenApiContractIT {
         assertThat(scheme.path("description").asText()).contains("Authorize").contains("repository name");
 
         assertThat(spec.path("security").toString()).as("the scheme is required globally").contains("X-Client-Id");
+    }
+
+    @Test
+    void theIdempotencyKeyAndTheVersionCheckExplainThemselves() {
+        JsonNode spec = client.get().uri("/v3/api-docs").exchange()
+                .expectStatus().isOk()
+                .expectBody(JsonNode.class).returnResult().getResponseBody();
+        assertThat(spec).isNotNull();
+        JsonNode schemas = spec.path("components").path("schemas");
+
+        String externalRef = schemas.path("CreateCommunicationCommand").path("properties")
+                .path("externalRef").path("description").asText();
+        assertThat(externalRef).as("externalRef is described as permanent")
+                .containsIgnoringCase("permanent").contains("idempotency").contains("follow-up");
+        String expectedVersion = schemas.path("UpdateCommunicationCommand").path("properties")
+                .path("expectedVersion").path("description").asText();
+        assertThat(expectedVersion).as("expectedVersion says what to send and what the 409 means")
+                .contains("version you last read").contains("409");
+
+        JsonNode duplicate = spec.path("paths").path("/v1/communications").path("post")
+                .path("responses").path("409");
+        assertThat(duplicate.isMissingNode()).as("POST /v1/communications documents its 409").isFalse();
+        assertThat(duplicate.path("description").asText()).contains("externalRef").contains("permanent");
+        assertThat(duplicate.path("content").path("application/json").toString())
+                .as("the example body shows the wording").contains("permanent idempotency key");
+        JsonNode stale = spec.path("paths").path("/v1/communications/{id}").path("put")
+                .path("responses").path("409");
+        assertThat(stale.path("description").asText()).as("PUT documents its 409").contains("expectedVersion");
     }
 
     @Test

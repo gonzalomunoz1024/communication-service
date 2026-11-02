@@ -8,6 +8,7 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.domain.Ticket;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -29,6 +30,9 @@ public record UpdateCommunicationCommand(
         Instant expiresAt,
         @Valid Ticket ticket,
         String actor,
+        @Schema(description = "The version you last read: every answer and GET /v1/communications/{id} carry it. "
+                + "A 409 'expectedVersion N does not match current version M' means someone saved in between: "
+                + "re-read, re-apply your change and send the new version.", example = "0")
         @NotNull Long expectedVersion) {
 
     public UpdateCommunicationCommand {

@@ -69,10 +69,28 @@ class MongoCommunicationRepositoryAdapterIT {
         StepVerifier.create(adapter.save(outage("c2", "vmforge", "INC1", NOW, null)))
                 .expectErrorSatisfies(ex -> assertThat(ex)
                         .isInstanceOf(ResponseStatusException.class)
-                        .hasMessageContaining("duplicate externalRef"))
+                        // names the holder and says the key is permanent, so nobody retires c1 hoping to free INC1
+                        .hasMessageContaining("externalRef 'INC1' is already used by notice c1 in tenant vmforge")
+                        .hasMessageContaining("permanent idempotency key")
+                        .hasMessageContaining("INC1-2"))
                 .verify();
         // same ref in another tenant is fine
         assertThat(adapter.save(outage("c3", "otherpod", "INC1", NOW, null)).block()).isNotNull();
+    }
+
+    @Test
+    void theExternalRefStaysTakenAfterItsHolderIsRetired() {
+        Communication holder = adapter.save(outage("c1", "vmforge", "INC1", NOW, null)).block();
+        assertThat(holder).isNotNull();
+        adapter.save(holder.withStatus(CommunicationStatus.RETIRED, "ops", NOW.plusSeconds(60))).block();
+
+        // the key is permanent: a follow-up needs its own value, and the 409 still names the holder
+        StepVerifier.create(adapter.save(outage("c2", "vmforge", "INC1", NOW, null)))
+                .expectErrorSatisfies(ex -> assertThat(ex)
+                        .isInstanceOf(ResponseStatusException.class)
+                        .hasMessageContaining("already used by notice c1"))
+                .verify();
+        assertThat(adapter.save(outage("c2", "vmforge", "INC1-2", NOW, null)).block()).isNotNull();
     }
 
     @Test
