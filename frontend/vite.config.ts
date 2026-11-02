@@ -20,7 +20,9 @@ export default defineConfig({
     },
   },
   test: {
+    // pure modules run in node; component tests opt into jsdom with `// @vitest-environment jsdom`
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['src/test/setup.ts'],
   },
 })
