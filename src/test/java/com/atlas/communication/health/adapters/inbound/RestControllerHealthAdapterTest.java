@@ -2,6 +2,7 @@ package com.atlas.communication.health.adapters.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -100,6 +101,26 @@ class RestControllerHealthAdapterTest {
                 .expectBody()
                 .jsonPath("$.error").value(msg -> assertThat((String) msg)
                         .contains("service").contains("intervalSeconds"));
+    }
+
+    @Test
+    void registerRejectsAMisspelledPolicyFieldNamingIt() {
+        // a push-only service that misspells staleAfterSeconds would otherwise get a monitor that
+        // never notices a crash, with nothing said; reports stay lenient (see below), registration is not
+        when(useCase.register(any())).thenReturn(Mono.just(monitor()));
+
+        client.post().uri("/v1/health/monitors")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "service", "billing", "staleAfterSecond", 60))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .contains("'staleAfterSecond'")
+                        .contains("known fields: ")
+                        .contains("staleAfterSeconds")
+                        .contains("intervalSeconds"));
+        verify(useCase, never()).register(any());
     }
 
     @Test

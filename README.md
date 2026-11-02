@@ -233,9 +233,10 @@ An `endsAt` or `expiresAt` that is not after `startsAt` names both values, and a
 not send is the publish time: `expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-11-02T10:15:00.123Z)`
 (with `startsAt` sent: `endsAt … must be after startsAt …`). A `PUT` without `expectedVersion` answers
 `expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since`.
-A field the publishing endpoints do not know (publish, update, retire, and inside `ticket`) is a
-400 too, `unknown field 'sevrity'; known fields: …`, so a misspelled optional field cannot change
-what is published without a word. Health reports keep accepting keys they do not know: a
+A field the publishing endpoints or monitor registration do not know (publish, update, retire,
+inside `ticket`, and `POST /v1/health/monitors`) is a 400 too, `unknown field 'sevrity'; known
+fields: …`, so a misspelled optional field cannot change what is published, or how a monitor
+judges, without a word. Health reports keep accepting keys they do not know: a
 forwarded Actuator document carries `groups` and whatever its producer adds.
 
 ### Consumer feed
@@ -259,7 +260,7 @@ forwarded Actuator document carries `groups` and whatever its producer adds.
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/v1/health/monitors` | register; 201 + `Location: /v1/health/monitors/<monitorId>` (the `id` in the body); with `url` the service is probed (pull), without it is push-only; 409 if (tenantId, service) exists |
+| POST | `/v1/health/monitors` | register; 201 + `Location: /v1/health/monitors/<monitorId>` (the `id` in the body); with `url` the service is probed (pull), without it is push-only; 409 if (tenantId, service) exists; a field it does not know is a 400 naming it |
 | GET | `/v1/health/monitors?tenantId=…` | monitors with live state (streaks, open notice) |
 | GET | `/v1/health/monitors/{id}` | one monitor; 404 |
 | POST | `/v1/health/monitors/{id}/probe` | probe now instead of waiting for the interval; 409 for push-only; the target is probed once, and when the scheduler saves the monitor meanwhile (its own probe of it) that observation is applied again to the monitor as the scheduler left it (up to 3 attempts) before a 409 `modified concurrently` is returned |
