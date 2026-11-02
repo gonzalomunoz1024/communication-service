@@ -1,0 +1,21 @@
+# G-3-23, before the fix: badge tests against 530d5c2 (OutageFeed.tsx: the badge is plain text in the Live-updates <label>, 'off' always reads Paused, the label has no row height)
+# usability evidence it reproduces: aria-feed.txt 'switch "Live updates" [checked]' then 'text: Live' (no live region);
+#   ux2-ui-log.jsonl landing (no tenant): mainText '... Critical Paused Refresh Choose a tenant ...'; phone-feed smallTargets [{name: 'Live updates', w: 30, h: 18}]
+# cwd frontend/: DEBUG_PRINT_LIMIT=0 npx vitest run src/test/OutageFeed.test.tsx
+ RUN  v5.0.5 /home/claude/wt-fe-3/frontend
+ ❯ src/test/OutageFeed.test.tsx (11 tests | 3 failed) 1043ms
+     × announces the connection state in a live region of its own, which never repeats the resolve announcement 205ms
+     × says it is waiting for a tenant rather than paused when none is entered, and paused only when switched off 28ms
+     × makes the whole Live-updates row the click target of its switch, at least 24 px tall like the form 39ms
+TestingLibraryElementError: Unable to find an accessible element with the role "status"
+ ❯ src/test/OutageFeed.test.tsx:70:20
+TestingLibraryElementError: Unable to find an accessible element with the role "status"
+ ❯ src/test/OutageFeed.test.tsx:98:12
+Error: expect(element).toHaveClass("min-h-6 cursor-pointer")
+Expected the element to have class:
+  min-h-6 cursor-pointer
+Received:
+  flex items-center gap-2 text-caption text-secondary
+ ❯ src/test/OutageFeed.test.tsx:117:25
+ Test Files  1 failed (1)
+      Tests  3 failed | 8 passed (11)

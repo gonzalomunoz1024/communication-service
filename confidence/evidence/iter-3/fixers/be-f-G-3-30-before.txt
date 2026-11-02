@@ -1,0 +1,58 @@
+# G-3-30 before the fix (worktree at 32c5c3c + the new test only)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*HealthStatusTest' --continue
+# test: HealthStatusTest (new): every word of the sidecar's Normalize and of the service's list, each as written,
+#       lower-cased and padded with spaces; any other word DEGRADED; a report whose components say pass/SERVING/fail
+
+HealthStatusTest > componentsInTheSidecarsWordsAreHealthyOrFailingAsTheyMean() FAILED
+    org.opentest4j.AssertionFailedError: 
+    expected: UP
+     but was: DEGRADED
+
+HealthStatusTest > everyWordOfBothVocabulariesMeansTheSameHereAsInTheSidecar() FAILED
+    org.assertj.core.error.AssertJMultipleFailuresError: 
+    Multiple Failures (24 failures)
+  the 24 failing spellings (soft assertions):
+    'PASS'             expected: UP   but was: DEGRADED
+    'pass'             expected: UP   but was: DEGRADED
+    ' PASS<tab>'       expected: UP   but was: DEGRADED
+    'GREEN'            expected: UP   but was: DEGRADED
+    'green'            expected: UP   but was: DEGRADED
+    ' GREEN<tab>'      expected: UP   but was: DEGRADED
+    'SERVING'          expected: UP   but was: DEGRADED
+    'serving'          expected: UP   but was: DEGRADED
+    ' SERVING<tab>'    expected: UP   but was: DEGRADED
+    'FAIL'             expected: DOWN but was: DEGRADED
+    'fail'             expected: DOWN but was: DEGRADED
+    ' FAIL<tab>'       expected: DOWN but was: DEGRADED
+    'FAILED'           expected: DOWN but was: DEGRADED
+    'failed'           expected: DOWN but was: DEGRADED
+    ' FAILED<tab>'     expected: DOWN but was: DEGRADED
+    'ERROR'            expected: DOWN but was: DEGRADED
+    'error'            expected: DOWN but was: DEGRADED
+    ' ERROR<tab>'      expected: DOWN but was: DEGRADED
+    'RED'              expected: DOWN but was: DEGRADED
+    'red'              expected: DOWN but was: DEGRADED
+    ' RED<tab>'        expected: DOWN but was: DEGRADED
+    'NOT_SERVING'      expected: DOWN but was: DEGRADED
+    'not_serving'      expected: DOWN but was: DEGRADED
+    ' NOT_SERVING<tab>' expected: DOWN but was: DEGRADED
+3 tests completed, 2 failed
+BUILD FAILED in 15s
+exit=1
+
+## HTTP (scratchpad http-g330.sh): private mongod :18201, backend :18200, jar built at 32c5c3c;
+## three pushes per service (failureThreshold 2), then the monitors and the feed
+POST /v1/health/reports x3 {"tenantId":"fixbef-g330","service":"orders","status":"UP","components":{"db":{"status":"pass"},"grpc":{"status":"SERVING"}}} -> 202
+POST /v1/health/reports x3 {"tenantId":"fixbef-g330","service":"billing","status":"fail","components":{"db":{"status":"fail"}}} -> 202
+POST /v1/health/reports x3 {"tenantId":"fixbef-g330","service":"search","status":"UP","components":{"index":{"status":"WARN"}}} -> 202
+GET /v1/health/monitors?tenantId=fixbef-g330
+  billing  lastStatus=DEGRADED  summary=DEGRADED: db DEGRADED
+  orders   lastStatus=DEGRADED  summary=DEGRADED: db DEGRADED, grpc DEGRADED
+  search   lastStatus=DEGRADED  summary=DEGRADED: index DEGRADED
+GET /v1/feed?tenantId=fixbef-g330
+  3 notice(s)
+  HEALTH  MINOR  billing is degraded
+  HEALTH  MINOR  orders is degraded
+  HEALTH  MINOR  search is degraded
+-> orders: every component healthy in the sidecar's words, yet a HEALTH notice; billing says fail and gets
+   a HEALTH (DEGRADED) notice instead of an OUTAGE

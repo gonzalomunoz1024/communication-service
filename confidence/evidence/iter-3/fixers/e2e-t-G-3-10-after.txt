@@ -1,0 +1,41 @@
+G-3-10 after (commit 3a6aa7e, README.md only).
+
+$ git show --stat --format=%s 3a6aa7e
+Fix G-3-10: name Spring Boot 3.5 and say when the cookbook's publishes answer 409
+ README.md | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+$ grep -n 'Spring Boot 3' README.md
+21:- Java 21 · Spring Boot 3.5 · WebFlux (Reactor/Netty) · Reactive MongoDB · Gradle (Kotlin DSL)
+(build.gradle.kts: org.springframework.boot 3.5.16; the jar's manifest: Spring-Boot-Version: 3.5.16)
+
+$ sed -n '308,314p' README.md
+The dates are computed from now (GNU `date`; the macOS fallback uses `-v`), so they hold on any
+day. The ticket numbers hold once per store: a tenant uses an `externalRef` once, ever, so where
+`vmforge` has already published `INC0012345` the first example answers 409 naming the notice that
+holds it (the comment after it says why), and the second does the same for `INC0012345-2`; change
+the ticket number (or the `externalRef`) to publish again. `<id>` is the `id` in a publish answer
+(also the last path segment of its `Location` header); `<monitorId>` likewise for
+`POST /v1/health/monitors`, or `.[].id` in the monitor list.
+
+What the new sentence says, run: the README's first two cookbook publishes as written (host changed to the e2e
+backend 127.0.0.1:28080), three passes on one fresh store during the final suite run 1:
+== pass 1: the README's first two cookbook publishes as written (host 127.0.0.1:28080, the e2e backend), on a store that has not seen INC0012345
+   created: id=3527174b-efa8-4728-8294-1d12cac55bce externalRef=INC0012345 status=ACTIVE
+HTTP 201
+   created: id=0ab7f497-3d08-49d5-9f8e-f7c6b18ecbeb externalRef=INC0012345-2 status=ACTIVE
+HTTP 201
+
+== pass 2: the same two commands again
+   externalRef 'INC0012345' is already used by notice 3527174b-efa8-4728-8294-1d12cac55bce in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (…
+HTTP 409
+   externalRef 'INC0012345-2' is already used by notice 0ab7f497-3d08-49d5-9f8e-f7c6b18ecbeb in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value…
+HTTP 409
+
+== pass 3: the same two commands with another ticket number (INC0012346)
+   created: id=6d88535a-fb34-40fd-8730-bc4b07c159e9 externalRef=INC0012346 status=ACTIVE
+HTTP 201
+   created: id=af693800-dbc6-472c-88e3-4e35c2d6b8b8 externalRef=INC0012346-2 status=ACTIVE
+HTTP 201
+
+-> pass 1: both publish; pass 2 (a store that has seen INC0012345 and INC0012345-2): each answers 409 naming
+   the notice that holds the reference; pass 3 (another ticket number): both publish again.

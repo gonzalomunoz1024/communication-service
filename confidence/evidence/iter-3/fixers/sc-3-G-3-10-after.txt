@@ -1,0 +1,131 @@
+G-3-10 (sidecar README lines) AFTER: commit 1e0e153 in the SC-3 worktree. Same tools, CI=true.
+
+## 1. Same procedure as before-§1 on the fixed README: each include line it prints, at column 8
+helm v3.16, kubeconform development
+README.md include lines:
+  README.md:48:{{- include "cs-health-sidecar.container" . | nindent 8 }}
+  README.md:85:{{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
+
+=== cs-health-sidecar.container
+pasted at column 8 of templates/deployment.yaml: {{- include "cs-health-sidecar.container" . | nindent 8 }}
+helm dependency build: exit 0
+helm lint: exit 0 (1 chart(s) linted, 0 chart(s) failed)
+helm template: exit 0
+rendered lines after '- name: health-sidecar' / '- restartPolicy: Always':
+  23:        - name: health-sidecar
+  24-          image: registry.example.com/platform/health-sidecar:1.0.0
+  25-          imagePullPolicy: IfNotPresent
+  26-          env:
+  Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+kubeconform -strict (1.29.0): exit 0
+
+=== cs-health-sidecar.initContainer
+pasted at column 8 of templates/deployment.yaml: {{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
+helm dependency build: exit 0
+helm lint: exit 0 (1 chart(s) linted, 0 chart(s) failed)
+helm template: exit 0
+rendered lines after '- name: health-sidecar' / '- restartPolicy: Always':
+  24:        - restartPolicy: Always
+  25-          name: health-sidecar
+  26-          image: registry.example.com/platform/health-sidecar:1.0.0
+  27-          imagePullPolicy: IfNotPresent
+  Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+kubeconform -strict (1.29.0): exit 0
+
+## 2. The README's two Helm yaml blocks pasted verbatim (Chart.yaml with the repository line
+##    pointed at the library chart by file://, values.yaml, the Deployment lines under
+##    spec.template.spec of a Deployment skeleton); script snippet.py
+README.md yaml blocks with an include line: 2
+
+=== block 1: containers
+README lines pasted under spec.template.spec:
+  |      containers:
+  |        - name: my-app
+  |          image: registry.example.com/my-team/my-app:1.4.2
+  |        {{- include "cs-health-sidecar.container" . | nindent 8 }}
+helm dependency build: exit 0
+helm lint: exit 0 (1 chart(s) linted, 0 chart(s) failed)
+helm template: exit 0
+rendered:
+   21|        - name: my-app
+   22|          image: registry.example.com/my-team/my-app:1.4.2
+   23|        - name: health-sidecar
+   24|          image: registry.example.com/platform/health-sidecar:1.0.0
+   25|          imagePullPolicy: IfNotPresent
+   26|          env:
+kubeconform -strict -kubernetes-version 1.27.0: exit 0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+kubeconform -strict -kubernetes-version 1.29.0: exit 0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+
+=== block 2: initContainers
+README lines pasted under spec.template.spec:
+  |      initContainers:
+  |        {{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
+helm dependency build: exit 0
+helm lint: exit 0 (1 chart(s) linted, 0 chart(s) failed)
+helm template: exit 0
+rendered:
+   19|    spec:
+   20|      initContainers:
+   21|        - restartPolicy: Always
+   22|          name: health-sidecar
+   23|          image: registry.example.com/platform/health-sidecar:1.0.0
+   24|          imagePullPolicy: IfNotPresent
+kubeconform -strict -kubernetes-version 1.29.0: exit 0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+
+## 3. Tests in the worktree
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container
+    helm_test.go:73: kubeconform 1.27.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+    helm_test.go:73: kubeconform 1.29.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer
+    helm_test.go:73: kubeconform 1.29.0: Summary: 1 resource found parsing stdin - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment (2.41s)
+    --- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container (1.61s)
+    --- PASS: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer (0.80s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	2.420s
+=== RUN   TestStatusJSONMatchesTheDocumentedContract
+--- PASS: TestStatusJSONMatchesTheDocumentedContract (0.01s)
+=== RUN   TestStatusShowsTheLastReportComposedSentOrNot
+--- PASS: TestStatusShowsTheLastReportComposedSentOrNot (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.023s
+exit 0
+
+## 4. Mutations in a scratch copy of the worktree: the new tests catch them
+### m1: README container line without '| nindent 8' (trim marker kept)
+48:        {{- include "cs-health-sidecar.container" . }}
+--- FAIL: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment (0.88s)
+        helm_test.go:56: the README prints "{{- include \"cs-health-sidecar.container\" . }}"; the chart's own comment shows ["{{- include \"cs-health-sidecar.container\" . | nindent 8 }}"]
+        helm_test.go:112: helm template payments-api <tmp>/payments-api: exit status 1
+            Error: YAML parse error on payments-api/templates/deployment.yaml: error converting YAML to JSON: yaml: line 20: mapping values are not allowed in this context
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.880s
+FAIL
+
+### m2: agent.go records the last report only when a send succeeds (/status = last report sent)
+@@ -280,7 +280,6 @@
+-	a.last = rep
+@@ -331,6 +330,7 @@
++		a.last = rep
+--- FAIL: TestStatusShowsTheLastReportComposedSentOrNot (0.00s)
+    agent_test.go:563: after a tick that sent nothing: lastReport &{TenantID:retail Service:payments-api Status:UP Components:map[db:map[status:UP]] Message: ObservedAt:2026-11-01 12:00:00 +0000 UTC Publisher:health-sidecar Instance:0xc000220070} (want the one observed at 2026-11-01 12:00:15 +0000 U
+    agent_test.go:571: after a failed send: lastReport &{TenantID:retail Service:payments-api Status:UP Components:map[db:map[status:UP]] Message: ObservedAt:2026-11-01 12:00:00 +0000 UTC Publisher:health-sidecar Instance:0xc000220070} (want the one observed at 2026-11-01 12:00:30 +0000 UTC), report
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.009s
+FAIL
+
+## 5. Gate in the worktree
+$ CI=true go test ./... -race -count=1
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	2.625s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	6.320s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.276s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.026s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.038s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.481s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.115s
+exit 0
+$ gofmt -l .
+(no files listed)
+$ go vet ./...
+vet exit 0

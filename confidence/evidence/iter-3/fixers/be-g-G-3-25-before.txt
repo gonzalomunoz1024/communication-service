@@ -1,0 +1,39 @@
+# G-3-25 (backend) before: auto-notice body and the actor of its update/retire (code at 42ae91f, new regression tests only)
+# Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests 'com.atlas.communication.health.domain.HealthNoticeTest' --tests 'com.atlas.communication.health.application.HealthObservationUseCaseTest'
+# HealthNoticeTest.anAutomatedNoticeReadsAsPlainWordsWithTheTimeToTheSecond: the UX-47 notice (rollup, observedAt with nanoseconds)
+# HealthObservationUseCaseTest.aNoticeIsUpdatedAndRetiredUnderTheNameItWasPublishedWith: monitor publisher health-sidecar
+
+> Task :test
+
+HealthObservationUseCaseTest > aNoticeIsUpdatedAndRetiredUnderTheNameItWasPublishedWith() FAILED
+    org.opentest4j.AssertionFailedError: [update actor] 
+    expected: "health-sidecar"
+     but was: "health-monitor"
+        at app//com.atlas.communication.health.application.HealthObservationUseCaseTest.aNoticeIsUpdatedAndRetiredUnderTheNameItWasPublishedWith(HealthObservationUseCaseTest.java:390)
+
+HealthNoticeTest > anAutomatedNoticeReadsAsPlainWordsWithTheTimeToTheSecond() FAILED
+    org.opentest4j.AssertionFailedError: 
+    expected: 
+      "fake-app is DOWN as of 2026-11-02 04:07:48 UTC.
+      Reported by its pods: 0 of 1 pod UP (DOWN: fake-app-7f9c6d5b4-x2k4q).
+  
+      Failing components:
+      db: DOWN (error=Connection refused)
+  
+      This notice is managed automatically and is retired once the service reports healthy again."
+     but was: 
+      "Automated health check reported **DOWN** at 2026-11-02T04:07:48.815528360Z (rolled up from the service's pods).
+  
+      0 of 1 pod UP (DOWN: fake-app-7f9c6d5b4-x2k4q)
+  
+      Failing components:
+      - db: DOWN - error=Connection refused
+  
+      This notice is managed automatically and is retired once the service reports healthy again."
+        at app//com.atlas.communication.health.domain.HealthNoticeTest.anAutomatedNoticeReadsAsPlainWordsWithTheTimeToTheSecond(HealthNoticeTest.java:54)
+
+19 tests completed, 2 failed
+
+BUILD FAILED in 24s
+5 actionable tasks: 2 executed, 3 up-to-date
+RC=1

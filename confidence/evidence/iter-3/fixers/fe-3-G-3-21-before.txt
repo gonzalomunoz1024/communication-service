@@ -1,0 +1,47 @@
+# G-3-21, before the fix: the duplicate-reference tests against a791cb0 (errors.ts matches only the bare "duplicate externalRef 'X' for tenant 'T'" wording)
+# real backend (iter-2 jar on :18220), POST /v1/communications twice with ticket INC0012345 -> 409
+#   {"error":"externalRef 'INC0012345' is already used by notice 37f5f540-93b0-4641-8034-326848d8e50d in tenant fixfe3. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2)."}
+#   (no structured field in the body; the same for an explicit externalRef INC0012345-2 -> "... (for example INC0012345-2-2).")
+# cwd frontend/: DEBUG_PRINT_LIMIT=0 npx vitest run src/test/errors.test.ts src/test/PublishOutageForm.test.tsx
+ RUN  v5.0.5 /home/claude/wt-fe-3/frontend
+ ❯ src/test/errors.test.ts (14 tests | 5 failed) 136ms
+     × explains a duplicate reference in the form's terms whatever the service's sentence says around it 56ms
+     × explains the service's current duplicate-reference sentence without its notice id or client-library terms 1ms
+     × names the External reference the person typed, and suggests the next follow-up number, from the request that was sent 7ms
+     × reads the reference and the tenant from the sentence when no request is at hand, with or without the holder 2ms
+     × suggests the next follow-up number, and -2 for anything else 1ms
+ ❯ src/test/PublishOutageForm.test.tsx (17 tests | 3 failed) 3349ms
+     × keeps the service's own words in a details element when its 409 explains the permanent key and names the notice 182ms
+     × explains the service's current 409 sentence in the form's words, with that sentence one click away 171ms
+     × names the External reference that was typed and suggests the next follow-up number 314ms
+Expected element to have text content:
+  The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference).
+Received:
+  The service rejected this. externalRef 'INC0012345' is already used in tenant 'acme' by communication c42 (RETIRED); the key is permanent, so a follow-up needs another externalRef
+ ❯ src/test/PublishOutageForm.test.tsx:235:19
+Expected element to have text content:
+  The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2.
+Received:
+  The service rejected this. externalRef 'INC0012345' is already used by notice 37f5f540-93b0-4641-8034-326848d8e50d in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2).
+ ❯ src/test/PublishOutageForm.test.tsx:247:19
+Expected element to have text content:
+  The service rejected this. INC0012345-2 is already the External reference of a notice in tenant acme. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as INC0012345-3.
+Received:
+  The service rejected this. externalRef 'INC0012345-2' is already used by notice 42fe0701-4438-4ae6-9173-c060fdf38f63 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2-2).
+ ❯ src/test/PublishOutageForm.test.tsx:273:19
+AssertionError: expected 'externalRef \'INC0012345\' is already…' to be 'INC0012345 is already the reference o…' // Object.is equality
+Expected: "INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2."
+Received: "externalRef 'INC0012345' is already used in tenant 'acme' by communication c42 (RETIRED); the key is permanent, so a follow-up needs another externalRef"
+ ❯ src/test/errors.test.ts:73:63
+TypeError: duplicateReference is not a function
+ ❯ src/test/errors.test.ts:83:12
+AssertionError: expected 'externalRef \'INC0012345-2\' is alrea…' to be 'INC0012345-2 is already the External …' // Object.is equality
+Expected: "INC0012345-2 is already the External reference of a notice in tenant acme. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as INC0012345-3."
+Received: "externalRef 'INC0012345-2' is already used by notice 42fe0701-4438-4ae6-9173-c060fdf38f63 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2-2)."
+ ❯ src/test/errors.test.ts:94:70
+TypeError: duplicateReference is not a function
+ ❯ src/test/errors.test.ts:103:12
+TypeError: undefined is not a function
+ ❯ src/test/errors.test.ts:110:127
+ Test Files  2 failed (2)
+      Tests  8 failed | 23 passed (31)

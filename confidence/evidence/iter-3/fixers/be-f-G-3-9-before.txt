@@ -1,0 +1,36 @@
+# G-3-9 before the fix (worktree at 2b0dfd1 + the new tests only)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*CommunicationTest' --tests '*RestControllerPublishingAdapterTest' integrationTest --tests '*CommunicationServiceE2EIT' --continue
+
+CommunicationTest > anExpiryNotAfterTheStartNamesBothValuesAndAStartThatDefaulted() FAILED
+    org.opentest4j.AssertionFailedError: 
+    Expecting message to be:
+      "expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-10-14T12:00:00Z)"
+    but was:
+      "expiresAt must be after startsAt"
+
+RestControllerPublishingAdapterTest > anUpdateWithoutExpectedVersionSaysWhatToSendAndWhatA409Means() FAILED
+    java.lang.AssertionError: JSON path "$.error" expected:<expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since> but was:<expectedVersion: must not be null>
+36 tests completed, 2 failed
+
+CommunicationServiceE2EIT > anExpiryBeforeTheDefaultedStartAndAMissingVersionSayWhatWasSentAndWhatToSend() FAILED
+    java.lang.AssertionError: 
+    Expecting actual:
+      "expiresAt must be after startsAt"
+    to match pattern:
+      "expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now \(\d{4}-\d\d-\d\dT[0-9:.]+Z\)"
+9 tests completed, 1 failed
+BUILD FAILED in 39s
+exit=1
+
+## HTTP (scratchpad http-g39.sh): private mongod :18201, backend :18200, jar built at 2b0dfd1
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g39","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"already over","expiresAt":"2026-10-01T09:00:00Z"}
+  -> {"error":"expiresAt must be after startsAt"} [HTTP 400]
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g39","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"expires as it starts","startsAt":"2026-11-02T06:49:42Z","expiresAt":"2026-11-02T06:49:42Z"}
+  -> {"error":"expiresAt must be after startsAt"} [HTTP 400]
+(published a1218eff-d275-4dd3-982d-d0fa3f22049e, version 0, startsAt = its publish time)
+PUT http://localhost:18200/v1/communications/a1218eff-d275-4dd3-982d-d0fa3f22049e {"expiresAt":"2026-10-01T09:00:00Z","expectedVersion":0}
+  -> {"error":"expiresAt must be after startsAt"} [HTTP 400]
+PUT http://localhost:18200/v1/communications/a1218eff-d275-4dd3-982d-d0fa3f22049e {"body":"Mitigation in progress."}
+  -> {"error":"expectedVersion: must not be null"} [HTTP 400]
+PUT http://localhost:18200/v1/communications/a1218eff-d275-4dd3-982d-d0fa3f22049e {"body":"Mitigation in progress.","expectedVersion":0}
+  -> {"id":"a1218eff-d275-4dd3-982d-d0fa3f22049e","tenantId":"fixbef-g39","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"down","body":"Mitigation in progress.","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T05:49:42.515Z","createdAt":"2026-11-02T05:49:42.515Z","updatedAt":"2026-11-02T05:49:42.740468336Z","version":1 ... [HTTP 200]

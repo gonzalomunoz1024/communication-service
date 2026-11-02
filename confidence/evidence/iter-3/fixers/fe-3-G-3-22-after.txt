@@ -1,0 +1,13 @@
+# G-3-22, after the fix: same command (confirm(open) = flushSync + focus the note / the action button; role=group aria-labelledby=the question; focus back on the confirm button after a refused call)
+# cwd frontend/: npx vitest run --reporter=verbose src/test/OutageCard.test.tsx src/test/OutageFeed.test.tsx
+ ✓ src/test/OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation 962ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list 760ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > says who resolves and whose feed the notice leaves before asking to confirm 110ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > keeps keyboard focus on the page after resolving the only notice 147ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > names the tenant in the withdraw confirmation too, and leaves the actor out when none is known 111ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > resolves from the keyboard alone: focus follows the confirmation and lands on the list when the card leaves 341ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > moves keyboard focus into the confirmation, under its question, and back to the action on Cancel 236ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > does the same for Withdraw, and gives focus back to the confirming button when the service refuses 103ms
+ Test Files  2 passed (2)
+      Tests  16 passed (16)
+# full suite before commit: npm run lint (exit 0), npm run typecheck (exit 0), npm test -> Test Files 18 passed (18), Tests 154 passed (154)

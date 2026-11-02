@@ -1,0 +1,52 @@
+== G-3-18 after: UNKNOWN is sent on a change (status, components, message) and at the heartbeat; DOWN/degraded every probe
+314:	changed := sig != a.lastSig || rep.Message != a.lastMessage
+315-	due := a.dirty || changed || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
+316-		(notUp(rep) && rep.Status != probe.UNKNOWN && !a.rejected)
+317-	a.mu.Unlock()
+
+-- go test ./internal/agent -run 'TestUnknownIsSentAtTheHeartbeat|TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat' -count=20 -race -v (summary)
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_one_per_heartbeat
+     20     --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/WARN_app_(a_degraded_status):_one_report_per_probe
+     20     --- PASS: TestUnknownIsSentAtTheHeartbeat/nothing_listens,_after_the_grace
+     20     --- PASS: TestUnknownIsSentAtTheHeartbeat/nothing_listens,_during_the_grace
+     20     --- PASS: TestUnknownIsSentAtTheHeartbeat/pinned_port_never_UP,_after_the_grace
+     20     --- PASS: TestUnknownIsSentAtTheHeartbeat/the_grace_ends_at_45_s:_the_new_message_is_sent_on_the_first_probe_after_it
+     20 --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat
+     20 --- PASS: TestUnknownIsSentAtTheHeartbeat
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent
+
+-- the agent package's other startup/UNKNOWN/rejection tests, unchanged, still pass:
+--- PASS: TestStartupGraceReportsUnknownUntilFirstUp
+--- PASS: TestNoListeningPortStaysUnknown
+--- PASS: TestPinnedTargetThatNeverAnswersUpStaysUnknown
+--- PASS: TestSendFailuresBackOffAndKeepLatest
+--- PASS: TestAppNeverSeenUpIsUnknownWhileNothingListens
+--- PASS: TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug
+--- PASS: TestRejectedDownReportKeepsTheHeartbeatCadence
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent
+
+-- live, the real binary before (bb826cc) and after, side by side for 21 s against a stub that counts POST /v1/health/reports
+   env: CS_IGNORE_PORTS=1-65535 (nothing to discover) CS_INTERVAL=1s CS_HEARTBEAT=5s CS_STARTUP_GRACE=3s CS_RETRY_DELAY=0s, SIGTERM at 21 s
+   bb826cc: UNKNOWN reports 19, leaving reports 1
+   g18: UNKNOWN reports 5, leaving reports 1
+   before (bb826cc), first 6 received:
+     05:22:26 UNKNOWN leaving=False msg='starting: waiting for the app to listen'
+     05:22:27 UNKNOWN leaving=False msg='starting: waiting for the app to listen'
+     05:22:28 UNKNOWN leaving=False msg='starting: waiting for the app to listen'
+     05:22:29 UNKNOWN leaving=False msg='no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH'
+     05:22:30 UNKNOWN leaving=False msg='no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH'
+     05:22:32 UNKNOWN leaving=False msg='no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH'
+   after, every report received:
+     05:22:26 UNKNOWN leaving=False msg='starting: waiting for the app to listen'
+     05:22:29 UNKNOWN leaving=False msg='no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH'
+     05:22:35 UNKNOWN leaving=False msg='no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH'
+     05:22:40 UNKNOWN leaving=False msg='no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH'
+     05:22:46 UNKNOWN leaving=False msg='no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH'
+     05:22:47 UNKNOWN leaving=True msg='instance shutting down'
+   after, the sidecar's own log (default level):
+     {"time":"2026-11-02T05:22:26.414476591Z","level":"INFO","msg":"health sidecar starting","version":"dev","service":"never-up","tenant":"fixsc3","instance":"never-up-7f9c6d5b4-x2k4q","endpoint":"ht
+     {"time":"2026-11-02T05:22:26.418883118Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+     {"time":"2026-11-02T05:22:29.637843199Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found after 3s: no listening port answered; set CS_PORT and CS_PATH"}
+     {"time":"2026-11-02T05:22:47.413745171Z","level":"INFO","msg":"leaving report sent"}
+     {"time":"2026-11-02T05:22:47.413953786Z","level":"INFO","msg":"health sidecar stopped"}

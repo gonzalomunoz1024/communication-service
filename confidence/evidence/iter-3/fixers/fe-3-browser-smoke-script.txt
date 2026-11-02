@@ -1,0 +1,198 @@
+// Browser smoke of the FE-3 fixes against real backends (iteration-2 jar), outside the repository.
+// node smoke.cjs <scratch dir>  — Vite :3300 -> backend :18220, :3301 -> backend :18222 (Mongo via a
+// forwarder this script cuts), :3302 -> a dead port.
+const { createRequire } = require('node:module')
+const { execSync, spawn } = require('node:child_process')
+const fs = require('node:fs')
+const req = createRequire('/home/claude/wt-fe-3/e2e/package.json')
+const { chromium } = req('@playwright/test')
+
+const S = process.argv[2]
+const RUN = String(Date.now()).slice(-6)
+const TENANT = `fixfe3-smoke-${RUN}`
+const TENANT_DB = `fixfe3-db-${RUN}`
+const TICKET = `INC7${RUN}`
+const DB_WORDING = 'The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.'
+const UNREACHABLE = 'The service is unreachable right now. Check that communication-service is running, then try again.'
+const lines = []
+let failures = 0
+const t0 = Date.now()
+const at = () => `+${((Date.now() - t0) / 1000).toFixed(1)}s`
+function check(ok, name, detail) {
+  if (!ok) failures++
+  const line = `${ok ? 'PASS' : 'FAIL'} ${at()} ${name} :: ${typeof detail === 'string' ? detail : JSON.stringify(detail)}`
+  lines.push(line)
+  console.log(line)
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+async function until(fn, timeout = 10_000) {
+  const end = Date.now() + timeout
+  for (;;) {
+    try {
+      const v = await fn()
+      if (v) return v
+    } catch {
+      /* not yet */
+    }
+    if (Date.now() > end) return false
+    await sleep(100)
+  }
+}
+const active = (page) =>
+  page.evaluate(() => {
+    const a = document.activeElement
+    return { tag: a?.tagName.toLowerCase(), label: a?.getAttribute('aria-label') ?? null, text: (a?.textContent ?? '').trim().slice(0, 60), role: a?.getAttribute('role') ?? null }
+  })
+
+;(async () => {
+  const browser = await chromium.launch()
+  try {
+    // ---------- :3300, healthy backend ----------
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    const page = await ctx.newPage()
+    const calls = []
+    page.on('request', (r) => {
+      const u = new URL(r.url())
+      if (u.pathname.startsWith('/v1/')) calls.push(`${r.method()} ${u.pathname}${u.search}`)
+    })
+    await page.goto('http://127.0.0.1:3300/#/feed')
+    const toggle = page.getByRole('switch', { name: 'Live updates' })
+    const row = toggle.locator('xpath=ancestor::label[1]')
+    const badge = row.getByRole('status')
+    await badge.waitFor()
+    check((await badge.textContent()) === 'Waiting for a tenant', 'G-3-23 first visit, no tenant: the badge says it is waiting for one, not Paused', { badge: await badge.textContent(), switchOn: await toggle.getAttribute('aria-checked') })
+    check((await badge.getAttribute('aria-live')) === 'polite', 'G-3-23 the badge is a polite role=status live region', { role: await badge.getAttribute('role'), ariaLive: await badge.getAttribute('aria-live') })
+    const rowBox = await row.boundingBox()
+    const switchBox = await toggle.boundingBox()
+    check(rowBox.height >= 24, 'G-3-23 the Live-updates row is at least 24 px tall around the 30x18 switch', { row: { w: Math.round(rowBox.width), h: Math.round(rowBox.height) }, switch: { w: Math.round(switchBox.width), h: Math.round(switchBox.height) } })
+
+    // G-3-24: type the tenant like a person
+    await page.getByRole('textbox', { name: 'Tenant', exact: true }).click()
+    await page.keyboard.type(TENANT, { delay: 40 })
+    await until(async () => (await badge.textContent()) === 'Live', 10_000)
+    await sleep(800)
+    const feedGets = calls.filter((c) => c.startsWith('GET /v1/feed?'))
+    const streams = calls.filter((c) => c.startsWith('GET /v1/feed/stream?'))
+    check(feedGets.length === 1 && streams.length === 1 && feedGets[0].includes(`tenantId=${TENANT}&`), `G-3-24 typing "${TENANT}" (${TENANT.length} keys, 40 ms apart) = one feed GET and one stream`, { feedGets, streams })
+    check((await badge.textContent()) === 'Live', 'G-3-23 the badge then reads Live', await badge.textContent())
+
+    // G-3-21: the real duplicate-reference 409
+    await page.getByRole('tab', { name: /Publish/ }).click()
+    const publishOnce = async (title, ref) => {
+      await page.getByLabel(/^Title/).fill(title)
+      await page.getByLabel(/^ServiceNow incident/).fill(TICKET)
+      await page.getByLabel(/^External reference/).fill(ref ?? '')
+      if (!(await page.getByLabel(/^Publisher/).inputValue())) await page.getByLabel(/^Publisher/).fill('fe3-smoke')
+      await page.getByRole('button', { name: 'Publish outage' }).click()
+    }
+    await publishOnce('Payments API returning 503s')
+    await page.getByRole('heading', { name: 'Outage published' }).waitFor()
+    await page.getByRole('button', { name: 'Publish another' }).click()
+    await publishOnce('Payments API returning 503s (again)')
+    const banner = page.getByRole('alert')
+    await banner.waitFor()
+    const shown = await banner.innerText()
+    const expected = `The service rejected this. ${TICKET} is already the reference of a notice in tenant ${TENANT} (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as ${TICKET}-2.`
+    check(shown.startsWith(expected) && !/[0-9a-f]{8}-[0-9a-f]{4}-/.test(shown) && !/idempotency/.test(shown), 'G-3-21 real 409: the banner explains it in the form\'s words, no notice uuid on screen', shown.replace(/\n/g, ' | '))
+    const summary = banner.getByText('What the service said')
+    await summary.click()
+    const said = await banner.locator('details p').innerText()
+    check(/^externalRef '.+' is already used by notice [0-9a-f-]{36} in tenant .+idempotency key/.test(said), 'G-3-21 the service\'s sentence is one click away under "What the service said"', said)
+    // a follow-up with the suggested value works, and reusing it suggests the next number
+    await publishOnce('Payments API follow-up', `${TICKET}-2`)
+    await page.getByRole('heading', { name: 'Outage published' }).waitFor()
+    await page.getByRole('button', { name: 'Publish another' }).click()
+    await publishOnce('Payments API follow-up again', `${TICKET}-2`)
+    await banner.waitFor()
+    const shown2 = await banner.innerText()
+    check(shown2.startsWith(`The service rejected this. ${TICKET}-2 is already the External reference of a notice in tenant ${TENANT}. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as ${TICKET}-3.`), 'G-3-21 a typed External reference is named as such and the next number is suggested', shown2.replace(/\n/g, ' | '))
+
+    // G-3-22: resolve from the keyboard
+    await page.getByRole('tab', { name: /Feed/ }).click()
+    const cards = page.locator('article')
+    await until(async () => (await cards.count()) === 2, 10_000)
+    await cards.first().getByRole('button', { name: 'Resolve' }).focus()
+    await page.keyboard.press('Enter')
+    const a1 = await active(page)
+    const group = page.getByRole('group', { name: /^Resolve as fe3-smoke\? It leaves tenant .+'s feed at once and cannot be reopened\.$/ })
+    check(a1.tag === 'input' && a1.label === 'Resolution note (optional)' && (await group.count()) === 1, 'G-3-22 Enter on Resolve: focus on the note field, inside the group named by the question', a1)
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Enter')
+    const a2 = await active(page)
+    check(a2.tag === 'button' && a2.text === 'Resolve' && (await group.count()) === 0, 'G-3-22 Tab, Enter on Cancel: focus back on the card\'s Resolve button', a2)
+    await page.keyboard.press('Enter')
+    await page.keyboard.type('smoke')
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Enter')
+    await until(async () => (await cards.count()) === 1, 10_000)
+    const a3 = await active(page)
+    const announcements = await page.getByRole('status').allInnerTexts()
+    check(a3.tag === 'div' && a3.text.length > 0 && a3.text !== 'Resolve', 'G-3-22 confirm with the keyboard: the card leaves and focus is on the list, not <body>', a3)
+    check(announcements.filter((t) => t.startsWith('Resolved')).length === 1 && (await badge.textContent()) === 'Live', 'G-3-23 the resolve is announced by one region; the badge region still says Live', announcements)
+
+    // G-3-25: a real automated notice
+    for (let i = 0; i < 6; i++) {
+      execSync(`curl -s -o /dev/null -H 'X-Client-Id: fe3-smoke' -H 'Content-Type: application/json' -d '{"tenantId":"${TENANT}","service":"payments-api","status":"DOWN","message":"smoke"}' http://localhost:18220/v1/health/reports`)
+      if (await until(async () => (await page.locator('article', { hasText: 'payments-api' }).count()) > 0, 1_000)) break
+    }
+    const auto = page.locator('article', { hasText: 'payments-api' }).first()
+    const autoText = (await auto.count()) ? await auto.innerText() : ''
+    const chip = auto.getByTitle('Raised by an automated health check')
+    check(autoText !== '' && !autoText.includes('health:') && (await chip.innerText()) === 'Automatic', 'G-3-25 a real automated notice: "Automatic" chip, no health:<monitor>:<n> reference', autoText.replace(/\n/g, ' | ').slice(0, 300))
+    await ctx.close()
+
+    // ---------- :3301, the backend loses its database ----------
+    const ctxDb = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await ctxDb.addInitScript((t) => localStorage.setItem('comm-tenant', t), TENANT_DB)
+    const dbPage = await ctxDb.newPage()
+    await dbPage.goto('http://127.0.0.1:3301/#/feed')
+    const dbBadge = dbPage.getByRole('switch', { name: 'Live updates' }).locator('xpath=ancestor::label[1]').getByRole('status')
+    await until(async () => (await dbBadge.textContent()) === 'Live', 15_000)
+    const fwd = fs.readFileSync(`${S}/tcpfwd.pid`, 'utf8').trim()
+    process.kill(Number(fwd))
+    const cutAt = Date.now()
+    await dbPage.getByRole('button', { name: 'Refresh' }).click()
+    const err = await until(async () => ((await dbPage.getByText("Couldn't load the feed").count()) ? dbPage.getByText(DB_WORDING).count() : 0), 15_000)
+    check(!!err, 'G-3-20 Mongo cut under :18222: Refresh shows the database wording, not "unreachable"', { msAfterCut: Date.now() - cutAt, unreachableShown: await dbPage.getByText(UNREACHABLE).count() })
+    check((await dbBadge.textContent()) === 'Live', 'G-3-20 the badge keeps reporting the stream (still open on keepalives)', await dbBadge.textContent())
+    await dbPage.getByRole('tab', { name: /Publish/ }).click()
+    await dbPage.getByLabel(/^Title/).fill('Published while the database is down')
+    await dbPage.getByLabel(/^Publisher/).fill('fe3-smoke')
+    await dbPage.getByRole('button', { name: 'Publish outage' }).click()
+    const dbBanner = dbPage.getByRole('alert')
+    await until(async () => (await dbBanner.count()) > 0, 15_000)
+    const dbText = await dbBanner.innerText()
+    check(dbText === DB_WORDING && (await dbPage.getByLabel(/^Title/).inputValue()) === 'Published while the database is down', 'G-3-20 publish while the database is down: the database wording, the draft kept', dbText)
+    // database back
+    const child = spawn('python3', ['-I', `${S}/tcpfwd.py`, '18229', '27017'], { detached: true, stdio: 'ignore' })
+    child.unref()
+    fs.writeFileSync(`${S}/tcpfwd.pid`, String(child.pid))
+    await dbPage.getByRole('tab', { name: /Feed/ }).click()
+    const back = await until(async () => {
+      if (await dbPage.getByRole('button', { name: 'Try again' }).count()) await dbPage.getByRole('button', { name: 'Try again' }).click()
+      await sleep(1500)
+      return (await dbPage.getByText("Couldn't load the feed").count()) === 0
+    }, 30_000)
+    check(!!back, 'G-3-20 after the forwarder is back, Try again loads the feed', { back: !!back })
+    await ctxDb.close()
+
+    // ---------- :3302, nothing behind the dev proxy ----------
+    const ctxDead = await browser.newContext()
+    await ctxDead.addInitScript(() => localStorage.setItem('comm-tenant', 'fixfe3-dead'))
+    const deadPage = await ctxDead.newPage()
+    await deadPage.goto('http://127.0.0.1:3302/#/feed')
+    const dead = await until(async () => deadPage.getByText(UNREACHABLE).count(), 15_000)
+    const deadBadge = await deadPage.getByRole('switch', { name: 'Live updates' }).locator('xpath=ancestor::label[1]').getByRole('status').textContent()
+    check(!!dead && deadBadge !== 'Live', 'G-3-20 a dead backend behind the dev proxy (502, no {"error"} body) still reads "unreachable"', { badge: deadBadge })
+    await ctxDead.close()
+  } catch (e) {
+    check(false, 'smoke aborted', String(e && e.stack ? e.stack.split('\n').slice(0, 4).join(' | ') : e))
+  } finally {
+    await browser.close()
+    lines.push(`== ${lines.length} checks, ${failures} failed (tenant ${TENANT}, ${TENANT_DB}; ticket ${TICKET})`)
+    fs.writeFileSync(`${S}/smoke-result.txt`, lines.join('\n') + '\n')
+    console.log(lines[lines.length - 1])
+    process.exit(failures ? 1 : 0)
+  }
+})()

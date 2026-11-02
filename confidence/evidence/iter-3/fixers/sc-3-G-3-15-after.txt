@@ -1,0 +1,30 @@
+== G-3-15 after: CS_REPORT_TIMEOUT defaults to 10 s, longer than the service's 5 s database timeout
+150:		ReportTimeout:      dur("CS_REPORT_TIMEOUT", 10*time.Second),
+165:| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included. The report timeout is longer than the service's own 5 s database timeout
+
+-- go test ./internal/config -run 'TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout|TestFromEnvDefaults' -count=20 -race -v (summary)
+     20 --- PASS: TestFromEnvDefaults
+     20 --- PASS: TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config
+
+-- live (scripts and logs under the scratchpad sc3/live): the iteration-2 backend jar on :18237 with its own Mongo (container fsc3-mongo), a stub app answering UP, the old and the fixed sidecar side by side, both pinned to the app (CS_INTERVAL=2s CS_HEARTBEAT=4s, CS_REPORT_TIMEOUT at its default)
+   [05:28:18] both sidecars report UP to the backend on :18237 (Mongo fsc3-mongo up)
+     before sidecar log: 05:28:07.428 INFO reported UP (accepted by the backend)
+     after sidecar log: 05:28:07.426 INFO reported UP (accepted by the backend)
+   [05:28:18] docker stop fsc3-mongo: the service's database is gone (connection refused)
+      curl POST /v1/health/reports during the outage: HTTP 503 after 5.040273 s body={"error":"database unavailable"}
+   /status of both during the outage:
+     [05:29:09] before (5 s): reportsSent=3 sendError='post http://127.0.0.1:18237/v1/health/reports: Post "http://127.0.0.1:18237/v1/health/reports": context deadline exceeded (Client.Timeout exceeded whi'
+     [05:29:09] after (10 s): reportsSent=3 sendError='post http://127.0.0.1:18237/v1/health/reports: HTTP 503 {"error":"database unavailable"}'
+   the fixed sidecar's log after the stop (the 503 with the service's reason, backoff 1 s .. 32 s):
+     {"time":"2026-11-02T05:28:25.45613406Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:18237/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"1s
+     {"time":"2026-11-02T05:28:32.627188096Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:18237/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"2
+     {"time":"2026-11-02T05:28:39.80986867Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:18237/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"4s
+     {"time":"2026-11-02T05:28:46.994226539Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:18237/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"8
+     {"time":"2026-11-02T05:28:56.4654443Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:18237/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"16s
+     {"time":"2026-11-02T05:29:14.981888413Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:18237/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"3
+   recovery (docker start fsc3-mongo):
+     [05:29:33] docker start fsc3-mongo
+     [05:29:49] before: reportsSent=5 sendError='-'
+     [05:29:49] after:  reportsSent=4 sendError='-'
+   cleanup: sidecars sent their leaving reports and stopped; backend, stub app and fsc3-mongo removed

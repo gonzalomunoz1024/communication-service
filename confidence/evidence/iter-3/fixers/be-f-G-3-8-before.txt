@@ -1,0 +1,52 @@
+# G-3-8 before the fix (worktree at edf8378 + the new tests only)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*RestControllerPublishingAdapterTest' --tests '*RestControllerHealthAdapterTest' integrationTest --tests '*CommunicationServiceE2EIT' --continue
+# tests: RestControllerPublishingAdapterTest.aMisspelledFieldIs400NamingItAndListingTheKnownOnes (POST sevrity, PUT expiryAt,
+#        retire reason, ticket.ulr; the use case stubbed to succeed), RestControllerHealthAdapterTest.aReportMayCarryKeysTheServiceDoesNotKnow
+#        (guard: must stay 202), CommunicationServiceE2EIT.publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem (full context)
+
+RestControllerPublishingAdapterTest > aMisspelledFieldIs400NamingItAndListingTheKnownOnes() FAILED
+    java.lang.AssertionError: Status expected:<400 BAD_REQUEST> but was:<201 CREATED>
+24 tests completed, 1 failed
+  (the health-report guard is among the 23 that pass)
+
+CommunicationServiceE2EIT > publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem() FAILED
+    java.lang.AssertionError: Status expected:<400 BAD_REQUEST> but was:<201 CREATED>
+8 tests completed, 1 failed
+BUILD FAILED in 1m 1s
+exit=1
+
+## The annotation alone: @JsonIgnoreProperties(ignoreUnknown = false) on the four records, nothing else
+## (Jackson reads ignoreUnknown=false as 'defer to FAIL_ON_UNKNOWN_PROPERTIES', which Spring Boot leaves off)
+18:RestControllerPublishingAdapterTest > aMisspelledFieldIs400NamingItAndListingTheKnownOnes() FAILED
+19:    java.lang.AssertionError: Status expected:<400 BAD_REQUEST> but was:<201 CREATED>
+28:16 tests completed, 1 failed
+30:> Task :test FAILED
+41:BUILD FAILED in 23s
+43:exit=1
+
+## HTTP replay (scratchpad http-g38.sh/.py): private mongod :18201, backend :18200, jar built at 83df7e2
+## (before G-3-7 and G-3-8). Every in-repo client body, then two typos. 'keys' lists every quoted key, nested included.
+== README: every command of the integration example and the curl cookbook ==
+README: POST /v1/health/monitors keys=failureThreshold,intervalSeconds,recoveryThreshold,service,tenantId,url -> 201
+README: POST /v1/health/reports keys=components,db,details,error,message,ping,service,status,status,status,tenantId -> 202
+README: POST /v1/communications keys=affectedServices,body,expiresAt,number,publisher,severity,tenantId,ticket,title,type -> 201
+README: POST /v1/communications keys=affectedServices,expiresAt,externalRef,number,publisher,severity,tenantId,ticket,title,type -> 201
+README: POST /v1/communications keys=endsAt,publisher,severity,startsAt,tenantId,title,type -> 201
+README: PUT /v1/communications/eda9a622-d9e0-43cb-aa7f-58fd45cbdc19 keys=body,expectedVersion -> 200
+README: POST /v1/communications/eda9a622-d9e0-43cb-aa7f-58fd45cbdc19/retire keys=actor,note -> 200
+README: POST /v1/health/monitors/c8c849b6-dcd3-40a5-917f-0388849dbe4e/probe -> 200
+== frontend: the body toRequest() builds (frontend/src/outages/validation.ts), every optional key set ==
+frontend: POST /v1/communications keys=affectedServices,audience,body,draft,endsAt,expiresAt,externalRef,publisher,severity,startsAt,tenantId,ticket,title,type -> 201
+frontend: POST /v1/communications/ddbe21cd-2627-4e65-8201-0ced6552ac18/retire keys=actor,note -> 200
+== e2e helpers: outage() + externalRef (01-api-contract), retire() (e2e/tests/helpers.ts) ==
+e2e: POST /v1/communications keys=affectedServices,externalRef,publisher,severity,tenantId,title,type -> 201
+e2e: POST /v1/communications/4e819fce-440a-48ed-a9bd-0acef131c9a5/retire keys=actor,note -> 200
+== sidecar: Report with every key of sidecar/internal/report/client.go ==
+sidecar: POST /v1/health/reports keys=components,instance,message,observedAt,publisher,service,status,tenantId -> 202
+== an Actuator document forwarded as is (groups, an extra key) still accepted ==
+forwarded: POST /v1/health/reports keys=components,groups,sentBy,service,status,tenantId -> 202
+== typos ==
+typo: POST /v1/communications keys=expiryAt,publisher,severity,tenantId,title,type -> 201
+typo: POST /v1/communications keys=publisher,severity,sevrity,tenantId,title,type -> 201
+-> both typos are published (201): expiryAt is dropped, so the notice gets the default expiry;
+   sevrity is dropped, so severity stays MAJOR without a word.

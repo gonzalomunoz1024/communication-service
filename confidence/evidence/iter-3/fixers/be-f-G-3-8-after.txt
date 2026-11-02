@@ -1,0 +1,49 @@
+# G-3-8 after the fix (RejectUnknownFieldsModule + @JsonIgnoreProperties(ignoreUnknown = false) on
+# CreateCommunicationCommand, UpdateCommunicationCommand, RetireRequest, Ticket; HealthReportCommand untouched)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*RestControllerPublishingAdapterTest' --tests '*RestControllerHealthAdapterTest'
+#          --tests '*GlobalExceptionHandlerTest' integrationTest --tests '*CommunicationServiceE2EIT' --tests '*HealthMonitoringE2EIT' --continue
+
+BUILD SUCCESSFUL in 59s
+exit=0
+  publishing.adapters.inbound.RestControllerPublishingAdapterTest" tests="16" skipped="0" failures="0" errors="0"
+  health.adapters.inbound.RestControllerHealthAdapterTest" tests="8" skipped="0" failures="0" errors="0"
+  config.GlobalExceptionHandlerTest" tests="4" skipped="0" failures="0" errors="0"
+  CommunicationServiceE2EIT" tests="8" skipped="0" failures="0" errors="0"
+  health.HealthMonitoringE2EIT" tests="6" skipped="0" failures="0" errors="0"
+  the new cases, all passed:
+    testcase name="aMisspelledFieldIs400NamingItAndListingTheKnownOnes()"
+    testcase name="aReportMayCarryKeysTheServiceDoesNotKnow()"
+    testcase name="publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem()"
+
+## pinned messages (RestControllerPublishingAdapterTest.aMisspelledFieldIs400NamingItAndListingTheKnownOnes)
+POST {...,"sevrity":"MINOR"}       -> 400 unknown field 'sevrity'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type
+PUT  {"expiryAt":...}               -> 400 unknown field 'expiryAt'; known fields: actor, affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, ticket, title
+POST .../retire {"reason":...}      -> 400 unknown field 'reason'; known fields: actor, note
+POST {...,"ticket":{"ulr":...}}     -> 400 unknown field 'ticket.ulr'; known fields: number, system, url
+use case never called (verifyNoInteractions); health report with groups/extra component key/instance zone/sentBy -> 202
+
+## HTTP replay, same script, jar built from the worktree with the fix
+== README: every command of the integration example and the curl cookbook ==
+README: POST /v1/health/monitors keys=failureThreshold,intervalSeconds,recoveryThreshold,service,tenantId,url -> 201
+README: POST /v1/health/reports keys=components,db,details,error,message,ping,service,status,status,status,tenantId -> 202
+README: POST /v1/communications keys=affectedServices,body,expiresAt,number,publisher,severity,tenantId,ticket,title,type -> 201
+README: POST /v1/communications keys=affectedServices,expiresAt,externalRef,number,publisher,severity,tenantId,ticket,title,type -> 201
+README: POST /v1/communications keys=endsAt,publisher,severity,startsAt,tenantId,title,type -> 201
+README: PUT /v1/communications/b76060a3-0c93-4dc6-a2cf-57a607b1dd1c keys=body,expectedVersion -> 200
+README: POST /v1/communications/b76060a3-0c93-4dc6-a2cf-57a607b1dd1c/retire keys=actor,note -> 200
+README: POST /v1/health/monitors/b3c7e268-1a30-4178-b414-21f02285cc50/probe -> 200
+== frontend: the body toRequest() builds (frontend/src/outages/validation.ts), every optional key set ==
+frontend: POST /v1/communications keys=affectedServices,audience,body,draft,endsAt,expiresAt,externalRef,publisher,severity,startsAt,tenantId,ticket,title,type -> 201
+frontend: POST /v1/communications/4fef7512-fe6c-41d0-bffa-85c2f5930783/retire keys=actor,note -> 200
+== e2e helpers: outage() + externalRef (01-api-contract), retire() (e2e/tests/helpers.ts) ==
+e2e: POST /v1/communications keys=affectedServices,externalRef,publisher,severity,tenantId,title,type -> 201
+e2e: POST /v1/communications/0ce395d0-bacb-4fda-a09f-bc36730695ee/retire keys=actor,note -> 200
+== sidecar: Report with every key of sidecar/internal/report/client.go ==
+sidecar: POST /v1/health/reports keys=components,instance,message,observedAt,publisher,service,status,tenantId -> 202
+== an Actuator document forwarded as is (groups, an extra key) still accepted ==
+forwarded: POST /v1/health/reports keys=components,groups,sentBy,service,status,tenantId -> 202
+== typos ==
+typo: POST /v1/communications keys=expiryAt,publisher,severity,tenantId,title,type -> 400 {"error":"unknown field 'expiryAt'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"}
+typo: POST /v1/communications keys=publisher,severity,sevrity,tenantId,title,type -> 400 {"error":"unknown field 'sevrity'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"}
+-> every README cookbook, frontend toRequest(), e2e helper and sidecar body: same status as before;
+   the two typos are 400 naming the field and listing the known ones; health reports keep extra keys (202).

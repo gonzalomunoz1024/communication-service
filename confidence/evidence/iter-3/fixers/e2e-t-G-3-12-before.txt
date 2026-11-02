@@ -1,0 +1,109 @@
+G-3-12 before: spec 04 cannot tell a lastEventId replay from the page's own list reload.
+Method: runs against a scratch copy of the backend with the replay path disabled (not reasoning).
+Scratch copy: /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2et-replay-off
+(a tar of the worktree at 54648ad with this one change, bootJar run there):
+
+--- src/main/java/com/atlas/communication/feed/application/FeedUseCase.java
++++ scratch/src/main/java/com/atlas/communication/feed/application/FeedUseCase.java
+@@ -79,8 +79,8 @@
+         }
+         return events.canResumeAfter(lastEventId)
+                 .flatMapMany(resumable -> resumable
+-                        ? events.streamAfter(query.tenantId(), lastEventId)
+-                                .filter(e -> matches(query, e.communication()))
++                        // SCRATCH (e2e-t G-3-12 before): replay disabled, a resume only tails the live bus
++                        ? events.stream().filter(e -> matches(query, e.communication()))
+                         : snapshotThenLive(query));
+     }
+ 
+
+With it a resume (?lastEventId=N) only tails the live fan-out: nothing published while the page was
+away comes over the resumed stream. The page still shows such a notice, because useOutageFeed reloads
+the list (GET /v1/feed) once after every reconnect.
+Stack: ./stack.sh up with the scratch jar (md5 3bd79c20c9341b7d50b59ba44f6bd200) in build/libs;
+the iteration-2 jar (md5 fb2fcf3aa540c8c3b12f11cabc207453) was put back after each session.
+(WebServer proxy errors and stack lines, trace and screenshot paths dropped below.)
+
+== 1. the spec as committed at 54648ad, replay disabled: PASSES although nothing was replayed
+$ npx playwright test tests/04-f92-backend-restart.spec.ts
+Running 1 test using 1 worker
+F-92: the badge showed Reconnecting 0.2 s into the restart
+F-92: a reopen carried lastEventId=1
+F-92: the backend was ready again 13.1 s after the restart began
+F-92: the page showed it 5.4 s after the backend was back
+  ✓  1 tests/04-f92-backend-restart.spec.ts:4:5 › F-92 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and shows what was pu…
+  1 passed (22.0s)
+exit=0
+-> the card came from the list reload; the old spec only checks that the window was not reloaded
+   and that the card appeared.
+
+== 2.1 the spec of this commit (4d769fe), same replay-disabled backend: FAILS, run 1 of 2
+$ npx playwright test tests/04-f92-backend-restart.spec.ts
+Running 1 test using 1 worker
+F-92: the badge showed Reconnecting 0.2 s into the restart
+F-92: a reopen carried lastEventId=1
+F-92: the backend was ready again 12.8 s after the restart began
+F-92: the page showed it 1.8 s after the backend was back
+  ✘  1 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is rep…
+    Error: SSE frames that carried "F-92 published while the page was away mvyuv8y8"
+    SSE frames that carried "F-92 published while the page was away mvyuv8y8"
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 3
+    + Received  + 1
+    - Array [
+    -   "created",
+    - ]
+    + Array []
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+      149 |     // before the replay arrives, so the frame is waited for (expect's 10 s).
+      150 |     const carriedBy = () => frames.filter((f) => f.communicationId === after.id)
+    > 151 |     await expect.poll(() => carriedBy().map((f) => f.event), { message: `SSE frames that carried "${after.title}"` }).toEqual(['created'])
+          |                                                                                                                       ^
+      152 |     const [replayed] = carriedBy()
+      153 |     expect(held, 'the reopen that waited for the fan-out').toContain(`lastEventId=${lastEventId}`)
+      154 |     expect(replayed.url, 'the stream request it came on').toContain(`lastEventId=${lastEventId}`)
+        at /home/claude/wt-e2e-t/e2e/tests/04-f92-backend-restart.spec.ts:151:119
+
+== 2.2 the spec of this commit (4d769fe), same replay-disabled backend: FAILS, run 2 of 2
+$ npx playwright test tests/04-f92-backend-restart.spec.ts
+Running 1 test using 1 worker
+F-92: the badge showed Reconnecting 0.3 s into the restart
+F-92: a reopen carried lastEventId=5
+F-92: the backend was ready again 13.3 s after the restart began
+F-92: the page showed it 1.6 s after the backend was back
+  ✘  1 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is rep…
+    Error: SSE frames that carried "F-92 published while the page was away mvyuvvbw"
+    SSE frames that carried "F-92 published while the page was away mvyuvvbw"
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 3
+    + Received  + 1
+    - Array [
+    -   "created",
+    - ]
+    + Array []
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+      149 |     // before the replay arrives, so the frame is waited for (expect's 10 s).
+      150 |     const carriedBy = () => frames.filter((f) => f.communicationId === after.id)
+    > 151 |     await expect.poll(() => carriedBy().map((f) => f.event), { message: `SSE frames that carried "${after.title}"` }).toEqual(['created'])
+          |                                                                                                                       ^
+      152 |     const [replayed] = carriedBy()
+      153 |     expect(held, 'the reopen that waited for the fan-out').toContain(`lastEventId=${lastEventId}`)
+      154 |     expect(replayed.url, 'the stream request it came on').toContain(`lastEventId=${lastEventId}`)
+        at /home/claude/wt-e2e-t/e2e/tests/04-f92-backend-restart.spec.ts:151:119
+
+-> in both runs the card appeared ("the page showed it ... after the backend was back", from the
+   list reload) and no frame on any stream carried the notice: the test fails at the frame poll.
+
+== a draft of this spec, superseded before the commit
+It checked the frames at once and let the page in right after the publish. In 3 full-suite runs on
+the real backend it failed once, in run 3, at the same assertion (Received []), the card having
+come from the list reload, which follows the stream's opening comment before the replay queries
+answer. Without a wait for the fan-out it could also have passed on a broken replay, the notice
+reaching the page live. The committed version waits until the test's own stream received the
+notice live and polls for the frame; the three runs in e2e-t-G-3-12-after.txt are of it.
+   draft, run 3: F-92: a reopen carried lastEventId=7
+   draft, run 3: F-92: the backend was ready again 13.0 s after the restart began
+   draft, run 3: F-92: the page showed it 0.6 s after the backend was back
+   draft, run 3:   ✘  6 tests/04-f92-backend-restart.spec.ts:33:5 › … (14.7s)

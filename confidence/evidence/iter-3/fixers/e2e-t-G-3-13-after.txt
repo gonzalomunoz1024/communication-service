@@ -1,0 +1,50 @@
+## 2026-11-02T05:25:02Z G-3-13 after: the e2e/README.md substitute block, run verbatim from e2e/ (worktree with the fix, HEAD 3806e7c + uncommitted G-3-13 changes)
+docker build -t go-toolset:e2e - <<'EOF'
+FROM golang:1.25
+RUN mkdir -p /etc/pki/ca-trust/extracted/pem \
+ && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+EOF
+GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up
+## output
+#6 naming to docker.io/library/go-toolset:e2e done
+05:25:03 stack: building the images (sidecar version 3806e7c, revision 3806e7cd26f5f245141281364c0fce2255af2442)
+#20 [app build 4/4] RUN go build -ldflags="-s -w" -o /out/fakeapp .
+#22 naming to docker.io/library/fakeapp:e2e done
+#27 [sidecar build 6/6] RUN go build -ldflags="-s -w -X main.version=3806e7c" -o /tmp/health-sidecar ./cmd/health-sidecar
+#31 naming to docker.io/library/communication-service:e2e done
+#27 [sidecar build 6/6] RUN go build -ldflags="-s -w -X main.version=3806e7c" -o /tmp/health-sidecar ./cmd/health-sidecar
+#35 naming to docker.io/library/health-sidecar:e2e 0.0s done
+ Image health-sidecar:e2e Built 
+ Image fakeapp:e2e Built 
+ Image communication-service:e2e Built 
+05:26:02 stack: the backend is ready (18 s)
+05:26:03 stack: the fake app answers UP (0 s)
+05:26:05 stack: the sidecar has reported (2 s)
+05:26:05 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+05:26:05 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+exit=0
+
+## docker inspect health-sidecar:e2e (built by ./stack.sh build inside up)
+  org.opencontainers.image.revision=3806e7cd26f5f245141281364c0fce2255af2442
+  org.opencontainers.image.version=3806e7c
+git describe --tags --always: 3806e7c; git rev-parse HEAD: 3806e7cd26f5f245141281364c0fce2255af2442
+## the running sidecar's start line
+{"time":"2026-11-02T05:26:03.504497634Z","level":"INFO","msg":"health sidecar starting","version":"3806e7c","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:8080","probe":"auto"}
+
+## docker compose config --quiet (the compose file with the new build args parses)
+exit=0
+## the workflow step
+48-        working-directory: e2e
+49:        run: ./stack.sh build
+50-
+51-      - name: Install the suite and its browser
+## the sidecar's build args as compose resolves them (VERSION=x REVISION=y GO_IMAGE/BASE_IMAGE unset)
+   {'REVISION': 'y', 'VERSION': 'x'}
+
+## at the final commits: the three final suite runs (fresh stacks, worktree at 13a012e) built the sidecar with
+  06:08:53 stack: building the images (sidecar version 13a012e, revision 13a012e62af67ad9540790f95d3db89329bb58e9)
+  06:11:31 stack: building the images (sidecar version 13a012e, revision 13a012e62af67ad9540790f95d3db89329bb58e9)
+  06:13:40 stack: building the images (sidecar version 13a012e, revision 13a012e62af67ad9540790f95d3db89329bb58e9)
+## docker inspect health-sidecar:e2e (the image the last of them built)
+  org.opencontainers.image.revision=13a012e62af67ad9540790f95d3db89329bb58e9
+  org.opencontainers.image.version=13a012e

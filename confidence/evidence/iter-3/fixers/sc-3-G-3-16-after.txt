@@ -1,0 +1,24 @@
+== G-3-16 after: every probe while the report is not UP for the service (status other than UP, or UP with a failing component, nested included)
+312:	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
+313-		(notUp(rep) && !a.rejected)
+431:func notUp(r report.Report) bool {
+432-	return r.Status != probe.UP || probe.Failing(r.Components)
+433-}
+
+-- go test ./internal/agent -run TestUpWithAFailingComponentIsSentEveryProbe -count=20 -race -v (summary)
+     20     --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/cache_WARN,_a_word_the_service_counts_as_DEGRADED:_every_probe
+     20     --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/db_DOWN:_every_probe
+     20     --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/discovery_UNKNOWN,_not_failing_on_the_service:_heartbeat
+     20     --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/every_component_UP:_heartbeat
+     20     --- PASS: TestUpWithAFailingComponentIsSentEveryProbe/nested_db.replica_DOWN:_every_probe
+     20 --- PASS: TestUpWithAFailingComponentIsSentEveryProbe
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent
+
+-- go test ./internal/probe -run TestFailingCountsTheComponentsTheServiceCounts -race -v
+--- PASS: TestFailingCountsTheComponentsTheServiceCounts (0.00s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe
+
+-- the refactor of the component walk keeps Signature: the same table's signature column run against the OLD flatten (3806e7c probe.go):
+   Failing( calls left in the copy: 0
+--- PASS: TestSignatureColumnOnTheOldWalk (0.00s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe

@@ -1,0 +1,48 @@
+== G-3-14 after: CS_LOG_LEVEL (debug|info|warn|error, default info) reaches run()'s slog handler; any other value exits 2
+132:	logLevel := func(key string) slog.Level {
+133-		v := str(key, "info")
+134-		switch strings.ToLower(v) {
+135-		case "debug":
+136-			return slog.LevelDebug
+137-		case "info":
+138-			return slog.LevelInfo
+139-		case "warn":
+140-			return slog.LevelWarn
+141-		case "error":
+142-			return slog.LevelError
+143-		}
+144-		errs = append(errs, fmt.Errorf("%s must be debug, info, warn or error (got %q)", key, v))
+145-		return slog.LevelInfo
+146-	}
+39:	level := new(slog.LevelVar)
+40:	log := slog.New(slog.NewJSONHandler(stdout, &slog.HandlerOptions{Level: level}))
+46:	level.Set(cfg.LogLevel)
+
+-- go test ./internal/config ./cmd/health-sidecar -run 'TestLogLevelIsReadAndValidated|TestRunLogsAtTheConfiguredLevel|TestRunRejectsAnUnusableValueWithExit2|TestEveryEnvironmentVariableIsDocumented' -count=20 -race -v (summary)
+     20     --- PASS: TestRunLogsAtTheConfiguredLevel/debug
+     20     --- PASS: TestRunLogsAtTheConfiguredLevel/info
+     20     --- PASS: TestRunLogsAtTheConfiguredLevel/warn
+     20     --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY
+     20     --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_LOG_LEVEL
+     20 --- PASS: TestEveryEnvironmentVariableIsDocumented
+     20 --- PASS: TestLogLevelIsReadAndValidated
+     20 --- PASS: TestRunLogsAtTheConfiguredLevel
+     20 --- PASS: TestRunRejectsAnUnusableValueWithExit2
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config
+
+-- the binary for 5 s against an UP stub app (pinned CS_PORT=18236) with CS_INTERVAL=1s CS_HEARTBEAT=1s: levels of the lines written
+   CS_LOG_LEVEL=debug: reports received 6; lines by level: {'INFO': 4, 'DEBUG': 4}
+   CS_LOG_LEVEL=(unset, default info): reports received 6; lines by level: {'INFO': 4}
+   debug run, its 'reported' lines:
+     {"time":"2026-11-02T05:33:19.473664032Z","level":"INFO","msg":"reported","status":"UP","message":""}
+     {"time":"2026-11-02T05:33:20.545156666Z","level":"DEBUG","msg":"reported","status":"UP","message":""}
+     {"time":"2026-11-02T05:33:21.578309465Z","level":"DEBUG","msg":"reported","status":"UP","message":""}
+     {"time":"2026-11-02T05:33:22.634309095Z","level":"DEBUG","msg":"reported","status":"UP","message":""}
+     {"time":"2026-11-02T05:33:23.675601288Z","level":"DEBUG","msg":"reported","status":"UP","message":""}
+   default run, its 'reported' lines:
+     {"time":"2026-11-02T05:33:19.472534435Z","level":"INFO","msg":"reported","status":"UP","message":""}
+
+-- README (Configuration row and Debugging):
+169:| `CS_LOG_LEVEL` | `info` | lowest level logged: `debug`, `info`, `warn` or `error`; `debug` adds a `reported` line for every report sent, heartbeats and repeats included (see [Debugging](#debugging-my-service-does-n
+195:probe while the report is DOWN or degraded) are logged at DEBUG: set `CS_LOG_LEVEL=debug` to see

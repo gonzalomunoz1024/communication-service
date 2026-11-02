@@ -1,0 +1,54 @@
+G-3-10 (sidecar README lines) BEFORE: sidecar/README.md and the chart at d9e6d2e, the SC-3 worktree
+before the fix. helm v3.16 and kubeconform from the brief's tools folder; CI=true.
+
+## 1. The README's Helm include line, pasted on its own line at column 8 under `containers` of a
+##    consuming chart's Deployment (file:// dependency on the library chart); script direct.sh
+helm v3.16, kubeconform development
+README.md include lines:
+  README.md:31:{{ include "cs-health-sidecar.container" . }}
+
+=== cs-health-sidecar.container
+pasted at column 8 of templates/deployment.yaml: {{ include "cs-health-sidecar.container" . }}
+helm dependency build: exit 0
+helm lint: exit 0 (1 chart(s) linted, 0 chart(s) failed)
+helm template: exit 0
+rendered lines after '- name: health-sidecar' / '- restartPolicy: Always':
+  23:        - name: health-sidecar
+  24-  image: registry.example.com/platform/health-sidecar:1.0.0
+  25-  imagePullPolicy: IfNotPresent
+  26-  env:
+  $W/container/rendered.yaml - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.29.0-standalone-strict/deployment-apps-v1.json#/properties/spec/additionalProperties: additionalProperties 'env', 'resources', 'image', 'imagePullPolicy', 'ports', 'securityContext', 'livenessProbe' not allowed
+  Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+kubeconform -strict (1.29.0): exit 1
+
+=== cs-health-sidecar.initContainer
+README.md prints no include line for cs-health-sidecar.initContainer
+
+## 2. The fix commit's tests run against the README and chart of d9e6d2e
+##    (git archive d9e6d2e sidecar + the new agent_test.go, helm_test.go, deploy_test.go)
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container
+    helm_test.go:56: the README prints "{{ include \"cs-health-sidecar.container\" . }}"; the chart's own comment shows ["{{- include \"cs-health-sidecar.container\" . | nindent 8 }}"]
+    helm_test.go:73: kubeconform (1.27.0): exit status 1
+        stdin - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spec/additionalProperties: additionalProperties 'env', 'securityContext', 'imagePullPolicy', 'image', 'livenessProbe', 'ports', 'resources' not allowed
+        Summary: 1 resource found parsing stdin - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+=== RUN   TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer
+    helm_test.go:52: the README prints no include line for cs-health-sidecar.initContainer
+--- FAIL: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment (0.69s)
+    --- FAIL: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/container (0.69s)
+    --- FAIL: TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment/initContainer (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.698s
+=== RUN   TestStatusJSONMatchesTheDocumentedContract
+--- PASS: TestStatusJSONMatchesTheDocumentedContract (0.01s)
+=== RUN   TestStatusShowsTheLastReportComposedSentOrNot
+    agent_test.go:593: the README's sentence on /status should name the last report composed, sent or not:
+         the discovered target, the last probe result, the last report sent and
+        the last send error, which is the first place to look when a service does not show up.
+    agent_test.go:598: the README's /status row for lastSendAt should say a rejected report sets it too:
+        | `lastSendAt`, `reportsSent` | when and how often a report reached the service (`lastSendAt` appears with the first accepted report) |
+--- FAIL: TestStatusShowsTheLastReportComposedSentOrNot (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.016s
+FAIL
+exit 1

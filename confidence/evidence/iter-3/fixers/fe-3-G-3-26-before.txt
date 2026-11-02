@@ -1,0 +1,28 @@
+# G-3-26, before: no test file for src/ui/useTheme.ts (only App.test renders it); the 503-with-body case is G-3-20 (fe-3-G-3-20-before.txt)
+# cwd frontend/: npm run test:coverage (v8, text reporter; files at 100 % in every column are not listed)
+## at 3806e7c (start of iteration 3)
+      Tests  141 passed (141)
+All files          |   93.49 |    90.73 |   89.42 |   93.99 |                   
+  ThemeToggle.tsx  |     100 |    66.66 |     100 |     100 | 10,14             
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+Statements   : 93.49% ( 719/769 )
+Branches     : 90.73% ( 783/863 )
+Functions    : 89.42% ( 203/227 )
+Lines        : 93.99% ( 595/633 )
+## at 50ff655 (G-3-20..G-3-25 committed, before this gap)
+      Tests  161 passed (161)
+All files          |   94.17 |    91.46 |   90.79 |   94.87 |                   
+  errors.ts        |   96.87 |       98 |     100 |     100 | 80                
+  ThemeToggle.tsx  |     100 |    66.66 |     100 |     100 | 10,14             
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+Statements   : 94.17% ( 760/807 )
+Branches     : 91.46% ( 825/902 )
+Functions    : 90.79% ( 217/239 )
+Lines        : 94.87% ( 629/663 )
+## mutation probes on src/ui/useTheme.ts, full suite at 50ff655 plus the new errors.ts fallback case, without useTheme.test.tsx (npx vitest run, 162 tests): every break goes unnoticed
+#  P1 an OS change overrides an explicit choice   P2 readStored() without try/catch
+#  P3 setThemeMode() without try/catch             P4 cycle() flips the stored mode, not what is on screen
+P1 full suite without useTheme.test.tsx: exit 0; Tests  162 passed (162)
+P2 full suite without useTheme.test.tsx: exit 0; Tests  162 passed (162)
+P3 full suite without useTheme.test.tsx: exit 0; Tests  162 passed (162)
+P4 full suite without useTheme.test.tsx: exit 0; Tests  162 passed (162)

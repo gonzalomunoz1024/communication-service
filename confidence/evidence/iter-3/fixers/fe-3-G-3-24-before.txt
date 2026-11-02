@@ -1,0 +1,30 @@
+# G-3-24, before the fix: request-counting tests against ec99c38 (App.tsx: the header field sets the tenant on every keystroke)
+# usability evidence it reproduces: ux2-ui-log.jsonl step type-tenant -> feedGets: 7, streams: 7 for 'ux2-sre'
+# cwd frontend/: DEBUG_PRINT_LIMIT=0 npx vitest run src/test/App.test.tsx
+ RUN  v5.0.5 /home/claude/wt-fe-3/frontend
+ ❯ src/test/App.test.tsx (6 tests | 2 failed) 2517ms
+       × loads the feed and opens the stream once for a tenant typed, not once per keystroke 1499ms
+       × follows at once on Enter and when the field loses focus 57ms
+AssertionError: expected [ 'u', 'ux', 'ux2', 'ux2-', …(3) ] to deeply equal [ 'ux2-sre' ]
+- Expected
++ Received
++   "u",
++   "ux",
++   "ux2",
++   "ux2-",
++   "ux2-s",
++   "ux2-sr",
+    "ux2-sre",
+  ]
+ ❯ src/test/App.test.tsx:109:55
+AssertionError: expected [ 'a', 'ac', 'acm', 'acme' ] to deeply equal [ 'acme' ]
+- Expected
++ Received
++   "a",
++   "ac",
++   "acm",
+    "acme",
+  ]
+ ❯ src/test/App.test.tsx:125:35
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)

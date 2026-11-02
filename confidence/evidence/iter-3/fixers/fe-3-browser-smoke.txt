@@ -1,0 +1,24 @@
+# FE-3 browser smoke against real backends, frontend at ea31d5d (all seven FE-3 commits), Chromium 1243 via Playwright 1.63 (/opt/pw-browsers), 2026-11-02
+# backends: the iteration-2 jar on :18220 (db fixfe3_a) and :18222 (db fixfe3_cut, Mongo reached through a local TCP forwarder on :18229 that the script kills and restarts)
+# Vite dev servers from frontend/ (npx vite --port P --strictPort, COMM_BACKEND=...): :3300 -> :18220, :3301 -> :18222, :3302 -> :18228 (nothing listening; the dev proxy answers 502 with an empty body)
+# script: fe-3-browser-smoke-script.txt (node smoke.cjs <dir>); automated notice created with POST /v1/health/reports {status: DOWN} on :18220
+# the automated notice's body (**DOWN**, nanosecond timestamp) is the iteration-2 backend's text: the backend half of G-3-25 belongs to BE-G
+PASS +0.9s G-3-23 first visit, no tenant: the badge says it is waiting for one, not Paused :: {"badge":"Waiting for a tenant","switchOn":"true"}
+PASS +1.0s G-3-23 the badge is a polite role=status live region :: {"role":"status","ariaLive":"polite"}
+PASS +1.0s G-3-23 the Live-updates row is at least 24 px tall around the 30x18 switch :: {"row":{"w":155,"h":26},"switch":{"w":30,"h":18}}
+PASS +3.5s G-3-24 typing "fixfe3-smoke-700383" (19 keys, 40 ms apart) = one feed GET and one stream :: {"feedGets":["GET /v1/feed?tenantId=fixfe3-smoke-700383&type=OUTAGE&page=0&size=100"],"streams":["GET /v1/feed/stream?tenantId=fixfe3-smoke-700383&type=OUTAGE&clientId=communication-frontend"]}
+PASS +3.5s G-3-23 the badge then reads Live :: Live
+PASS +4.4s G-3-21 real 409: the banner explains it in the form's words, no notice uuid on screen :: The service rejected this. INC7700383 is already the reference of a notice in tenant fixfe3-smoke-700383 (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC7700383-2. | What the service said
+PASS +4.4s G-3-21 the service's sentence is one click away under "What the service said" :: externalRef 'INC7700383' is already used by notice 619eedd8-156e-4b3f-bd6b-0f357826ee63 in tenant fixfe3-smoke-700383. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC7700383-2).
+PASS +5.3s G-3-21 a typed External reference is named as such and the next number is suggested :: The service rejected this. INC7700383-2 is already the External reference of a notice in tenant fixfe3-smoke-700383. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as INC7700383-3. | What the service said
+PASS +5.5s G-3-22 Enter on Resolve: focus on the note field, inside the group named by the question :: {"tag":"input","label":"Resolution note (optional)","text":"","role":null}
+PASS +5.5s G-3-22 Tab, Enter on Cancel: focus back on the card's Resolve button :: {"tag":"button","label":null,"text":"Resolve","role":null}
+PASS +5.7s G-3-22 confirm with the keyboard: the card leaves and focus is on the list, not <body> :: {"tag":"div","label":null,"text":"Active now1ActiveMajorOutageINC7700383Updated just nowPaymen","role":null}
+PASS +5.7s G-3-23 the resolve is announced by one region; the badge region still says Live :: ["Live","Resolved “Payments API follow-up”. It has left every consumer's feed."]
+PASS +7.2s G-3-25 a real automated notice: "Automatic" chip, no health:<monitor>:<n> reference :: Active | Major | Outage | Automatic | Updated just now | payments-api is down |  | Automated health check reported **DOWN** at 2026-11-02T05:35:07.265993432Z (reported by the service). |  | smoke |  | This notice is managed automatically and is retired once the service reports healthy again. |  | pa
+PASS +12.9s G-3-20 Mongo cut under :18222: Refresh shows the database wording, not "unreachable" :: {"msAfterCut":5086,"unreachableShown":0}
+PASS +12.9s G-3-20 the badge keeps reporting the stream (still open on keepalives) :: Live
+PASS +18.2s G-3-20 publish while the database is down: the database wording, the draft kept :: The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.
+PASS +19.8s G-3-20 after the forwarder is back, Try again loads the feed :: {"back":true}
+PASS +20.4s G-3-20 a dead backend behind the dev proxy (502, no {"error"} body) still reads "unreachable" :: {"badge":"Reconnecting (1)"}
+== 18 checks, 0 failed (tenant fixfe3-smoke-700383, fixfe3-db-700383; ticket INC7700383)

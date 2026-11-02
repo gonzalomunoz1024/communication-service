@@ -1,0 +1,28 @@
+# G-3-32 after the fix (Communication.requireAfterStart: endsAt and expiresAt share the G-3-9 wording)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*.CommunicationTest' --tests '*PublishingUseCaseTest'
+#          --tests '*RestControllerPublishingAdapterTest' integrationTest --tests '*CommunicationServiceE2EIT' --continue
+BUILD SUCCESSFUL in 1m 2s
+exit=0
+  common.domain.CommunicationTest" tests="20" skipped="0" failures="0" errors="0"
+  publishing.application.PublishingUseCaseTest" tests="26" skipped="0" failures="0" errors="0"
+  publishing.adapters.inbound.RestControllerPublishingAdapterTest" tests="17" skipped="0" failures="0" errors="0"
+  CommunicationServiceE2EIT" tests="9" skipped="0" failures="0" errors="0"
+  pinned texts (CommunicationTest, both passed):
+    endsAt 2026-10-14T12:00:50Z must be after startsAt 2026-10-14T12:01:40Z                    (endsBeforeStartIsRejected)
+    endsAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-10-14T12:00:00Z)
+    endsAt 2026-10-14T12:30:00Z must be after startsAt 2026-10-14T13:00:00Z                    (update, stored start)
+  the G-3-9 expiresAt texts still pass (anExpiryNotAfterTheStartNamesBothValuesAndAStartThatDefaulted)
+
+## HTTP, same script, jar built from the worktree with the fix
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g332","publisher":"sre","type":"MAINTENANCE","severity":"INFO","title":"window already over","endsAt":"2026-10-01T09:00:00Z"}
+  -> {"error":"endsAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-11-02T06:13:41.372Z)"} [HTTP 400]
+POST http://localhost:18200/v1/communications {"tenantId":"fixbef-g332","publisher":"sre","type":"MAINTENANCE","severity":"INFO","title":"ends before it starts","startsAt":"2026-11-02T08:13:40Z","endsAt":"2026-11-02T07:13:40Z"}
+  -> {"error":"endsAt 2026-11-02T07:13:40Z must be after startsAt 2026-11-02T08:13:40Z"} [HTTP 400]
+(published d3e6b592-c8b3-42ee-bb0f-124138a75503: startsAt 2026-11-02T07:13:40Z, endsAt 2026-11-02T08:13:40Z, version 0)
+PUT http://localhost:18200/v1/communications/d3e6b592-c8b3-42ee-bb0f-124138a75503 {"endsAt":"2026-11-02T06:43:40Z","expectedVersion":0}
+  -> {"error":"endsAt 2026-11-02T06:43:40Z must be after startsAt 2026-11-02T07:13:40Z"} [HTTP 400]
+
+## full check at 93f8054 (after G-3-30 and G-3-32): ./gradlew --max-workers=2 --no-daemon check
+BUILD SUCCESSFUL in 2m 7s
+exit=0
+test: 224 tests, 0 failures; integrationTest: 46 tests, 0 failures; spotbugsMain: 0 bugs; jacocoTestCoverageVerification passed

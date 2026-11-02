@@ -1,0 +1,22 @@
+# G-3-26, after: src/test/useTheme.test.tsx (7 tests: system setting followed live and listener removed on unmount, explicit choice over the system and stored, unknown stored value, toggle via ThemeToggle with two callers agreeing, getItem/setItem throwing, no matchMedia, server snapshot) + errors.test.ts 409 fallback case; no product code changed
+# cwd frontend/: npm run test:coverage
+      Tests  169 passed (169)
+All files          |   96.77 |    92.68 |   94.14 |   97.58 |                   
+ src/ui            |   99.27 |    94.21 |     100 |     100 |                   
+  useTheme.ts      |     100 |       96 |     100 |     100 | 46                
+Statements   : 96.77% ( 781/807 )
+Branches     : 92.68% ( 836/902 )
+Functions    : 94.14% ( 225/239 )
+Lines        : 97.58% ( 647/663 )
+#   ThemeToggle.tsx (66.66 % branches before) and errors.ts (98 % branches at 50ff655) are now 100 % in every column, so the reporter omits them;
+#   useTheme.ts line 46 is the server-side 'typeof document' branch, which effects never reach
+## the same mutation probes, npx vitest run src/test/useTheme.test.tsx: every break fails a test
+P1 an OS change overrides an explicit choice (handler without the system-mode guard): exit 1; Tests  1 failed | 6 passed (7)
+    × keeps an explicit choice from storage over the system setting, and stores a new one 13ms
+P2 reading storage is not guarded (readStored without try/catch): exit 1; Tests  1 failed | 6 passed (7)
+    × still applies a choice for the session when storage throws (private mode, quota, blocked site data) 11ms
+P3 writing storage is not guarded (setThemeMode without try/catch): exit 1; Tests  1 failed | 6 passed (7)
+    × still applies a choice for the session when storage throws (private mode, quota, blocked site data) 9ms
+P4 the toggle flips the stored mode instead of what is on screen: exit 1; Tests  1 failed | 6 passed (7)
+    × toggles to the explicit opposite of what is on screen, and every caller agrees 166ms
+# full suite before commit: npm run lint (exit 0), npm run typecheck (exit 0), npm test -> Test Files 19 passed (19), Tests 169 passed (169)

@@ -1,0 +1,31 @@
+G-3-10 before (root README lines only): two statements in README.md at 3806e7c are not true.
+
+$ git show 3806e7c:README.md | grep -n 'Spring Boot 3'
+21:- Java 21 · Spring Boot 3.4 · WebFlux (Reactor/Netty) · Reactive MongoDB · Gradle (Kotlin DSL)
+$ grep -n 'org.springframework.boot") version' build.gradle.kts   (unchanged since 3806e7c)
+8:    id("org.springframework.boot") version "3.5.16"
+$ unzip -p build/libs/communication-service-0.0.1-SNAPSHOT.jar META-INF/MANIFEST.MF | grep Spring-Boot-Version   (the iteration-2 jar)
+Spring-Boot-Version: 3.5.16
+
+$ git show 3806e7c:README.md | sed -n '308,311p'
+Every example works on any day: the dates are computed from now (GNU `date`; the macOS
+fallback uses `-v`). `<id>` is the `id` in a publish answer (also the last path segment of its
+`Location` header); `<monitorId>` likewise for `POST /v1/health/monitors`, or `.[].id` in the
+monitor list.
+
+The cookbook's first two publishes, run as written (host changed to the e2e backend 127.0.0.1:28080, a fresh
+store; the run was on the stack of the final suite run 1). Pass 2 is the same commands on the same store, i.e.
+any store that has seen INC0012345 before: the first example does not work there, so "every example works on
+any day" is false.
+== pass 1: the README's first two cookbook publishes as written (host 127.0.0.1:28080, the e2e backend), on a store that has not seen INC0012345
+   created: id=3527174b-efa8-4728-8294-1d12cac55bce externalRef=INC0012345 status=ACTIVE
+HTTP 201
+   created: id=0ab7f497-3d08-49d5-9f8e-f7c6b18ecbeb externalRef=INC0012345-2 status=ACTIVE
+HTTP 201
+
+== pass 2: the same two commands again
+   externalRef 'INC0012345' is already used by notice 3527174b-efa8-4728-8294-1d12cac55bce in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (…
+HTTP 409
+   externalRef 'INC0012345-2' is already used by notice 0ab7f497-3d08-49d5-9f8e-f7c6b18ecbeb in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value…
+HTTP 409
+

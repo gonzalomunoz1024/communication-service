@@ -1,0 +1,33 @@
+# G-3-1 after the fix (stream adapter ends the stream on the database-unavailable family; README paragraph)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*RestControllerFeedAdapterTest' --tests '*GlobalExceptionHandlerTest' integrationTest --tests '*OperationsEndpointsIT' bootJar
+
+<testsuite name="com.atlas.communication.feed.adapters.inbound.RestControllerFeedAdapterTest" tests="2" skipped="0" failures="0" errors="0"
+<testsuite name="com.atlas.communication.config.GlobalExceptionHandlerTest" tests="4" skipped="0" failures="0" errors="0"
+<testsuite name="com.atlas.communication.OperationsEndpointsIT" tests="7" skipped="0" failures="0" errors="0"
+<testcase name="aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError()" classname="com.atlas.communication.OperationsEndpointsIT" time="2.232"/>
+
+what the IT run logged for its six streams (3 failure forms x fresh/resume), from the test report's system-out:
+2026-11-02T05:21:22.962Z  WARN 800 --- [     parallel-2] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPrefe
+2026-11-02T05:21:23.379Z  WARN 800 --- [     parallel-4] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPrefe
+2026-11-02T05:21:23.712Z  WARN 800 --- [     parallel-2] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPrefe
+2026-11-02T05:21:24.044Z  WARN 800 --- [     parallel-4] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPrefe
+2026-11-02T05:21:24.389Z  WARN 800 --- [     parallel-2] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Exception opening socket
+2026-11-02T05:21:24.727Z  WARN 800 --- [     parallel-4] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Exception opening socket
+ERROR lines in the IT's system-out: 0
+100:BUILD SUCCESSFUL in 44s
+102:exit=0
+
+## Real server, same scenario as in the before file, jar built from this commit (bootJar above)
+GET lines (curl -N -m 15 -H 'X-Client-Id: fixbef-repro' http://localhost:18200/v1/feed/stream?...):
+GET /v1/feed/stream?tenantId=fixbef-g31 -> :connected   [curl exit=0 http=200]  (5.2 s)
+GET /v1/feed/stream?tenantId=fixbef-g31&lastEventId=1 -> :connected   [curl exit=0 http=200]  (5.0 s)
+stream-path WARN/ERROR lines in the backend log while the two streams were open:
+2026-11-02T05:21:53.715Z  WARN 1575 --- [communication-service] [b6dff6545557c54] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state 
+2026-11-02T05:21:58.761Z  WARN 1575 --- [communication-service] [b6dff6545557c54] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state 
+counts in that window (from the script):
+ERROR lines: 0
+stack frame lines ('	at '): 37
+WARN 'feed stream closed': 2
+WARN '-> 503' on the stream path: 0
+(the remaining stack frames are the driver's own INFO 'Exception in monitor thread while connecting to server
+ localhost:18201' at the moment mongod went away: org.mongodb.driver.cluster, gap G-3-6, another fixer's)

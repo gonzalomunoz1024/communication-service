@@ -1,0 +1,26 @@
+== G-3-17 before: boolean() reads anything but 1/true/yes/on as false, silently (config.go at 95ca128)
+114:	boolean := func(key string) bool {
+115-		switch strings.ToLower(strings.TrimSpace(get(key))) {
+116-		case "1", "true", "yes", "on":
+117-			return true
+118-		}
+119-		return false
+120-	}
+
+-- go test ./internal/config -run TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly -race -v
+    config_test.go:124: CS_INSECURE_SKIP_VERIFY="maybe": error "CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required" should contain "CS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")"
+    config_test.go:124: CS_INSECURE_SKIP_VERIFY="2": error "CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required" should contain "CS_INSECURE_SKIP_VERIFY must be true or false (got \"2\")"
+    config_test.go:124: CS_INSECURE_SKIP_VERIFY="t": error "CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required" should contain "CS_INSECURE_SKIP_VERIFY must be true or false (got \"t\")"
+    config_test.go:124: CS_INSECURE_SKIP_VERIFY="enabled": error "CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required" should contain "CS_INSECURE_SKIP_VERIFY must be true or false (got \"enabled\")"
+--- FAIL: TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config
+FAIL
+
+-- go test ./cmd/health-sidecar -run TestRunRejectsAnUnusableValueWithExit2 -race -v
+    main_test.go:109: CS_INSECURE_SKIP_VERIFY=maybe: exit code 0, want 2
+--- FAIL: TestRunRejectsAnUnusableValueWithExit2 (2.00s)
+    --- FAIL: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY (2.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+FAIL

@@ -1,0 +1,24 @@
+# G-3-22, before the fix: keyboard focus tests against a026d72 (OutageCard.tsx: setConfirming(true) moves no focus, the question is a plain <p>)
+# usability evidence it reproduces: confidence/evidence/iter-2/usability/ux2-ui-log.jsonl step resolve-confirm -> "active": {"tag": "body"}
+# cwd frontend/: DEBUG_PRINT_LIMIT=0 npx vitest run src/test/OutageCard.test.tsx src/test/OutageFeed.test.tsx
+ RUN  v5.0.5 /home/claude/wt-fe-3/frontend
+ ❯ src/test/OutageCard.test.tsx (8 tests | 2 failed) 1097ms
+     × moves keyboard focus into the confirmation, under its question, and back to the action on Cancel 84ms
+     × does the same for Withdraw, and gives focus back to the confirming button when the service refuses 237ms
+ ❯ src/test/OutageFeed.test.tsx (8 tests | 1 failed) 1355ms
+     × resolves from the keyboard alone: focus follows the confirmation and lands on the list when the card leaves 133ms
+AssertionError: expected <body><div>…(1)</div></body> to be <input …(3)></input> // Object.is equality
+ ❯ src/test/OutageCard.test.tsx:88:36
+     87|     const note = screen.getByPlaceholderText('Resolution note (optiona…
+     88|     expect(document.activeElement).toBe(note)
+AssertionError: expected <body><div>…(1)</div></body> to be <input …(3)></input> // Object.is equality
+ ❯ src/test/OutageCard.test.tsx:110:36
+    109|     const reason = screen.getByPlaceholderText('Reason (optional)')
+    110|     expect(document.activeElement).toBe(reason)
+AssertionError: expected <body><div>…(1)</div></body> to be <input …(3)></input> // Object.is equality
+ ❯ src/test/OutageFeed.test.tsx:100:36
+    100|     expect(document.activeElement).toBe(within(card).getByPlaceholderT…
+ Test Files  2 failed (2)
+      Tests  3 failed | 13 passed (16)
+# probe with the fix applied but its refocus-after-failure line removed: the Withdraw test fails with
+#   AssertionError: expected [] to deeply equal [ <button id="_r_7_-confirm" ...> ]  (focus.mock.contexts: nothing gave focus back)

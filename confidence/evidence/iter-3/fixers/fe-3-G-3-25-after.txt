@@ -1,0 +1,16 @@
+# G-3-25 (frontend half), after the fix: same command (display.ts isAutomaticReference(): a health: reference renders an 'Automatic' chip titled 'Raised by an automated health check'; other references unchanged)
+# cwd frontend/: npx vitest run --reporter=verbose src/test/OutageCard.test.tsx
+ ✓ src/test/OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation 872ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > offers Withdraw instead of Resolve for a notice that has not started 141ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > says who resolves and whose feed the notice leaves before asking to confirm 57ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > names the tenant in the withdraw confirmation too, and leaves the actor out when none is known 99ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > shows an upcoming notice as Scheduled, with its start once and in sentence case 37ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > labels an automated notice "Automatic" instead of showing its internal health: reference 26ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > still shows a reference a person chose, once, and not when it is the ticket number 86ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > hides the action when the page cannot resolve 20ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > moves keyboard focus into the confirmation, under its question, and back to the action on Cancel 170ms
+ ✓ src/test/OutageCard.test.tsx > OutageCard > does the same for Withdraw, and gives focus back to the confirming button when the service refuses 73ms
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+# full suite before commit: npm run lint (exit 0), npm run typecheck (exit 0), npm test -> Test Files 18 passed (18), Tests 161 passed (161)
+# the body text of automated notices is composed by the backend (BE-G's half of G-3-25); the card renders it as plain text, unchanged

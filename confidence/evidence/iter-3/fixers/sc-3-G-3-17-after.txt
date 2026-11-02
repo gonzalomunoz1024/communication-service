@@ -1,0 +1,28 @@
+== G-3-17 after: boolean() takes true/false, 1/0, yes/no, on/off in any case; anything else is a named, joined error (exit 2)
+116:	boolean := func(key string, def bool) bool {
+117-		v := strings.TrimSpace(get(key))
+118-		switch strings.ToLower(v) {
+119-		case "":
+120-			return def
+121-		case "1", "true", "yes", "on":
+122-			return true
+123-		case "0", "false", "no", "off":
+124-			return false
+125-		}
+126-		errs = append(errs, fmt.Errorf("%s must be true or false (got %q)", key, v))
+127-		return def
+128-	}
+
+-- go test ./internal/config ./cmd/health-sidecar -run 'TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly|TestRunRejectsAnUnusableValueWithExit2' -count=20 -race -v (summary)
+     20     --- PASS: TestRunRejectsAnUnusableValueWithExit2/CS_INSECURE_SKIP_VERIFY
+     20 --- PASS: TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly
+     20 --- PASS: TestRunRejectsAnUnusableValueWithExit2
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+      1 ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config
+
+-- the binary, as in iteration-2 ev/04 (CS_INSECURE_SKIP_VERIFY=maybe; nothing probed: CS_IGNORE_PORTS=1-65535; listen 127.0.0.1:18235; 3 s timeout)
+   hs-bb826cc: exit=124 (still running at 3 s, stopped by SIGTERM)
+     {"time":"2026-11-02T05:25:44.157829004Z","level":"INFO","msg":"health sidecar starting","version":"dev","service":"cid-app","tenant":"fixsc3","instance":"cid-app-7f9c6d5b4-x2k4q","endpoint":"http://127.0.0.1:1","probe":"auto"}
+   hs-g17: exit=2 (exited by itself)
+     {"time":"2026-11-02T05:25:47.458140408Z","level":"ERROR","msg":"invalid configuration","error":"CS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")"}
+   (before = bb826cc, whose config.go boolean() is the 3806e7c one)

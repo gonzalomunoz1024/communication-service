@@ -1,0 +1,17 @@
+# G-3-2 after: the sweep claims the probe slot (save with lastProbeAt=now under the version check) before probing
+# Command: ./gradlew --max-workers=2 --no-daemon --continue test integrationTest --tests '*HealthMonitoringE2EIT' --tests '*MongoHealthMonitorRepositoryAdapterIT' --tests '*MongoHealthInstanceRepositoryAdapterIT'
+
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+BUILD SUCCESSFUL in 1m
+RC=0
+
+## JUnit XML (build/test-results)
+build/test-results/test: tests=210 failures=0 errors=0 skipped=0
+build/test-results/integrationTest: tests=15 failures=0 errors=0 skipped=0
+  PASS HealthSweepUseCaseTest.aFailingMonitorDoesNotStopTheSweep()
+  PASS HealthSweepUseCaseTest.silenceIsNotTrustedDuringTheStartupGrace()
+  PASS HealthSweepUseCaseTest.probesOnlyMonitorsWhoseIntervalElapsed()
+  PASS HealthSweepUseCaseTest.twoInstancesSweepingTheSameDueMonitorProbeItOnceAndTheLoserStaysQuiet()
+  PASS HealthMonitorTest.claimingTheProbeSlotRecordsTheProbeTimeAndNothingElse()

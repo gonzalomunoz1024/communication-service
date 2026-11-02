@@ -1,0 +1,17 @@
+# G-3-23, after the fix: same command (badge wrapped in <span role=status aria-live=polite>; 'Waiting for a tenant' when Live updates is on and no tenant; label min-h-6 cursor-pointer py-1)
+# cwd frontend/: npx vitest run --reporter=verbose src/test/OutageFeed.test.tsx
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > shows the connection state, including the reopen attempt 163ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > announces the connection state in a live region of its own, which never repeats the resolve announcement 474ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > says it is waiting for a tenant rather than paused when none is entered, and paused only when switched off 95ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > makes the whole Live-updates row the click target of its switch, at least 24 px tall like the form 43ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list 212ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > keeps keyboard focus on the page after resolving the only notice 117ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > resolves from the keyboard alone: focus follows the confirmation and lands on the list when the card leaves 127ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > says when the service has more than the first page 26ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an empty feed in terms of what the feed lists 19ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line 30ms
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > says the service cannot reach its database for its own 503, while the badge keeps reporting the stream 39ms
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+# e2e specs that read these regions stay unambiguous: 02 filters getByRole('status') by 'Resolved …', 04 uses getByText(/^Reconnecting/)
+# full suite before commit: npm run lint (exit 0), npm run typecheck (exit 0), npm test -> Test Files 18 passed (18), Tests 157 passed (157)

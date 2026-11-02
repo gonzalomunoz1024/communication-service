@@ -1,0 +1,28 @@
+# G-3-11 after the fix (RestControllerFeedAdapter resumes after the larger of ?lastEventId= and Last-Event-ID)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*RestControllerFeedAdapterTest' --tests '*FeedUseCaseTest'
+#          integrationTest --tests '*CommunicationServiceE2EIT' --tests '*OperationsEndpointsIT' --continue
+BUILD SUCCESSFUL in 58s
+exit=0
+  feed.adapters.inbound.RestControllerFeedAdapterTest" tests="3" skipped="0" failures="0" errors="0"
+  feed.application.FeedUseCaseTest" tests="11" skipped="0" failures="0" errors="0"
+  CommunicationServiceE2EIT" tests="9" skipped="0" failures="0" errors="0"
+  OperationsEndpointsIT" tests="7" skipped="0" failures="0" errors="0"
+  the new case passed:
+    testcase name="withBothAQueryIdAndALastEventIdHeaderTheStreamResumesAfterTheLaterOne()"
+  (resume ids captured: [85, 85, 80]; CommunicationServiceE2EIT.reconnectingWithLastEventIdReplaysWhatWasMissed still passes)
+
+## HTTP, same script, jar built from the worktree with the fix
+every event in the log (resume from 0): ids 1 2 3 
+GET /v1/feed/stream?tenantId=fixbef-g311&lastEventId=1  + Last-Event-ID: 2 -> id:3 
+GET /v1/feed/stream?tenantId=fixbef-g311&lastEventId=2 + Last-Event-ID: 1  -> id:3 
+GET /v1/feed/stream?tenantId=fixbef-g311                  + Last-Event-ID: 2 -> id:3 
+GET /v1/feed/stream?tenantId=fixbef-g311&lastEventId=2 (no header)        -> id:3 
+-> both orders resume after 2: only frame 3 is sent; a single id behaves as before
+
+## final state: the G-3-9 commit was amended (6419cea -> 37a1eca) after the first full check failed in spotbugsMain
+## (NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE, handleBind calling getDefaultMessage() twice; now read once into a local),
+## plus a README sentence; G-3-11 re-applied on top (d6212d1 -> 32c5c3c). Behaviour unchanged. Full check at 32c5c3c:
+## ./gradlew --max-workers=2 --no-daemon check
+BUILD SUCCESSFUL in 1m 47s
+exit=0
+test: 220 tests, 0 failures; integrationTest: 46 tests, 0 failures; spotbugsMain: 0 bugs; jacocoTestCoverageVerification passed

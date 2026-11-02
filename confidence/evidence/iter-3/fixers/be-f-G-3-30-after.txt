@@ -1,0 +1,40 @@
+# G-3-30 after the fix (HealthStatus.fromCode reads PASS/GREEN/SERVING as UP and FAIL/FAILED/ERROR/RED/NOT_SERVING as DOWN)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*HealthStatusTest' --tests 'com.atlas.communication.health.*'
+#          integrationTest --tests '*HealthMonitoringE2EIT' --continue
+BUILD SUCCESSFUL in 1m 1s
+exit=0
+  health.adapters.inbound.RestControllerHealthAdapterTest: tests=8 failures=0 errors=0
+  health.adapters.outbound.HealthMonitorDocumentMappingTest: tests=2 failures=0 errors=0
+  health.adapters.outbound.WebClientHealthProbeAdapterTest: tests=5 failures=0 errors=0
+  health.application.HealthMonitorUseCaseTest: tests=19 failures=0 errors=0
+  health.application.HealthObservationUseCaseTest: tests=14 failures=0 errors=0
+  health.application.HealthSweepUseCaseTest: tests=16 failures=0 errors=0
+  health.domain.HealthMonitorTest: tests=14 failures=0 errors=0
+  health.domain.HealthNoticeTest: tests=3 failures=0 errors=0
+  health.domain.HealthReportTest: tests=9 failures=0 errors=0
+  health.domain.HealthRollupTest: tests=12 failures=0 errors=0
+  health.domain.HealthStatusTest: tests=3 failures=0 errors=0
+  health.HealthMonitoringE2EIT: tests=6 failures=0 errors=0
+  HealthStatusTest cases, all passed:
+    testcase name="componentsInTheSidecarsWordsAreHealthyOrFailingAsTheyMean()"
+    testcase name="everyWordOfBothVocabulariesMeansTheSameHereAsInTheSidecar()"
+    testcase name="anyOtherWordIsDegraded()"
+
+## HTTP, same script, jar built from the worktree with the fix
+POST /v1/health/reports x3 {"tenantId":"fixbef-g330","service":"orders","status":"UP","components":{"db":{"status":"pass"},"grpc":{"status":"SERVING"}}} -> 202
+POST /v1/health/reports x3 {"tenantId":"fixbef-g330","service":"billing","status":"fail","components":{"db":{"status":"fail"}}} -> 202
+POST /v1/health/reports x3 {"tenantId":"fixbef-g330","service":"search","status":"UP","components":{"index":{"status":"WARN"}}} -> 202
+GET /v1/health/monitors?tenantId=fixbef-g330
+  billing  lastStatus=DOWN      summary=DOWN: db DOWN
+  orders   lastStatus=UP        summary=UP
+  search   lastStatus=DEGRADED  summary=DEGRADED: index DEGRADED
+GET /v1/feed?tenantId=fixbef-g330
+  2 notice(s)
+  OUTAGE  MAJOR  billing is down
+  HEALTH  MINOR  search is degraded
+-> orders stays UP with no notice; billing is DOWN with an OUTAGE; WARN still means DEGRADED (search)
+
+## full check at 93f8054 (after G-3-30 and G-3-32): ./gradlew --max-workers=2 --no-daemon check
+BUILD SUCCESSFUL in 2m 7s
+exit=0
+test: 224 tests, 0 failures; integrationTest: 46 tests, 0 failures; spotbugsMain: 0 bugs; jacocoTestCoverageVerification passed

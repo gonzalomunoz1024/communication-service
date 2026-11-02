@@ -1,0 +1,35 @@
+# G-3-25 (backend) after: plain-words auto-notice body (UTC to the second, no Markdown), update/retire signed with the monitor's publisher
+# Command: ./gradlew --max-workers=2 --no-daemon --continue test integrationTest --tests '*HealthMonitoringE2EIT' --tests '*CommunicationServiceE2EIT'
+
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+BUILD SUCCESSFUL in 1m 7s
+RC=0
+
+## JUnit XML (build/test-results)
+build/test-results/test: tests=212 failures=0 errors=0 skipped=0
+build/test-results/integrationTest: tests=12 failures=0 errors=0 skipped=0
+  PASS HealthMonitoringE2EIT.probedServiceGoingDownPublishesAnOutageAndRecoveryRetiresIt()
+  PASS HealthMonitoringE2EIT.pushedReportsNeedNoRegistrationAndDeletingTheMonitorRetiresItsNotice()
+  PASS HealthObservationUseCaseTest.recoveryRetiresTheNoticeWithANote()
+  PASS HealthObservationUseCaseTest.changeOfKindRetiresTheOldNoticeAndOpensANewOne()
+  PASS HealthObservationUseCaseTest.newFailingComponentsUpdateTheOpenNoticeInPlace()
+  PASS HealthObservationUseCaseTest.aNoticeIsUpdatedAndRetiredUnderTheNameItWasPublishedWith()
+  PASS HealthObservationUseCaseTest.openClaimsTheMonitorBeforePublishingAnOutage()
+  PASS HealthSweepUseCaseTest.silentPushOnlyMonitorsAreObservedAsDown()
+  PASS HealthMonitorTest.changeOfKindWhileOpenReplacesAfterThreshold()
+  PASS HealthNoticeTest.downProbeBecomesOutageAtDownSeverity()
+  PASS HealthNoticeTest.anAutomatedNoticeReadsAsPlainWordsWithTheTimeToTheSecond()
+  PASS HealthNoticeTest.degradedPushBecomesHealthNoticeAtDegradedSeverity()
+  PASS HealthNoticeTest.staleNoticeExplainsSilenceAndComponentListIsCapped()
+
+## The UX-47 notice as composed now (HealthNoticeTest.anAutomatedNoticeReadsAsPlainWordsWithTheTimeToTheSecond expects exactly):
+        assertThat(body).isEqualTo("""
+                fake-app is DOWN as of 2026-11-02 04:07:48 UTC.
+                Reported by its pods: 0 of 1 pod UP (DOWN: fake-app-7f9c6d5b4-x2k4q).
+
+                Failing components:
+                db: DOWN (error=Connection refused)
+
+                This notice is managed automatically and is retired once the service reports healthy again.""");

@@ -1,0 +1,33 @@
+# G-3-20, before the fix: the new 503-with-body tests against 3806e7c (errors.ts isUnreachable() folds every 502/503/504)
+# cwd frontend/: DEBUG_PRINT_LIMIT=0 npx vitest run src/test/errors.test.ts src/test/OutageFeed.test.tsx src/test/PublishOutageForm.test.tsx
+# real backend (iter-2 jar on :18222, its Mongo forwarder cut): GET /v1/feed and POST /v1/communications -> HTTP/1.1 503, Content-Type: application/json, {"error":"database unavailable"} in 5.03 s / 5.21 s
+ RUN  v5.0.5 /home/claude/wt-fe-3/frontend
+ ❯ src/test/errors.test.ts (10 tests | 3 failed) 51ms
+     × treats the service's own 503 as a failure it explained, not as the service being unreachable 7ms
+     × leaves every other error to explainError 8ms
+     × keeps the reason of a 503 that carries the service's {"error"} body apart from a proxy's bare 503 1ms
+ ❯ src/test/OutageFeed.test.tsx (7 tests | 1 failed) 666ms
+     × says the service cannot reach its database for its own 503, while the badge keeps reporting the stream 28ms
+ ❯ src/test/PublishOutageForm.test.tsx (15 tests | 1 failed) 2768ms
+     × says the service cannot reach its database for its own 503 and keeps the draft editable 210ms
+TestingLibraryElementError: Unable to find an element with the text: The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+ ❯ src/test/OutageFeed.test.tsx:120:19
+Expected element to have text content:
+  The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.
+Received:
+  The service is unreachable right now. Check that communication-service is running, then try again.
+ ❯ src/test/PublishOutageForm.test.tsx:113:19
+AssertionError: expected true to be false // Object.is equality
+- false
++ true
+ ❯ src/test/errors.test.ts:47:30
+AssertionError: expected 'The service is unreachable right now.…' to be 'The service cannot reach its database…' // Object.is equality
+Expected: "The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment."
+Received: "The service is unreachable right now. Check that communication-service is running, then try again."
+ ❯ src/test/errors.test.ts:78:82
+AssertionError: expected true to be false // Object.is equality
+- false
++ true
+ ❯ src/test/errors.test.ts:114:40
+ Test Files  3 failed (3)
+      Tests  5 failed | 27 passed (32)

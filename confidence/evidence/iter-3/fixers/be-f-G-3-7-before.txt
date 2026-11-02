@@ -1,0 +1,14 @@
+# G-3-7 before the fix (worktree at 83df7e2 + the new tests only)
+# command: ./gradlew --max-workers=2 --no-daemon test --tests '*RestControllerPublishingAdapterTest'
+# tests: aNullServiceEntryNamesItsPositionAndTheRule (POST ["vm-api",null], PUT [null]),
+#        anEmptyOrBlankServiceEntryIsRejected (POST ["vm-api",""], PUT ["  ","vm-api"]); the use case is stubbed to succeed
+
+RestControllerPublishingAdapterTest > aNullServiceEntryNamesItsPositionAndTheRule() FAILED
+    java.lang.AssertionError: JSON path "$.error" expected:<affectedServices[1]: must not be null> but was:<Failed to read HTTP message>
+
+RestControllerPublishingAdapterTest > anEmptyOrBlankServiceEntryIsRejected() FAILED
+    java.lang.AssertionError: Status expected:<400 BAD_REQUEST> but was:<201 CREATED>
+
+15 tests completed, 2 failed
+BUILD FAILED in 40s
+exit=1
