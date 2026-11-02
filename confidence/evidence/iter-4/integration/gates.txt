@@ -1,0 +1,214 @@
+Orchestrator's gates on the combined iteration-4 code (int4). Full logs in the orchestrator's scratchpad int4-gates/.
+
+== backend: ./gradlew --max-workers=2 --no-daemon build at 5352449 (code = 4eff8f4)
+2026-11-02T09:48:59Z
+> Task :compileJava
+> Task :cyclonedxDirectBom
+> Task :cyclonedxBom
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :bootJar
+> Task :jar
+> Task :assemble
+> Task :compileTestJava
+> Task :processTestResources
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+> Task :jacocoTestCoverageVerification
+> Task :jacocoTestReport
+> Task :spotbugsTest SKIPPED
+> Task :verifySbomScope
+> Task :spotbugsMain
+> Task :check
+> Task :build
+BUILD SUCCESSFUL in 1m 58s
+gradle exit 0
+2026-11-02T09:50:58Z
+test: 270 tests, 0 failures, 0 errors, 0 skipped; integrationTest: 55 tests, 0 failures, 0 errors, 0 skipped (build/test-results)
+JaCoCo: LINE 1545/1590 = 0.9717, BRANCH 825/954 = 0.8648
+
+== sidecar (go1.27.3)
+== at 5352449
+== gofmt -l
+== go vet
+vet exit 0
+== CI=true go test -race -count=1 ./...
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	2.460s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	6.617s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.328s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.042s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.018s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.507s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.156s
+test exit 0
+
+== e2e static
+> communication-service-e2e@0.1.0 lint
+> eslint . --max-warnings 0
+> communication-service-e2e@0.1.0 typecheck
+> tsc --noEmit
+
+== e2e run 1
+== run 1 at 1cd3f13, 2026-11-02T09:55:38Z
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (54ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body that suggests the first free follow-up value (220ms)
+  ✓  3 tests/01-api-contract.spec.ts:28:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (23ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (16.5s)
+F-91: the OUTAGE card appeared 5.4 s after the app went DOWN
+F-91: the card left 6.8 s after the app came back
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (19.8s)
+F-92: the badge showed Reconnecting 0.4 s into the restart
+F-92: a reopen carried lastEventId=7
+F-92: the backend was ready again 14.2 s after the restart began
+F-92: the page showed it 1.0 s after the backend was back
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (23.5s)
+F-76: the sidecar had stopped 0.4 s after SIGTERM
+  ✓  7 tests/05-f76-sidecar-sigterm.spec.ts:7:5 › F-76 F-48 F-91 SIGTERM to the sidecar → a leaving report and exit 0 → the pod is marked left and no notice opens → started again, the pod reports again (1.4s)
+F-39: HEALTH notice 10.2 s after the app turned DEGRADED
+F-41: OUTAGE in place of the HEALTH notice 10.1 s after the app went DOWN
+F-39: OUTAGE retired 9.8 s after the app came back
+  ✓  8 tests/06-f39-pull-monitor.spec.ts:37:5 › F-31 F-37 F-39 F-40 F-41 a pull monitor probes the fake app every 5 s: DEGRADED twice → HEALTH notice, DOWN twice → OUTAGE in its place, UP twice → retired (31.7s
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+F-57: the late page showed the error state 10.7 s into the outage
+F-92: the late page while the database was down (3 stream requests, 1 list loads): +0.0 s (no badge), +0.1 s Connecting, +5.1 s Reconnecting (1), +5.1 s Reconnecting (1) | Couldn't load the feed (database unavailable), +
+F-92: the backend was ready again 21.0 s after the database stopped
+F-92: the late page showed the feed 0.0 s after the backend was ready, then: +15.8 s Service degraded | Couldn't load the feed (database unavailable), +15.8 s Live
+F-92: the open page showed a new notice 0.9 s after the backend was ready
+  ✓  9 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its str
+  9 passed (2.1m)
+playwright exit 0
+== run 1 wall 162 s, ended 2026-11-02T09:58:20Z
+
+== e2e run 2
+== run 2 at 1cd3f13, 2026-11-02T09:58:20Z
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (60ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body that suggests the first free follow-up value (205ms)
+  ✓  3 tests/01-api-contract.spec.ts:28:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (24ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (15.4s)
+F-91: the OUTAGE card appeared 3.9 s after the app went DOWN
+F-91: the card left 6.8 s after the app came back
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (18.2s)
+F-92: the badge showed Reconnecting 0.2 s into the restart
+F-92: a reopen carried lastEventId=7
+F-92: the backend was ready again 12.9 s after the restart began
+F-92: the page showed it 1.8 s after the backend was back
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (22.9s)
+F-76: the sidecar had stopped 0.4 s after SIGTERM
+  ✓  7 tests/05-f76-sidecar-sigterm.spec.ts:7:5 › F-76 F-48 F-91 SIGTERM to the sidecar → a leaving report and exit 0 → the pod is marked left and no notice opens → started again, the pod reports again (1.4s)
+F-39: HEALTH notice 9.9 s after the app turned DEGRADED
+F-41: OUTAGE in place of the HEALTH notice 10.2 s after the app went DOWN
+F-39: OUTAGE retired 10.1 s after the app came back
+  ✓  8 tests/06-f39-pull-monitor.spec.ts:37:5 › F-31 F-37 F-39 F-40 F-41 a pull monitor probes the fake app every 5 s: DEGRADED twice → HEALTH notice, DOWN twice → OUTAGE in its place, UP twice → retired (31.2s
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+F-57: the late page showed the error state 10.7 s into the outage
+F-92: the late page while the database was down (3 stream requests, 1 list loads): +0.0 s (no badge), +0.1 s Connecting, +5.1 s Connecting | Couldn't load the feed (database unavailable), +5.1 s Reconnecting (1) | Couldn
+F-92: the backend was ready again 21.0 s after the database stopped
+F-92: the late page showed the feed 0.0 s after the backend was ready, then: +15.8 s Service degraded | Couldn't load the feed (database unavailable), +15.8 s Live
+F-92: the open page showed a new notice 0.3 s after the backend was ready
+  ✓  9 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its str
+  9 passed (2.0m)
+playwright exit 0
+== run 2 wall 144 s, ended 2026-11-02T10:00:44Z
+
+== e2e run 3
+== run 3 at 1cd3f13, 2026-11-02T10:00:44Z
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (56ms)
+  ✓  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body that suggests the first free follow-up value (202ms)
+  ✓  3 tests/01-api-contract.spec.ts:28:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (23ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (16.4s)
+F-91: the OUTAGE card appeared 5.9 s after the app went DOWN
+F-91: the card left 6.3 s after the app came back
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (19.4s)
+F-92: the badge showed Reconnecting 0.2 s into the restart
+F-92: a reopen carried lastEventId=7
+F-92: the backend was ready again 12.7 s after the restart began
+F-92: the page showed it 1.9 s after the backend was back
+F-92: replayed as created#8 on the stream resumed after 7; 1 list reload
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (22.2s)
+F-76: the sidecar had stopped 0.4 s after SIGTERM
+  ✓  7 tests/05-f76-sidecar-sigterm.spec.ts:7:5 › F-76 F-48 F-91 SIGTERM to the sidecar → a leaving report and exit 0 → the pod is marked left and no notice opens → started again, the pod reports again (1.4s)
+F-39: HEALTH notice 9.9 s after the app turned DEGRADED
+F-41: OUTAGE in place of the HEALTH notice 10.1 s after the app went DOWN
+F-39: OUTAGE retired 10.1 s after the app came back
+  ✓  8 tests/06-f39-pull-monitor.spec.ts:37:5 › F-31 F-37 F-39 F-40 F-41 a pull monitor probes the fake app every 5 s: DEGRADED twice → HEALTH notice, DOWN twice → OUTAGE in its place, UP twice → retired (31.4s
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+F-57: the late page showed the error state 10.7 s into the outage
+F-92: the late page while the database was down (3 stream requests, 1 list loads): +0.0 s (no badge), +0.1 s Connecting, +5.1 s Reconnecting (1), +5.2 s Reconnecting (1) | Couldn't load the feed (database unavailable), +
+F-92: the backend was ready again 21.0 s after the database stopped
+F-92: the late page showed the feed 0.0 s after the backend was ready, then: +15.8 s Service degraded | Couldn't load the feed (database unavailable), +15.8 s Live
+F-92: the open page showed a new notice 0.3 s after the backend was ready
+  ✓  9 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its str
+  9 passed (2.1m)
+playwright exit 0
+== run 3 wall 146 s, ended 2026-11-02T10:03:11Z
+
+== batch 1 (before 1cd3f13): run 1
+== run 1 at 87714a9, 2026-11-02T09:51:52Z
+  ✓  1 tests/01-api-contract.spec.ts:6:7 › API contract smoke › F-27 a /v1 call without X-Client-Id is refused with an {error} body (59ms)
+  ✘  2 tests/01-api-contract.spec.ts:12:7 › API contract smoke › F-09 a reused externalRef is a 409 with an {error} body (302ms)
+  ✓  3 tests/01-api-contract.spec.ts:27:7 › API contract smoke › F-92 the readiness probe answers 200 without a client id (53ms)
+  ✓  4 tests/02-f90-publish-live-resolve.spec.ts:4:5 › F-90 publish in the UI → live in another tab without reload → resolve in the UI → gone from the feed (16.5s)
+  ✓  5 tests/03-f91-sidecar-auto-notice.spec.ts:21:5 › F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from health-sidecar → the app recovers → the card leaves (19.8s)
+  ✓  6 tests/04-f92-backend-restart.spec.ts:72:5 › F-92 F-61 F-20 the backend restarts mid-stream → Reconnecting → the page resumes by itself with lastEventId and is replayed what was published meanwhile (21.8s)
+  ✓  7 tests/05-f76-sidecar-sigterm.spec.ts:7:5 › F-76 F-48 F-91 SIGTERM to the sidecar → a leaving report and exit 0 → the pod is marked left and no notice opens → started again, the pod reports again (1.5s)
+  ✓  8 tests/06-f39-pull-monitor.spec.ts:37:5 › F-31 F-37 F-39 F-40 F-41 a pull monitor probes the fake app every 5 s: DEGRADED twice → HEALTH notice, DOWN twice → OUTAGE in its place, UP twice → retired (32.2s
+  ✓  9 tests/07-f92-database-down.spec.ts:49:5 › F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its str
+  1 failed
+  8 passed (2.1m)
+playwright exit 1
+== run 1 wall 163 s, ended 2026-11-02T09:54:36Z
+
+== scans
+Trivy DB: {"Version":2,"NextUpdate":"2026-11-03T01:14:05.64063672Z","UpdatedAt":"2026-11-02T01:14:05.640637121Z","DownloadedAt":"2026-11-02T07:28:40.748184579Z"}
+== Trivy 0.58.1 SBOM scan of build/reports/cyclonedx/bom.json (backend, code 1cd3f13), every severity
+exit 0
+
+== CI flags on the backend image's OS packages (communication-service:e2e, built by stack.sh from this jar)
+2026-11-02T10:03:54Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://aquasecurity.github.io/trivy/v0.58/docs/scanner/vulnerability#severity-selection for details.
+
+communication-service:e2e (debian 13.7)
+=======================================
+Total: 0 (HIGH: 0, CRITICAL: 0)
+
+exit 0
+
+== same image, OS packages, every severity, fixed or not
+2026-11-02T10:03:55Z	INFO	Detected OS	family="debian" version="13.7"
+2026-11-02T10:03:55Z	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=25
+communication-service:e2e (debian 13.7)
+Total: 77 (UNKNOWN: 3, LOW: 20, MEDIUM: 50, HIGH: 4, CRITICAL: 0)
+│ libbz2-1.0     │ CVE-2026-42250   │          │              │ 1.0.8-6                     │               │ bzip2: bzip2: Denial of Service in bzip2recover via a        │
+│ libc-bin       │ CVE-2026-18374   │          │              │ 2.41-12+deb13u4             │               │ glibc: glibc: Heap buffer overflow via attacker-controlled   │
+│ libc6          │ CVE-2026-18374   │ MEDIUM   │              │                             │               │ glibc: glibc: Heap buffer overflow via attacker-controlled   │
+│ libexpat1      │ CVE-2025-66382   │ MEDIUM   │ fix_deferred │ 2.9.0-1~deb13u1             │               │ libexpat: libexpat: Denial of service via crafted file       │
+│                │ CVE-2026-115506  │ UNKNOWN  │              │                             │               │ libexpat through 2.9.0 contains a denial of service          │
+│                │ CVE-2026-117610  │          │              │                             │               │ libexpat through 2.9.0 contains a NULL pointer dereference   │
+│                │ CVE-2026-118370  │          │              │                             │               │ libexpat through 2.9.0 contains a signed integer overflow    │
+│ libfreetype6   │ CVE-2026-95512   │ MEDIUM   │              │ 2.13.3+dfsg-1+deb13u1       │               │ freetype: FreeType: Denial of Service via repeated           │
+
+== CI command on the sidecar image (health-sidecar:e2e, Go 1.27.3 builder, distroless static base)
+2026-11-02T10:03:56Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://aquasecurity.github.io/trivy/v0.58/docs/scanner/vulnerability#severity-selection for details.
+
+health-sidecar:e2e (debian 12.15)
+=================================
+Total: 0 (HIGH: 0, CRITICAL: 0)
+
+exit 0
+
+== sidecar binary, every severity
+2026-11-02T10:03:57Z	INFO	Detected OS	family="debian" version="12.15"
+2026-11-02T10:03:57Z	INFO	[debian] Detecting vulnerabilities...	os_version="12" pkg_num=5
+2026-11-02T10:03:57Z	INFO	[gobinary] Detecting vulnerabilities...
+health-sidecar:e2e (debian 12.15)
+Total: 4 (UNKNOWN: 4, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+SBOM scan (json): results 1 targets ['Java'] vulnerabilities 0 Counter()
+bom components 113
+['jackson-databind:2.21.7', 'netty-codec-http:4.2.19.Final', 'netty-handler:4.2.19.Final', 'reactor-netty-http:1.3.8', 'spring-boot:4.0.9', 'spring-core:7.0.10', 'spring-webflux:7.0.10', 'jackson-databind:3.1.7']
+backend image OS: 77 Counter({'MEDIUM': 50, 'LOW': 20, 'HIGH': 4, 'UNKNOWN': 3}) fixable 0
+HIGH: [('libuuid1', 'CVE-2026-76642', 'affected'), ('libuuid1', 'CVE-2026-78408', 'affected'), ('libuuid1', 'CVE-2026-78409', 'affected'), ('libuuid1', 'CVE-2026-78410', 'affected')]
+sidecar image health-sidecar:e2e (debian 12.15) debian 4 Counter({'UNKNOWN': 4}) [('ca-certificates', 'DLA-4845-1'), ('tzdata', 'DLA-4792-1'), ('tzdata', 'DLA-4854-1'), ('tzdata', 'DLA-4867-1')]
+sidecar image usr/local/bin/health-sidecar gobinary 0 Counter() []
