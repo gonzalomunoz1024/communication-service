@@ -211,7 +211,8 @@ so the stream also accepts `?clientId=`. Every request is logged with its id
 system that sent it. It is identification, not authentication: nothing is verified.
 In Swagger UI click **Authorize** once and paste your repository name under `X-Client-Id`; every
 operation there documents the `401` you get without it. `communication.client-id.required=false`
-switches the check off for local experiments.
+switches the check off for local experiments; requests are still logged, those without a valid id
+as `client=-`.
 
 ### Publisher commands
 

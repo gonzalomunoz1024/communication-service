@@ -24,8 +24,9 @@ import reactor.test.StepVerifier;
 
 /**
  * The filter's less common outcomes. A request that ends before anything set a status is logged
- * as {@code error} or {@code cancelled}, not as a 200; a blank {@code clientId} parameter is no id;
- * and when the error body cannot be serialised the caller still gets a JSON error.
+ * as {@code error} or {@code cancelled}, not as a 200; with the check switched off every request is
+ * still logged; a blank {@code clientId} parameter is no id; and when the error body cannot be
+ * serialised the caller still gets a JSON error.
  */
 class ClientIdWebFilterEdgeCasesTest {
 
@@ -69,6 +70,35 @@ class ClientIdWebFilterEdgeCasesTest {
             assertThat(lines).hasSize(1);
             assertThat(lines.get(0)).matches("client=vmforge-tools GET /v1/feed/stream -> cancelled \\(\\d+ ms\\)");
         }
+    }
+
+    @Test
+    void withTheCheckSwitchedOffEveryRequestIsStillLoggedUnidentifiedOnesAsADash() {
+        ClientIdWebFilter off = new ClientIdWebFilter(false, new ObjectMapper());
+        WebFilterChain ok = exchange -> {
+            exchange.getResponse().setStatusCode(HttpStatus.OK);
+            return Mono.empty();
+        };
+        MockServerWebExchange anonymous = MockServerWebExchange.from(MockServerHttpRequest.get("/v1/communications"));
+        MockServerWebExchange named = identified("/v1/communications");
+        MockServerWebExchange malformed = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/v1/communications").header(ClientIdWebFilter.HEADER, "not a repo!"));
+
+        try (LogCapture log = LogCapture.of(ClientIdWebFilter.class)) {
+            StepVerifier.create(off.filter(anonymous, ok)).verifyComplete();
+            StepVerifier.create(off.filter(named, ok)).verifyComplete();
+            StepVerifier.create(off.filter(malformed, ok)).verifyComplete();
+
+            List<String> lines = infoLines(log);
+            assertThat(lines).hasSize(3);
+            assertThat(lines.get(0)).matches("client=- GET /v1/communications -> 200 \\(\\d+ ms\\)");
+            assertThat(lines.get(1)).matches("client=vmforge-tools GET /v1/communications -> 200 \\(\\d+ ms\\)");
+            // an id that is not a repository name is not written to the log
+            assertThat(lines.get(2)).matches("client=- POST /v1/communications -> 200 \\(\\d+ ms\\)");
+        }
+        assertThat(named.<String>getAttribute(ClientIdWebFilter.ATTRIBUTE)).isEqualTo("vmforge-tools");
+        assertThat(anonymous.<String>getAttribute(ClientIdWebFilter.ATTRIBUTE)).isNull();
+        assertThat(malformed.<String>getAttribute(ClientIdWebFilter.ATTRIBUTE)).isNull();
     }
 
     @Test

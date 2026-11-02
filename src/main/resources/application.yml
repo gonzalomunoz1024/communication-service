@@ -46,7 +46,8 @@ springdoc:
 communication:
   client-id:
     # every /v1 request must name its caller (repository name) in X-Client-Id, or ?clientId= for
-    # EventSource clients; identification only, nothing is verified. Set false for local experiments.
+    # EventSource clients; identification only, nothing is verified. Set false for local experiments
+    # (requests are still logged; those without a valid id as client=-).
     required: true
   mongo:
     # how long a call waits for the database before giving up: with the driver's own defaults (30 s
