@@ -1,0 +1,65 @@
+=== F-01 publish contract (tenant audit-f01-ygjho)
+[MATCH] F-01: POST → 201 + Location + ACTIVE + audience default CUSTOMERS :: (201, '/v1/communications/d290d69a-2b84-465c-9ae4-68e8132800e4', 'ACTIVE', 'CUSTOMERS')
+[MATCH] F-01: future startsAt → SCHEDULED :: (201, 'SCHEDULED')
+[MATCH] F-01: live `created` frame on the stream :: [('status', 200), ('id', '625'), ('event', 'created'), ('id', '626'), ('event', 'created')]
+=== F-11 audit history
+[MATCH] F-11: history capped at 50 after 60 updates, entries ordered by time :: (50, {'at': '2026-11-02T00:30:46.248Z', 'actor': 'audit-sre', 'action': 'updated'}, {'at': '2026-11-02T00:30:46.709Z', 'actor': 'audit-sre', 'action': 'updated'})
+[MATCH] F-11: actor fallback on a PUT without actor :: {'audit-sre'}
+=== F-16 scheduled visibility
+[MATCH] F-16: upcoming MAINTENANCE (tomorrow) shown, future OUTAGE hidden, maintenance in 10 days hidden :: ['maint ygjho']
+[MATCH] F-16: includeUpcoming=false hides all of them :: []
+=== F-17 permalinks, F-15/F-06 effective expiry
+[MATCH] F-17: retired permalink 200 RETIRED :: (200, 'RETIRED')
+[MATCH] F-17: draft permalink 404 :: 404
+[MATCH] F-17: unknown permalink 404 :: 404
+[MATCH] F-15: expired item absent from the feed before the sweep :: []
+[MATCH] F-17/F-15: expired permalink 200 EXPIRED (effective status) :: (200, 'EXPIRED')
+[MATCH] F-06 clause / GAP-backend-5: retire of a time-expired item still stored ACTIVE answers 200 (claimed; 409 would mean the gap is closed) :: ('ACTIVE', 200, 'RETIRED')
+=== F-20 resume
+[MATCH] F-20: Last-Event-ID header → 500 with the bson "second seq expression" error :: (500, 'data:{"error":"Due to limitations of the org.bson.Document, you can\'t add a second \'seq\' expression specified as \'seq : Document{{$lte=693}}\'; Criteria already ')
+[MATCH] F-20: ?lastEventId= → 500 :: (500, 'data:{"error":"Due to limitations of the org.bson.Document, you can\'t add a second \'seq\' expression ')
+=== F-29 OpenAPI
+[MATCH] F-29: 16 /v1 paths in /v3/api-docs :: (16, ['/v1/admin/communications', '/v1/admin/communications/{id}', '/v1/admin/communications/{id}/retire', '/v1/admin/tenants', '/v1/communications', '/v1/communications/{id}', '/v1/communications/{id}/publish', '/v1/communications/{id}/retire', '/v1/feed', '/v1/feed/stream', '/v1/feed/{id}', '/v1/h
+[MATCH] F-29: apiKey scheme on X-Client-Id applied globally :: ({'clientId': {'type': 'apiKey', 'description': 'Repository name of the calling system; required on every /v1 request', 'name': 'X-Client-Id', 'in': 'header'}}, [{'clientId': []}])
+[MATCH] F-29: Swagger UI served :: 200
+=== F-33 monitor reads
+[MATCH] F-33: list all monitors 200 array :: (200, 69)
+[MATCH] F-33: list by tenant with state :: (200, {'lastStatus': 'UNKNOWN', 'unhealthyStreak': 0, 'healthyStreak': 0, 'incidents': 0})
+[MATCH] F-33: get one 200 :: 200
+[MATCH] F-33: unknown 404 :: (404, {'error': 'monitor 00000000-0000-0000-0000-000000000000 not found'})
+=== F-35 delete monitor retires its notice
+[MATCH] F-35 (setup): two DOWN reports opened an OUTAGE notice :: ({'lastStatus': 'DOWN', 'lastReportAt': '2026-11-02T00:30:51.087Z', 'lastSummary': 'DOWN (audit down): db DOWN', 'unhealthyStreak': 2, 'healthyStreak': 0, 'openCommunicationId': '8768250d-6eec-4e43-ad7d-007527d407ba', 'openStatus': 'DOWN', 'openSignature': 'DOWN[db=DOWN]', 'incidents': 1}, ['svc is 
+[MATCH] F-35: DELETE → 204 :: 204
+[MATCH] F-35: notice RETIRED with audit "monitor deleted" :: ('RETIRED', [{'at': '2026-11-02T00:30:51.108Z', 'actor': 'health-monitor', 'action': 'ACTIVE -> RETIRED: monitor deleted'}])
+[MATCH] F-35: second DELETE → 404 :: (404, {'error': 'monitor 170ac614-60a0-45d6-af39-a999549a5f34 not found'})
+=== F-37 pull probing against a stub on 18556
+[MATCH] F-37: 503 + DOWN document → DOWN with components :: {'lastStatus': 'DOWN', 'lastReportAt': '2026-11-02T00:30:51.136617906Z', 'lastProbeAt': '2026-11-02T00:30:51.136617906Z', 'lastSummary': 'DOWN (HTTP 503): db DOWN', 'unhealthyStreak': 1, 'healthyStreak': 0, 'incidents': 0}
+[MATCH] F-37: plain 200 → UP :: {'lastStatus': 'UP', 'lastReportAt': '2026-11-02T00:30:51.149024337Z', 'lastProbeAt': '2026-11-02T00:30:51.149024337Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'healthyStreak': 1, 'incidents': 0}
+[MATCH] F-37: plain 500 → DOWN :: {'lastStatus': 'DOWN', 'lastReportAt': '2026-11-02T00:30:51.169184597Z', 'lastProbeAt': '2026-11-02T00:30:51.169184597Z', 'lastSummary': 'DOWN (HTTP 500)', 'unhealthyStreak': 1, 'healthyStreak': 0, 'incidents': 0}
+[MATCH] F-37: closed port → DOWN probe failed :: DOWN (probe failed: finishConnect(..) failed: Connection refused: /127.0.0.1:1)
+[MATCH] F-37: 200 ms timeout on a 3 s target → DOWN quickly :: ('DOWN (probe failed: no response within 200ms)', 0.21)
+=== F-46 / F-49 / F-76 instance records
+[MATCH] F-46: instance report → 202 :: 202
+[MATCH] F-49: auto-registered instance monitor gets staleAfterSeconds=90 :: {'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'staleAfterSeconds': 90, 'minHealthyPercent': 50}
+[MATCH] F-46: two records ordered by id with all fields (upsert on pod-a) :: [{'monitorId': 'e4172bc1-0c6b-4648-a394-a0863a5ed027', 'instanceId': 'pod-a', 'status': 'UP', 'components': [], 'namespace': 'ns', 'node': 'n1', 'cluster': 'c1', 'version': '1.0', 'left': False, 'lastSeenAt': '2026-11-02T00:30:51.422Z'}, {'monitorId': 'e4172bc1-0c6b-4648-a394-a0863a5ed027', 'instanc
+[MATCH] F-46: unknown monitor instances → 404 :: 404
+[MATCH] F-76 (BE side): leaving:true → left=true immediately :: [('pod-a', False), ('pod-b', True)]
+[MATCH] F-48: left pod dropped from the rollup count :: UP (1 of 1 pod UP)
+[MATCH] F-49: explicit staleAfterSeconds=20 kept after an instance report :: 20
+=== F-64 identity
+[MATCH] F-64: header accepted on GET :: 200
+[MATCH] F-64: ?clientId= accepted on the stream (non-empty tenant) :: 200
+[MATCH] F-27: missing id → 401 :: (401, {'error': 'missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)'})
+=== cmd-4 (e2e) SSE first-byte latency
+[MATCH] GAP-e2e-5 / cmd-4: empty tenant, header: first byte at 15.003s (~15 s claimed) :: 200 15.003224
+[MATCH] GAP-e2e-5 / cmd-4: empty tenant, ?clientId=: first byte at 15.003s (~15 s claimed) :: 200 15.003310
+[MISMATCH] GAP-e2e-5 / cmd-4: non-empty tenant: first byte at 0.004s (~15 s claimed) :: 200 0.004481
+=== UX-22 / UX-25 / GAP-e2e-7 error texts
+[MATCH] UX-22: unknown enum → 400 "Failed to read HTTP message" without the field name :: (400, {'error': 'Failed to read HTTP message'})
+[MATCH] UX-22: malformed JSON → 400 "Failed to read HTTP message" :: (400, {'error': 'Failed to read HTTP message'})
+[MATCH] UX-25: unknown /v1 path → 404 "No static resource v1/nothing." :: (404, {'error': 'No static resource v1/nothing.'})
+[MISMATCH] UX-25: text/plain body → 415 "unexpected error" :: (415, {'error': "Content type 'text/plain' not supported for bodyType=com.atlas.communication.publishing.domain.CreateCommunicationCommand"})
+
+SUMMARY: 48 checks, 46 match, 2 mismatch
+  MISMATCH: GAP-e2e-5 / cmd-4 non-empty tenant: first byte at 0.004s (~15 s claimed)
+  MISMATCH: UX-25 text/plain body → 415 "unexpected error"

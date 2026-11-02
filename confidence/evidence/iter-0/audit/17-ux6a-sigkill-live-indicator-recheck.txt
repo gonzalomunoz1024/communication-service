@@ -1,0 +1,29 @@
+# UX-6 (a) re-check: private backend :18500 (iteration-0 jar) behind the vite dev proxy :3500; SIGKILL the backend, sample the live indicator every 2 s, restart it with the same command, measure when the stream is back. tenant=audit-ux6a-5g1n
+[3.3s] before kill: indicator=Live cards=1
+[3.4s] kill -9 24723 (backend :18500) sent
+[5.4s] during outage: indicator=Live api=ERR ECONNREFUSED
+[7.4s] during outage: indicator=Live api=ERR ECONNREFUSED
+[9.4s] during outage: indicator=Live api=ERR ECONNREFUSED
+[11.4s] during outage: indicator=Live api=ERR ECONNREFUSED
+[13.4s] during outage: indicator=Live api=ERR ECONNREFUSED
+[15.4s] during outage: indicator=Live api=ERR ECONNREFUSED
+[17.4s] during outage: indicator=Live api=ERR ECONNREFUSED
+[17.4s] restarted backend with the same command (new pid 19057)
+[23.6s] backend answers 200 again; indicator=Live
+[23.6s] indicator back to Live (0 s after the backend was up)
+[23.6s] published 'after restart 5g1n'
+[29.9s] indicator=Live
+[40.1s] indicator=Live
+[50.2s] indicator=Live
+[60.3s] indicator=Live
+[70.4s] indicator=Live
+[80.4s] indicator=Live
+[90.5s] indicator=Live
+[100.6s] indicator=Live
+[110.7s] indicator=Live
+[120.8s] indicator=Live
+[130.9s] indicator=Live
+[141.0s] indicator=Live
+[151.1s] indicator=Live
+[161.1s] indicator=Live
+RESULT: indicator during the 3.4s-outage: see samples above; backend up at 23.6s; Live again at 23.6s; post-restart item seen live at not seen; stream requests: [{"at":"0.8s","failed":"net::ERR_ABORTED"},{"at":"0.9s","status":200}]

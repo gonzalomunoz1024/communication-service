@@ -1,0 +1,21 @@
+== F-67 config errors (host binary built by the sidecar verifier: /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar/bin/health-sidecar)
+--- env []
+{"time":"2026-11-02T00:34:52.188842183Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit=2
+--- env [CS_ENDPOINT=http://x CS_TENANT=t CS_INTERVAL=nope]
+{"time":"2026-11-02T00:34:52.194234708Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"nope\""}
+exit=2
+--- env [CS_ENDPOINT=http://x CS_TENANT=t CS_PROBE=tcp]
+{"time":"2026-11-02T00:34:52.207915208Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT is required when CS_PROBE=tcp"}
+exit=2
+--- env [CS_ENDPOINT=ftp://x CS_TENANT=t]
+{"time":"2026-11-02T00:34:52.223827204Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+exit=2
+--- env [CS_ENDPOINT=http://x CS_TENANT=t CS_IGNORE_PORTS=9-1]
+{"time":"2026-11-02T00:34:52.229307873Z","level":"ERROR","msg":"invalid configuration","error":"CS_IGNORE_PORTS: bad port range \"9-1\""}
+exit=2
+== DeriveService unit tests
+=== RUN   TestDeriveService
+--- PASS: TestDeriveService (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.028s

@@ -1,0 +1,38 @@
+[00:51:24] private backend pid 16304 on :18800 (Netty started on port 18800)
+  six noise services reporting (keeps silent share at 1/8 = 12.5 %)
+  silent-1 UP -> 202  (no further reports)
+  zero-1 UP -> 202
+  zero-2 UP -> 202
+  zero-1 leaving -> 202
+  zero-2 leaving -> 202
+[00:51:46] +20 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=1 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[00:52:07] +41 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=1 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[00:52:27] +61 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=1 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[00:52:47] +81 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=1 summary='UP (1 of 1 pod UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[00:53:07] +101 s:
+    monitor goes-silent     lastStatus=DOWN     unhealthy=5 incidents=1 summary='DOWN (1 pod has not reported since 2026-11-02T00:51:26.380Z (silent-1))'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[00:53:27] +121 s:
+    monitor goes-silent     lastStatus=DOWN     unhealthy=15 incidents=1 summary='DOWN (1 pod has not reported since 2026-11-02T00:51:26.380Z (silent-1))'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[00:53:48] +142 s:
+    monitor goes-silent     lastStatus=DOWN     unhealthy=25 incidents=1 summary='DOWN (1 pod has not reported since 2026-11-02T00:51:26.380Z (silent-1))'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: [('OUTAGE', 'MAJOR', 'goes-silent is down', 'Automated health check reported **DOWN** at 2026-11-01T23:50:19.447704269Z (no health report received since 2026-11-01T23:48:45.873Z).\n\n1 pod has not reported since 2026-11-01T23:48:45.873Z (silent-1)\n\nThis notice is man')]
+[00:53:48] backend log lines about staleness/silence:
+[00:53:48] DONE
+SIL_RC=0

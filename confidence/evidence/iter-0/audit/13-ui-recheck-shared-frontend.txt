@@ -1,0 +1,13 @@
+[MATCH] UX-11: fresh visit (tenant acme, type Outage) shows "Nothing outage is active or upcoming for acme." :: Feed Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Connecting Refresh All clear Nothing outage is active or upcoming 
+[MATCH] UX-13: tenant pre-filled with acme on first visit :: acme
+[MATCH] F-60: created frame → card appears live :: {"ms":292,"status":201}
+[MATCH] F-63/UX-10: ticket chip rendered as text, not a link (instance-url unset) :: SPAN
+[MATCH] UX-12: "Starts in …" tag is CSS-capitalised (renders "Starts In …") :: {"text":"Starts in 60m","transform":"capitalize"}
+[MATCH] F-62: resolve: inline confirm, card removed, stored RETIRED with audit :: {"confirmSnippet":"Active Major Outage INC0012345 Updated just now live 1tno svc-a Started just now audit-sre Resolving retires it: it leaves every consumer's ","last":[{"at":"2026-11-02T00:39:46.880Z","actor":"audit-sre","action":"ACTIVE -> RETIRED"}]}
+[MATCH] UX-7: no confirmation / undo / status announcement after resolve :: []
+[MATCH] F-64: every fetch carries X-Client-Id: communication-frontend; the stream carries ?clientId= :: {"fetches":5,"stream":"/v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communication-frontend"}
+[MATCH] F-60 (console): no page errors during the live flow :: []
+[MATCH] GAP-frontend-2: future-dated OUTAGE appears live under Upcoming but is gone after reload; GET hides it :: {"shown":true,"after":0,"upcomingSection":true,"getCount":0}
+[MATCH] GAP-frontend-7: 103 visible items → UI shows 100 with no hint; server hasNext=true :: {"cards":100,"hasNext":true,"total":103}
+[MATCH] GAP-frontend-1: after a non-200 on the stream the EventSource is not re-created (≤2 requests in 12 s, indicator stuck); toggling Live updates restores Live :: {"streamRequestsIn12s":2,"indicatorAfter500":"Reconnecting","switchFound":1,"indicatorAfterToggle":"Live"}
+SUMMARY: 12 checks, 12 match, 0 mismatch

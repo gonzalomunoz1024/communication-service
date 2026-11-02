@@ -1,0 +1,25 @@
+# Re-check of sidecar cmd-7 STEP E (dead app -> UNKNOWN instead of DOWN) and F-77 (rediscovery after the app restarts) on the audit pod: audit-hold/audit-sidecar/audit-app, private backend :18500, tenant audit-pod, service audit-app, CS_INTERVAL=3s CS_HEARTBEAT=10s CS_STARTUP_GRACE=30s; sidecar image health-sidecar:ci built 2026-11-01T23:17Z (iteration-0 code)
+[00:53:58] baseline
+  /status: {"version": "ci", "service": "audit-app", "tenant": "audit-pod", "instance": "audit-app-7f9c6d5b4-aud1t", "target": "http://127.0.0.1:8080/actuator/health", "upSeen": true, "lastReport": {"tenantId": "audit-pod", "service": "audit-app", "status": "UP", "components": {"db": {"details": {"database": "PostgreSQL"}, "status": "UP"}, "ping": {"status": "UP"}}, "observedAt": "2026-11-02T00:53:57.535Z", "publisher": "health
+  monitor: audit-app lastStatus=UP summary=None unhealthy=None healthy=None openNotice=None
+  feed: empty
+[00:53:58] docker kill audit-app -> the app port disappears (connection refused / no listener)
+  /status: {"version": "ci", "service": "audit-app", "tenant": "audit-pod", "instance": "audit-app-7f9c6d5b4-aud1t", "upSeen": true, "lastReport": {"tenantId": "audit-pod", "service": "audit-app", "status": "UNKNOWN", "message": "no health target found yet", "observedAt": "2026-11-02T00:54:08.388Z", "publisher": "health-sidecar", "instance": {"id": "audit-app-7f9c6d5b4-aud1t", "namespace": "audit-ns", "node": "worker-1", "clust
+  monitor: audit-app lastStatus=DOWN summary=None unhealthy=None healthy=None openNotice=None
+  feed: empty
+[00:54:10] 12 s later (one heartbeat further)
+  /status: {"version": "ci", "service": "audit-app", "tenant": "audit-pod", "instance": "audit-app-7f9c6d5b4-aud1t", "upSeen": true, "lastReport": {"tenantId": "audit-pod", "service": "audit-app", "status": "UNKNOWN", "message": "no health target found yet", "observedAt": "2026-11-02T00:54:21.822Z", "publisher": "health-sidecar", "instance": {"id": "audit-app-7f9c6d5b4-aud1t", "namespace": "audit-ns", "node": "worker-1", "clust
+  monitor: audit-app lastStatus=DOWN summary=None unhealthy=None healthy=None openNotice=None
+  feed: empty
+  sidecar log since the kill:
+    {"time":"2026-11-02T00:54:01.612768178Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+    {"time":"2026-11-02T00:54:01.629691653Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+    {"time":"2026-11-02T00:54:05.165900197Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found yet"}
+[00:54:22] docker start audit-app
+  /status: {"version": "ci", "service": "audit-app", "tenant": "audit-pod", "instance": "audit-app-7f9c6d5b4-aud1t", "target": "http://127.0.0.1:8080/actuator/health", "upSeen": true, "lastReport": {"tenantId": "audit-pod", "service": "audit-app", "status": "UP", "components": {"db": {"details": {"database": "PostgreSQL"}, "status": "UP"}, "ping": {"status": "UP"}}, "observedAt": "2026-11-02T00:54:31.474Z", "publisher": "health
+  monitor: audit-app lastStatus=UP summary=None unhealthy=None healthy=None openNotice=None
+  feed: empty
+  sidecar log since the restart:
+    {"time":"2026-11-02T00:54:24.867065935Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+    {"time":"2026-11-02T00:54:24.880615951Z","level":"INFO","msg":"reported","status":"UP","message":""}
+[00:54:34] end

@@ -1,0 +1,10 @@
+publish -> 201 {"id": "135370b8-253d-4a32-8560-303a1ea039fa", "tenantId": "audit-f15-de8e", "publisher": "audit", "type": "OUTAGE", "severity": "MAJOR", "title": "f15 projection", "affectedServices": [], "audience": "CUSTOMERS", "status": "SCHEDULED", "startsAt": "2026-11-02T00:51:31Z", "expiresAt": "2026-11-02T00
+stored right after publish: SCHEDULED startsAt 2026-11-02T00:51:31Z expiresAt 2026-11-02T00:51:38Z
+  t+  0.0s stored=SCHEDULED feed=-
+  t+  4.9s stored=SCHEDULED feed=ACTIVE
+  t+ 12.1s stored=SCHEDULED feed=-
+  t+ 28.3s stored=EXPIRED   feed=-
+CLAIM F-15 (e2e): feed shows ACTIVE while stored SCHEDULED -> True
+CLAIM F-15 (e2e): gone from the feed right after expiresAt (t+12s) while stored still ACTIVE -> gone at t+12.1s stored=SCHEDULED
+CLAIM F-15 (e2e): permalink eventually EXPIRED -> True at t+28.3s
+VERDICT: MATCH

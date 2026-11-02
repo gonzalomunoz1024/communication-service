@@ -1,0 +1,68 @@
+[00:31:55] STEP A: app container joins the pod (fakeapp:ci, UID 1001)
+docker: Error response from daemon: joining network namespace of container: No such container: sc-pod-main
+
+Run 'docker run --help' for more information
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=True lastSeen=2026-11-01T23:42:52.515Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  feed: empty
+[00:32:03] STEP B: 25 s of steady state (heartbeat 10 s) then stats
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+[00:32:28] STEP C: app answers DOWN (db DOWN) -> expect DOWN after retry delay, OUTAGE notice after the 2nd DOWN report (failureThreshold 2, heartbeat 10 s)
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=True lastSeen=2026-11-01T23:42:52.515Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  feed: empty
+[00:32:50] after the heartbeat:
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[00:32:50] STEP D: app recovers -> UP; notice retired after recoveryThreshold 2 UP reports
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[00:33:12] after the heartbeat:
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[00:33:12] STEP E: kill the app container (connection refused) -> DOWN (unreachable); the port is gone so the sidecar rediscovers; then restart the app
+Error response from daemon: cannot kill container: sc-pod-main-app: container 418ec618dc54320ed0aa2dd7e0c28f0b032d09207290dd7f362e243692f8898e is not running
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[00:33:21] restart app
+Error response from daemon: joining network namespace of container: No such container: sc-pod-main
+failed to start containers: sc-pod-main-app
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[00:33:43] after heartbeat:
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[00:33:43] STEP F: sidecar crash (docker kill -s KILL) and restart (emulates a liveness restart) -> UP again, same monitor, no new notice
+Error response from daemon: cannot kill container: sc-pod-main-sidecar: No such container: sc-pod-main-sidecar
+error: no such object: sc-pod-main-sidecar
+  sidecar state: 
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=True lastSeen=2026-11-01T23:42:52.515Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+Error response from daemon: No such container: sc-pod-main-sidecar
+failed to start containers: sc-pod-main-sidecar
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=True lastSeen=2026-11-01T23:42:52.515Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  feed: empty
+[00:33:52] STEP G: steady state 30 s, stats
+  /status: unreachable
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+[00:34:22] STEP H: docker stop sidecar (SIGTERM, 30 s grace) -> leaving report, left=true, exit 0
+Error response from daemon: No such container: sc-pod-main-sidecar
+error: no such object: sc-pod-main-sidecar
+  stop took 0.03 s; exit code 
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=True lastSeen=2026-11-01T23:42:52.515Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[00:34:23] SIDECAR LOG (whole run):
+Error response from daemon: No such container: sc-pod-main-sidecar
+[00:34:23] DONE (containers left running for inspection: sc-pod-main, sc-pod-main-app; sidecar stopped)
+MAIN_RC=0

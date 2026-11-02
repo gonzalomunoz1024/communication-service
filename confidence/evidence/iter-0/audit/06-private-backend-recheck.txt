@@ -1,0 +1,18 @@
+=== F-22 status sweeper (private backend 18500, sweep 2 s), tenant audit-sw-fasr
+[MATCH] F-22 (setup): created SCHEDULED :: SCHEDULED
+[MATCH] F-22: stored ACTIVE after the start passed (sweep applied), audit SCHEDULED -> ACTIVE :: ('ACTIVE', {'at': '2026-11-02T00:34:57.427Z', 'actor': 'sweeper', 'action': 'SCHEDULED -> ACTIVE'})
+[MATCH] F-22: `activated` then `expired` frames on the stream :: [(0.0, 'created', 'SCHEDULED', 'sweep fasr'), (3.6, 'activated', 'ACTIVE', 'sweep fasr'), (9.8, 'expired', 'EXPIRED', 'sweep fasr')]
+[MATCH] F-22: stored EXPIRED by actor sweeper :: ('EXPIRED', {'at': '2026-11-02T00:35:03.545Z', 'actor': 'sweeper', 'action': 'ACTIVE -> EXPIRED'})
+=== F-48 silence / leaving (18500), tenant audit-sil-fasr
+[MATCH] F-48: pod-1 left: summary counts only pod-2 :: UP (1 of 1 pod UP)
+[MATCH] F-48: one left + one silent (staleAfterSeconds 5) → DOWN naming pod-2 :: (6.1, 'DOWN (1 pod has not reported since 2026-11-02T00:35:21.662Z (pod-2))')
+[MISMATCH] F-48: OUTAGE notice opened for the silent service :: []
+[MISMATCH] F-48: silent pod returns → notice retired :: (None, [])
+[MATCH] F-48: all pods left → UNKNOWN (no live pod reports), no notice after 8 s :: ('UP', 'UNKNOWN (no live pod reports)', 0)
+=== F-45 staleness safety valve (private backend 18501, db audit-valve, stale grace 0)
+[MATCH] F-45: 2 of 4 silent for 12 s → nothing declared DOWN (valve at 30 %) :: ['UP', 'UP', 'UP', 'UP']
+[MATCH] F-45: 1 of 4 silent → declared DOWN :: (1.1, 'DOWN (no health report received since 2026-11-02T00:35:39.741Z)')
+
+SUMMARY: 11 checks, 9 match, 2 mismatch
+PRIV_RC=0
+2026-11-02T00:35:45.217Z  WARN 31975 --- [communication-service] [ntLoopGroup-3-3] c.a.c.h.application.HealthSweepUseCase   : 2 of 4 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
