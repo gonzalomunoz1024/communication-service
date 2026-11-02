@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, effectiveStatus, reconcile, sortFeed, toFeedItem } from '../outages/feed-state'
+import { UPCOMING_WINDOW_MS, applyEvent, effectiveStatus, inFeed, reconcile, sortFeed, toFeedItem } from '../outages/feed-state'
 import type { Communication, CommunicationEvent, FeedItem } from '../outages/types'
 
 const now = Date.parse('2026-11-01T21:00:00Z')
@@ -54,6 +54,22 @@ describe('applyEvent', () => {
   it('does not add a draft', () => {
     expect(applyEvent([], event('CREATED', comm({ status: 'DRAFT' })), now)).toEqual([])
   })
+  it('lists scheduled maintenance inside the upcoming window, like GET /v1/feed', () => {
+    const inThreeDays = new Date(now + 3 * 86_400_000).toISOString()
+    const inTenDays = new Date(now + 10 * 86_400_000).toISOString()
+    const soon = applyEvent([], event('CREATED', comm({ type: 'MAINTENANCE', severity: 'INFO', status: 'SCHEDULED', startsAt: inThreeDays })), now)
+    expect(soon.map((i) => [i.id, i.status])).toEqual([['c1', 'SCHEDULED']])
+    expect(applyEvent([], event('CREATED', comm({ type: 'MAINTENANCE', severity: 'INFO', status: 'SCHEDULED', startsAt: inTenDays })), now)).toEqual([])
+  })
+  it('does not list a scheduled outage, incident or change until it starts', () => {
+    const inOneHour = new Date(now + 3_600_000).toISOString()
+    for (const type of ['OUTAGE', 'INCIDENT', 'CHANGE'] as const) {
+      expect(applyEvent([], event('CREATED', comm({ type, status: 'SCHEDULED', startsAt: inOneHour })), now)).toEqual([])
+    }
+    // ...and drops one that is pushed into the future by an update
+    const shown = applyEvent([], event('CREATED', comm()), now)
+    expect(applyEvent(shown, event('UPDATED', comm({ startsAt: inOneHour, updatedAt: '2026-11-01T20:30:00Z' })), now)).toEqual([])
+  })
   it('keeps the ticket when projecting', () => {
     const ticket = { system: 'servicenow', number: 'INC0012345', url: 'https://acme.service-now.com/x' }
     expect(toFeedItem(comm({ ticket }), now).ticket).toEqual(ticket)
@@ -63,6 +79,17 @@ describe('applyEvent', () => {
     const item = toFeedItem(comm({ history: [{ at: 'x', actor: 'y', action: 'z' }], version: 3 }), now)
     expect('history' in item).toBe(false)
     expect('version' in item).toBe(false)
+  })
+})
+
+describe('inFeed', () => {
+  it('matches the service rule at the window boundary', () => {
+    const edge = { status: 'SCHEDULED', type: 'MAINTENANCE', startsAt: new Date(now + UPCOMING_WINDOW_MS).toISOString() } as const
+    expect(inFeed(edge, now)).toBe(true)
+    expect(inFeed({ ...edge, startsAt: new Date(now + UPCOMING_WINDOW_MS + 1000).toISOString() }, now)).toBe(false)
+    expect(inFeed({ ...edge, type: 'OUTAGE' }, now)).toBe(false)
+    expect(inFeed({ status: 'ACTIVE', type: 'OUTAGE', startsAt: '2026-11-01T20:00:00Z' }, now)).toBe(true)
+    expect(inFeed({ status: 'EXPIRED', type: 'OUTAGE', startsAt: '2026-11-01T20:00:00Z' }, now)).toBe(false)
   })
 })
 

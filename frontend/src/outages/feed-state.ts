@@ -34,16 +34,33 @@ export function toFeedItem(c: Communication, now = Date.now()): FeedItem {
   }
 }
 
-const visible = (s: CommunicationStatus) => s === 'ACTIVE' || s === 'SCHEDULED'
+/**
+ * How far ahead scheduled maintenance is listed: mirrors `communication.feed.upcoming-window`
+ * in the service's application.yml (P7D). Keep the two in step.
+ */
+export const UPCOMING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
 /**
- * Applies one stream event to the feed: upsert by id while the communication is visible,
- * drop it once it is retired, expired or a draft. Older updates never overwrite newer ones.
+ * The visibility rule of GET /v1/feed (CommunicationQuery.visibleAt): everything live, plus
+ * scheduled MAINTENANCE that starts within the upcoming window. Scheduled outages, incidents
+ * and changes appear only once they start. Stream frames go through the same rule, so the
+ * live list and a reload agree.
+ */
+export function inFeed(item: Pick<FeedItem, 'status' | 'type' | 'startsAt'>, now = Date.now()): boolean {
+  if (item.status === 'ACTIVE') return true
+  if (item.status !== 'SCHEDULED') return false
+  return item.type === 'MAINTENANCE' && Date.parse(item.startsAt) <= now + UPCOMING_WINDOW_MS
+}
+
+/**
+ * Applies one stream event to the feed: upsert by id while the communication is in the feed,
+ * drop it once it is retired, expired, a draft or scheduled outside what the feed lists.
+ * Older updates never overwrite newer ones.
  */
 export function applyEvent(items: FeedItem[], event: CommunicationEvent, now = Date.now()): FeedItem[] {
   const next = toFeedItem(event.communication, now)
   const i = items.findIndex((it) => it.id === next.id)
-  if (!visible(next.status)) return i === -1 ? items : items.filter((it) => it.id !== next.id)
+  if (!inFeed(next, now)) return i === -1 ? items : items.filter((it) => it.id !== next.id)
   if (i === -1) return [...items, next]
   if (Date.parse(items[i].updatedAt) > Date.parse(next.updatedAt)) return items
   const copy = items.slice()

@@ -44,6 +44,11 @@ in case the replay did not cover the gap. **Try again** in the error state reope
 | Live updates | `GET /v1/feed/stream?tenantId=…` (SSE, `CommunicationEvent` frames) |
 | Resolve | `POST /v1/communications/{id}/retire` (`RetireRequest`) |
 
+The feed lists what is live plus scheduled maintenance starting within the next 7 days
+(`communication.feed.upcoming-window`); a scheduled outage, incident or change appears when it
+starts. Stream frames are filtered by the same rule (`inFeed` in `feed-state.ts`), so the live
+list never shows something a reload would not.
+
 The form enforces the same invariants as `Communication#validateInvariants` before sending
 (severity floor for OUTAGE/INCIDENT, `endsAt` for MAINTENANCE, time ordering, length caps), and
 shows the service's `{"error": …}` text when it rejects a request anyway.
