@@ -28,6 +28,15 @@ export interface Ticket {
   url?: string
 }
 
+/**
+ * The body of a failed call: `error` always; the 409 for a reused (tenantId, externalRef) key also
+ * names the first follow-up reference the tenant does not hold yet.
+ */
+export interface ErrorBody {
+  error: string
+  suggestedExternalRef?: string
+}
+
 /** POST /v1/communications body. Instants are ISO-8601 strings. */
 export interface CreateCommunication {
   tenantId: string

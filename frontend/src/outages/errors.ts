@@ -48,21 +48,31 @@ export interface DuplicateReference {
   tenantId: string
   /** the reference is the ServiceNow incident number (External reference was left empty) */
   fromTicket: boolean
-  /** a value to suggest for the follow-up notice */
-  next: string
+  /**
+   * a value to suggest for the follow-up notice: the service's `suggestedExternalRef`, else
+   * nextReference(); none when the service says the follow-up values it checked are all taken
+   */
+  next?: string
   /** the service's own sentence (it names the notice that holds the key by id) */
   said: string
 }
 
 /**
- * The value to suggest once `reference` is taken: a follow-up's number goes up (INC0012345-2 →
- * INC0012345-3), anything else gets -2 (the end of a date such as payments-2026-11-12 is not a
- * count, so it is left alone).
+ * The value to suggest once `reference` is taken, from a service that neither names one nor says
+ * they are all taken: a follow-up's number goes up (INC0012345-2 → INC0012345-3), anything else gets
+ * -2 (the end of a date such as payments-2026-11-12 is not a count, so it is left alone). Only the
+ * service knows whether that value is free as well.
  */
 export function nextReference(reference: string): string {
   const m = /^(.+)-([1-9])$/.exec(reference)
   return m ? `${m[1]}-${Number(m[2]) + 1}` : `${reference}-2`
 }
+
+/**
+ * How the service says it found no free follow-up value; it then sends no suggestedExternalRef:
+ * "give a follow-up notice a new value (INC9-2 to INC9-51 are taken as well)".
+ */
+const NONE_FREE = /\(([^()]+ are taken as well)\)/
 
 /**
  * Recognises the 409 for a reused (tenantId, externalRef) key by its status and the word
@@ -78,7 +88,11 @@ export function duplicateReference(e: unknown, sent?: CreateCommunication): Dupl
   const reference = typed || sent?.ticket?.number || /externalRef '(.+?)' (?:is already used|for tenant)/.exec(said)?.[1]
   const tenantId = sent?.tenantId.trim() || /\b(?:in|for) tenant '?([^\s']+)/.exec(said)?.[1].replace(/[.;,:]+$/, '')
   if (!reference || !tenantId) return null
-  return { reference, tenantId, fromTicket: sent ? !typed && !!sent.ticket : true, next: nextReference(reference), said }
+  // the service names the first follow-up the tenant does not hold yet (INC…-3 when INC…-2 is taken too),
+  // or says it found none free; a service that does neither leaves the counting to nextReference()
+  const suggested = e.body?.suggestedExternalRef?.trim()
+  const next = suggested || (NONE_FREE.test(said) ? undefined : nextReference(reference))
+  return { reference, tenantId, fromTicket: sent ? !typed && !!sent.ticket : true, next, said }
 }
 
 /**
@@ -94,7 +108,9 @@ export function explainPublishError(e: unknown, sent?: CreateCommunication): str
   const taken = duplicateReference(e, sent)
   if (!taken) return explainError(e)
   const { reference, tenantId, next } = taken
+  // a value to use, or the service's own words when the follow-up values it checked are all taken
+  const instead = next ? `, such as ${next}` : ` (${NONE_FREE.exec(taken.said)?.[1] ?? ''})`
   return taken.fromTicket
-    ? `${reference} is already the reference of a notice in tenant ${tenantId} (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as ${next}.`
-    : `${reference} is already the External reference of a notice in tenant ${tenantId}. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as ${next}.`
+    ? `${reference} is already the reference of a notice in tenant ${tenantId} (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference${instead}.`
+    : `${reference} is already the External reference of a notice in tenant ${tenantId}. References are permanent, even after a notice is retired, so a follow-up needs another External reference${instead}.`
 }

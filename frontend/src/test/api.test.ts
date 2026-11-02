@@ -39,6 +39,18 @@ describe('createCommunicationClient', () => {
     await expect(client.feed({ tenantId: 'acme' })).rejects.toBeInstanceOf(ApiError)
   })
 
+  it("keeps the 409's suggestedExternalRef, the follow-up value the service says the tenant does not hold yet", async () => {
+    const said = "externalRef 'INC0012345' is already used by notice n1 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-3)."
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ error: said, suggestedExternalRef: 'INC0012345-3' }), { status: 409 }))
+    const client = createCommunicationClient('', { fetchImpl: fetchImpl as unknown as typeof fetch })
+    await expect(client.publish({ tenantId: 'acme', publisher: 'p', type: 'OUTAGE', severity: 'MAJOR', title: 't' })).rejects.toMatchObject({
+      status: 409,
+      message: said,
+      fromService: true,
+      body: { error: said, suggestedExternalRef: 'INC0012345-3' },
+    })
+  })
+
   describe('stream', () => {
     const opened: string[] = []
     class FakeEventSource {

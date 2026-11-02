@@ -258,6 +258,19 @@ describe('PublishOutageForm duplicate reference', () => {
     expect(sentence).toBeVisible()
   })
 
+  it("suggests the service's free value for a third notice on one incident, whose next number is taken too", async () => {
+    const c = client()
+    // INC0012345 and INC0012345-2 are both taken; the service names the first value the tenant does not hold
+    const said =
+      "externalRef 'INC0012345' is already used by notice 37f5f540-93b0-4641-8034-326848d8e50d in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-3)."
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, said, true, { error: said, suggestedExternalRef: 'INC0012345-3' }))
+    const alert = await publishIncident(c)
+    expect(alert).toHaveTextContent(
+      'The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-3.',
+    )
+    expect(alert).not.toHaveTextContent('INC0012345-2')
+  })
+
   it('names the External reference that was typed and suggests the next follow-up number', async () => {
     const c = client()
     const said =

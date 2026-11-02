@@ -111,10 +111,13 @@ a chip of its own; a notice raised by health monitoring, whose reference is the 
 notice's `externalRef` unless **External reference** is filled in, and that key is permanent per
 tenant (a retired notice keeps it): a second notice for the same incident needs another External
 reference, which is what the 409 banner says. The banner recognises that 409 by its status and the
-word `externalRef`, names the field the reference came from and suggests a value (a follow-up's
-number goes up: `INC0012345-2`, then `INC0012345-3`; any other reference gets `-2`); the service's
-own sentence, which names the notice holding the reference by id, is folded under **What the
-service said**.
+word `externalRef`, names the field the reference came from and suggests the value the 409 names
+in `suggestedExternalRef`, the first follow-up the tenant does not hold yet (`INC0012345-3` when
+`INC0012345-2` is taken too); from a service that does not send that field it counts on by itself (a
+follow-up's number goes up: `INC0012345-2`, then `INC0012345-3`; any other reference gets `-2`). When
+the service says the follow-up values it checked are all taken (`INC0012345-2 to INC0012345-51 are
+taken as well`), the banner suggests none and gives those words instead. The service's own sentence,
+which names the notice holding the reference by id, is folded under **What the service said**.
 
 ## Porting to another UI
 

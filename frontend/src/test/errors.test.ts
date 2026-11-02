@@ -112,6 +112,28 @@ describe('explainPublishError', () => {
     expect(duplicateReference(e)).toBeNull()
     expect(explainPublishError(e)).toBe('externalRef already taken')
   })
+  it('prefers the follow-up value the service names, and counts on itself when the service names none', () => {
+    const said = "externalRef 'INC0012345' is already used by notice n1 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-3)."
+    const sent = { tenantId: 'acme', publisher: 'oncall', type: 'OUTAGE', severity: 'MAJOR', title: 't', ticket: { system: 'servicenow', number: 'INC0012345' } } as const
+    // INC0012345-2 is taken as well: only the service can know, and it names the first free value
+    expect(duplicateReference(new ApiError(409, said, true, { error: said, suggestedExternalRef: 'INC0012345-3' }), sent)?.next).toBe('INC0012345-3')
+    expect(explainPublishError(new ApiError(409, said, true, { error: said, suggestedExternalRef: 'INC0012345-3' }), sent)).toMatch(/such as INC0012345-3\.$/)
+    expect(duplicateReference(new ApiError(409, said, true, { error: said, suggestedExternalRef: ' ' }), sent)?.next).toBe('INC0012345-2')
+    expect(duplicateReference(new ApiError(409, said, true, { error: said }), sent)?.next).toBe('INC0012345-2')
+  })
+  it('suggests no value, and gives the service\'s words, when the service says the follow-up values it checked are all taken', () => {
+    // past 50 taken follow-ups the service names none (no suggestedExternalRef) and says which ones it checked
+    const said = "externalRef 'INC9' is already used by notice c1 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (INC9-2 to INC9-51 are taken as well)."
+    const e = new ApiError(409, said, true, { error: said })
+    expect(duplicateReference(e)).toMatchObject({ reference: 'INC9', tenantId: 'vmforge', fromTicket: true, next: undefined })
+    expect(explainPublishError(e)).toBe(
+      'INC9 is already the reference of a notice in tenant vmforge (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference (INC9-2 to INC9-51 are taken as well).',
+    )
+    const typed = { tenantId: 'vmforge', publisher: 'oncall', type: 'OUTAGE', severity: 'MAJOR', title: 't', externalRef: 'INC9' } as const
+    expect(explainPublishError(e, typed)).toBe(
+      'INC9 is already the External reference of a notice in tenant vmforge. References are permanent, even after a notice is retired, so a follow-up needs another External reference (INC9-2 to INC9-51 are taken as well).',
+    )
+  })
   it('suggests the next follow-up number, and -2 for anything else', () => {
     expect(['INC0012345', 'INC0012345-1', 'INC0012345-2', 'INC0012345-9', 'payments-2026-11-01', 'payments-2026-11-12', 'v2'].map(nextReference)).toEqual([
       'INC0012345-2',

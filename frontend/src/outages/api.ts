@@ -3,6 +3,7 @@ import type {
   CommunicationEvent,
   CommunicationEventType,
   CreateCommunication,
+  ErrorBody,
   FeedFilter,
   FeedItem,
   Page,
@@ -17,11 +18,14 @@ export class ApiError extends Error {
   readonly status: number
   /** true when `message` is the service's own {"error"} text, false for a status line or a failed connection */
   readonly fromService: boolean
-  constructor(status: number, message: string, fromService = false) {
+  /** the service's error body, when it sent one */
+  readonly body?: ErrorBody
+  constructor(status: number, message: string, fromService = false, body?: ErrorBody) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.fromService = fromService
+    this.body = body
   }
 }
 
@@ -85,11 +89,14 @@ export function feedQuery(filter: FeedFilter, extra: Record<string, string | num
   return q.toString()
 }
 
-/** The service's {"error"} text when it sent one (true), else the status line (false). */
-async function errorMessage(res: Response): Promise<[string, boolean]> {
+/** The service's {"error"} text when it sent one (true, with its body), else the status line (false). */
+async function errorMessage(res: Response): Promise<[string, boolean, ErrorBody?]> {
   try {
-    const body = (await res.json()) as { error?: string }
-    if (body?.error) return [body.error, true]
+    const body = (await res.json()) as ErrorBody
+    if (body?.error) {
+      const suggestedExternalRef = typeof body.suggestedExternalRef === 'string' ? body.suggestedExternalRef : undefined
+      return [body.error, true, { error: body.error, suggestedExternalRef }]
+    }
   } catch {
     /* not JSON */
   }
@@ -132,8 +139,8 @@ export function createCommunicationClient(
       throw new ApiError(0, e instanceof Error ? e.message : String(e))
     }
     if (!res.ok) {
-      const [text, fromService] = await errorMessage(res)
-      throw new ApiError(res.status, text, fromService)
+      const [text, fromService, body] = await errorMessage(res)
+      throw new ApiError(res.status, text, fromService, body)
     }
     return (await res.json()) as T
   }
