@@ -50,12 +50,17 @@ export async function openFeed(page: Page, tenant = TENANT): Promise<void> {
   await page.goto('/#/feed')
   await page.getByRole('textbox', { name: 'Tenant', exact: true }).fill(tenant)
   await expect(page.getByText('Live', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await markDocument(page)
+}
+
+/** Marks the page's current document for expectNotReloaded. */
+export async function markDocument(page: Page): Promise<void> {
   await page.evaluate((run) => {
     ;(window as unknown as { __e2eRun?: string }).__e2eRun = run
   }, RUN)
 }
 
-/** The page is the same document openFeed left: a reload (or navigation) would have lost the marker. */
+/** The page is the same document openFeed (or markDocument) left: a reload (or navigation) would have lost the marker. */
 export async function expectNotReloaded(page: Page): Promise<void> {
   expect(await page.evaluate(() => (window as unknown as { __e2eRun?: string }).__e2eRun)).toBe(RUN)
 }
