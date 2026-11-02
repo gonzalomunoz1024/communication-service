@@ -59,7 +59,7 @@ public class HealthObservationUseCase {
         HealthEvaluation evaluation = monitor.evaluate(report, now);
         HealthMonitor next = evaluation.monitor();
         return switch (evaluation.transition()) {
-            case NONE -> monitors.save(next);
+            case NONE -> reconcileOpen(next).flatMap(monitors::save);
             case OPEN -> open(next, report, now);
             case REPLACE -> replace(next, report, now);
             case UPDATE -> update(next, report, now).flatMap(monitors::save);
@@ -70,6 +70,35 @@ public class HealthObservationUseCase {
     /** Retires whatever the monitor has open (used when a monitor is deleted). */
     public Mono<HealthMonitor> close(HealthMonitor monitor, String note, Instant now) {
         return monitor.state().hasOpen() ? resolve(monitor, note, now) : Mono.just(monitor);
+    }
+
+    /**
+     * An observation that changes nothing still has to notice when the open notice is no longer
+     * ours to keep: an operator retired it by hand (or an admin purged it) while the service keeps
+     * failing the same way. Then the monitor forgets it and counts again, so the next threshold
+     * crossing opens a fresh notice instead of silence for as long as the failure lasts.
+     */
+    private Mono<HealthMonitor> reconcileOpen(HealthMonitor next) {
+        if (!next.state().hasOpen()) {
+            return Mono.just(next);
+        }
+        String id = next.state().openCommunicationId();
+        return publishing.get(id)
+                .map(current -> {
+                    if (current.status().terminal()) {
+                        log.info("notice {} for monitor {} was closed externally; counting again", id, next.id());
+                        return next.withClosedByOperator();
+                    }
+                    return next;
+                })
+                .onErrorResume(ResponseStatusException.class, ex -> {
+                    if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
+                        log.info("notice {} for monitor {} is gone; counting again", id, next.id());
+                        return Mono.just(next.withClosedByOperator());
+                    }
+                    log.warn("could not check notice {} for monitor {}: {}", id, next.id(), ex.getReason());
+                    return Mono.just(next);
+                });
     }
 
     private Mono<HealthMonitor> open(HealthMonitor next, HealthReport report, Instant now) {

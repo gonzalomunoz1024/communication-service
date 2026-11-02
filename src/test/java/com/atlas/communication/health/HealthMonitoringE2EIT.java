@@ -146,6 +146,47 @@ class HealthMonitoringE2EIT {
     }
 
     @Test
+    void anOperatorRetiringTheAutoNoticeMakesTheMonitorCountAgain() {
+        actuator.set(Map.of("status", "DOWN", "components", Map.of("db", Map.of("status", "DOWN"))));
+        HealthMonitor monitor = register(Map.of(
+                "tenantId", "vmforge",
+                "service", "ops-retire-e2e",
+                "url", "http://localhost:" + port + FakeActuatorController.PATH,
+                "failureThreshold", 2,
+                "recoveryThreshold", 1));
+        probe(monitor.id());
+        String first = probe(monitor.id()).state().openCommunicationId();
+        assertThat(first).isNotNull();
+
+        // an SRE resolves the notice by hand while the service is still failing the same way
+        client.post().uri("/v1/communications/{id}/retire", first)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("actor", "vmforge-sre", "note", "known, being worked on"))
+                .exchange()
+                .expectStatus().isOk();
+
+        // the monitor notices on its next observation and starts counting from zero again...
+        HealthMonitor noticed = probe(monitor.id());
+        assertThat(noticed.state().openCommunicationId()).isNull();
+        assertThat(noticed.state().unhealthyStreak()).isZero();
+        assertThat(probe(monitor.id()).state().openCommunicationId()).isNull();
+        feedFor("ops-retire-e2e").jsonPath("$.totalElements").isEqualTo(0);
+
+        // ...so the threshold opens a fresh notice, incident #2, instead of silence for ever
+        HealthMonitor reopened = probe(monitor.id());
+        assertThat(reopened.state().openCommunicationId()).isNotNull().isNotEqualTo(first);
+        feedFor("ops-retire-e2e")
+                .jsonPath("$.totalElements").isEqualTo(1)
+                .jsonPath("$.items[0].id").isEqualTo(reopened.state().openCommunicationId())
+                .jsonPath("$.items[0].externalRef").isEqualTo("health:" + monitor.id() + ":2");
+
+        actuator.set(Map.of("status", "UP"));
+        probe(monitor.id());
+        client.delete().uri("/v1/health/monitors/{id}", monitor.id())
+                .exchange().expectStatus().isNoContent();
+    }
+
+    @Test
     void pushedReportsNeedNoRegistrationAndDeletingTheMonitorRetiresItsNotice() {
         HealthMonitor first = report("billing-e2e", Map.of("status", "UP"));
         assertThat(first.url()).isNull();

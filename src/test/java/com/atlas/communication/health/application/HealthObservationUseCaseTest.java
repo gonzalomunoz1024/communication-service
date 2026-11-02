@@ -234,6 +234,49 @@ class HealthObservationUseCaseTest {
     }
 
     @Test
+    void operatorRetiredNoticeIsNoticedEvenWhenTheFailingSetIsUnchanged() {
+        saveReturnsArgument();
+        when(publishing.get("c1")).thenReturn(Mono.just(communication("c1", CommunicationStatus.RETIRED, 3)));
+
+        // same failure as the open notice: nothing to update, but the notice is gone by hand
+        HealthReport report = down(List.of(failing("db")));
+        HealthMonitor cleared = useCase.observe(openDown("c1", report.signature()), report, NOW).block();
+        assertThat(cleared).isNotNull();
+        assertThat(cleared.state().hasOpen()).isFalse();
+        assertThat(cleared.state().unhealthyStreak()).isZero();
+        verify(publishing, never()).update(anyString(), any());
+        verify(publishing, never()).create(anyString(), any());
+
+        // counting restarts: the next threshold crossing opens a fresh notice (incident #2)
+        when(publishing.create(anyString(), any())).thenAnswer(inv ->
+                Mono.just(communication(inv.getArgument(0), CommunicationStatus.ACTIVE, 0)));
+        StepVerifier.create(useCase.observe(cleared, report, NOW))
+                .assertNext(m -> {
+                    assertThat(m.state().hasOpen()).isTrue();
+                    assertThat(m.state().openCommunicationId()).isNotEqualTo("c1");
+                    assertThat(m.state().incidents()).isEqualTo(2);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void anOpenNoticeThatIsStillActiveIsLeftAloneWhenNothingChanged() {
+        saveReturnsArgument();
+        when(publishing.get("c1")).thenReturn(Mono.just(communication("c1", CommunicationStatus.ACTIVE, 3)));
+
+        HealthReport report = down(List.of(failing("db")));
+        StepVerifier.create(useCase.observe(openDown("c1", report.signature()), report, NOW))
+                .assertNext(m -> {
+                    assertThat(m.state().openCommunicationId()).isEqualTo("c1");
+                    assertThat(m.state().unhealthyStreak()).isEqualTo(2);
+                })
+                .verifyComplete();
+        verify(publishing, never()).update(anyString(), any());
+        verify(publishing, never()).create(anyString(), any());
+        verify(publishing, never()).retire(anyString(), any());
+    }
+
+    @Test
     void purgedNoticeIsRecreatedUnderTheClaimedId() {
         saveReturnsArgument();
         when(publishing.get("c1")).thenReturn(Mono.error(
