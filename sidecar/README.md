@@ -167,8 +167,20 @@ management.endpoint.health.show-details: always
   probe's own error, e.g. `connection refused`.)
 - On SIGTERM it sends one last report with `instance.leaving: true`, so the pod drops out of
   the service's rollup at once instead of looking dead for the staleness window (90 s).
-- If the communication service is unreachable it keeps only the latest status and retries
-  with exponential backoff up to 60 s. The app never depends on the sidecar.
+- If a report does not get through (the service is unreachable, times out, or answers 5xx, 408,
+  409 or 429), the sidecar keeps only the latest status and tries again at the first probe after
+  a step of 1 s, then 2, 4, 8, 16 and 30 s, each step less up to 20 % at random. When the next
+  probe would come more than 30 s after the failed attempt, it probes and tries at the end of the
+  step instead, so attempts are never more than 30 s apart. The first report that gets through
+  starts the steps again at 1 s. The app never depends on the sidecar.
+- The 30 s cap and `CS_HEARTBEAT` decide how long the service can go without hearing from a pod
+  that is fine. When the service goes away, the pod's last accepted report is at most one
+  heartbeat old, rounded up to the next probe (30 to 36 s with the defaults); once the service is
+  back, the pod's next attempt comes within 30 s. The service calls a pod silent after 90 s
+  without a report (`instance-stale-after-seconds`), and a service whose pods are all silent is
+  DOWN, so keep `CS_HEARTBEAT` + 30 s well below that window: with the defaults an outage of the
+  service shorter than 24 s cannot make a healthy pod look silent, and after a longer one every
+  pod is heard from again within 30 s of the service's return.
 
 The report body is Actuator's vocabulary plus the instance:
 
@@ -198,7 +210,7 @@ The report body is Actuator's vocabulary plus the instance:
 | `CS_PORT`, `CS_PATH`, `CS_SCHEME` | discovered | pin the target; `CS_PORT` is required for a non-auto mode |
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
 | `CS_IGNORE_PORTS` | `15000-15099` | ports discovery skips, e.g. `15000-15099,9090` |
-| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component, or UNKNOWN (a DOWN or degraded report is sent every probe, see [What it reports and when](#what-it-reports-and-when)) |
+| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component, or UNKNOWN (a DOWN or degraded report is sent every probe). A failed send is retried at most 30 s apart; keep `CS_HEARTBEAT` + 30 s well below the service's 90 s staleness window. See [What it reports and when](#what-it-reports-and-when) |
 | `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included. The report timeout is longer than the service's own 5 s database timeout, so while the service cannot reach its database its 503 `database unavailable` arrives before the sidecar gives up and `sendError` names that cause, not a timeout |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
 | `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |

@@ -91,6 +91,11 @@ func (s *fakeSender) Send(_ context.Context, r report.Report) error {
 	return nil
 }
 
+// senderFunc lets a test answer each report with a function of its own.
+type senderFunc func(context.Context, report.Report) error
+
+func (f senderFunc) Send(ctx context.Context, r report.Report) error { return f(ctx, r) }
+
 func (s *fakeSender) all() []report.Report {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -299,6 +304,127 @@ func TestSendFailuresBackOffAndKeepLatest(t *testing.T) {
 	h.agent.Tick(ctx)
 	if n := len(h.sender.all()); n != 2 {
 		t.Errorf("heartbeat after a rejection should send, got %d", n)
+	}
+}
+
+// G-3-29 (AUD-2-1): a failed send is retried after 1, 2, 4, 8 and 16 s and then at most every
+// 30 s, each step shortened at random by up to a fifth, and the first report that gets through
+// starts the steps again from 1 s. Run wakes up for a retry rather than let the probe interval
+// carry it past the cap, so after an outage of the service a pod's first attempt comes within
+// 30 s and its silence stays within heartbeat + 30 s + the outage, inside the service's 90 s
+// staleness window for a short outage. Driven through Run on the harness clock with the default
+// 15 s interval and 30 s heartbeat: the service refuses every report for five minutes, takes
+// them for two, refuses one more and takes them again.
+func TestRetriesAreNeverFurtherApartThanTheBackoffCap(t *testing.T) {
+	for _, status := range []string{"UP", "DOWN"} {
+		t.Run(status+" app", func(t *testing.T) {
+			app := newFakeApp(t, status)
+			cfg := baseConfig()
+			cfg.StartupGrace = 0
+			h := newHarness(t, cfg, app.port)
+			const firstStep, capStep = time.Second, 30 * time.Second // the steps the README documents
+
+			back := h.clock.Add(5 * time.Minute) // the service takes reports again
+			blip := back.Add(2 * time.Minute)    // the first attempt from here on is refused once more
+			end := blip.Add(time.Minute)
+			type attempt struct {
+				at time.Time
+				ok bool
+			}
+			var attempts []attempt
+			blipped := false
+			h.agent.sender = senderFunc(func(_ context.Context, r report.Report) error {
+				if r.Instance != nil && r.Instance.Leaving {
+					return nil
+				}
+				refused := h.clock.Before(back) || (!h.clock.Before(blip) && !blipped)
+				blipped = blipped || !h.clock.Before(blip)
+				attempts = append(attempts, attempt{h.clock, !refused})
+				if refused {
+					return errors.New("connection refused")
+				}
+				return nil
+			})
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			interval, waits := cfg.Interval, 0
+			h.agent.Sleep = func(_ context.Context, d time.Duration) {
+				if waits++; waits > 1000 {
+					t.Fatal("Run did not reach the end of the scenario in 1000 waits")
+				}
+				if d < 0 || d >= interval+interval/5 {
+					t.Errorf("Run waited %v, want at most the %v interval plus less than 20 %% jitter", d, interval)
+				}
+				if !h.clock.Before(end) {
+					cancel()
+					return
+				}
+				h.advance(d)
+			}
+			h.agent.Run(ctx)
+
+			start := attempts[0].at
+			var gaps []string
+			var atCap []time.Duration // waits once the steps have reached the cap
+			failures := 0             // consecutive refused attempts before the current one
+			firstBack := -1
+			for i, a := range attempts {
+				if firstBack < 0 && !a.at.Before(back) {
+					firstBack = i
+				}
+				if i == 0 {
+					continue
+				}
+				prev, gap := attempts[i-1], a.at.Sub(attempts[i-1].at)
+				if prev.ok {
+					failures = 0
+					continue
+				}
+				failures++
+				gaps = append(gaps, gap.Round(100*time.Millisecond).String())
+				step := min(firstStep<<(failures-1), capStep)
+				if gap > capStep {
+					t.Errorf("attempt %d at +%v came %v after the refused one before it, want at most %v (the backoff cap)",
+						i, a.at.Sub(start).Round(time.Millisecond), gap.Round(time.Millisecond), capStep)
+				}
+				low, why := step-step/5, fmt.Sprintf("the %v step less a fifth", step)
+				if step < interval {
+					low, why = interval, fmt.Sprintf("the next probe after the %v step", step)
+				}
+				if gap < low {
+					t.Errorf("attempt %d at +%v came %v after refused attempt %d in a row, want at least %v (%s)",
+						i, a.at.Sub(start).Round(time.Millisecond), gap.Round(time.Millisecond), failures, low, why)
+				}
+				if step == capStep {
+					atCap = append(atCap, gap)
+				}
+			}
+			if len(atCap) < 2 || slices.Min(atCap) == slices.Max(atCap) {
+				t.Errorf("waits at the cap %v: want several, varied by the jitter", atCap)
+			}
+			t.Logf("waits after a refused attempt: %v", gaps)
+			if firstBack < 0 || !attempts[firstBack].ok {
+				t.Fatalf("no accepted attempt after the service was back at +%v: %v", back.Sub(start), attempts)
+			}
+			if late := attempts[firstBack].at.Sub(back).Round(time.Millisecond); late > capStep {
+				t.Errorf("the first attempt after the service was back came %v after it, want at most %v", late, capStep)
+			} else {
+				t.Logf("the first attempt after the service was back came %v after it", late)
+			}
+			for i, a := range attempts {
+				if a.at.Before(blip) || a.ok {
+					continue
+				}
+				if i+1 == len(attempts) || !attempts[i+1].ok {
+					t.Fatalf("the attempt refused at +%v was not followed by an accepted one", a.at.Sub(start).Round(time.Millisecond))
+				}
+				if gap := attempts[i+1].at.Sub(a.at).Round(time.Millisecond); gap >= interval+interval/5 {
+					t.Errorf("after a refusal that followed accepted reports the retry came %v later, want the next probe (under %v): the steps start again from %v after a success",
+						gap, interval+interval/5, firstStep)
+				}
+				break
+			}
+		})
 	}
 }
 

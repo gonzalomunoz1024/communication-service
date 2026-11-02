@@ -20,11 +20,22 @@ import (
 	"github.com/gonzalomunoz1024/communication-service/sidecar/internal/report"
 )
 
-// Backoff bounds for failed sends.
+// Retry steps for failed sends: the first retry waits minBackoff, each further one twice the
+// step before, up to maxBackoff, and a success starts again from minBackoff. Run wakes up for a
+// retry rather than let the probe interval carry it past maxBackoff (see wait), so attempts are
+// never further apart than maxBackoff.
+//
+// maxBackoff and the heartbeat bound how long the service can go without hearing from a pod
+// that is fine: its last accepted report is at most a heartbeat old, rounded up to a probe tick,
+// when the service goes away, and its first attempt after the service is back comes at most
+// maxBackoff later. The service calls a pod silent after 90 s (instance-stale-after-seconds), so
+// the default 30 s heartbeat (36 s once rounded up) plus 30 s leaves 24 to 30 s of that window
+// for the outage itself.
 const (
 	minBackoff = time.Second
-	maxBackoff = 60 * time.Second
-	// jitter is the share of an interval added at random so a fleet never ticks in lockstep.
+	maxBackoff = 30 * time.Second
+	// jitter is the share of a wait varied at random so a fleet never acts in lockstep: added
+	// to the probe interval, taken off a retry step so a step never exceeds maxBackoff.
 	jitter = 0.2
 )
 
@@ -68,6 +79,9 @@ type Agent struct {
 	// then retried only at the heartbeat or on a change, even while the report is DOWN or degraded.
 	rejected bool
 	backoff  time.Duration
+	// failedAt is the time of the tick whose send failed and now waits for its retry; nextSend
+	// is when that retry is due.
+	failedAt time.Time
 	nextSend time.Time
 	sent     int
 }
@@ -139,12 +153,26 @@ func (a *Agent) Run(ctx context.Context) {
 		"probe", a.cfg.ProbeMode)
 	for {
 		a.Tick(ctx)
-		a.Sleep(ctx, a.cfg.Interval+time.Duration(rand.Float64()*jitter*float64(a.cfg.Interval)))
+		a.Sleep(ctx, a.wait())
 		if ctx.Err() != nil {
 			a.leave()
 			return
 		}
 	}
+}
+
+// wait is how long Run sleeps before its next tick: the probe interval plus up to a fifth of
+// it, cut short to the retry's due time when a failed send is waiting and the next tick would
+// come more than maxBackoff after the failed one, so a retry never waits longer than
+// maxBackoff. A step that ends before the next tick waits for it: one attempt per tick at most.
+func (a *Agent) wait() time.Duration {
+	d := a.cfg.Interval + time.Duration(rand.Float64()*jitter*float64(a.cfg.Interval))
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if now := a.Now(); a.dirty && now.Add(d).After(a.failedAt.Add(maxBackoff)) {
+		d = max(a.nextSend.Sub(now), 0)
+	}
+	return d
 }
 
 // Tick runs one observe-compose-send cycle.
@@ -302,8 +330,10 @@ func (a *Agent) instance(leaving bool) *report.Instance {
 // observations, so while the app is failing every probe is sent and the threshold is reached one
 // probe interval after the first failure rather than one heartbeat later. UNKNOWN, which the
 // service ignores, is sent like UP, on a change and at the heartbeat, so a pod that never becomes
-// UP does not post after every probe forever. Failures back off exponentially up to a minute,
-// keeping only the latest report. A change is logged at INFO, the sends in between at DEBUG.
+// UP does not post after every probe forever. A failed send is retried at the first tick after a
+// step of 1, 2, 4, 8, 16 and then 30 s (maxBackoff), less up to a fifth at random, and never more
+// than maxBackoff after it (see wait), keeping only the latest report. A change is logged at
+// INFO, the sends in between at DEBUG.
 func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 	a.mu.Lock()
 	sig := signature(rep)
@@ -347,7 +377,8 @@ func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 		}
 		a.dirty = true
 		a.sendErr = err.Error()
-		a.nextSend = now.Add(a.backoff + time.Duration(rand.Float64()*jitter*float64(a.backoff)))
+		a.failedAt = now
+		a.nextSend = now.Add(a.backoff - time.Duration(rand.Float64()*jitter*float64(a.backoff)))
 		a.log.Warn("report failed; will retry", "error", err, "in", a.backoff.String())
 	}
 }
