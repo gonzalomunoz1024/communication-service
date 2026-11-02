@@ -109,10 +109,12 @@ tasks.spotbugsTest {
 }
 
 // Coverage: one report over both test runs, so a class covered only by an *IT counts. Only the
-// Spring wiring in config/ and the main class are left out of the ratio; everything else is
-// production logic that a test is expected to reach.
+// Spring wiring (the *Config classes and the *Properties records in config/) and the main class
+// are left out of the ratio; everything else, the error handler, the client-id filter and the
+// readiness indicator in config/ included, is production logic that a test is expected to reach.
 val coverageExclusions = listOf(
-    "com/atlas/communication/config/**",
+    "com/atlas/communication/config/*Config*",
+    "com/atlas/communication/config/*Properties*",
     "com/atlas/communication/*Application*",
 )
 
@@ -138,7 +140,13 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.92".toBigDecimal() // measured 0.9553 on 2026-11-02 over 1187 lines
+                // set when 0.9553 of 1187 lines were covered; 0.9611 of 1414 on 2026-11-02, config/ counted
+                minimum = "0.92".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.84".toBigDecimal() // measured 0.8435 (717 of 850 branches) on 2026-11-02
             }
         }
     }

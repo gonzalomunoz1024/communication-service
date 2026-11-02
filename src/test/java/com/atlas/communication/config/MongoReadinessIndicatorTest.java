@@ -99,6 +99,21 @@ class MongoReadinessIndicatorTest {
     }
 
     @Test
+    void aFailureWithoutAMessageIsNamedByItsType() {
+        when(mongo.executeCommand(PING)).thenReturn(Mono.error(new DataAccessResourceFailureException(null)));
+
+        try (LogCapture log = LogCapture.of(MongoReadinessIndicator.class)) {
+            Health health = readiness.health().block(Duration.ofSeconds(5));
+
+            assertThat(health).isNotNull();
+            assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+            assertThat(health.getDetails()).containsEntry("error", "DataAccessResourceFailureException");
+            assertThat(log.atLeast(Level.WARN)).extracting(ILoggingEvent::getFormattedMessage)
+                    .containsExactly("readiness DOWN: MongoDB did not answer a ping: DataAccessResourceFailureException");
+        }
+    }
+
+    @Test
     void aPingWithoutAnswerIsDownAfterTheReadinessTimeoutNotTheServerSelectionTimeout() {
         when(mongo.executeCommand(PING)).thenReturn(Mono.never());
 
