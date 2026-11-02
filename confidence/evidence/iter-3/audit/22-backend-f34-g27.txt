@@ -1,0 +1,70 @@
+Iteration-3 audit: F-34 (probe now) and the G-2-7 forced-probe scenario, re-run by the auditor (gate claim 2)
+Code: the prebuilt jar scratchpad/communication-service-iter3.jar (e3968c4 = 4a0e84e code); private backends :19712/:19713 (pair), :19720/:19721 (A/B) and :19725/:19726 (default config) on au3-* databases, the 3 s stub endpoint on :19760;
+the verifier's scripts check_g27*.py copied to scratchpad/audit3/be with only ports and database names changed. Iteration-2 jar for the A/B runs (:19721, :19726): scratchpad/communication-service-iter2.jar (sha256 491438c7..., read only). Port map: 21-backend-replays.txt.
+Runs finished 08:08Z-08:15Z (log mtimes), while iteration-4 fixers ran Gradle and npm in /home/claude/wt4-* (machine busy).
+
+== 1. The matrix row's own check (how_to_verify: probe a URL monitor -> lastProbeAt set; probe push-only -> 409)
+auditor  (scratchpad/audit3/logs/be-21-check-b.txt):
+| B-34a | F-34/F-37 | PASS | probe UP -> 200 state={'lastStatus': 'UP', 'lastReportAt': '2026-11-02T08:02:46.545185712Z', 'lastProbeAt': '2026-11-02T08:02:46.545185712Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'heal
+| B-34b | F-34 | PASS | probe push-only -> 409 {'error': 'monitor f7968e61-a2e3-4f5c-9dbb-6f51caefb4e5 is push-only (no url) and cannot be probed'} |
+verifier (ev/21-http-health.txt):
+| B-34a | F-34/F-37 | PASS | probe UP -> 200 state={'lastStatus': 'UP', 'lastReportAt': '2026-11-02T06:53:52.452016668Z', 'lastProbeAt': '2026-11-02T06:53:52.452016668Z', 'lastSummary': 'UP (HTTP 200)', 'unhealthyStreak': 0, 'heal
+| B-34b | F-34 | PASS | probe push-only -> 409 {'error': 'monitor 501c2b83-9c75-4734-9080-b4b444ff840c is push-only (no url) and cannot be probed'} |
+-> MATCH. G26 threshold rows (10/10 each side) also identical: be-28-check-g26.txt vs ev/28.
+
+== 2. G27-a: iteration-2 G-2-7 scenario (two nodes sweeping every 1 s, monitor interval 5 s, 3 s endpoint, 30 sequential forced probes)
+auditor  (be-26-check-g27.txt):
+| G27-a | F-34/G-2-7 30 sequential forced probes during the scheduler | FAIL | codes: 200 x0, 409 x30, other []; 274.4s for 30 probes of a 3 s endpoint; monitor lastStatus=UP probeCount~{'lastStatus':
+| G27-b | F-34 burst of 30 parallel forced probes (addendum: conflicts among themselves) | PASS | 200 x29, 409 x1 (a persistent conflict after 3 attempts is the documented 409) |
+| G27-c | F-43/G-3-2 scheduler side: no WARN when it loses to a forced probe or the other node | PASS | scheduler 'skipping monitor' WARN lines A+B: 0 -> 0 -> 0 (the scheduler losing the race is logge
+verifier (ev/26-g27-forced-probe-race.txt):
+| G27-a | F-34/G-2-7 30 sequential forced probes during the scheduler | FAIL | codes: 200 x0, 409 x30, other []; 274.4s for 30 probes of a 3 s endpoint; monitor lastStatus=UP probeCount~{'lastStatus':
+| G27-b | F-34 burst of 30 parallel forced probes (addendum: conflicts among themselves) | PASS | 200 x28, 409 x2 (a persistent conflict after 3 attempts is the documented 409) |
+| G27-c | F-43/G-3-2 scheduler side: no WARN when it loses to a forced probe or the other node | PASS | scheduler 'skipping monitor' WARN lines A+B: 0 -> 0 -> 0 (the scheduler losing the race is logge
+-> MATCH: 0 x 200 / 30 x 409 on both sides, 274.4 s each. G27-b burst 29/1 here vs 28/2 there (both 'persistent conflict' 409s of a parallel burst, documented).
+
+== 3. G27b characterisation (interval 5 s fails, 15 s and 30 s pass) and G27c A/B (iteration-2 jar vs iteration-3 jar, same scenario)
+auditor:
+| G27b-S1 | F-34/G-2-7 forced probe vs scheduler | FAIL | S1 pair, interval 5 s: 200 x0, 409 x10; seconds per call [9.2, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.2] |
+| G27b-S2 | F-34/G-2-7 forced probe vs scheduler | PASS | S2 pair, interval 15 s (README example): 200 x10, 409 x0; seconds per call [6.1, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0] |
+| G27b-S3 | F-34/G-2-7 forced probe vs scheduler | FAIL | S3 single node, interval 5 s: 200 x0, 409 x10; seconds per call [9.2, 9.1, 9.2, 9.2, 9.2, 9.2, 9.1, 9.2, 9.1, 9.2] |
+| G27b-S4 | F-34/G-2-7 forced probe vs scheduler | PASS | S4 pair, interval 30 s (default): 200 x10, 409 x0; seconds per call [6.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0] |
+| G27b-S3 | F-34/G-2-7 forced probe vs scheduler | PASS | S3a iteration-2 jar, single node, interval 5 s: 200 x10, 409 x0; seconds per call [6.1, 3.1, 3.1, 3.0, 3.0, 3.0, 3.0, 3.0, 3.1, 3.0] |
+| G27b-S3 | F-34/G-2-7 forced probe vs scheduler | FAIL | S3b iteration-3 jar, single node, interval 5 s: 200 x0, 409 x10; seconds per call [9.2, 9.2, 9.2, 9.2, 9.2, 9.2, 9.2, 9.2, 9.2, 9.2] |
+verifier:
+| G27b-S1 | F-34/G-2-7 forced probe vs scheduler | FAIL | S1 pair, interval 5 s: 200 x0, 409 x10; seconds per call [9.2, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.1, 9.2, 9.1] |
+| G27b-S2 | F-34/G-2-7 forced probe vs scheduler | PASS | S2 pair, interval 15 s (README example): 200 x10, 409 x0; seconds per call [6.1, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0] |
+| G27b-S3 | F-34/G-2-7 forced probe vs scheduler | FAIL | S3 single node, interval 5 s: 200 x0, 409 x10; seconds per call [9.2, 9.1, 9.1, 9.2, 9.2, 9.2, 9.1, 9.1, 9.2, 9.2] |
+| G27b-S4 | F-34/G-2-7 forced probe vs scheduler | PASS | S4 pair, interval 30 s (default): 200 x10, 409 x0; seconds per call [6.1, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0] |
+| G27b-S3 | F-34/G-2-7 forced probe vs scheduler | PASS | S3a iteration-2 jar, single node, interval 5 s: 200 x10, 409 x0; seconds per call [6.1, 3.1, 3.1, 3.0, 3.1, 3.0, 3.1, 3.0, 3.1, 3.0] |
+| G27b-S3 | F-34/G-2-7 forced probe vs scheduler | FAIL | S3b iteration-3 jar, single node, interval 5 s: 200 x0, 409 x10; seconds per call [9.1, 9.1, 9.2, 9.2, 9.2, 9.2, 9.2, 9.2, 9.1, 9.2] |
+-> MATCH on every verdict and count; the per-call seconds agree to 0.1 s (9.1-9.2 s = three probe attempts of a 3 s endpoint).
+
+== 4. G27d default configuration (sweep 5 s, the shipped default; application.yml:86 sweep-interval-ms: 5000)
+auditor  (be-26d-check-g27d.txt):
+| G27d-D1 | F-34/G-2-7 forced probe vs scheduler (default config) | PASS | D1 iteration-3 jar, default sweep, interval 5 s: 200 x10, 409 x0; seconds per call [9.2, 3.0, 9.2, 3.0, 9.2, 3.0, 3.0, 3.0, 9.2, 3.1] |
+| G27d-D2 | F-34/G-2-7 forced probe vs scheduler (default config) | PASS | D2 iteration-3 jar, default sweep, interval 10 s: 200 x10, 409 x0; seconds per call [3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.1, 3.1, 3.0] |
+| G27d-D3 | F-34/G-2-7 forced probe vs scheduler (default config) | PASS | D3 iteration-3 jar, default sweep, interval 30 s: 200 x10, 409 x0; seconds per call [9.2, 3.1, 3.0, 3.0, 3.1, 3.0, 3.1, 3.0, 3.0, 3.0] |
+| G27d-D4 | F-34/G-2-7 forced probe vs scheduler (default config) | PASS | D4 iteration-2 jar, default sweep, interval 5 s (A/B): 200 x10, 409 x0; seconds per call [6.1, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0] |
+verifier (ev/26d-g27-default-config.txt):
+| G27d-D1 | F-34/G-2-7 forced probe vs scheduler (default config) | FAIL | D1 iteration-3 jar, default sweep, interval 5 s: 200 x9, 409 x1; seconds per call [9.2, 6.1, 3.0, 3.0, 3.0, 9.2, 3.0, 3.0, 3.0, 9.2] |
+| G27d-D2 | F-34/G-2-7 forced probe vs scheduler (default config) | PASS | D2 iteration-3 jar, default sweep, interval 10 s: 200 x10, 409 x0; seconds per call [3.0, 3.0, 3.1, 3.0, 3.0, 3.0, 3.0, 3.1, 3.1, 3.0] |
+| G27d-D3 | F-34/G-2-7 forced probe vs scheduler (default config) | PASS | D3 iteration-3 jar, default sweep, interval 30 s: 200 x10, 409 x0; seconds per call [9.1, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0] |
+| G27d-D4 | F-34/G-2-7 forced probe vs scheduler (default config) | PASS | D4 iteration-2 jar, default sweep, interval 5 s (A/B): 200 x10, 409 x0; seconds per call [3.0, 3.1, 3.0, 3.1, 3.0, 3.0, 3.0, 3.0, 3.0, 3.1] |
+-> MATCH (nuance) on D1: here 10 x 200, 4 of 10 calls at 9.2 s (three attempts); there 9 x 200 + 1 x 409, with 4 of 10 calls retried
+   (6.1 s once, 9.2 s three times; the 409 is one of the 9.2 s calls). The race in the default configuration is timing-dependent and both runs show it.
+   The iteration-2 jar (D4) needed at most one retry, on its first call (6.1 s here, none there). D2-D4 identical verdicts.
+
+== 5. Root cause (code read, matches GAP-backend3-1's citations)
+HealthSweepUseCase.java:170  work = claimAndProbe(monitor, now);
+HealthSweepUseCase.java:194-196  return monitors.save(monitor.withProbeClaimed(now)).flatMap(claimed -> observation.probe(claimed, now));
+HealthMonitorUseCase.java:48  static final int PROBE_ATTEMPTS = 3;   :123-129 probeDespiteTheScheduler retries the whole probe on a version conflict.
+The scheduler now saves twice per probe (claim, then result), so a forced probe that holds its version for a 3 s probe loses every time when the
+scheduler's saves come less than ~3 s apart (1 s sweep, 5 s interval); with the 5 s default sweep it loses some of the time.
+
+== 6. Ruling on gate claim 2 (F-34)
+F-34's matrix row (feature text and how_to_verify) passes over HTTP: lastProbeAt is set, push-only -> 409, and with the shipped 5 s sweep forced probes
+answer 200 (10/10 here, 9/10 for the verifier). The failing G-2-7 scenario is an iteration-2 gap re-check with a non-default 1 s sweep; it is a
+confirmed regression of the closed G-2-7 (GAP-backend3-1, minor), priced in the verifier's test-health (-1) and integration (-2, shared with GAP-2 and GAP-5) deductions.
+Iteration 1 graded the same race the same way (PASS with a race note; iteration-1 audit row 13 MATCH). Verdict: PASS (note) upheld; the gate
+'any matrix item fails E2E' does not trip on F-34. No numeric effect either way: the backend is already capped at 80 by GAP-backend3-6.

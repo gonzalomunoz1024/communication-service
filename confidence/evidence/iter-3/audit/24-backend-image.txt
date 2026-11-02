@@ -1,0 +1,38 @@
+Iteration-3 audit: backend image (cmd-31, sampled backend#50) and GAP-backend3-7 (sampled backend#129)
+
+== cmd-31 replay: docker build -t au3-backend:test . (repo root, prebuilt jar in build/libs, unchanged sha256), run on 127.0.0.1:19780 (mongo7 db au3-image), docker stop
+build: exit 0; every layer cached, as in the verifier's addendum (ev/34: 'every layer cached'):
+    #1 [internal] load build definition from Dockerfile
+    #2 [internal] load metadata for gcr.io/distroless/java21-debian12:nonroot
+    #3 [internal] load .dockerignore
+    #4 [1/2] FROM gcr.io/distroless/java21-debian12:nonroot@sha256:7e37784d94dccbf5ccb195c73b295f5ad00cd266512dfbac12eb9c3c28f8077d
+    #5 [internal] load build context
+    #6 [2/2] COPY --chown=65532:65532 build/libs/communication-service-*.jar /app/app.jar
+    #6 CACHED
+    #7 naming to docker.io/library/au3-backend:test done
+inspect: User=65532:65532 Ports={"8080/tcp":{}} Entrypoint=["java","-jar","/app/app.jar"] Size=335092382
+verifier (ev/34:11): User=65532:65532 Ports={"8080/tcp":{}} Entrypoint=["java","-jar","/app/app.jar"] Size=335092382
+run:
+    # au3-backend:test on 127.0.0.1:19780 (mongo7 db au3-image)
+    readiness -> 200 (after loop 1)
+    docker top:
+    UID                 PID                 COMMAND
+    65532               17805               java
+    GET /actuator/health/liveness -> 200 0.011833s
+    GET /actuator/health/readiness -> 200 0.013251s
+    {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"} 401
+    POST /v1/communications -> 201
+    docker stop took 4.49 s; exit code 143
+    2026-11-02T08:19:37.148Z  INFO 1 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 8.376 seconds (process running 
+    2026-11-02T08:19:38.617Z  INFO 1 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+    2026-11-02T08:19:38.624Z  INFO 1 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+verifier (ev/34:21): docker stop took 4.42 s; exit code 143 (SIGTERM, graceful shutdown in the log)
+-> MATCH: same user, port, entrypoint and size; readiness 200; 401 without X-Client-Id; 201 publish; stop 143 after a graceful shutdown.
+
+== GAP-backend3-7 (debian12 distroless base ships fixable C/H OS packages): MATCH
+Scans are in 07-dependency-scan-rerun.txt §7 (auditor's fresh DB):
+  au3-backend:test (java21-debian12:nonroot): 108 findings {'MEDIUM': 64, 'LOW': 24, 'CRITICAL': 2, 'HIGH': 12, 'UNKNOWN': 6}; critical/high 14, of which fixable 10; packages ['libbrotli1', 'libexpat1', 'liblcms2-2', 'libuuid1', 'zlib1g']
+  gcr.io/distroless/java21-debian13:nonroot (remote): 77 findings {'MEDIUM': 50, 'LOW': 20, 'UNKNOWN': 3, 'HIGH': 4}; critical/high 4, of which fixable 0; packages ['libuuid1']
+Claim: 2 CRITICAL + 12 HIGH, 10 fixable; debian13: 0 CRITICAL, 4 HIGH (libuuid1, no fix). Same figures. (The claim that the local base digest equals the tag's current remote digest was not re-checked.)
+Dockerfile:11 ARG BASE_IMAGE=gcr.io/distroless/java21-debian12:nonroot
+Rubric note: the CI policy (ci.yml:40-46) scans the SBOM only; these OS findings are information (the verifier's grading), and the backend is capped by GAP-backend3-6 anyway.

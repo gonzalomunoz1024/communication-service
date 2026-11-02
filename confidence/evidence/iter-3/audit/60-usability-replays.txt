@@ -1,0 +1,81 @@
+Iteration-3 audit: usability replays (18 sampled claims), compared with confidence/evidence/iter-3/usability/
+The reviewer's scripts (evidence/iter-3/usability/scripts) copied to scratchpad/audit3/ux/scripts and re-pointed to the auditor's private stacks
+(API walk and cookbook on :19700/:19711, UI on Vite :19741/:19742, outage UI on :19775 -> :19774 with its own Mongo au3-uxmongo :19773,
+reconnect UI :19778 -> :19777 (killed and restarted by the script), pods au3-ux-*). Runs 08:29Z-08:41Z and 08:52Z-08:58Z.
+
+| # | claim | replay (scratchpad/audit3/ux/...) | result |
+|---|---|---|---|
+| usability#02 | cmd-3: focus-obscured + focus-reverse -> 0; 0 (no focused stop hidden under the sticky header) | both exit 0; hidden=true 0, partly 0 on every settled stop (desktop and phone, Tab and Shift+Tab); the reviewer's raw log has two hidden=true entries in an unsettled phone-reverse list, which its report sets aside; the header's own theme button is flagged by the metric in both runs | MATCH (nuance) |
+| usability#05 | cmd-6: view-in-feed focus, twice -> 0; 0 | twice: focus after 'View in feed' is on body, announcements Connecting/Live, next Tab stops filter fields; the same as the reviewer's (the finding reproduces) | MATCH (exact) |
+| usability#08 | cmd-9: page opened during the outage, 45 samples | 45 samples, error shown in 10, badges Connecting 1 / Live 29 / Reconnecting 15, 7 feed GETs all 503, 6 streams: identical | MATCH (exact) |
+| usability#11 | cmd-12: README cookbook pasted literally, twice, fresh store -> 0 | run 1: every block 0 except the two curl -N blocks (124, bounded); run 2: the 409 duplicate externalRef texts and the RETIRED PUT 409, as claimed | MATCH |
+| usability#15 | cmd-16: Swagger's publish example fixed one error at a time to a 201 | ticket.url -> endsAt -> expiresAt -> 'INCIDENT requires severity MINOR or higher' -> 201 (DRAFT), the same chain | MATCH |
+| usability#19 | cmd-20: sidecar-pod3 + auto-notice3 (alone, app starts, app stops -> automated OUTAGE, app returns ...) | sidecar-pod3.txt: the same phases; auto-notice3 desktop/phone: 1 card, 'Automatic' chip with its title, plain-sentence body, no health: ref shown, scrollWidth 1280 / 390 | MATCH |
+| usability#37 | F-65 'FAIL (one clause)': the feed's load error is not role=alert (UX-53) | au3-feed-error-live.txt: error text in no alert/live region (liveRole null, alerts 0), nothing announced after Try again; the tree shows status 'Live' beside it | MATCH (fact); the gate reading is ruled in audit.md §4 |
+| usability#42 | F-09 ticket PASS: the form says the incident number doubles as the reference | PublishOutageForm.tsx:250 hint 'defaults to the incident number'; real 409 banner text in fe g3 ('the ServiceNow incident number doubles as the reference'); api-walk3 E6b, E10 -> 400 as claimed | MATCH |
+| usability#44 | F-27 identification PASS | api-walk3 E0: 401 naming the header and ?clientId=; 400 for a bad id; api-docs.json (auditor's /v3/api-docs) X-Client-Id scheme description = the reviewer's Authorize-dialog text in swagger3.json ('Click Authorize and paste the repository name ...') | MATCH |
+| usability#48 | F-31 register a monitor PASS, friction UX-56 | api-walk3 H1 201 with Location, H6 409 duplicate, H7 204, H8 201 with a typo; monitor-typos.txt: misspelled policy fields -> 201 with the defaults | MATCH |
+| usability#52 | F-78 /status, logs, debugging PASS | sidecar-pod3 (debug shows every send), sidecar-cause3 (README cause 3: UNKNOWN with the config hint at 5/20/40 s) | MATCH (nuance: grace timing) |
+| usability#53 | F-80 image NOT VERIFIED (UBI) | UBI registry unreachable (000); the repo Dockerfile with a distroless base runs as 1001 (../sc/logs/03) and as 1000660000 under the restricted emulation (../sc/logs/30) | MATCH |
+| usability#54 | F-82/F-83 Kustomize PASS | sidecar-manifests3.txt S1-S3b: identical apart from timestamps | MATCH |
+| usability#61 | UX-53 minor: 'Couldn't load the feed' appears silently | the same probe as #37 | MATCH |
+| usability#75 | UX-42 PARTLY CLOSED: words right in a mocked and a real outage; badge stays 'Live' | au3-ux3-dbdown-run.txt (real outage, own Mongo stopped 51 s): API 503 in 5.0 s, UI 'The service cannot reach its database right now (HTTP 503)...', badge 'Live' beside it; a page opened meanwhile cycles Live/Reconnecting; recovery 2/2 cards. Mocked half: fe v-runs (G-3-22 wording) | MATCH |
+| usability#77 | UX-44 CLOSED on publish/update/retire/ticket; same class remains on monitors (UX-56) | api-walk3 E6-E6f all 400 naming the field and the known fields (case included); monitor-typos 201 | MATCH |
+| usability#78 | UX-45 CLOSED | api-walk3 E7 'affectedServices[1]: must not be null', E7b '... must not be blank', E7c 'affectedServices: expected a JSON array' | MATCH (exact) |
+| usability#81 | UX-48 CLOSED: status 'Live' in the tree; Reconnecting, (1)...(7), Live announced through a real kill and restart | au3-aria-badge.txt: 'status: Live' (role=status, aria-live=polite); au3-ux3-reconnect-run.txt: Reconnecting, (1)...(6), Live announced (restart 7.6 s here vs 11.1 s there, so one attempt fewer) | MATCH (nuance) |
+
+Only status difference in the API walk (68 steps both): C1-verbatim 201 here (fresh store) vs 409 there (the shared store already held INC0012345).
+
+--- au3-ux3-reconnect-run.txt ---
+[ensure-A] {"state":"started"}
+[seed] {"status":201}
+[before] {"cards":1,"badge":"Live"}
+[killed] {"pids":[19915]}
+[outage-timeline] {"timeline":[{"t":0,"badge":"Live"},{"t":0.5,"badge":"Reconnecting"},{"t":3.6,"badge":"Reconnecting (1)"},{"t":4.1,"badge":"Reconnecting (2)"},{"t":6.1,"badge":"Reconnecting (3)"},{"t":10.1,"badge":"Reconnecting (4)"},{"t":18.2,"badge":"Recon
+[restarted] {"readyAfterMs":7647}
+[published-after-ready] {"status":201,"msAfterReady":502}
+[recovery] {"liveAfterReadyMs":2299,"newCardAfterReadyMs":2368,"badge":"Live","cards":2,"reconnectAttemptsSeen":6}
+[announcements] {"ann":[{"t":2683,"role":"status","text":"Reconnecting"},{"t":5711,"role":"status","text":"Reconnecting (1)"},{"t":6714,"role":"status","text":"Reconnecting (2)"},{"t":8718,"role":"status","text":"Reconnecting (3)"},{"t":12725,"role":"status","
+--- au3-aria-badge.txt ---
+  - switch "Live updates" [checked]
+  - status: Live
+  - button "Refresh"
+  - status
+  - heading "Active now 2" [level=2]
+    - heading "Publish while the database is down" [level=3]
+    - heading "Seeded before the database outage" [level=3]
+badge attrs: {"role":"status","live":"polite","text":"Live"}
+--- au3-ux3-dbdown-run.txt (key lines) ---
+[api-feed-while-down] {"status":503,"text":"{\"error\":\"database unavailable\"}","ms":5025}
+[api-readiness] {"status":503,"text":"{\"status\":\"DOWN\"}","ms":1013}
+[ui-feed-while-down] {"text":"Feed 1 Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh Couldn't load the feed The service cannot reach its database right now (HTTP 503)
+[ui-fresh-page-while-down] {"badgeOverTime":["0s:Live","2s:Live","4s:Live","6s:Reconnecting","8s:Live","10s:Live","12s:Live","14s:Reconnecting","16s:Live","18s:Live","20s:Live","22s:Reconnecting"],"text":"Feed Publish Service Type All types Outage Incident Mai
+[ui-publish-while-down] {"banner":"The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment."}
+[sidecar-while-down] {"sendError":"post http://172.17.0.1:19774/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","reportsSent":1,"lastSendAt":"2026-11-02T08:54:13.366403809Z","last":"UP","afterDownMs":50924}
+[mongo-started] {"downForMs":51128}
+[ui-feed-after] {"cards":2,"badge":"Live","text":"Feed 2 Publish Service Type All types Outage Incident Maintenance Change Health Minimum severity Any severity Info Minor Major Critical Live Refresh ACTIVE NOW 2 Active Major Outage Updated just now Publish whi
+--- au3-feed-error-live.txt (F-65 / UX-53) ---
+{
+ "first": {
+  "errorText": "Couldn't load the feedThe service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in",
+  "insideAlertOrLiveRegion": false,
+  "liveRole": null,
+  "alertsOnPage": 0,
+  "announced": [
+   "status: Connecting",
+   "status: Live"
+  ]
+ },
+ "afterTryAgainStillFailing": {
+  "errorText": "Couldn't load the feedThe service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in",
+  "insideAlertOrLiveRegion": false,
+  "liveRole": null,
+  "alertsOnPage": 0,
+  "announced": []
+ },
+ "ariaSnapshotMain": [
+  "  - status: Live",
+  "  - status",
+  "  - paragraph: Couldn't load the feed",
+  "  - paragraph: \"The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.\"",
+  "  - button \"Try again\""

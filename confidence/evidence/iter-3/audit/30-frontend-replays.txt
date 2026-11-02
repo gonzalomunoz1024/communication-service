@@ -1,0 +1,65 @@
+Iteration-3 audit: frontend replays (16 sampled claims), compared with confidence/evidence/iter-3/frontend/
+Static checks: the verifier's run-static sequence in frontend/ (no install; builds into the auditor's scratch, never frontend/dist), 08:10-08:12Z:
+  01-lint-run1 | exit 0 | 4.8s | npm run lint
+  02-typecheck-run1 | exit 0 | 4.0s | npm run typecheck
+  03-build-run1 | exit 0 | 5.5s | npm run build -- --outDir <scratchpad>/audit3/fe/dist --emptyOutDir
+  04-test-run1 | exit 0 | 13.3s | npm test -- --reporter=verbose
+  05-test-run2 | exit 0 | 11.8s | npm test
+  06-test-run3 | exit 0 | 22.2s | npm test
+  07-coverage | exit 0 | 23.6s | npm run test:coverage -- --coverage.reportsDirectory=<scratchpad>/audit3/fe/coverage
+  08-audit | exit 0 | 0.6s | npm audit
+  09-audit-omit-dev | exit 0 | 0.7s | npm audit --omit=dev
+  10-audit-json | exit 0 | 0.5s | npm audit --json
+  11-default-tenant-build | exit 0 | 1.1s | env VITE_DEFAULT_TENANT=au3f-default npx vite build --outDir <scratchpad>/audit3/fe/dist-default-tenant --em
+  12-xorigin-build | exit 0 | 1.1s | env VITE_API_BASE=http://127.0.0.1:19711 npx vite build --outDir <scratchpad>/audit3/fe/dist-xorigin --emptyOutDir
+  13-badclientid-build | exit 0 | 0.8s | env VITE_CLIENT_ID=bad id! npx vite build --outDir <scratchpad>/audit3/fe/dist-badclientid --emptyOutDir
+  14-lint-run2 | exit 0 | 5.8s | npm run lint
+  15-lint-run3 | exit 0 | 6.2s | npm run lint
+  16-typecheck-run2 | exit 0 | 6.6s | npm run typecheck
+  17-typecheck-run3 | exit 0 | 4.7s | npm run typecheck
+  18-build-run2 | exit 0 | 5.1s | npm run build -- --outDir <scratchpad>/audit3/fe/dist-run2 --emptyOutDir
+  19-build-run3 | exit 0 | 6.6s | npm run build -- --outDir <scratchpad>/audit3/fe/dist-run3 --emptyOutDir
+  git status --short (frontend/): []
+  04-test-run1:  Test Files 19 passed (19)  Tests 169 passed (169) 
+  05-test-run2:  Test Files 19 passed (19)  Tests 169 passed (169) 
+  06-test-run3:  Test Files 19 passed (19)  Tests 169 passed (169) 
+  07-coverage:  Test Files 19 passed (19)  Tests 169 passed (169) 
+  coverage: All files | 96.77 | 92.68 | 94.14 | 97.58 | 
+  npm audit / --omit=dev: found 0 vulnerabilities found 0 vulnerabilities 
+  npm ls minimatch: minimatch@11.0.3 overridden; overrides {"minimatch": "^11.0.1"}
+
+Browser runs: the verifier's scripts (evidence/iter-3/frontend/scripts) re-pointed to the auditor's private stack (infra.sh: backends :19711 default config
+on au3-shared in place of the shared :8080, :19753/:19754 pair, :19755 on its own Mongo; Vite :19742-:19744; reverse proxies :19745-:19749; pod au3f-*).
+Comparison by check id and verdict (scratchpad/audit3/scripts/fecmp.py, auditor log vs verifier run-logs/<run>.txt):
+  v1: matched 62 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  v2: matched 46 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  v3: matched 54 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  g3: matched 32 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  v4: matched 9 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  v5: matched 46 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  v7d: matched 2 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  v8: matched 7 same verdict, 0 different, 0 only in auditor run, 0 only in verifier run
+  v7b (shell script, no ids): the same pattern as results/v7b-expired-lastEventId.txt; seqs 1-3 here vs 3-5 there (the verifier's database held two older events).
+
+| # | claim | replay | result |
+|---|---|---|---|
+| frontend#01 | G-3-21 closed (g3, v2) | g3 32/32 and v2 46/46, ids and verdicts identical; the 409 banner reads 'the ServiceNow incident number doubles as the reference', 'What the service said' collapsed | MATCH |
+| frontend#03 | G-3-23 closed (g3, v4, v5) | g3, v4 9/9, v5 46/46 identical | MATCH |
+| frontend#05 | G-3-25 closed (g3, v8) | g3 and v8 7/7 identical (automatic chip, plain-sentence body, pod outage card) | MATCH |
+| frontend#08 | G-2-10 closed (v2, v3, g3, v5) | all four identical (focus lands on the banner / heading as claimed) | MATCH |
+| frontend#19 | cmd-8: three vite builds with VITE_DEFAULT_TENANT / VITE_API_BASE / VITE_CLIENT_ID='bad id!' -> 0, 0, 0 | static 11-13: exit 0, 0, 0 | MATCH |
+| frontend#20 | cmd-9: npm ls minimatch; overrides block -> 0 | minimatch@11.0.3 overridden; overrides {"minimatch": "^11.0.1"} | MATCH |
+| frontend#25 | cmd-14: v1 -> 0 (62/62) | v1 62/62, identical ids | MATCH (exact) |
+| frontend#29 | cmd-18: g3 run 1 -> 0 (30/32, two script assumptions) | the kept g3 script (the corrected one) 32/32; the run-1 script is not kept | MATCH (equivalent) |
+| frontend#34 | cmd-23: v8 pod UI -> 0 (7/7) | 7/7 identical, after fixing a port slip in the auditor's copy (see audit.md §6) | MATCH |
+| frontend#38 | cmd-27: v7b expired lastEventId -> 0 | exit 0; gap not retained -> 3 snapshot frames; boundary -> created only; nothing missed -> no frames; never issued -> snapshot | MATCH |
+| frontend#49 | F-02 PASS | 5 F-02 rows identical: draft:true -> 201 DRAFT, 'Draft saved', no View in feed, absent from feed, permalink 404 | MATCH |
+| frontend#54 | F-15 PASS (card gone 129 ms after expiresAt) | 3 F-15 rows identical; the card left 135 ms after expiresAt here | MATCH (nuance: timer jitter) |
+| frontend#60 | F-53 PASS | 7 F-53 rows identical (pre-paint script, color-scheme meta, live OS following, toggle persistence) | MATCH |
+| frontend#66 | F-59 PASS | 9 F-59 rows identical (Choose a tenant, 3 skeletons in aria-busy, empty-state sentences, error + Try again recovers) | MATCH |
+| frontend#73 | F-66 PASS: lint, typecheck, build x3 exit 0; tests 169/169 x3 | the same (static 01-06, 14-19) | MATCH (exact) |
+| frontend#77 | GAP-frontend3-1: onopen counts every 200 as a recovery; a stream ended normally is left to the browser's ~3 s retry | code frontend/src/outages/api.ts:182-191 as cited; seen live in 60 (ux3-dbdown: a page opened during the outage shows Live/Reconnecting cycling every ~8 s) | MATCH |
+
+F-65 (gate claim 3): v5 has the same 46 F-65 rows as the verifier, all PASS: axe on both tabs, light and dark, 0 violations; sampled text contrast min 4.66 (light) and 5.93 (dark), 0 below AA.
+PASS [F-65] sampled contrast ratios feed-light: every sampled text at or above AA (4.5:1 normal, 3:1 large) :: {"tertiary text (captions, hints, meta)":{"sampled":12,"min":4.66,"belowAA":0,"worst":[{"
+The feed-error live-region probe (UX-53) is in 60-usability-replays.txt.

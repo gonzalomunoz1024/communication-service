@@ -1,0 +1,96 @@
+# Gate claim 1 (GAP-backend3-6): Trivy 0.58.1 SBOM scan re-run by the auditor, plus the backend image's OS packages (GAP-backend3-7)
+# 2026-11-02, code e3968c4 (= 4a0e84e); HEAD 6fa95c5 -> 6c15715 during the audit (confidence/ only)
+
+## 1. Input
+build/reports/cyclonedx/bom.json sha256 936b6f37fd1b7c4f... (copied read-only to the auditor's scratch trivy-in/; CycloneDX 1.6, 87 components = the runtime classpath, verifySbomScope)
+
+## 2. With the verifier's DB cache mounted read-only (scratchpad/backend3/trivy-cache):
+2026-11-02T07:55:10Z	FATAL	Fatal error	init error: DB error: error in vulnerability DB initialize: failed to open db: open /root/.cache/trivy/db/trivy.db: read-only file system
+
+real	0m0.344s
+user	0m0.027s
+sys	0m0.019s
+-> Trivy 0.58.1 needs a writable cache even with --skip-db-update; so the auditor downloaded its own DB instead (more independent).
+
+## 3. Fresh DB, own cache (docker run --rm --network host -e HTTPS_PROXY -e SSL_CERT_FILE=/ca/ca-bundle.crt -v <ca>:/ca/ca-bundle.crt:ro -v <auditor cache>:/root/.cache -v <trivy-in>:/scan:ro mirror.gcr.io/aquasec/trivy:0.58.1 sbom --scanners vuln --format json /scan/bom.json)
+exit=0; DB metadata: {"Version":2,"NextUpdate":"2026-11-03T07:17:05.526947983Z","UpdatedAt":"2026-11-02T07:17:05.526948404Z","DownloadedAt":"2026-11-02T07:55:29.611027381Z"}
+2026-11-02T07:55:19Z	INFO	[vulndb] Downloading artifact...	repo="mirror.gcr.io/aquasec/trivy-db:2"
+2026-11-02T07:55:29Z	INFO	Detected SBOM format	format="cyclonedx-json"
+2026-11-02T07:55:29Z	INFO	Number of language-specific files	num=1
+real	0m13.304s
+
+auditor scan (Trivy 0.58.1, fresh DB UpdatedAt 2026-11-02T07:17:05Z): 29 {'HIGH': 10, 'MEDIUM': 16, 'CRITICAL': 3}
+verifier table (07-dependency-scan.txt): 29 {'CRITICAL': 3, 'HIGH': 10, 'MEDIUM': 16}
+only in auditor scan: []
+only in verifier table: []
+
+CRITICAL and HIGH (auditor scan):
+  CRITICAL CVE-2026-75595   netty-handler@4.1.135.Final        fixed in 4.2.17.Final, 4.1.137.Final
+  CRITICAL CVE-2026-47890   spring-webflux@6.2.19              fixed in 7.0.9
+  CRITICAL CVE-2026-47892   spring-webflux@6.2.19              fixed in 7.0.9
+  HIGH     CVE-2026-89407   jackson-core@2.21.4                fixed in 2.18.11, 2.21.7, 2.22.3
+  HIGH     CVE-2026-89425   jackson-core@2.21.4                fixed in 2.21.7, 2.22.3, 2.18.11
+  HIGH     CVE-2026-68497   jackson-databind@2.21.4            fixed in 2.18.10, 2.21.6, 2.22.2
+  HIGH     CVE-2026-91776   jackson-databind@2.21.4            fixed in 2.18.11, 2.21.7, 2.22.3
+  HIGH     CVE-2026-91777   jackson-databind@2.21.4            fixed in 2.21.7, 2.18.11, 2.22.3
+  HIGH     CVE-2026-56819   netty-codec-http2@4.1.135.Final    fixed in 4.2.16.Final, 4.1.136.Final
+  HIGH     CVE-2026-55831   netty-codec-http@4.1.135.Final     fixed in 4.2.16.Final, 4.1.136.Final
+  HIGH     CVE-2026-55833   netty-codec-http@4.1.135.Final     fixed in 4.2.16.Final, 4.1.136.Final
+  HIGH     CVE-2026-56745   netty-codec-http@4.1.135.Final     fixed in 4.2.16.Final, 4.1.136.Final
+  HIGH     CVE-2026-59901   netty-codec@4.1.135.Final          fixed in 4.1.136.Final
+
+## 4. The shipped jar carries exactly these versions (cmd-5 replay)
+sha256 build/libs/communication-service-0.0.1-SNAPSHOT.jar = scratchpad/communication-service-iter3.jar = b63ffd4ebfae68c9db311eff543a41e2176d3e731bc7a6a92daa82735339e77f
+unzip -Z1 | grep BOOT-INF/lib: jackson-databind-2.21.4.jar jackson-core-2.21.4.jar spring-webflux-6.2.19.jar spring-boot-3.5.16.jar netty-codec-http2-4.1.135.Final.jar netty-codec-http-4.1.135.Final.jar netty-handler-4.1.135.Final.jar netty-codec-4.1.135.Final.jar netty-common-4.1.135.Final.jar
+build.gradle.kts: Spring Boot 3.5.16 at be19645 (iteration 2) and at e3968c4; 3.4.1 at 191a0c5. No netty/jackson override. The only resolutionStrategy (line 94) is SpotBugs' own configurations.
+
+## 5. Is any of it triaged? (git ls-files / git grep, outside confidence/)
+files named *vex*, .trivyignore, .grype*, openvex, suppressions: none
+git grep -iE 'vex|trivyignore|only-fixed|ignore-states|severity-cutoff|fail-build|anchore|grype|CVE-2026' -- ':!confidence':
+  .github/workflows/ci.yml:40  # a critical or high finding in a runtime dependency fails the job
+  .github/workflows/ci.yml:42  uses: anchore/scan-action@v6   (sbom: build/reports/cyclonedx/bom.json)
+  .github/workflows/ci.yml:45  fail-build: true
+  .github/workflows/ci.yml:46  severity-cutoff: high
+  README.md:80  backend job 'Fails when': 'a gate fails, or a runtime dependency has a known vulnerability rated high or critical'
+-> no VEX, no ignore list, no accepted-risk record; the repository's own CI rule fails on these purls.
+
+## 6. Reachability probe for CVE-2026-89407 (verifier's check_g_jackson_regex.py, re-pointed to private :19795, tenant au3-cve)
+n=  2000 PUT expectedVersion (Long)                           -> 400 in  0.025s (2037 bytes) {"error":"Failed to read HTTP message"}
+n=  2000 POST monitor intervalSeconds (Integer)               -> 400 in  0.017s (2102 bytes) {"error":"Failed to read HTTP message"}
+n=  2000 POST monitor minHealthyPercent (Integer), float-like -> 400 in  0.007s (2106 bytes) {"error":"Failed to read HTTP message"}
+n=  2000 POST report observedAt (Instant)                     -> 400 in   0.02s (2074 bytes) {"error":"observedAt: '1111111111111111111111111111111111111111111111111111111111111111111
+n=  2000 POST report details value (free-form map)            -> 202 in  0.091s (2118 bytes) {"id":"8f5733ab-29fb-4a33-a078-764bd6fcd037","tenantId":"au3-cve","service":"r","policy":{
+n= 60000 PUT expectedVersion (Long)                           -> 400 in  0.015s (60037 bytes) {"error":"Failed to read HTTP message"}
+n= 60000 POST monitor intervalSeconds (Integer)               -> 400 in  0.007s (60103 bytes) {"error":"Failed to read HTTP message"}
+n= 60000 POST monitor minHealthyPercent (Integer), float-like -> 400 in   0.01s (60107 bytes) {"error":"Failed to read HTTP message"}
+n= 60000 POST report observedAt (Instant)                     -> 400 in  0.015s (60074 bytes) {"error":"observedAt: '1111111111111111111111111111111111111111111111111111111111111111111
+n= 60000 POST report details value (free-form map)            -> 202 in  0.032s (60118 bytes) {"id":"8f5733ab-29fb-4a33-a078-764bd6fcd037","tenantId":"au3-cve","service":"r","policy":{
+EXIT 0
+-> same codes, sizes and texts as the verifier's ev/07 probe; 5-91 ms (the 91 ms is the first call). Reachability lowers the risk, not the finding.
+
+## 7. GAP-backend3-7: OS packages of the backend image (root Dockerfile, BASE_IMAGE=gcr.io/distroless/java21-debian12:nonroot), image au3-backend:test (cmd-31)
+$ trivy image --skip-db-update --scanners vuln --pkg-types os au3-backend:test  (docker socket, auditor DB) -> exit 0
+au3-backend:test (debian 12.13) 108 findings {'MEDIUM': 64, 'LOW': 24, 'CRITICAL': 2, 'HIGH': 12, 'UNKNOWN': 6}
+    libbrotli1 1.0.9-2+b6 C:CVE-2026-111497
+    libexpat1 2.5.0-1+deb12u2 H:CVE-2024-28757, H:CVE-2025-59375, H:CVE-2026-25210, H:CVE-2026-45186, H:CVE-2026-66046, H:CVE-2026-76957, H:CVE-2026-77214, H:CVE-2026-93990
+    liblcms2-2 2.14-2 H:CVE-2026-41254
+    libuuid1 2.38.1-5+deb12u3 H:CVE-2026-53613(no fix), H:CVE-2026-53615(no fix), H:CVE-2026-78410(no fix)
+    zlib1g 1:1.2.13.dfsg-1 C:CVE-2023-45853(no fix)
+gcr.io/distroless/java21-debian13:nonroot (debian 13.7) 77 findings {'MEDIUM': 50, 'LOW': 20, 'UNKNOWN': 3, 'HIGH': 4}
+    libuuid1 2.41.5-0+deb13u1 H:CVE-2026-76642(no fix), H:CVE-2026-78408(no fix), H:CVE-2026-78409(no fix), H:CVE-2026-78410(no fix)
+(debian13: trivy image --image-src remote gcr.io/distroless/java21-debian13:nonroot through the agent proxy with its CA; the first attempt without the proxy CA failed with x509 unknown authority)
+-> identical to the verifier's ev/07 scan 2 (108: C2/H12; debian13 77: H4 libuuid1, no fix).
+
+## 8. When the 13 CRITICAL/HIGH entries were published (PublishedDate in the auditor's Trivy JSON)
+2026-07-21 to 2026-09-23 (netty 07-21..08-19, spring-webflux 08-27, jackson 09-11..09-23): every one was public before iteration 2
+(Spring Boot 3.5.16 since be19645). The iteration-2 audit's "none known" reflected an unreachable database, not a different dependency set.
+
+## 9. Ruling on gate claim 1 (GAP-backend3-6)
+The gate applies as worded ("an open critical/high security finding"):
+- reproduced exactly with an independent, fresh database (29 entries, 3 CRITICAL + 10 HIGH, the same IDs; section 3);
+- the affected versions are what the shipped jar carries in BOOT-INF/lib (section 4), all on the runtime classpath (the SBOM is runtime-only, G-3-5);
+- nothing triages them: no VEX, ignore list or accepted-risk record (section 5), and the repository's own CI rule fails the job on them
+  (ci.yml:40-46, README.md:80);
+- the environmental exception ("no vulnerability DB") does not apply: the database was reachable for the verifier and for the auditor;
+- the reachability probe (section 6) lowers the risk of one HIGH entry; it does not close any entry, and the netty and spring-webflux entries are untested.
+Not a regression of iteration 3 (section 8). Backend capped at 80, as its verifier did.
