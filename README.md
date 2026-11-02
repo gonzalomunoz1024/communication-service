@@ -139,6 +139,10 @@ given on the URI.
   A client that reconnects with `Last-Event-ID` (browsers do this on their own; `?lastEventId=`
   for curl) gets every event it missed, in order, while the log still holds it
   (`communication.events.retention`, default 1 day); otherwise it gets a fresh snapshot.
+  Frames are delivered at least once, never skipped: a `snapshot` frame's `id:` is the log head
+  read just before the snapshot was built (not the node's fan-out cursor, which can trail it by
+  one poll), so a resume from it can repeat an event whose change the snapshot already showed;
+  consumers dedupe on the communication's `(id, version)`, carried in every payload.
 - **Multi-instance**: events go through a shared log in Mongo (`communication_events`) that every
   instance appends to and tails (`communication.events.poll-interval-ms`, default 500 ms), so a
   notice published through any node reaches subscribers on every node. It is a poll, not a change

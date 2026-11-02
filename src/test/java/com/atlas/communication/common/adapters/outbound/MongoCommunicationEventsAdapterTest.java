@@ -117,6 +117,16 @@ class MongoCommunicationEventsAdapterTest {
     }
 
     @Test
+    void headIsTheEndOfTheLogEvenWhileTheCursorTrailsIt() {
+        when(sequence.current()).thenReturn(Mono.just(10L), Mono.just(12L));
+        adapter.initialise().block();
+
+        // two events were appended since the last poll: the head knows, the cursor does not yet
+        StepVerifier.create(adapter.head()).expectNext(12L).verifyComplete();
+        assertThat(adapter.position()).isEqualTo(10);
+    }
+
+    @Test
     void streamAfterReplaysTheGapThenContinuesLiveExactlyOnce() {
         when(sequence.current()).thenReturn(Mono.just(12L));
         adapter.initialise().block();

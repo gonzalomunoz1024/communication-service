@@ -181,7 +181,12 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
     }
 
     @Override
-    public long position() {
+    public Mono<Long> head() {
+        return sequence.current();
+    }
+
+    /** Last sequence this instance has fanned out: the tail cursor, which trails {@link #head()} by up to one poll. */
+    long position() {
         return Math.max(cursor.get(), 0);
     }
 
