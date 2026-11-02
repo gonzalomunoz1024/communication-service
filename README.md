@@ -168,7 +168,11 @@ server (within 15 s with a paused mongod) later calls get their 503 after 5 s ag
   usable once per tenant for the life of the store (unique index on `(tenantId, externalRef)`,
   retired and expired notices included). Repeating it is how a client retries the same publish
   safely: the 409 names the notice that already holds it. A follow-up notice on the same ticket,
-  or one published after the first was retired, needs a new value (`INC0012345-2`).
+  or one published after the first was retired, needs a new value (`INC0012345-2`): the 409
+  suggests the first one the tenant does not hold yet, in its sentence and as
+  `"suggestedExternalRef": "INC0012345-3"` beside `error` (counting on from `n` for a reference
+  that ends in `-n`, `n` up to 99; when the next 50 values are all taken it says so and suggests
+  none).
 - **Tickets (optional)**: a communication can carry the ServiceNow incident behind it
   (`ticket.number`, e.g. `INC0012345`; `ticket.system` names another tracker). The number is
   trimmed, upper-cased and checked against `communication.tickets.number-pattern`; with

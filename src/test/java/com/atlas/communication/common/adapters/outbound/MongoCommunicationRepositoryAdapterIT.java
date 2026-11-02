@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -76,6 +77,52 @@ class MongoCommunicationRepositoryAdapterIT {
                 .verify();
         // same ref in another tenant is fine
         assertThat(adapter.save(outage("c3", "otherpod", "INC1", NOW, null)).block()).isNotNull();
+    }
+
+    @Test
+    void theConflictSuggestsTheFirstFollowUpValueTheTenantDoesNotHoldYet() {
+        adapter.save(outage("c1", "vmforge", "INC1", NOW, null)).block();
+        adapter.save(outage("c2", "vmforge", "INC1-2", NOW, null)).block();
+        adapter.save(outage("c3", "otherpod", "INC1-3", NOW, null)).block(); // another tenant's is no obstacle
+        adapter.save(outage("c4", "vmforge", "CHG-2026", NOW, null)).block();
+
+        // a third notice for one incident, sent with the incident's reference or with the second
+        // notice's: both count on to the first value nobody in the tenant holds
+        for (String reused : List.of("INC1", "INC1-2")) {
+            StepVerifier.create(adapter.save(outage("c5", "vmforge", reused, NOW, null)))
+                    .expectErrorSatisfies(ex -> {
+                        assertThat(ex).as(reused).isInstanceOf(ResponseStatusException.class)
+                                .hasMessageContaining("externalRef '" + reused + "' is already used by notice")
+                                .hasMessageContaining("(for example INC1-3, which is still free)");
+                        assertThat(((ResponseStatusException) ex).getBody().getProperties()).as(reused)
+                                .containsExactly(Map.entry("suggestedExternalRef", "INC1-3"));
+                    })
+                    .verify();
+        }
+        // a number longer than two digits is part of the reference, not a follow-up counter
+        StepVerifier.create(adapter.save(outage("c5", "vmforge", "CHG-2026", NOW, null)))
+                .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getBody().getProperties())
+                        .containsExactly(Map.entry("suggestedExternalRef", "CHG-2026-2")))
+                .verify();
+        assertThat(adapter.save(outage("c5", "vmforge", "INC1-3", NOW, null)).block()).isNotNull();
+    }
+
+    @Test
+    void pastFiftyTakenFollowUpValuesTheConflictSaysSoAndSuggestsNone() {
+        adapter.save(outage("c1", "vmforge", "INC9", NOW, null)).block();
+        for (int n = 2; n <= 51; n++) {
+            adapter.save(outage("c" + n, "vmforge", "INC9-" + n, NOW, null)).block();
+        }
+
+        StepVerifier.create(adapter.save(outage("c99", "vmforge", "INC9", NOW, null)))
+                .expectErrorSatisfies(ex -> {
+                    assertThat(ex).isInstanceOf(ResponseStatusException.class)
+                            .hasMessageContaining("externalRef 'INC9' is already used by notice c1 in tenant vmforge")
+                            .hasMessageContaining("(INC9-2 to INC9-51 are taken as well)");
+                    Map<String, Object> fields = ((ResponseStatusException) ex).getBody().getProperties();
+                    assertThat(fields == null ? Map.of() : fields).doesNotContainKey("suggestedExternalRef");
+                })
+                .verify();
     }
 
     @Test

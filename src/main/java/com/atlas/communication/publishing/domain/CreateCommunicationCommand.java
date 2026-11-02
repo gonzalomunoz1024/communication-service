@@ -45,7 +45,8 @@ public record CreateCommunicationCommand(
         @Schema(description = "Permanent idempotency key, usable once per tenant for the life of the store "
                 + "(retired and expired notices included). Repeat it only to retry the same publish: the 409 "
                 + "names the notice that already holds it. A follow-up notice needs a new value, for example "
-                + "INC0012345-2. Defaults to ticket.number when a ticket is given.", example = "INC0012345")
+                + "INC0012345-2; the 409 suggests the first one still free as suggestedExternalRef. Defaults to "
+                + "ticket.number when a ticket is given.", example = "INC0012345")
         String externalRef,
         @Valid Ticket ticket) {
 

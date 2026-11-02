@@ -44,11 +44,13 @@ public class RestControllerPublishingAdapter implements PublishingInboundPort {
     @Operation(summary = "Publish (or draft) a new communication")
     @ApiResponse(responseCode = "409", description = "externalRef already used in this tenant. It is a permanent "
             + "idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value. "
-            + "The body names the notice that holds it.",
+            + "The body names the notice that holds it, and suggestedExternalRef is the first follow-up value the "
+            + "tenant does not hold yet (absent when the first 50 are all taken).",
             content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"error\":"
-                    + "\"externalRef 'INC-1' is already used by notice 3f0c2a1e-7d4b-4a4e-9c2b-5e1f0a6d8b21 in tenant "
-                    + "acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; "
-                    + "give a follow-up notice a new value (for example INC-1-2).\"}")))
+                    + "\"externalRef 'INC0012345' is already used by notice 3f0c2a1e-7d4b-4a4e-9c2b-5e1f0a6d8b21 in "
+                    + "tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same "
+                    + "publish; give a follow-up notice a new value (for example INC0012345-3, which is still free).\","
+                    + "\"suggestedExternalRef\":\"INC0012345-3\"}")))
     public Mono<ResponseEntity<Communication>> createHttp(
             @Valid @RequestBody CreateCommunicationCommand command) {
         return create(command).map(saved -> ResponseEntity

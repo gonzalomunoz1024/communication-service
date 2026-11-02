@@ -60,7 +60,8 @@ class OpenApiContractIT {
         assertThat(duplicate.isMissingNode()).as("POST /v1/communications documents its 409").isFalse();
         assertThat(duplicate.path("description").asText()).contains("externalRef").contains("permanent");
         assertThat(duplicate.path("content").path("application/json").toString())
-                .as("the example body shows the wording").contains("permanent idempotency key");
+                .as("the example body shows the wording").contains("permanent idempotency key")
+                .as("and the free follow-up value beside it").contains("suggestedExternalRef");
         JsonNode stale = spec.path("paths").path("/v1/communications/{id}").path("put")
                 .path("responses").path("409");
         assertThat(stale.path("description").asText()).as("PUT documents its 409").contains("expectedVersion");

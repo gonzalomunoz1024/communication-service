@@ -3,6 +3,7 @@ package com.atlas.communication.config;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -157,14 +158,23 @@ public class GlobalExceptionHandler {
                         + " (the API is documented at /swagger-ui.html)")));
     }
 
+    /**
+     * The reason as {@code error}; fields the thrower put on the problem detail come beside it
+     * (the 409 for a reused externalRef adds {@code suggestedExternalRef}).
+     */
     @ExceptionHandler(ResponseStatusException.class)
     public Mono<ResponseEntity<Map<String, String>>> handleStatus(ResponseStatusException ex) {
         String reason = ex.getReason();
         if (reason == null && ex.getStatusCode() instanceof HttpStatus status) {
             reason = status.getReasonPhrase().toLowerCase(Locale.ROOT);
         }
-        return Mono.just(ResponseEntity.status(ex.getStatusCode())
-                .body(Map.of("error", safe(reason))));
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("error", safe(reason));
+        Map<String, Object> fields = ex.getBody().getProperties();
+        if (fields != null) {
+            fields.forEach((name, value) -> body.putIfAbsent(name, String.valueOf(value)));
+        }
+        return Mono.just(ResponseEntity.status(ex.getStatusCode()).body(body));
     }
 
     @ExceptionHandler(Exception.class)

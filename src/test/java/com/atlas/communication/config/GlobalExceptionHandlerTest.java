@@ -148,6 +148,23 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void aStatusCarriesTheFieldsItWasGivenBesideTheError() {
+        // the 409 for a reused externalRef hands the client the first free follow-up value
+        ResponseStatusException conflict = new ResponseStatusException(HttpStatus.CONFLICT,
+                "externalRef 'INC1' is already used by notice c1 in tenant vmforge");
+        conflict.getBody().setProperty("suggestedExternalRef", "INC1-3");
+
+        StepVerifier.create(handler.handleStatus(conflict))
+                .assertNext(response -> {
+                    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(response.getBody()).containsExactly(
+                            Map.entry("error", "externalRef 'INC1' is already used by notice c1 in tenant vmforge"),
+                            Map.entry("suggestedExternalRef", "INC1-3"));
+                })
+                .verifyComplete();
+    }
+
+    @Test
     void aStatusWithAReasonKeepsTheReason() {
         StepVerifier.create(handler.handleStatus(
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "no such monitor: m1")))
