@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Button, Icon, Input, StateTag, Tag, cx, longDate, relativeTime } from '../ui'
 import { SEVERITY_TONE, titleCase } from './display'
 import { explainError } from './errors'
@@ -22,6 +23,7 @@ const SEVERITY_BAR: Record<FeedItem['severity'], string> = {
 
 /** One feed item: severity rail, status, title, body, services and timing. */
 export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
+  const id = useId()
   const [confirming, setConfirming] = useState(false)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -29,6 +31,15 @@ export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
   const active = item.status === 'ACTIVE'
   // a notice that has not started is withdrawn rather than resolved; both retire it
   const verb = active ? 'Resolve' : 'Withdraw'
+  const notePlaceholder = active ? 'Resolution note (optional)' : 'Reason (optional)'
+
+  // The confirmation takes the place of the button that opened it and gives it back: focus moves
+  // with it both ways (to the note, then to the button), or it falls to <body>. When a resolve
+  // succeeds the card leaves and the feed moves focus to the list.
+  const confirm = (open: boolean) => {
+    flushSync(() => setConfirming(open))
+    document.getElementById(`${id}-${open ? 'note' : 'action'}`)?.focus()
+  }
 
   const retire = async () => {
     if (!onRetire) return
@@ -37,8 +48,12 @@ export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
     try {
       await onRetire(item, note)
     } catch (e) {
-      setError(explainError(e))
-      setBusy(false)
+      flushSync(() => {
+        setError(explainError(e))
+        setBusy(false)
+      })
+      // the button was disabled while the call ran, which drops focus: give it back so Enter tries again
+      document.getElementById(`${id}-confirm`)?.focus()
     }
   }
 
@@ -93,31 +108,33 @@ export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
             {item.publisher}
           </span>
           {onRetire && !confirming && (
-            <Button size="sm" variant="capsule" icon={active ? 'check' : 'close'} className="ml-auto" onClick={() => setConfirming(true)}>
+            <Button id={`${id}-action`} size="sm" variant="capsule" icon={active ? 'check' : 'close'} className="ml-auto" onClick={() => confirm(true)}>
               {verb}
             </Button>
           )}
         </div>
 
         {confirming && (
-          <div className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
-            <p className="text-caption text-secondary">
+          <div role="group" aria-labelledby={`${id}-question`} className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
+            <p id={`${id}-question`} className="text-caption text-secondary">
               {active
                 ? `Resolve${actor ? ` as ${actor}` : ''}? It leaves tenant ${item.tenantId}'s feed at once and cannot be reopened.`
                 : `Withdraw${actor ? ` as ${actor}` : ''}? Withdrawing retires it before it starts: tenant ${item.tenantId}'s consumers never see it and it cannot be reopened.`}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Input
+                id={`${id}-note`}
                 size="sm"
                 className="min-w-48 flex-1"
-                placeholder={active ? 'Resolution note (optional)' : 'Reason (optional)'}
+                aria-label={notePlaceholder}
+                placeholder={notePlaceholder}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
-              <Button size="sm" variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>
+              <Button size="sm" variant="ghost" onClick={() => confirm(false)} disabled={busy}>
                 Cancel
               </Button>
-              <Button size="sm" variant="primary" loading={busy} onClick={retire}>
+              <Button id={`${id}-confirm`} size="sm" variant="primary" loading={busy} onClick={retire}>
                 {verb}
               </Button>
             </div>

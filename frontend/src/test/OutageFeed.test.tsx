@@ -90,6 +90,21 @@ describe('OutageFeed', () => {
     expect(document.activeElement?.contains(screen.getByText('All clear'))).toBe(true)
   })
 
+  it('resolves from the keyboard alone: focus follows the confirmation and lands on the list when the card leaves', async () => {
+    const user = userEvent.setup()
+    const f = fakeClient([item('a'), item('b')])
+    render(<OutageFeed client={f.client} tenantId="acme" actor="oncall" />)
+    const card = (await screen.findByText('Notice a')).closest('article')!
+    within(card).getByRole('button', { name: 'Resolve' }).focus()
+    await user.keyboard('{Enter}')
+    expect(document.activeElement).toBe(within(card).getByPlaceholderText('Resolution note (optional)'))
+    await user.keyboard('fixed{Tab}{Tab}{Enter}')
+    await waitFor(() => expect(screen.queryByText('Notice a')).toBeNull())
+    expect(f.client.retire).toHaveBeenCalledWith('a', 'oncall', 'fixed')
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement?.contains(screen.getByText('Notice b'))).toBe(true)
+  })
+
   it('says when the service has more than the first page', async () => {
     const f = fakeClient([item('a')], { totalElements: 240, hasNext: true })
     render(<OutageFeed client={f.client} tenantId="acme" />)

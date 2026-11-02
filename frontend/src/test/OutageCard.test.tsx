@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { OutageCard } from '../outages/OutageCard'
@@ -76,5 +76,55 @@ describe('OutageCard', () => {
   it('hides the action when the page cannot resolve', () => {
     render(<OutageCard item={item} />)
     expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument()
+  })
+
+  it('moves keyboard focus into the confirmation, under its question, and back to the action on Cancel', async () => {
+    const user = userEvent.setup()
+    render(<OutageCard item={item} onRetire={vi.fn(async () => {})} actor="web-oncall" />)
+    screen.getByRole('button', { name: 'Resolve' }).focus()
+    await user.keyboard('{Enter}')
+    // the button that had focus gave way to the confirmation: focus lands on its first control, not on <body>
+    const note = screen.getByPlaceholderText('Resolution note (optional)')
+    expect(document.activeElement).toBe(note)
+    expect(note).toHaveAccessibleName('Resolution note (optional)')
+    // the question names the group the focus entered, so a screen reader reads it out
+    const group = screen.getByRole('group', { name: "Resolve as web-oncall? It leaves tenant acme's feed at once and cannot be reopened." })
+    expect(group).toContainElement(note)
+
+    await user.tab()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cancel' }))
+    await user.keyboard('{Enter}')
+    expect(screen.queryByRole('group')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Resolve' }))
+  })
+
+  it('does the same for Withdraw, and gives focus back to the confirming button when the service refuses', async () => {
+    const user = userEvent.setup()
+    const scheduled: FeedItem = { ...item, status: 'SCHEDULED', type: 'MAINTENANCE', startsAt: new Date(Date.now() + 3_600_000).toISOString() }
+    let refuse: (e: Error) => void = () => {}
+    const onRetire = vi.fn(() => new Promise<void>((_, reject) => (refuse = reject)))
+    render(<OutageCard item={scheduled} onRetire={onRetire} />)
+    screen.getByRole('button', { name: 'Withdraw' }).focus()
+    await user.keyboard('{Enter}')
+    const reason = screen.getByPlaceholderText('Reason (optional)')
+    expect(document.activeElement).toBe(reason)
+    const group = screen.getByRole('group')
+    expect(group).toHaveAccessibleName("Withdraw? Withdrawing retires it before it starts: tenant acme's consumers never see it and it cannot be reopened.")
+    const confirmButton = within(group).getByRole('button', { name: 'Withdraw' })
+
+    await user.keyboard('{Tab}{Tab}{Enter}')
+    expect(onRetire).toHaveBeenCalledWith(scheduled, '')
+    // a browser drops focus from a button disabled while the call runs (jsdom keeps it), so the card must
+    // hand it back itself once the call fails
+    expect(confirmButton).toBeDisabled()
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    try {
+      await act(async () => refuse(new Error('already expired')))
+      expect(screen.getByRole('alert')).toHaveTextContent('already expired')
+      expect(focus.mock.contexts).toEqual([confirmButton])
+      expect(document.activeElement).toBe(confirmButton)
+    } finally {
+      focus.mockRestore()
+    }
   })
 })
