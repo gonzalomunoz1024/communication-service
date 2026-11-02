@@ -1,0 +1,110 @@
+
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a91830158d2ba4acf/frontend
+
+ ❯ src/test/feed-state.test.ts (13 tests | 3 failed) 27ms
+   ❯ applyEvent (8)
+     × lists scheduled maintenance inside the upcoming window, like GET /v1/feed 11ms
+     × does not list a scheduled outage, incident or change until it starts 2ms
+   ❯ inFeed (1)
+     × matches the service rule at the window boundary 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/feed-state.test.ts > applyEvent > lists scheduled maintenance inside the upcoming window, like GET /v1/feed
+AssertionError: expected [ { id: 'c1', …(15) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "affectedServices": [
++       "payments",
++     ],
++     "audience": "CUSTOMERS",
++     "body": undefined,
++     "endsAt": undefined,
++     "expiresAt": undefined,
++     "externalRef": undefined,
++     "id": "c1",
++     "publisher": "oncall",
++     "severity": "INFO",
++     "startsAt": "2026-11-11T21:00:00.000Z",
++     "status": "SCHEDULED",
++     "tenantId": "acme",
++     "ticket": undefined,
++     "title": "t",
++     "type": "MAINTENANCE",
++     "updatedAt": "2026-11-01T20:00:00Z",
++   },
++ ]
+
+ ❯ src/test/feed-state.test.ts:62:142
+     60|     const soon = applyEvent([], event('CREATED', comm({ type: 'MAINTEN…
+     61|     expect(soon.map((i) => [i.id, i.status])).toEqual([['c1', 'SCHEDUL…
+     62|     expect(applyEvent([], event('CREATED', comm({ type: 'MAINTENANCE',…
+       |                                                                                                                                              ^
+     63|   })
+     64|   it('does not list a scheduled outage, incident or change until it st…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/test/feed-state.test.ts > applyEvent > does not list a scheduled outage, incident or change until it starts
+AssertionError: expected [ { id: 'c1', …(15) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "affectedServices": [
++       "payments",
++     ],
++     "audience": "CUSTOMERS",
++     "body": undefined,
++     "endsAt": undefined,
++     "expiresAt": undefined,
++     "externalRef": undefined,
++     "id": "c1",
++     "publisher": "oncall",
++     "severity": "MAJOR",
++     "startsAt": "2026-11-01T22:00:00.000Z",
++     "status": "SCHEDULED",
++     "tenantId": "acme",
++     "ticket": undefined,
++     "title": "t",
++     "type": "OUTAGE",
++     "updatedAt": "2026-11-01T20:00:00Z",
++   },
++ ]
+
+ ❯ src/test/feed-state.test.ts:67:111
+     65|     const inOneHour = new Date(now + 3_600_000).toISOString()
+     66|     for (const type of ['OUTAGE', 'INCIDENT', 'CHANGE'] as const) {
+     67|       expect(applyEvent([], event('CREATED', comm({ type, status: 'SCH…
+       |                                                                                                               ^
+     68|     }
+     69|     // ...and drops one that is pushed into the future by an update
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/test/feed-state.test.ts > inFeed > matches the service rule at the window boundary
+RangeError: Invalid time value
+ ❯ src/test/feed-state.test.ts:87:107
+     85| describe('inFeed', () => {
+     86|   it('matches the service rule at the window boundary', () => {
+     87|     const edge = { status: 'SCHEDULED', type: 'MAINTENANCE', startsAt:…
+       |                                                                                                           ^
+     88|     expect(inFeed(edge, now)).toBe(true)
+     89|     expect(inFeed({ ...edge, startsAt: new Date(now + UPCOMING_WINDOW_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 10 passed (13)
+   Start at  00:58:10
+   Duration  422ms (setup 73%, tests 11%, transform 9%, import 5%, worker 3%)
+

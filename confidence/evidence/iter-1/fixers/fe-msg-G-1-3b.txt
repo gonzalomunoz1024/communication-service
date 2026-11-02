@@ -1,0 +1,19 @@
+Fix G-1-3: fall back to a fresh snapshot when a resume never opens
+
+The reopen added for G-1-3 passes ?lastEventId=<last seq> so the service can
+replay what was missed. If that request is refused (today's service answers a
+resume with 500, G-1-1, and a proxy answers 502 while it restarts) the browser
+closes the EventSource again and the client would retry the same resume for
+ever, never getting back on the air.
+
+api.ts: when a resumed connection closes without ever having opened, the next
+attempt drops lastEventId and starts from a snapshot; a resumed connection
+that did open keeps resuming from the newest seq. useOutageFeed already
+reloads the list once the stream is back, so nothing is lost either way.
+
+Tests (src/test/stream.test.ts): a failed resume is followed by a plain
+reopen, frames seen on a later connection are resumed again, and a resume
+that opens keeps resuming. 12 files / 78 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

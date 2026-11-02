@@ -1,0 +1,312 @@
+
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a91830158d2ba4acf/frontend
+
+ ❯ src/test/stream.test.ts (6 tests | 2 failed) 66ms
+   ❯ reconnectDelay (1)
+     × doubles from one second and caps at thirty 5ms
+   ❯ stream liveness (5)
+     × reopens with backoff and the last sequence number once the browser has given up 12ms
+ ❯ src/test/feed-state.test.ts (10 tests | 2 failed) 13ms
+   ❯ reconcile (2)
+     × takes the page and keeps items the stream touched after the request started 3ms
+     × never carries another tenant over 1ms
+ ❯ src/test/OutageFeed.test.tsx (1 test | 1 failed) 177ms
+   ❯ OutageFeed (1)
+     × shows the connection state, including the reopen attempt 175ms
+ ❯ src/test/useOutageFeed.test.tsx (4 tests | 3 failed) 1346ms
+   ❯ useOutageFeed (4)
+     × loads the page, then follows the stream state 98ms
+     × reloads the list once the stream is back after being down 1073ms
+     × refresh reopens the stream right away while it is down, and only then 61ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/OutageFeed.test.tsx > OutageFeed > shows the connection state, including the reopen attempt
+TestingLibraryElementError: Unable to find an element with the text: Reconnecting (3). This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex flex-col gap-5"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-end gap-3 rounded-lg border border-stroke-light bg-surface-tertiary p-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-1.5 min-w-48 flex-1"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-caption font-medium text-secondary"[39m
+          [36m>[39m
+            [0mService[0m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex flex-col gap-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative w-full"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tertiary"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.7"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"11"[39m
+                  [33mcy[39m=[32m"11"[39m
+                  [33mr[39m=[32m"6.5"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19.8 19.8l-4.2-4.2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 py-1.5 text-caption pl-9 pr-3 font-mono"[39m
+                [33mplaceholder[39m=[32m"Any service"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-1.5 w-40"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-caption font-medium text-secondary"[39m
+          [36m>[39m
+            [0mType[0m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex flex-col gap-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative"[39m
+            [36m>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Type"[39m
+                [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer appearance-none pl-3 pr-8 py-1.5 text-caption"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll types[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"OUTAGE"[39m
+                [36m>[39m
+                  [0mOutage[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"INCIDENT"[39m
+                [36m>[39m
+                  [0mIncident[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"MAINTENANCE"[39m
+                [36m>[39m
+                  [0mMaintenance[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"CHANGE"[39m
+                [36m>[39m
+                  [0mChange[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"HEALTH"[39m
+                [36m>[39m
+                  [0mHealth[0m
+                [36m</option>[39m
+              [36m</select>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-tertiary"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.7"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 9.5l7 7 7-7"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-1.5 w-40"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-caption font-medium text-secondary"[39m
+          [36m>[39m
+            [0mMinimum severity[0m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex flex-col gap-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative"[39m
+            [36m>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Minimum severity"[39m
+                [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer appearance-none pl-3 pr-8 py-1.5 text-caption"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAny severity[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"INFO"[39m
+                [36m>[39m
+                  [0mInfo[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"MINOR"[39m
+                [36m>[39m
+                  [0mMinor[0m
+                [36m</option>[39m
+...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/test/OutageFeed.test.tsx:53:19
+     51|     expect(screen.getByText('Reconnecting')).toBeInTheDocument()
+     52|     act(() => f.last().onRetry?.(3, 4_000))
+     53|     expect(screen.getByText('Reconnecting (3)')).toBeInTheDocument()
+       |                   ^
+     54|   })
+     55| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/test/feed-state.test.ts > reconcile > takes the page and keeps items the stream touched after the request started
+TypeError: reconcile is not a function
+ ❯ src/test/feed-state.test.ts:78:12
+     76|       toFeedItem(comm({ id: 'fresh', updatedAt: '2026-11-01T21:00:01Z'…
+     77|     ]
+     78|     expect(reconcile(local, page, since, 'acme').map((i) => i.id)).toE…
+       |            ^
+     79|     expect(reconcile(local, page, since, 'acme')[0].title).toBe('t')
+     80|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/test/feed-state.test.ts > reconcile > never carries another tenant over
+TypeError: reconcile is not a function
+ ❯ src/test/feed-state.test.ts:83:12
+     81|   it('never carries another tenant over', () => {
+     82|     const local = [toFeedItem(comm({ id: 'x', tenantId: 'other', updat…
+     83|     expect(reconcile(local, page, since, 'acme').map((i) => i.id)).toE…
+       |            ^
+     84|   })
+     85| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/test/stream.test.ts > reconnectDelay > doubles from one second and caps at thirty
+TypeError: undefined is not a function
+ ❯ src/test/stream.test.ts:50:38
+     48| describe('reconnectDelay', () => {
+     49|   it('doubles from one second and caps at thirty', () => {
+     50|     expect([1, 2, 3, 4, 5, 6, 7, 20].map(reconnectDelay)).toEqual([1_0…
+       |                                      ^
+     51|   })
+     52| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/test/stream.test.ts > stream liveness > reopens with backoff and the last sequence number once the browser has given up
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/test/stream.test.ts:90:26
+     88|
+     89|     first.giveUp()
+     90|     expect(first.closed).toBe(true)
+       |                          ^
+     91|     expect(onRetry).toHaveBeenLastCalledWith(1, 1_000)
+     92|     expect(FakeEventSource.instances).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/test/useOutageFeed.test.tsx > useOutageFeed > loads the page, then follows the stream state
+AssertionError: expected undefined to be +0 // Object.is equality
+
+- Expected:
+0
+
++ Received:
+undefined
+
+ ❯ src/test/useOutageFeed.test.tsx:62:45
+     60|     act(() => f.last().onConnection?.(false))
+     61|     expect(result.current.connection).toBe('reconnecting')
+     62|     expect(result.current.reconnectAttempt).toBe(0)
+       |                                             ^
+     63|     act(() => f.last().onRetry?.(3, 4_000))
+     64|     expect(result.current.connection).toBe('reconnecting')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/test/useOutageFeed.test.tsx > useOutageFeed > reloads the list once the stream is back after being down
+AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div />[39m
+  [36m</body>[39m
+[36m</html>[39m
+ ❯ src/test/useOutageFeed.test.tsx:79:47
+     77|     act(() => f.last().onConnection?.(false))
+     78|     act(() => f.last().onConnection?.(true))
+     79|     await waitFor(() => expect(f.client.feed).toHaveBeenCalledTimes(2))
+       |                                               ^
+     80|     expect(result.current.connection).toBe('live')
+     81|     expect(result.current.reconnectAttempt).toBe(0)
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/test/useOutageFeed.test.tsx > useOutageFeed > refresh reopens the stream right away while it is down, and only then
+AssertionError: expected "vi.fn()" to be called at least once
+ ❯ src/test/useOutageFeed.test.tsx:96:24
+     94|     act(() => f.last().onRetry?.(2, 2_000))
+     95|     act(() => result.current.refresh())
+     96|     expect(f.stops[0]).toHaveBeenCalled()
+       |                        ^
+     97|     expect(f.client.stream).toHaveBeenCalledTimes(2)
+     98|     expect(result.current.connection).toBe('connecting')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  4 failed (4)
+      Tests  8 failed | 13 passed (21)
+   Start at  00:44:05
+   Duration  3.62s (environment 49%, tests 24%, setup 16%, transform 8%, import 2%)
+
+    Isolate  4 workers spawned · ~1.06s startup each (spawn + environment, per file)
+             at least ~355ms faster with isolate: false — reuses workers across files instead of one per file
+

@@ -31,3 +31,9 @@ The sidecar image was built with the repository's own `sidecar/Dockerfile` and t
 - sidecar in the emulated pod: discovered `http://127.0.0.1:8080/actuator/health`, reported UP, backend auto-registered monitor (podtest, fake-app).
 
 Scratchpad root for logs: `/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/logs`.
+
+## Iteration 1 stack (from 2026-11-02 01:05Z)
+The shared stack now runs the fixed code: backend jar built from the merged branch (Spring Boot 3.5.16, Actuator
+probes at `/actuator/health/{liveness,readiness}`), frontend dev server restarted on the fixed `frontend/` (new
+`vite.config.ts` proxy drop handler), sidecar image `health-sidecar:ci` rebuilt (`version=ci-iter1`) and the pod
+`app`+`sidecar` recreated. Same ports and container names as before. Jar copy: `/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter1.jar`.

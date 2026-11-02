@@ -1,0 +1,20 @@
+Fix G-1-13: "View in feed" lands on the feed that shows the new notice
+
+After publishing, "View in feed" switched tabs but kept the header tenant and
+the default Type=Outage filter, so an incident, maintenance or change, or a
+notice published under another tenant, was nowhere to be seen (UX-2, UX-3).
+
+- PublishOutageForm: onViewFeed receives the published communication.
+- App: on "View in feed" the header tenant becomes the notice's tenant and the
+  feed opens with its type filter set to the notice's type (OutageFeed's
+  defaultType is now driven by the shell).
+- README: documents the callback.
+
+Test (src/test/App.test.tsx, jsdom, stubbed fetch/EventSource): publish a
+CHANGE for tenant "other" from the shell, click "View in feed", and the header
+reads "other", the Type filter reads Change, the feed GET carries
+tenantId=other&type=CHANGE and the new notice is on screen. Against the
+previous shell it fails; with the fix 11 files / 59 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

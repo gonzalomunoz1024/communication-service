@@ -1,0 +1,384 @@
+
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a91830158d2ba4acf/frontend
+
+ ❯ src/test/errors.test.ts (3 tests | 1 failed) 15ms
+   ❯ client with the service down (1)
+     × turns a failed connection into an ApiError with status 0 7ms
+ ❯ src/test/OutageFeed.test.tsx (2 tests | 1 failed) 237ms
+   ❯ OutageFeed (2)
+     × explains an unreachable service instead of showing the status line 40ms
+ ❯ src/test/PublishOutageForm.test.tsx (5 tests | 1 failed) 1320ms
+   ❯ PublishOutageForm server errors (2)
+     × says the service is unreachable instead of quoting a proxy status 239ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line
+TestingLibraryElementError: Unable to find an element with the text: The service is unreachable right now. Check that communication-service is running, then try again.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex flex-col gap-5"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-end gap-3 rounded-lg border border-stroke-light bg-surface-tertiary p-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-1.5 min-w-48 flex-1"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-caption font-medium text-secondary"[39m
+          [36m>[39m
+            [0mService[0m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex flex-col gap-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative w-full"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tertiary"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"15"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.7"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"15"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"11"[39m
+                  [33mcy[39m=[32m"11"[39m
+                  [33mr[39m=[32m"6.5"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19.8 19.8l-4.2-4.2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 py-1.5 text-caption pl-9 pr-3 font-mono"[39m
+                [33mplaceholder[39m=[32m"Any service"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-1.5 w-40"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-caption font-medium text-secondary"[39m
+          [36m>[39m
+            [0mType[0m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex flex-col gap-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative"[39m
+            [36m>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Type"[39m
+                [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer appearance-none pl-3 pr-8 py-1.5 text-caption"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAll types[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"OUTAGE"[39m
+                [36m>[39m
+                  [0mOutage[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"INCIDENT"[39m
+                [36m>[39m
+                  [0mIncident[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"MAINTENANCE"[39m
+                [36m>[39m
+                  [0mMaintenance[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"CHANGE"[39m
+                [36m>[39m
+                  [0mChange[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"HEALTH"[39m
+                [36m>[39m
+                  [0mHealth[0m
+                [36m</option>[39m
+              [36m</select>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-tertiary"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.7"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 9.5l7 7 7-7"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col gap-1.5 w-40"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-caption font-medium text-secondary"[39m
+          [36m>[39m
+            [0mMinimum severity[0m
+          [36m</label>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex flex-col gap-1"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative"[39m
+            [36m>[39m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Minimum severity"[39m
+                [33mclass[39m=[32m"no-focus-ring w-full rounded-md border border-stroke-light bg-surface-secondary text-primary placeholder:text-tertiary transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer appearance-none pl-3 pr-8 py-1.5 text-caption"[39m
+              [36m>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m""[39m
+                [36m>[39m
+                  [0mAny severity[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"INFO"[39m
+                [36m>[39m
+                  [0mInfo[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"MINOR"[39m
+                [36m>[39m
+                  [0mMinor[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"MAJOR"[39m
+                [36m>[39m
+                  [0mMajor[0m
+                [36m</option>[39m
+                [36m<option[39m
+                  [33mvalue[39m=[32m"CRITICAL"[39m
+                [36m>[39m
+                  [0mCritical[0m
+                [36m</option>[39m
+              [36m</select>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-tertiary"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"1.7"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 9.5l7 7 7-7"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ml-auto flex items-center gap-3 pb-1"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"flex items-center gap-2 text-caption text-secondary"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-checked[39m=[32m"true"[39m
+              [33maria-label[39m=[32m"Live updates"[39m
+              [33mclass[39m=[32m"relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200 h-[18px] w-[30px] bg-accent"[39m
+              [33mrole[39m=[32m"switch"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"absolute left-[2px] rounded-full bg-white shadow-sm transition-transform duration-200 [transition-timing-function:var(--ease-spring)] h-[14px] w-[14px] translate-x-3"[39m
+              [36m/>[39m
+            [36m</button>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"inline-flex items-center gap-1.5 text-caption text-secondary"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"shrink-0 rounded-full h-2 w-2 animate-pulse-subtle"[39m
+                [33mstyle[39m=[32m"background: var(--color-warning);"[39m
+              [36m/>[39m
+              [0mConnecting[0m
+            [36m</span>[39m
+          [36m</label>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150 active:scale-[0.97] disabled:active:scale-100 rounded-full text-secondary hover:bg-surface-secondary hover:text-primary px-3 py-1.5 text-caption"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"13"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"1.7"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"13"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20.5 15a8.5 8.5 0 1 1-2-8.8L20.5 10M20.5 4.5V10H15"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRefresh[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex h-full flex-col items-center justify-center gap-3 text-center p-10"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"text-tertiary text-critical"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"22"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"1.7"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"22"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 4.2 21 19.8H3z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 10v4.2"[39m
+            [36m/>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"16.9"[39m
+              [33mfill[39m=[32m"currentColor"[39m
+              [33mr[39m=[32m"0.45"[39m
+              [33mstroke[39m=[32m"none"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"max-w-md"[39m
+        [36m>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm font-medium text-primary"[39m
+          [36m>[39m
+            [0mCouldn't load the feed[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mt-1 text-footnote text-tertiary"[39m
+          [36m>[39m
+            [0m503 Service Unavailable[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mt-1 flex items-center gap-2"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150 active:scale-[0.97] disabled:active:scale-100 rounded-md bg-surface-secondary font-medium text-primary hover:bg-stroke-light px-3 py-1.5 text-caption"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"13"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"1.7"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"13"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20.5 15a8.5 8.5 0 1 1-2-8.8L20.5 10M20.5 4.5V10H15"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mTry again[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/test/OutageFeed.test.tsx:62:19
+     60|     render(<OutageFeed client={f.client} tenantId="acme" />)
+     61|     expect(await screen.findByText("Couldn't load the feed")).toBeInTh…
+     62|     expect(screen.getByText(UNREACHABLE_MESSAGE)).toBeInTheDocument()
+       |                   ^
+     63|     expect(screen.queryByText(/503/)).toBeNull()
+     64|     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTh…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service is unreachable instead of quoting a proxy status
+Error: [2mexpect([22m[31melement[39m[2m).toHaveTextContent()[22m
+
+Expected element to have text content:
+[32m  The service is unreachable right now. Check that communication-service is running, then try again.[39m
+Received:
+[31m  The service rejected this. 502 Bad Gateway[39m
+ ❯ src/test/PublishOutageForm.test.tsx:74:19
+     72|     vi.mocked(c.publish).mockRejectedValue(new ApiError(502, '502 Bad …
+     73|     const alert = await publish(c)
+     74|     expect(alert).toHaveTextContent(UNREACHABLE_MESSAGE)
+       |                   ^
+     75|     expect(alert).not.toHaveTextContent('rejected')
+     76|     expect(alert).not.toHaveTextContent('502')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/test/errors.test.ts > client with the service down > turns a failed connection into an ApiError with status 0
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/test/errors.test.ts:34:83
+     32|     const client = createCommunicationClient('http://svc', { fetchImpl…
+     33|     const err: unknown = await client.feed({ tenantId: 'acme' }).catch…
+     34|     expect(isApiError(err) && err.status === 0 && err.message === 'fet…
+       |                                                                                   ^
+     35|     expect(isUnreachable(err)).toBe(true)
+     36|     expect(explainError(err)).toBe(UNREACHABLE_MESSAGE)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  3 failed | 7 passed (10)
+   Start at  01:07:01
+   Duration  2.56s (environment 43%, tests 39%, setup 11%, transform 4%, import 3%)
+

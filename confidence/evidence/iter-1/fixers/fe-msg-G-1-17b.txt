@@ -1,0 +1,25 @@
+Fix G-1-17: add ESLint (React Compiler hooks rules) and coverage
+
+The frontend had no lint configuration (the verifier's ad-hoc run found
+react-hooks errors in useOutageFeed.ts) and no coverage report; the component
+test infrastructure landed in the first G-1-17 commit.
+
+- eslint.config.js (flat): @eslint/js recommended, typescript-eslint
+  recommended, eslint-plugin-react-hooks 7 flat "recommended-latest" (rules of
+  hooks, exhaustive deps, set-state-in-effect, purity and the other compiler
+  rules) and eslint-plugin-react-refresh for Vite; tests and vite.config.ts get
+  Node globals. ESLint 9.39 (not 10, which typescript-eslint 8 does not
+  support yet). `npm run lint` is clean: useOutageFeed.ts was rewritten around
+  derived state in G-1-3, and the two remaining findings (helpers exported from
+  Tag.tsx next to components) are fixed by moving jobState()/stateTone() to
+  src/ui/job-state.ts, re-exported from the kit index.
+- @vitest/coverage-v8 5.0.5 and `npm run test:coverage` (V8, text + html,
+  feature and kit code only). Current figures: statements 73.9 %, branches
+  67.4 %, functions 76.2 %, lines 76.1 %; src/outages is at 92 % statements.
+- README: the lint/test/coverage/build commands.
+
+Dev dependencies only; `npm audit` reports 12 moderate advisories, all in the
+lint toolchain's transitive minimatch, none in the runtime bundle.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

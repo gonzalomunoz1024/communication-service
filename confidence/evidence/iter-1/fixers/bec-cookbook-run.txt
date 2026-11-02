@@ -1,0 +1,27 @@
+dates: in2h=2026-11-02T02:49:43Z tomorrow01=2026-11-03T01:00:00Z tomorrow03=2026-11-03T03:00:00Z
+== 1. publish outage (expect 201)
+201
+id=2ee9a172-4d25-4b4c-acd7-096a3efb75d6
+{'status': 'ACTIVE', 'expiresAt': '2026-11-02T02:49:43Z', 'externalRef': 'INC0012345', 'version': 0}
+== 2. schedule maintenance (expect 201, SCHEDULED)
+201 {'status': 'SCHEDULED', 'startsAt': '2026-11-03T01:00:00Z', 'endsAt': '2026-11-03T03:00:00Z', 'expiresAt': '2026-11-03T03:00:00Z'}
+== 3. feed (expect 200 with the outage)
+200 items: ['API degradation in eu-west']
+== 4. stream (3 s, expect snapshot frames)
+      1 event:created
+      2 event:snapshot
+== 5. resume with lastEventId=1234 (3 s; a future id gets a fresh snapshot)
+== 6. PUT with expectedVersion 0 (expect 200, version 1)
+200 {'version': 1, 'body': 'Mitigation in progress.'}
+== 7. retire (expect 200, RETIRED)
+200 RETIRED {'at': '2026-11-02T00:49:50.810322889Z', 'actor': 'admin', 'action': 'ACTIVE -> RETIRED: resolved'}
+== 8. admin retired (expect 200, includes ours)
+200 retired items: 1 with history: True
+== 9. health monitors list (expect 200) and probe <monitorId> (register one first)
+Location: /v1/health/monitors/458b22cb-e8e2-48d2-8fdc-3a8f2208213a
+200 ids: ['458b22cb-e8e2-48d2-8fdc-3a8f2208213a']
+200 DOWN DOWN (probe failed: finishConnect(..) failed with error(-111): Connection refused: /127.0.0.1:1)
+== 10. swagger scheme and 401 docs
+['X-Client-Id'] Click Authorize and paste the repository name of the system 
+operations: 20 with 401: 20
+swagger-ui 200

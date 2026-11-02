@@ -1,0 +1,32 @@
+Fix G-1-16: time-driven card states, page cap notice, Withdraw, 409 wording
+
+Four small feed/form gaps (GAP-frontend-7/8, UX-8, UX-9):
+
+- A card lingered after expiresAt (still offering Resolve) until the sweeper
+  frame arrived, and an upcoming maintenance did not turn active at startsAt.
+  feed-state.ts gains revise() (re-projects statuses at an instant and drops
+  what left the feed) and nextChange() (the next start/expiry boundary);
+  useOutageFeed wakes up at that boundary and projects again, so cards move on
+  time without a frame.
+- The 100-item page cap was silent (hasNext ignored). The hook exposes
+  total/truncated from the page and the feed says "Showing the first N of M
+  notices. Narrow the filters to see the rest."
+- "Resolve" on a notice that has not started now reads "Withdraw", with
+  matching confirmation copy and announcement; both retire it.
+- The service's 409 "duplicate externalRef '...' for tenant '...'" is put in
+  the form's terms by explainPublishError(): the field people filled in is
+  the ServiceNow incident number, which doubles as the reference.
+- The empty state says what the feed lists (live notices; maintenance planned
+  within the next 7 days; other scheduled notices once they start) instead of
+  "active or upcoming".
+- README documents the behaviour.
+
+Tests: feed-state.test.ts (revise/nextChange across boundaries, stable array
+when idle), useOutageFeed.test.tsx (expiry drops a card and a start activates
+one with real timers and no frame; truncated/total), OutageFeed.test.tsx (cap
+notice, empty-state copy), OutageCard.test.tsx (Withdraw flow),
+errors.test.ts and PublishOutageForm.test.tsx (409 wording). Against the
+previous sources 9 of the new tests fail; with the fix 12 files / 77 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR

@@ -1,0 +1,30 @@
+Fix G-1-10: bring the Atlas tokens to WCAG AA contrast
+
+axe flagged serious color-contrast on every scan: tertiary text (#86868b light,
+#636366 dark) at 3.3-3.6:1 on the surfaces, white on the #007aff/#0a84ff accent
+fill at 4.0/3.65:1 (primary button, badge), and the semantic hues used as text
+on their own tints (Active tag 3.1:1, severity Major 2.0:1, server-error alert
+2.9:1); field hints and errors were also 11 px.
+
+Tokens (src/ui/atlas.css):
+- text-secondary/text-tertiary: #58585d/#6e6e73 (light), #aeaeb2/#98989d (dark);
+  the hierarchy is kept, every role is >= 4.5:1 on all three surfaces.
+- accent fill: #0071e3 (light) / #0a6fd6 (dark); critical fill: #d70015 /
+  #dc2626 - white text reaches >= 4.7:1 on both; tints are unchanged.
+- new --color-{neutral,healthy,critical,warning}-text tokens (dark enough in
+  light, light enough in dark) exposed as text-*-fg / text-state-*-fg
+  utilities, >= 4.5:1 on the surfaces and on the matching tint.
+
+Kit and feature: Tag/StateTag, Field errors (now 12 px text-caption), the
+warning-outline Button, the server-error alert, the card's retire error and
+the success/empty-state icons use the *-fg hue; fills, dots, rails and focus
+rings keep the plain hue.
+
+Tests: src/test/contrast.test.ts parses atlas.css and computes the WCAG ratios
+for both themes (text roles on surfaces, white on fills, *-text on tints and
+surfaces, 3:1 graphics, secondary/tertiary hierarchy, *-fg mapping);
+src/test/kit-colours.test.tsx checks the kit recipes. Against the previous
+tokens 10 of the 14 new tests fail; with the fix 9 files / 52 tests pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014imXaNCskRMkaR2RiAD7FR
