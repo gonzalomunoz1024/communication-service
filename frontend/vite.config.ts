@@ -16,6 +16,18 @@ export default defineConfig({
       '/v1': {
         target: backend,
         changeOrigin: true,
+        // SSE: if the service dies mid-stream, http-proxy leaves the browser's response open
+        // forever and the EventSource never notices (production proxies end it). Do the same here.
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, _req, res) => {
+            if (!String(proxyRes.headers['content-type'] ?? '').includes('text/event-stream')) return
+            const drop = () => {
+              if (!res.writableEnded) res.destroy()
+            }
+            proxyRes.on('close', drop)
+            proxyRes.on('error', drop)
+          })
+        },
       },
     },
   },

@@ -56,6 +56,17 @@ export function removeItem(items: FeedItem[], id: string): FeedItem[] {
   return items.filter((it) => it.id !== id)
 }
 
+/**
+ * Replaces the list with a freshly loaded page, keeping local items the stream updated after
+ * the request started (`since`, ms): a frame that arrived while the GET was in flight is newer
+ * than the page and must not be lost. Items of another tenant never survive the swap.
+ */
+export function reconcile(local: FeedItem[], page: FeedItem[], since: number, tenantId: string): FeedItem[] {
+  const onPage = new Set(page.map((it) => it.id))
+  const fresh = local.filter((it) => !onPage.has(it.id) && it.tenantId === tenantId && Date.parse(it.updatedAt) >= since)
+  return [...page, ...fresh]
+}
+
 const STATUS_ORDER: Record<CommunicationStatus, number> = { ACTIVE: 0, SCHEDULED: 1, DRAFT: 2, EXPIRED: 3, RETIRED: 4 }
 
 /** Active before scheduled, then most severe, then most recently started. */

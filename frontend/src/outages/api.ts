@@ -26,6 +26,12 @@ export interface StreamHandlers {
   onEvent: (event: CommunicationEvent) => void
   /** true once the stream is open, false while the browser is reconnecting */
   onConnection?: (open: boolean) => void
+  /**
+   * The browser gave up on its own retries (a non-200 answer to a reconnect, e.g. a proxy's 502
+   * while the service restarts) and the client is reopening the stream itself: the attempt
+   * number (1-based) and the delay before it.
+   */
+  onRetry?: (attempt: number, delayMs: number) => void
 }
 
 export interface CommunicationClient {
@@ -37,6 +43,15 @@ export interface CommunicationClient {
 }
 
 const EVENT_TYPES: CommunicationEventType[] = ['SNAPSHOT', 'CREATED', 'UPDATED', 'ACTIVATED', 'EXPIRED', 'RETIRED']
+
+/** Reopen backoff: 1 s, 2 s, 4 s … capped at 30 s. */
+export const RECONNECT_BASE_MS = 1_000
+export const RECONNECT_MAX_MS = 30_000
+
+/** Delay before the client's own reopen attempt `attempt` (1-based). */
+export function reconnectDelay(attempt: number): number {
+  return Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** Math.max(0, attempt - 1))
+}
 
 /** Query string for the feed filters; empty values are left out. */
 export function feedQuery(filter: FeedFilter, extra: Record<string, string | number> = {}): string {
@@ -101,21 +116,69 @@ export function createCommunicationClient(
         body: JSON.stringify({ actor: actor || undefined, note: note || undefined }),
       }),
 
-    stream: (filter, { onEvent, onConnection }) => {
-      // EventSource cannot set headers, so the stream identifies itself in the query instead
-      const source = new EventSource(`${root}/v1/feed/stream?${feedQuery(filter, { clientId })}`)
+    /*
+     * Liveness: the browser's EventSource reconnects by itself after a dropped connection (with
+     * `Last-Event-ID`, so the service replays what was missed) but gives up for good after any
+     * non-200 answer, e.g. a proxy's 502 while the service restarts. When that happens the client
+     * reopens the stream itself with exponential backoff, passing the last sequence number it saw
+     * as `?lastEventId=` (a fresh EventSource sends no header). The service's 15 s keepalive
+     * comments are not visible through the EventSource API, so a half-open socket that never
+     * closes cannot be detected here; proxies end the client connection when the upstream dies
+     * (the dev proxy in vite.config.ts does the same), which is what makes the browser notice.
+     */
+    stream: (filter, { onEvent, onConnection, onRetry }) => {
+      let source: EventSource | null = null
+      let timer: ReturnType<typeof setTimeout> | undefined
+      let lastSeq: number | undefined
+      let attempt = 0
+      let stopped = false
+
       // the server names each frame after its event type, lower-cased
       const listener = (e: MessageEvent<string>) => {
+        let event: CommunicationEvent
         try {
-          onEvent(JSON.parse(e.data) as CommunicationEvent)
+          event = JSON.parse(e.data) as CommunicationEvent
         } catch {
-          /* a malformed frame is skipped, the stream carries on */
+          return // a malformed frame is skipped, the stream carries on
+        }
+        if (typeof event.seq === 'number') lastSeq = lastSeq === undefined ? event.seq : Math.max(lastSeq, event.seq)
+        onEvent(event)
+      }
+
+      const open = () => {
+        // EventSource cannot set headers, so the stream identifies itself in the query instead
+        const extra: Record<string, string | number> = { clientId }
+        if (lastSeq !== undefined) extra.lastEventId = lastSeq
+        const es = new EventSource(`${root}/v1/feed/stream?${feedQuery(filter, extra)}`)
+        source = es
+        EVENT_TYPES.forEach((t) => es.addEventListener(t.toLowerCase(), listener))
+        es.onopen = () => {
+          attempt = 0
+          onConnection?.(true)
+        }
+        es.onerror = () => {
+          onConnection?.(false)
+          // CONNECTING: the browser retries on its own; CLOSED: it gave up, so we take over
+          if (es.readyState === EventSource.CLOSED && !stopped && source === es) reopen()
         }
       }
-      EVENT_TYPES.forEach((t) => source.addEventListener(t.toLowerCase(), listener))
-      source.onopen = () => onConnection?.(true)
-      source.onerror = () => onConnection?.(false)
-      return () => source.close()
+
+      const reopen = () => {
+        source?.close()
+        source = null
+        attempt += 1
+        const delay = reconnectDelay(attempt)
+        onRetry?.(attempt, delay)
+        timer = setTimeout(open, delay)
+      }
+
+      open()
+      return () => {
+        stopped = true
+        clearTimeout(timer)
+        source?.close()
+        source = null
+      }
     },
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEvent, effectiveStatus, sortFeed, toFeedItem } from '../outages/feed-state'
+import { applyEvent, effectiveStatus, reconcile, sortFeed, toFeedItem } from '../outages/feed-state'
 import type { Communication, CommunicationEvent, FeedItem } from '../outages/types'
 
 const now = Date.parse('2026-11-01T21:00:00Z')
@@ -63,6 +63,24 @@ describe('applyEvent', () => {
     const item = toFeedItem(comm({ history: [{ at: 'x', actor: 'y', action: 'z' }], version: 3 }), now)
     expect('history' in item).toBe(false)
     expect('version' in item).toBe(false)
+  })
+})
+
+describe('reconcile', () => {
+  const since = Date.parse('2026-11-01T21:00:00Z')
+  const page = [toFeedItem(comm({ id: 'p1' }), now)]
+  it('takes the page and keeps items the stream touched after the request started', () => {
+    const local = [
+      toFeedItem(comm({ id: 'p1', title: 'stale copy' }), now),
+      toFeedItem(comm({ id: 'old', updatedAt: '2026-11-01T20:59:59Z' }), now),
+      toFeedItem(comm({ id: 'fresh', updatedAt: '2026-11-01T21:00:01Z' }), now),
+    ]
+    expect(reconcile(local, page, since, 'acme').map((i) => i.id)).toEqual(['p1', 'fresh'])
+    expect(reconcile(local, page, since, 'acme')[0].title).toBe('t')
+  })
+  it('never carries another tenant over', () => {
+    const local = [toFeedItem(comm({ id: 'x', tenantId: 'other', updatedAt: '2026-11-01T21:00:01Z' }), now)]
+    expect(reconcile(local, page, since, 'acme').map((i) => i.id)).toEqual(['p1'])
   })
 })
 

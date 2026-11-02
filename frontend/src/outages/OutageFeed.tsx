@@ -38,11 +38,12 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
   )
   const feed = useOutageFeed(client, filter, live)
   const conn = CONNECTION[feed.connection]
+  const connLabel = feed.reconnectAttempt > 0 ? `${conn.label} (${feed.reconnectAttempt})` : conn.label
   const active = feed.items.filter((i) => i.status === 'ACTIVE')
   const upcoming = feed.items.filter((i) => i.status === 'SCHEDULED')
   useEffect(() => {
     onCount?.(active.length)
-  }, [active.length])
+  }, [active.length, onCount])
 
   const resolve = allowResolve
     ? async (item: { id: string }, note: string) => {
@@ -78,7 +79,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
         <div className="ml-auto flex items-center gap-3 pb-1">
           <label className="flex items-center gap-2 text-caption text-secondary">
             <Switch size="sm" label="Live updates" checked={live} onChange={setLive} />
-            <StatusDot kind={conn.kind} pulse={conn.pulse} label={conn.label} />
+            <StatusDot kind={conn.kind} pulse={conn.pulse} label={connLabel} />
           </label>
           <Button size="sm" variant="ghost" icon="refresh" onClick={feed.refresh} loading={feed.loading}>
             Refresh

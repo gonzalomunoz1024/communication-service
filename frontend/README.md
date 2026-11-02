@@ -26,6 +26,13 @@ Every request carries `X-Client-Id: communication-frontend`, which the service r
 caller; set `VITE_CLIENT_ID` at build time to identify a host app by its repository name instead.
 The live stream passes the same id as `?clientId=`, because `EventSource` cannot set headers.
 
+The browser keeps the stream open by itself and retries a dropped socket with `Last-Event-ID`,
+but it gives up for good once a retry is answered with anything other than 200 (a restart or a
+proxy error). When that happens the client reopens the stream itself, with exponential backoff
+(1 s, 2 s, … 30 s, shown as **Reconnecting (n)** in the badge) and `?lastEventId=<last seq>` so
+the service replays what was missed; after it is back, the list is reloaded once from `/v1/feed`
+in case the replay did not cover the gap. **Try again** in the error state reopens it at once.
+
 `npm test` runs the unit tests (validation, feed state, client); `npm run typecheck` type-checks.
 
 ## What it calls
