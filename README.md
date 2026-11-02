@@ -18,7 +18,7 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 
 ## Stack
 
-- Java 21 · Spring Boot 3.4 · WebFlux (Reactor/Netty) · Reactive MongoDB · Gradle (Kotlin DSL)
+- Java 21 · Spring Boot 3.5 · WebFlux (Reactor/Netty) · Reactive MongoDB · Gradle (Kotlin DSL)
 - Vertical-slice hexagonal architecture: each slice has `adapters/{inbound,outbound}`,
   `application`, `domain`, `ports/{inbound,outbound}`
 - CQRS flavor: structural read/write separation — `publishing` (commands), `feed` (queries + SSE),
@@ -353,10 +353,13 @@ hard crash, which can no longer push anything, is still detected.
 
 ## Curl cookbook
 
-Every example works on any day: the dates are computed from now (GNU `date`; the macOS
-fallback uses `-v`). `<id>` is the `id` in a publish answer (also the last path segment of its
-`Location` header); `<monitorId>` likewise for `POST /v1/health/monitors`, or `.[].id` in the
-monitor list.
+The dates are computed from now (GNU `date`; the macOS fallback uses `-v`), so they hold on any
+day. The ticket numbers hold once per store: a tenant uses an `externalRef` once, ever, so where
+`vmforge` has already published `INC0012345` the first example answers 409 naming the notice that
+holds it (the comment after it says why), and the second does the same for `INC0012345-2`; change
+the ticket number (or the `externalRef`) to publish again. `<id>` is the `id` in a publish answer
+(also the last path segment of its `Location` header); `<monitorId>` likewise for
+`POST /v1/health/monitors`, or `.[].id` in the monitor list.
 
 ```bash
 # dates relative to now (ISO-8601 UTC)
