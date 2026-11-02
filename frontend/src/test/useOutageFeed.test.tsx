@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CommunicationClient, StreamHandlers } from '../outages/api'
+import { ApiError, createCommunicationClient, reconnectDelay, type CommunicationClient, type StreamHandlers } from '../outages/api'
 import type { Communication, FeedItem, Page } from '../outages/types'
 import { useOutageFeed } from '../outages/useOutageFeed'
 
@@ -39,6 +39,34 @@ function fakeClient(items: FeedItem[] = []) {
     }),
   }
   return { client, handlers, stops, last: () => handlers[handlers.length - 1] }
+}
+
+/** The browser's EventSource, as much of it as the client uses, driven by hand. */
+class FakeEventSource {
+  static readonly CONNECTING = 0
+  static readonly OPEN = 1
+  static readonly CLOSED = 2
+  static all: FakeEventSource[] = []
+  readyState = FakeEventSource.CONNECTING
+  onopen: (() => void) | null = null
+  onerror: (() => void) | null = null
+  constructor(readonly url: string) {
+    FakeEventSource.all.push(this)
+  }
+  addEventListener() {}
+  close() {
+    this.readyState = FakeEventSource.CLOSED
+  }
+  /** the service answers 200 */
+  open() {
+    this.readyState = FakeEventSource.OPEN
+    this.onopen?.()
+  }
+  /** the service ends the response; the browser would reconnect by itself */
+  end() {
+    this.readyState = FakeEventSource.CONNECTING
+    this.onerror?.()
+  }
 }
 
 describe('useOutageFeed', () => {
@@ -79,6 +107,64 @@ describe('useOutageFeed', () => {
     await waitFor(() => expect(f.client.feed).toHaveBeenCalledTimes(2))
     expect(result.current.connection).toBe('live')
     expect(result.current.reconnectAttempt).toBe(0)
+  })
+
+  it('never says Live, reloads nothing and keeps its error while each stream it opens is ended within seconds', async () => {
+    // a page opened while the service cannot reach its database: GET /v1/feed answers 503, and each stream is
+    // answered 200 and then ended once the service's 5 s database wait gives up
+    vi.useFakeTimers()
+    vi.stubGlobal('EventSource', FakeEventSource)
+    FakeEventSource.all = []
+    const fetchImpl = vi.fn(async () => ({ ok: false, status: 503, statusText: 'Service Unavailable', json: async () => ({ error: 'database unavailable' }) }) as unknown as Response)
+    const client = createCommunicationClient('', { fetchImpl })
+    const { result, unmount } = renderHook(() => useOutageFeed(client, { tenantId: 'acme' }, true))
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+      const reason = 'The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.'
+      expect(result.current.error).toBe(reason)
+      for (let i = 1; i <= 5; i++) {
+        const es = FakeEventSource.all[FakeEventSource.all.length - 1]
+        act(() => es.open())
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5_060)
+        })
+        expect(result.current.connection, `attempt ${i}, 5 s after it opened`).not.toBe('live')
+        act(() => es.end())
+        expect(result.current.connection).toBe('reconnecting')
+        expect(result.current.reconnectAttempt).toBe(i)
+        expect(result.current.error).toBe(reason)
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(reconnectDelay(i))
+        })
+        expect(FakeEventSource.all, `attempt ${i + 1} opens ${reconnectDelay(i)} ms later`).toHaveLength(i + 1)
+      }
+      expect(fetchImpl).toHaveBeenCalledTimes(1)
+    } finally {
+      unmount()
+      vi.useRealTimers()
+    }
+  })
+
+  it('does not report Live while the last load failed, and keeps that error while the same list reloads', async () => {
+    const f = fakeClient([item('a')])
+    vi.mocked(f.client.feed).mockRejectedValueOnce(new ApiError(503, 'database unavailable', true))
+    const { result } = renderHook(() => useOutageFeed(f.client, { tenantId: 'acme' }, true))
+    await waitFor(() => expect(result.current.error).toMatch(/cannot reach its database/))
+    // the stream works (it was open before the database went away), but the page has no list
+    act(() => f.last().onConnection?.(true))
+    expect(result.current.connection).toBe('degraded')
+
+    let answer: (p: Page<FeedItem>) => void = () => {}
+    vi.mocked(f.client.feed).mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+    act(() => result.current.refresh())
+    expect(result.current.loading).toBe(true)
+    expect(result.current.error).toMatch(/cannot reach its database/)
+    expect(result.current.connection).toBe('degraded')
+    await act(async () => answer(page([item('a')])))
+    expect(result.current.error).toBeNull()
+    expect(result.current.connection).toBe('live')
   })
 
   it('refresh reopens the stream right away while it is down, and only then', async () => {

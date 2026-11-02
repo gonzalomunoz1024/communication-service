@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { RECONNECT_MAX_MS, createCommunicationClient, reconnectDelay } from '../outages/api'
+import { RECONNECT_MAX_MS, STREAM_SETTLE_MS, createCommunicationClient, reconnectDelay } from '../outages/api'
 import type { CommunicationEvent } from '../outages/types'
 
 /** Enough of the browser's EventSource to drive the client's reconnect logic by hand. */
@@ -70,6 +70,7 @@ describe('stream liveness', () => {
     const onRetry = vi.fn()
     const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onConnection, onRetry })
     latest().open()
+    vi.advanceTimersByTime(STREAM_SETTLE_MS) // it stayed open: a working stream, not one the service ends at once
     expect(onConnection).toHaveBeenLastCalledWith(true)
     latest().drop()
     expect(onConnection).toHaveBeenLastCalledWith(false)
@@ -119,7 +120,7 @@ describe('stream liveness', () => {
     stop()
   })
 
-  it('starts the backoff again from one second after a successful open', () => {
+  it('starts the backoff again from one second once a reopened stream works', () => {
     const onRetry = vi.fn()
     const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onRetry })
     latest().open()
@@ -130,8 +131,9 @@ describe('stream liveness', () => {
       vi.advanceTimersByTime(reconnectDelay(i))
     }
     expect(onRetry).toHaveBeenLastCalledWith(6, RECONNECT_MAX_MS)
-    // the service is back: this attempt opens, and the next outage is retried after one second again
+    // the service is back: this attempt opens and stays open, and the next outage is retried after one second again
     latest().open()
+    vi.advanceTimersByTime(STREAM_SETTLE_MS)
     latest().giveUp()
     expect(onRetry).toHaveBeenLastCalledWith(1, 1_000)
     stop()
@@ -176,6 +178,89 @@ describe('stream liveness', () => {
     latest().giveUp()
     vi.advanceTimersByTime(1_000)
     expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web')
+    stop()
+  })
+
+  it('counts a stream as working once it has delivered a frame, or stayed open STREAM_SETTLE_MS without one', () => {
+    const onConnection = vi.fn()
+    const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onConnection })
+    latest().open()
+    expect(onConnection).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(STREAM_SETTLE_MS - 1)
+    expect(onConnection).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(onConnection).toHaveBeenLastCalledWith(true)
+    stop()
+
+    const onFramed = vi.fn()
+    const stopFramed = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onConnection: onFramed })
+    latest().open()
+    latest().frame('snapshot', { seq: 1, type: 'SNAPSHOT' })
+    expect(onFramed).toHaveBeenLastCalledWith(true)
+    stopFramed()
+    // longer than the service's 5 s database wait, after which it ends a stream it could not serve
+    expect(STREAM_SETTLE_MS).toBe(6_000)
+  })
+
+  it('treats a stream the service ends within seconds of opening as a failed attempt: growing delays, no reset, never open', () => {
+    // the service answers 200 and ": connected" before it reads its database and, when it cannot reach it, ends
+    // the stream once its 5 s wait gives up (4996 to 5057 ms after the open in Chromium); the browser alone
+    // would reconnect every ~3 s, and every reconnect would look like a recovery
+    const onConnection = vi.fn()
+    const onRetry = vi.fn()
+    const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onConnection, onRetry })
+    for (let i = 1; i <= 6; i++) {
+      const es = latest()
+      es.open()
+      vi.advanceTimersByTime(5_060)
+      es.drop() // the service ended it
+      expect(onConnection, `attempt ${i}`).not.toHaveBeenCalledWith(true)
+      expect(es.closed, `attempt ${i} is not left to the browser's own retry`).toBe(true)
+      expect(onRetry).toHaveBeenLastCalledWith(i, reconnectDelay(i))
+      vi.advanceTimersByTime(reconnectDelay(i))
+      expect(FakeEventSource.instances).toHaveLength(i + 1)
+    }
+    expect(onRetry.mock.calls.map(([, delay]) => delay)).toEqual([1_000, 2_000, 4_000, 8_000, 10_000, 10_000])
+    expect(onConnection).toHaveBeenLastCalledWith(false)
+    stop()
+  })
+
+  it('retries a stream the service refuses before any byte (its 503 while the database is away) with the same growing delays', () => {
+    const onConnection = vi.fn()
+    const onRetry = vi.fn()
+    const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onConnection, onRetry })
+    for (let i = 1; i <= 6; i++) {
+      latest().giveUp() // a non-200 answer: the browser fails the stream at once, without an open
+      expect(onRetry).toHaveBeenLastCalledWith(i, reconnectDelay(i))
+      vi.advanceTimersByTime(reconnectDelay(i))
+    }
+    expect(FakeEventSource.instances).toHaveLength(7)
+    expect(onConnection).not.toHaveBeenCalledWith(true)
+    stop()
+  })
+
+  it("leaves a working stream that drops to the browser's own retry, and takes over with the backoff when that retry ends early", () => {
+    const onConnection = vi.fn()
+    const onRetry = vi.fn()
+    const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onConnection, onRetry })
+    const es = latest()
+    es.open()
+    es.frame('snapshot', { seq: 4, type: 'SNAPSHOT' })
+    // the connection drops: the browser reconnects by itself, with Last-Event-ID
+    es.drop()
+    expect(es.closed).toBe(false)
+    expect(onRetry).not.toHaveBeenCalled()
+    // that retry reaches a service that cannot read its database: answered, then ended within seconds
+    es.open()
+    vi.advanceTimersByTime(5_060)
+    es.drop()
+    // working once, before the drop; the retry that ended early never counted
+    expect(onConnection.mock.calls.filter(([open]) => open)).toHaveLength(1)
+    expect(onConnection).toHaveBeenLastCalledWith(false)
+    expect(es.closed).toBe(true)
+    expect(onRetry).toHaveBeenLastCalledWith(1, 1_000)
+    vi.advanceTimersByTime(1_000)
+    expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=4')
     stop()
   })
 

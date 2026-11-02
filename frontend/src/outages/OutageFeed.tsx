@@ -26,6 +26,8 @@ const CONNECTION: Record<Connection | 'waiting', { label: string; kind: 'healthy
   connecting: { label: 'Connecting', kind: 'warning', pulse: true },
   live: { label: 'Live', kind: 'healthy', pulse: true },
   reconnecting: { label: 'Reconnecting', kind: 'warning', pulse: true },
+  // the stream works but the list could not be loaded: the error under it says why
+  degraded: { label: 'Service degraded', kind: 'warning' },
 }
 
 const UPCOMING_DAYS = Math.round(UPCOMING_WINDOW_MS / 86_400_000)
@@ -117,7 +119,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
           <label className="flex min-h-6 cursor-pointer items-center gap-2 py-1 text-caption text-secondary">
             <Switch size="sm" label="Live updates" checked={live} onChange={setLive} />
             {/* a live region of its own (the resolve announcement below is another), so a screen reader
-                hears Connecting, Live and Reconnecting (n) as they change */}
+                hears Connecting, Live, Reconnecting (n) and Service degraded as they change */}
             <span role="status" aria-live="polite">
               <StatusDot kind={conn.kind} pulse={conn.pulse} label={connLabel} />
             </span>

@@ -191,7 +191,7 @@ describe('OutageFeed', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
-  it("says the service cannot reach its database for its own 503, while the badge keeps reporting the stream", async () => {
+  it("says the service cannot reach its database for its own 503, and the badge does not say Live beside it", async () => {
     const f = fakeClient()
     vi.mocked(f.client.feed).mockRejectedValue(new ApiError(503, 'database unavailable', true))
     render(<OutageFeed client={f.client} tenantId="acme" />)
@@ -199,9 +199,30 @@ describe('OutageFeed', () => {
     expect(screen.getByText('The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.')).toBeInTheDocument()
     expect(screen.queryByText(UNREACHABLE_MESSAGE)).toBeNull()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
-    // a failed GET does not tear the stream down: the badge says what the stream is doing, not what the GET got
+    // a failed GET does not tear the stream down, but a page whose list could not be loaded is not live
     expect(screen.getByText('Connecting')).toBeInTheDocument()
     act(() => f.last().onConnection?.(true))
-    expect(screen.getByText('Live')).toBeInTheDocument()
+    expect(badge()).toHaveTextContent(/^Service degraded$/)
+    expect(screen.queryByText('Live')).toBeNull()
+  })
+
+  it('keeps the error on screen through the reload after the stream comes back, then lists the notices and says Live', async () => {
+    const f = fakeClient([item('a')])
+    vi.mocked(f.client.feed).mockRejectedValueOnce(new ApiError(503, 'database unavailable', true))
+    render(<OutageFeed client={f.client} tenantId="acme" />)
+    expect(await screen.findByText("Couldn't load the feed")).toBeInTheDocument()
+    let answer: (p: Page<FeedItem>) => void = () => {}
+    vi.mocked(f.client.feed).mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+    // the stream was down and works again: the list reloads once, and until it answers the reason stays
+    act(() => f.last().onConnection?.(false))
+    act(() => f.last().onConnection?.(true))
+    await waitFor(() => expect(f.client.feed).toHaveBeenCalledTimes(2))
+    expect(screen.getByText(/cannot reach its database/)).toBeInTheDocument()
+    expect(document.querySelector('div[aria-busy="true"]')).toBeNull()
+    expect(badge()).toHaveTextContent(/^Service degraded$/)
+    await act(async () => answer({ items: [item('a')], page: 0, size: 100, totalElements: 1, hasNext: false }))
+    expect(screen.getByText('Notice a')).toBeInTheDocument()
+    expect(screen.queryByText("Couldn't load the feed")).toBeNull()
+    expect(badge()).toHaveTextContent(/^Live$/)
   })
 })

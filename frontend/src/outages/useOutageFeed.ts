@@ -4,11 +4,17 @@ import { explainError } from './errors'
 import { applyEvent, nextChange, reconcile, removeItem, revise, sortFeed } from './feed-state'
 import type { FeedFilter, FeedItem } from './types'
 
-export type Connection = 'off' | 'connecting' | 'live' | 'reconnecting'
+/**
+ * What the page can vouch for: `live` while the stream works and the list's last load succeeded,
+ * `degraded` while the stream works but the list could not be loaded, `connecting` until a stream
+ * works, `reconnecting` while it is reopened after it stopped working or an attempt failed.
+ */
+export type Connection = 'off' | 'connecting' | 'live' | 'reconnecting' | 'degraded'
 
 export interface OutageFeed {
   items: FeedItem[]
   loading: boolean
+  /** why the list could not be loaded; a reload of the same list keeps it until that reload answers */
   error: string | null
   connection: Connection
   /** how many times the page has reopened the stream itself since it was last live (0 otherwise) */
@@ -23,8 +29,9 @@ export interface OutageFeed {
   remove: (id: string) => void
 }
 
-/** What the last GET /v1/feed produced, tagged with the request it answered. */
+/** What the last GET /v1/feed produced, tagged with the filter and the request it answered. */
 interface Loaded {
+  key: string
   requestId: string
   items: FeedItem[]
   error: string | null
@@ -39,13 +46,14 @@ interface StreamState {
   attempt: number
 }
 
-const EMPTY: Loaded = { requestId: '', items: [], error: null }
+const EMPTY: Loaded = { key: '', requestId: '', items: [], error: null }
 
 /**
  * The visible feed for a filter: one GET /v1/feed page, then, when `live`, the SSE stream
  * keeps it current (its snapshot frames re-upsert what the GET returned, harmlessly). After
- * the stream has been down and comes back, the list is reloaded once, because events may have
- * been missed meanwhile; frames that arrive during that reload are kept.
+ * the stream has been down and works again, the list is reloaded once, because events may have
+ * been missed meanwhile; frames that arrive during that reload are kept. Attempts that fail
+ * while the stream is down reload nothing.
  */
 export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, live: boolean): OutageFeed {
   const key = JSON.stringify(filter)
@@ -72,6 +80,7 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
       .then((page) => {
         if (cancelled) return
         setLoaded((prev) => ({
+          key,
           requestId,
           items: reconcile(prev.items, page.items, since, stableFilter.tenantId),
           error: null,
@@ -81,12 +90,12 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
       })
       .catch((e: unknown) => {
         if (cancelled) return
-        setLoaded((prev) => ({ ...prev, requestId, error: explainError(e) }))
+        setLoaded((prev) => ({ ...prev, key, requestId, error: explainError(e) }))
       })
     return () => {
       cancelled = true
     }
-  }, [client, stableFilter, blank, requestId])
+  }, [client, stableFilter, blank, key, requestId])
 
   useEffect(() => {
     if (!canStream) return
@@ -119,8 +128,14 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
     return () => clearTimeout(t)
   }, [loaded.items, now])
 
+  const settled = loaded.requestId === requestId
+  // the last failure of this list stays until a reload of it answers (Try again, Refresh, the reload
+  // after the stream works again), rather than a skeleton between two answers that say the same
+  const error = !blank && loaded.key === key ? loaded.error : null
   const current = stream?.streamKey === streamKey ? stream : null
-  const connection: Connection = !canStream ? 'off' : (current?.phase ?? 'connecting')
+  const phase: Connection = !canStream ? 'off' : (current?.phase ?? 'connecting')
+  // a working stream does not make the page live while its list could not be loaded
+  const connection: Connection = phase === 'live' && error ? 'degraded' : phase
   const reconnectAttempt = current?.phase === 'reconnecting' ? current.attempt : 0
   const reconnecting = connection === 'reconnecting'
 
@@ -130,11 +145,10 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
   }, [reconnecting])
   const remove = useCallback((id: string) => setLoaded((prev) => ({ ...prev, items: removeItem(prev.items, id) })), [])
 
-  const settled = loaded.requestId === requestId
   return {
     items: blank ? [] : sortFeed(revise(loaded.items, now)),
     loading: !blank && !settled,
-    error: settled ? loaded.error : null,
+    error,
     connection,
     reconnectAttempt,
     total: settled && !blank ? loaded.total : undefined,

@@ -31,12 +31,15 @@ export function isApiError(e: unknown): e is ApiError {
 
 export interface StreamHandlers {
   onEvent: (event: CommunicationEvent) => void
-  /** true once the stream is open, false while the browser is reconnecting */
+  /**
+   * true once the stream works (it delivered a frame, or stayed open STREAM_SETTLE_MS), false when it
+   * stops working or an attempt fails
+   */
   onConnection?: (open: boolean) => void
   /**
-   * The browser gave up on its own retries (a non-200 answer to a reconnect, e.g. a proxy's 502
-   * while the service restarts) and the client is reopening the stream itself: the attempt
-   * number (1-based) and the delay before it.
+   * An attempt failed (a non-200 answer such as a proxy's 502 or the service's 503, or a stream that
+   * ended before it worked) and the client is reopening the stream itself: the attempt number
+   * (1-based) and the delay before it.
    */
   onRetry?: (attempt: number, delayMs: number) => void
 }
@@ -54,11 +57,19 @@ const EVENT_TYPES: CommunicationEventType[] = ['SNAPSHOT', 'CREATED', 'UPDATED',
 /**
  * Reopen backoff: 1 s, 2 s, 4 s, 8 s, then every 10 s. The cap is how long a page can take to
  * notice that the service is back after a long outage (each attempt is one cheap request that a
- * proxy answers at once while the service is down); it starts again from 1 s after every
- * successful open.
+ * proxy answers at once while the service is down); it starts again from 1 s once a stream works.
  */
 export const RECONNECT_BASE_MS = 1_000
 export const RECONNECT_MAX_MS = 10_000
+
+/**
+ * How long a stream that has sent no frame must stay open before it counts as working. A 200 alone
+ * proves nothing: a service that answered before it found its database unreachable ends the stream
+ * when its 5 s database wait gives up (`communication.mongo.server-selection-timeout`), 5.0 to 5.06 s
+ * after the open as Chromium sees it. A frame proves it at once; a stream with nothing to send (no
+ * notice matches the filter) is trusted after this, a second past that wait.
+ */
+export const STREAM_SETTLE_MS = 6_000
 
 /** Delay before the client's own reopen attempt `attempt` (1-based). */
 export function reconnectDelay(attempt: number): number {
@@ -141,27 +152,45 @@ export function createCommunicationClient(
     /*
      * Liveness: the browser's EventSource reconnects by itself after a dropped connection (with
      * `Last-Event-ID`, so the service replays what was missed) but gives up for good after any
-     * non-200 answer, e.g. a proxy's 502 while the service restarts. When that happens the client
-     * reopens the stream itself with exponential backoff, passing the last sequence number it saw
-     * as `?lastEventId=` (a fresh EventSource sends no header) on every attempt, failed ones
-     * included: an attempt that never opened met a proxy or a restarting service, not a refusal,
-     * and the first one that gets through is then a real resume. The service never rejects a
-     * numeric id; one it cannot resume from (too old, or never issued by its log) is answered with
-     * a fresh snapshot, which the feed applies like any other, so there is nothing to drop here.
-     * The service's 15 s keepalive comments are not visible through the EventSource API, so a
-     * half-open socket that never closes cannot be detected here; proxies end the client
-     * connection when the upstream dies (the dev proxy in vite.config.ts does the same), which is
-     * what makes the browser notice.
+     * non-200 answer, e.g. a proxy's 502 while the service restarts or the service's own 503 while
+     * it cannot reach its database. A 200 is not proof either: a service that answered before it
+     * found its database unreachable ends the stream seconds later, and the browser's fixed ~3 s
+     * retry would then open, end and open it again for as long as the outage lasts. So a stream
+     * counts as working only once it delivers a frame or stays open STREAM_SETTLE_MS; an attempt
+     * that fails before that (refused, unreachable, or ended early) is closed and the client
+     * reopens the stream itself with exponential backoff, which keeps growing until a stream
+     * works. Only a working stream that drops is left to the browser's own retry. Every attempt
+     * passes the last sequence number seen as `?lastEventId=` (a fresh EventSource sends no
+     * header), failed ones included: an attempt that never worked met a proxy, a restarting
+     * service or a database outage, not a refusal, and the first one that gets through is then a
+     * real resume. The service never rejects a numeric id; one it cannot resume from (too old, or
+     * never issued by its log) is answered with a fresh snapshot, which the feed applies like any
+     * other, so there is nothing to drop here. The service's 15 s keepalive comments are not
+     * visible through the EventSource API, so a half-open socket that never closes cannot be
+     * detected here; proxies end the client connection when the upstream dies (the dev proxy in
+     * vite.config.ts does the same), which is what makes the browser notice.
      */
     stream: (filter, { onEvent, onConnection, onRetry }) => {
       let source: EventSource | null = null
       let timer: ReturnType<typeof setTimeout> | undefined
+      let settling: ReturnType<typeof setTimeout> | undefined
       let lastSeq: number | undefined
       let attempt = 0
+      let working = false
       let stopped = false
+
+      // the stream proved itself: say so once, and retry the next outage, whenever it comes, from 1 s again
+      const works = () => {
+        clearTimeout(settling)
+        if (working) return
+        working = true
+        attempt = 0
+        onConnection?.(true)
+      }
 
       // the server names each frame after its event type, lower-cased
       const listener = (e: MessageEvent<string>) => {
+        works()
         let event: CommunicationEvent
         try {
           event = JSON.parse(e.data) as CommunicationEvent
@@ -180,14 +209,22 @@ export function createCommunicationClient(
         source = es
         EVENT_TYPES.forEach((t) => es.addEventListener(t.toLowerCase(), listener))
         es.onopen = () => {
-          // the service answered: the next outage, whenever it comes, is retried from 1 s again
-          attempt = 0
-          onConnection?.(true)
+          // answered, which is not yet working: it must outlast the service's database wait or send a frame
+          clearTimeout(settling)
+          settling = setTimeout(works, STREAM_SETTLE_MS)
         }
         es.onerror = () => {
+          if (stopped || source !== es) return
+          clearTimeout(settling)
           onConnection?.(false)
-          // CONNECTING: the browser retries on its own; CLOSED: it gave up, so we take over
-          if (es.readyState === EventSource.CLOSED && !stopped && source === es) reopen()
+          if (working) {
+            // a working stream dropped: the browser retries on its own while CONNECTING; CLOSED: it gave up
+            working = false
+            if (es.readyState === EventSource.CLOSED) reopen()
+          } else {
+            // a failed attempt, retried with the growing backoff rather than the browser's fixed delay
+            reopen()
+          }
         }
       }
 
@@ -204,6 +241,7 @@ export function createCommunicationClient(
       return () => {
         stopped = true
         clearTimeout(timer)
+        clearTimeout(settling)
         source?.close()
         source = null
       }

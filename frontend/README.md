@@ -34,18 +34,27 @@ service owners assign. The feed and the form follow the header's tenant field on
 one stream subscription rather than one per keystroke.
 
 The browser keeps the stream open by itself and retries a dropped socket with `Last-Event-ID`,
-but it gives up for good once a retry is answered with anything other than 200 (a restart or a
-proxy error). When that happens the client reopens the stream itself, with exponential backoff
-(1 s, 2 s, 4 s, 8 s, then every 10 s, shown as **Reconnecting (n)** in the badge; the cap is how
-long a page can take to notice that the service is back, and the backoff starts again from 1 s
-after every successful open). Every attempt carries `?lastEventId=<last seq>`, failed ones
-included, so the first one that reaches the service gets a replay of what was missed; an id the
-service cannot resume from (too old, or never issued by its event log) is answered with a fresh
-snapshot, never an error, so the client has nothing to drop. After the stream is back the list is
-reloaded once from `/v1/feed` in case the replay did not cover the gap. **Try again** in the
-error state reopens it at once. The badge is a polite live region of its own, so screen readers
-hear Connecting, Live and Reconnecting (n) as they change; it reads **Paused** only when Live
-updates is switched off and **Waiting for a tenant** while no tenant is entered.
+but it gives up for good once a retry is answered with anything other than 200 (a restart, a
+proxy error, or the service's `503` while it cannot reach its database). A `200` alone does not
+mean the stream works: a service that answered before it found its database unreachable ends the
+stream when its 5 s database wait gives up. So a stream counts as working once it has delivered a
+frame or stayed open for 6 s (`STREAM_SETTLE_MS` in `api.ts`, a second past that wait; a filter
+that matches no notice gets no frame, so its badge turns Live after those 6 s), and an attempt
+that is refused, cannot connect or ends sooner has failed. After a failed attempt the client
+reopens the stream itself, with exponential backoff (1 s, 2 s, 4 s, 8 s, then every 10 s, shown
+as **Reconnecting (n)** in the badge; the cap is how long a page can take to notice that the
+service is back, and the backoff starts again from 1 s once a stream works); only a working
+stream that drops is left to the browser's own retry first. Every attempt carries
+`?lastEventId=<last seq>`, failed ones included, so the first one that reaches the service gets a
+replay of what was missed; an id the service cannot resume from (too old, or never issued by its
+event log) is answered with a fresh snapshot, never an error, so the client has nothing to drop.
+Once the stream works again the list is reloaded once from `/v1/feed` in case the replay did not
+cover the gap; failed attempts reload nothing. **Try again** in the error state reopens it at
+once. The badge is a polite live region of its own, so screen readers hear Connecting, Live,
+Reconnecting (n) and Service degraded as they change; it reads **Live** only while the stream
+works and the list's last load succeeded, **Service degraded** while the stream works but the
+list could not be loaded (the error under it says why), **Paused** only when Live updates is
+switched off and **Waiting for a tenant** while no tenant is entered.
 
 `npm test` runs the unit and component tests (vitest; pure modules in Node, components in
 jsdom with Testing Library), `npm run test:coverage` adds a V8 coverage report (`coverage/`),
@@ -80,8 +89,13 @@ The form enforces the same invariants as `Communication#validateInvariants` befo
 shows the service's `{"error": …}` text when it rejects a request anyway. A 5xx is reported as a
 failure of the service (with its reason when it gave one), not as a rejection. While the service
 cannot reach its database it answers `503 {"error":"database unavailable"}`, and both tabs say
-exactly that (the service is running and recovers by itself, so try again in a moment); the
-connection badge keeps showing what the stream is doing, which stays open on keepalives meanwhile.
+exactly that (the service is running and recovers by itself, so try again in a moment). The feed
+keeps that error on screen while the same list reloads (Try again, Refresh, or the reload once the
+stream works again) rather than a skeleton between two failures, and its badge does not say Live
+meanwhile: a page that was open before the outage keeps its stream, which stays open on
+keepalives, and reads Live until one of its loads fails, then Service degraded; a page opened
+during the outage gets no working stream (each attempt is refused or ended within seconds), counts
+**Reconnecting (n)** until the database is back and then reloads its list by itself.
 When the service cannot be reached at all (connection refused, or a 502/503/504 that a proxy in
 front of it answers without the service's `{"error"}` body) both tabs say that it is unreachable
 instead of quoting the status line, and the feed's **Try again** reopens the live stream as well
