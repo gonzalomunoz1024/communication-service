@@ -41,7 +41,9 @@ included, so the first one that reaches the service gets a replay of what was mi
 service cannot resume from (too old, or never issued by its event log) is answered with a fresh
 snapshot, never an error, so the client has nothing to drop. After the stream is back the list is
 reloaded once from `/v1/feed` in case the replay did not cover the gap. **Try again** in the
-error state reopens it at once.
+error state reopens it at once. The badge is a polite live region of its own, so screen readers
+hear Connecting, Live and Reconnecting (n) as they change; it reads **Paused** only when Live
+updates is switched off and **Waiting for a tenant** while no tenant is entered.
 
 `npm test` runs the unit and component tests (vitest; pure modules in Node, components in
 jsdom with Testing Library), `npm run test:coverage` adds a V8 coverage report (`coverage/`),

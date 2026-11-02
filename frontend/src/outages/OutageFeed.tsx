@@ -19,7 +19,9 @@ export interface OutageFeedProps {
   onCount?: (count: number) => void
 }
 
-const CONNECTION: Record<Connection, { label: string; kind: 'healthy' | 'warning' | 'neutral'; pulse?: boolean }> = {
+/** The badge next to the Live-updates switch; `waiting` is `off` because no tenant is entered yet, not because anyone paused it. */
+const CONNECTION: Record<Connection | 'waiting', { label: string; kind: 'healthy' | 'warning' | 'neutral'; pulse?: boolean }> = {
+  waiting: { label: 'Waiting for a tenant', kind: 'neutral' },
   off: { label: 'Paused', kind: 'neutral' },
   connecting: { label: 'Connecting', kind: 'warning', pulse: true },
   live: { label: 'Live', kind: 'healthy', pulse: true },
@@ -52,7 +54,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
     [tenantId, service, type, severity],
   )
   const feed = useOutageFeed(client, filter, live)
-  const conn = CONNECTION[feed.connection]
+  const conn = CONNECTION[live && !tenantId.trim() ? 'waiting' : feed.connection]
   const connLabel = feed.reconnectAttempt > 0 ? `${conn.label} (${feed.reconnectAttempt})` : conn.label
   const active = feed.items.filter((i) => i.status === 'ACTIVE')
   const upcoming = feed.items.filter((i) => i.status === 'SCHEDULED')
@@ -111,9 +113,14 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
           />
         </Field>
         <div className="ml-auto flex items-center gap-3 pb-1">
-          <label className="flex items-center gap-2 text-caption text-secondary">
+          {/* the switch is 30x18 px; the labelled row is the click target, at least 24 px tall */}
+          <label className="flex min-h-6 cursor-pointer items-center gap-2 py-1 text-caption text-secondary">
             <Switch size="sm" label="Live updates" checked={live} onChange={setLive} />
-            <StatusDot kind={conn.kind} pulse={conn.pulse} label={connLabel} />
+            {/* a live region of its own (the resolve announcement below is another), so a screen reader
+                hears Connecting, Live and Reconnecting (n) as they change */}
+            <span role="status" aria-live="polite">
+              <StatusDot kind={conn.kind} pulse={conn.pulse} label={connLabel} />
+            </span>
           </label>
           <Button size="sm" variant="ghost" icon="refresh" onClick={feed.refresh} loading={feed.loading}>
             Refresh

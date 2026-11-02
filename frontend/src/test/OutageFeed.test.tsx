@@ -38,6 +38,13 @@ function fakeClient(items: FeedItem[] = [], pageOver: Partial<Page<FeedItem>> = 
   return { client, last: () => handlers[handlers.length - 1] }
 }
 
+/** The Live-updates row: the switch and, next to it, the connection badge. */
+const switchRow = () => screen.getByRole('switch', { name: 'Live updates' }).closest('label')!
+/** The connection badge, a live region of its own inside that row. */
+const badge = () => within(switchRow()).getByRole('status')
+/** The page's announcement of a resolve: the live region outside that row. */
+const announcement = () => screen.getAllByRole('status').find((s) => !switchRow().contains(s))!
+
 describe('OutageFeed', () => {
   beforeEach(() => vi.stubGlobal('EventSource', class {}))
   afterEach(() => vi.unstubAllGlobals())
@@ -55,6 +62,63 @@ describe('OutageFeed', () => {
     expect(screen.getByText('Reconnecting (3)')).toBeInTheDocument()
   })
 
+  it('announces the connection state in a live region of its own, which never repeats the resolve announcement', async () => {
+    const user = userEvent.setup()
+    const f = fakeClient([item('a'), item('b')])
+    render(<OutageFeed client={f.client} tenantId="acme" actor="oncall" />)
+    expect(await screen.findByText('Notice a')).toBeInTheDocument()
+    const region = badge()
+    expect(region).toHaveAttribute('aria-live', 'polite')
+    expect(region).toHaveTextContent(/^Connecting$/)
+    act(() => f.last().onConnection?.(true))
+    expect(region).toHaveTextContent(/^Live$/)
+    act(() => f.last().onConnection?.(false))
+    expect(region).toHaveTextContent(/^Reconnecting$/)
+    act(() => f.last().onRetry?.(3, 4_000))
+    // the same region, with new text: that is what a screen reader announces
+    expect(badge()).toBe(region)
+    expect(region).toHaveTextContent(/^Reconnecting \(3\)$/)
+    act(() => f.last().onConnection?.(true))
+    expect(region).toHaveTextContent(/^Live$/)
+
+    const card = screen.getByText('Notice a').closest('article')!
+    await user.click(within(card).getByRole('button', { name: 'Resolve' }))
+    await user.click(within(card).getByRole('button', { name: 'Resolve' }))
+    await waitFor(() => expect(announcement()).toHaveTextContent('Resolved “Notice a”.'))
+    // one live region says it: the badge keeps saying what the stream does
+    expect(screen.getAllByRole('status').filter((s) => /Resolved/.test(s.textContent ?? ''))).toHaveLength(1)
+    expect(region).toHaveTextContent(/^Live$/)
+  })
+
+  it('says it is waiting for a tenant rather than paused when none is entered, and paused only when switched off', async () => {
+    const user = userEvent.setup()
+    const f = fakeClient()
+    const { rerender } = render(<OutageFeed client={f.client} tenantId="" />)
+    expect(screen.getByRole('switch', { name: 'Live updates' })).toHaveAttribute('aria-checked', 'true')
+    expect(badge()).toHaveTextContent(/^Waiting for a tenant$/)
+    expect(screen.queryByText('Paused')).toBeNull()
+    expect(f.client.stream).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('switch', { name: 'Live updates' }))
+    expect(badge()).toHaveTextContent(/^Paused$/)
+    rerender(<OutageFeed client={f.client} tenantId="acme" />)
+    expect(badge()).toHaveTextContent(/^Paused$/)
+    await user.click(screen.getByRole('switch', { name: 'Live updates' }))
+    expect(badge()).toHaveTextContent(/^Connecting$/)
+    expect(f.client.stream).toHaveBeenCalledTimes(1)
+  })
+
+  it('makes the whole Live-updates row the click target of its switch, at least 24 px tall like the form', async () => {
+    const user = userEvent.setup()
+    const f = fakeClient()
+    render(<OutageFeed client={f.client} tenantId="acme" />)
+    const toggle = screen.getByRole('switch', { name: 'Live updates' })
+    // the switch itself is 30x18 px; the labelled row around it is at least 24 px tall and reads as clickable
+    expect(switchRow()).toHaveClass('min-h-6', 'cursor-pointer')
+    await user.click(within(switchRow()).getByText('Connecting'))
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+  })
+
   it('names the filters, announces a resolve and keeps focus on the list', async () => {
     const user = userEvent.setup()
     const f = fakeClient([item('a'), item('b')])
@@ -63,7 +127,7 @@ describe('OutageFeed', () => {
     expect(screen.getByLabelText('Service')).toHaveAttribute('placeholder', 'Any service')
     expect(screen.getByLabelText('Type')).toHaveValue('OUTAGE')
     expect(screen.getByLabelText('Minimum severity')).toHaveValue('')
-    const status = screen.getByRole('status')
+    const status = announcement()
     expect(status).toHaveTextContent('')
 
     const card = screen.getByText('Notice a').closest('article')!
@@ -84,7 +148,7 @@ describe('OutageFeed', () => {
     await user.click(within(card).getByRole('button', { name: 'Resolve' }))
     await user.click(within(card).getByRole('button', { name: 'Resolve' }))
     await waitFor(() => expect(screen.queryByText('Notice a')).toBeNull())
-    expect(screen.getByRole('status')).toHaveTextContent('Resolved “Notice a”. It has left every consumer\'s feed.')
+    expect(announcement()).toHaveTextContent('Resolved “Notice a”. It has left every consumer\'s feed.')
     // the card that held focus is gone and so is the list: focus must land on what replaced it, not on <body>
     expect(document.activeElement).not.toBe(document.body)
     expect(document.activeElement?.contains(screen.getByText('All clear'))).toBe(true)
