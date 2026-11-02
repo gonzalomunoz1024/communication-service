@@ -75,7 +75,26 @@ class CommunicationTest {
                 CommunicationType.MAINTENANCE, Severity.INFO, "Planned", null, List.of(), null,
                 false, NOW.plusSeconds(100), NOW.plusSeconds(50), null, null, NOW))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("endsAt must be after startsAt");
+                .hasMessage("endsAt 2026-10-14T12:00:50Z must be after startsAt 2026-10-14T12:01:40Z");
+    }
+
+    @Test
+    void anEndNotAfterTheStartNamesBothValuesAndAStartThatDefaulted() {
+        // no startsAt: the window starts now, which the publisher did not write, so the message says so
+        assertThatThrownBy(() -> Communication.create("m1", "vmforge", "sre", CommunicationType.MAINTENANCE,
+                Severity.INFO, "Planned", null, List.of(), null, false, null,
+                Instant.parse("2026-10-01T09:00:00Z"), null, null, NOW))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("endsAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now "
+                        + "(2026-10-14T12:00:00Z)");
+        // an update that moves the end before the stored start: the stored value, named as such
+        Communication window = Communication.create("m1", "vmforge", "sre", CommunicationType.MAINTENANCE,
+                Severity.INFO, "Planned", null, List.of(), null, false, NOW.plusSeconds(3600),
+                NOW.plusSeconds(7200), null, null, NOW);
+        assertThatThrownBy(() -> window.withContent(null, null, null, null, null, null,
+                NOW.plusSeconds(1800), null, "sre", NOW.plusSeconds(10)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("endsAt 2026-10-14T12:30:00Z must be after startsAt 2026-10-14T13:00:00Z");
     }
 
     @Test

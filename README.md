@@ -209,9 +209,9 @@ line and column) and the rule. A value that cannot be read is quoted
 (`publisher: must not be blank; title: must not be blank`).
 `affectedServices` takes up to 20 service names: a JSON `null` entry answers
 `affectedServices[1]: must not be null`, an empty or blank one `affectedServices[1]: must not be blank`.
-An `expiresAt` that is not after `startsAt` names both values, and a `startsAt` you did not send is
-the publish time: `expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-11-02T10:15:00.123Z)`
-(with `startsAt` sent: `expiresAt … must be after startsAt …`). A `PUT` without `expectedVersion` answers
+An `endsAt` or `expiresAt` that is not after `startsAt` names both values, and a `startsAt` you did
+not send is the publish time: `expiresAt 2026-10-01T09:00:00Z must be after startsAt, which defaulted to now (2026-11-02T10:15:00.123Z)`
+(with `startsAt` sent: `endsAt … must be after startsAt …`). A `PUT` without `expectedVersion` answers
 `expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since`.
 A field the publishing endpoints do not know (publish, update, retire, and inside `ticket`) is a
 400 too, `unknown field 'sevrity'; known fields: …`, so a misspelled optional field cannot change

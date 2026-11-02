@@ -191,18 +191,23 @@ public record Communication(
         if (type == CommunicationType.MAINTENANCE) {
             require(endsAt != null, "MAINTENANCE requires endsAt");
         }
-        require(endsAt == null || endsAt.isAfter(startsAt), "endsAt must be after startsAt");
-        if (expiresAt != null && !expiresAt.isAfter(startsAt)) {
-            // both values, and where a start nobody sent came from (to the millisecond, as it is stored)
-            throw new IllegalArgumentException("expiresAt " + expiresAt + " must be after startsAt"
-                    + (startsAtDefaulted ? ", which defaulted to now (" + startsAt.truncatedTo(ChronoUnit.MILLIS) + ")"
-                            : " " + startsAt));
-        }
+        requireAfterStart("endsAt", endsAt, startsAtDefaulted);
+        requireAfterStart("expiresAt", expiresAt, startsAtDefaulted);
         if (type == CommunicationType.INCIDENT || type == CommunicationType.OUTAGE) {
             require(severity.atLeast(Severity.MINOR), type + " requires severity MINOR or higher");
         }
         require(ticket == null || (ticket.number() != null && !ticket.number().isBlank()),
                 "ticket.number is required");
+    }
+
+    /** A time that must follow {@code startsAt}: the message names both values and a start nobody sent. */
+    private void requireAfterStart(String field, Instant value, boolean startsAtDefaulted) {
+        if (value != null && !value.isAfter(startsAt)) {
+            // a defaulted start is shown to the millisecond, as it is stored
+            throw new IllegalArgumentException(field + " " + value + " must be after startsAt"
+                    + (startsAtDefaulted ? ", which defaulted to now (" + startsAt.truncatedTo(ChronoUnit.MILLIS) + ")"
+                            : " " + startsAt));
+        }
     }
 
     private List<AuditEntry> appended(Instant at, String actor, String action) {
