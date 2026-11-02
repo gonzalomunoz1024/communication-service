@@ -70,7 +70,10 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 - **Multi-instance**: events go through a shared log in Mongo (`communication_events`) that every
   instance appends to and tails (`communication.events.poll-interval-ms`, default 500 ms), so a
   notice published through any node reaches subscribers on every node. It is a poll, not a change
-  stream, so a standalone Mongo works; live latency is bounded by the interval.
+  stream, so a standalone Mongo works; live latency is bounded by the interval. On shutdown
+  (SIGTERM) a node completes its open streams at once instead of holding the graceful-shutdown
+  wait for 30 s; clients reconnect to another node (browsers do it by themselves) and resume
+  with `Last-Event-ID`.
 - **Scheduled visibility**: future-dated items are hidden from the feed, except SCHEDULED
   MAINTENANCE within the lookahead window (`communication.feed.upcoming-window`, default 7d).
   Drafts are invisible to consumers everywhere; EXPIRED/RETIRED stay retrievable by permalink.

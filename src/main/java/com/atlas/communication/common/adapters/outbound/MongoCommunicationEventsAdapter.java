@@ -5,6 +5,8 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.Document;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
@@ -88,6 +90,20 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
         if (tail != null) {
             tail.dispose();
         }
+    }
+
+    /**
+     * Ends every live stream the moment the context starts closing. SSE responses never finish
+     * on their own, so the graceful shutdown of the web server (which waits for in-flight
+     * requests before anything else is stopped) would otherwise sit out its whole timeout,
+     * 30 s by default, and then cut the connections. {@link ContextClosedEvent} is published
+     * before that wait begins; subscribers see their stream complete, reconnect to another
+     * instance and resume with {@code Last-Event-ID}. Late subscribers complete at once.
+     */
+    @EventListener(ContextClosedEvent.class)
+    public void closeStreams() {
+        stop();
+        sink.tryEmitComplete();
     }
 
     /** Positions the cursor at the end of the log, so only events from now on are fanned out. */

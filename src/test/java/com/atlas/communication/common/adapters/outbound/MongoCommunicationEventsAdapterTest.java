@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -147,6 +148,27 @@ class MongoCommunicationEventsAdapterTest {
         adapter.streamAfter("vmforge", 5).subscribe(seen::add);
         adapter.fanOut(doc(6, "a"));
         assertThat(seen).extracting(CommunicationEvent::seq).containsExactly(6L);
+    }
+
+    @Test
+    void closingTheContextCompletesEveryLiveStream() {
+        when(sequence.current()).thenReturn(Mono.just(3L));
+        adapter.initialise().block();
+        when(repository.findTenantEventsInWindow("vmforge", 3, 3)).thenReturn(Flux.empty());
+
+        AtomicBoolean liveCompleted = new AtomicBoolean();
+        AtomicBoolean resumedCompleted = new AtomicBoolean();
+        adapter.stream().subscribe(e -> { }, ex -> { }, () -> liveCompleted.set(true));
+        adapter.streamAfter("vmforge", 3).subscribe(e -> { }, ex -> { }, () -> resumedCompleted.set(true));
+        assertThat(liveCompleted).isFalse();
+        assertThat(resumedCompleted).isFalse();
+
+        adapter.closeStreams(); // what the ContextClosedEvent triggers
+
+        assertThat(liveCompleted).as("live subscriber").isTrue();
+        assertThat(resumedCompleted).as("resumed subscriber").isTrue();
+        // whoever subscribes while the instance is going away is told so at once
+        StepVerifier.create(adapter.stream()).verifyComplete();
     }
 
     @Test

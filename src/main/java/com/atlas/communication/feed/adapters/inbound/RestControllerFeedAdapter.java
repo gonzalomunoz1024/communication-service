@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 @RestController
 @RequiredArgsConstructor
@@ -77,19 +78,27 @@ public class RestControllerFeedAdapter {
         FeedQuery query = new FeedQuery(tenantId, service, type, severity, audience,
                 null, true, 0, Page.MAX_SIZE);
         Long resumeAfter = lastEventId != null ? lastEventId : parseEventId(lastEventIdHeader);
-        Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query, resumeAfter).map(e ->
-                ServerSentEvent.<CommunicationEvent>builder()
-                        .id(Long.toString(e.seq()))
-                        .event(e.type().name().toLowerCase())
-                        .data(e)
-                        .build());
-        Flux<ServerSentEvent<CommunicationEvent>> keepalive = Flux
-                .interval(KEEPALIVE_INTERVAL, KEEPALIVE_INTERVAL)
-                .map(i -> ServerSentEvent.<CommunicationEvent>builder().comment("keepalive").build());
-        // The response is only committed with its first write. A tenant with nothing visible
-        // would otherwise get status and headers with the first keepalive, 15 s in, and a
-        // browser would sit in "connecting" for that long: open with a comment frame instead.
-        return Flux.merge(data, keepalive).startWith(CONNECTED);
+        return Flux.defer(() -> {
+            // The keepalive must stop with the data: when the event source completes (this
+            // instance is shutting down) the response has to end too, or it would live on
+            // through comments alone until the graceful-shutdown timeout cuts it.
+            Sinks.Empty<Void> ended = Sinks.empty();
+            Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query, resumeAfter)
+                    .map(e -> ServerSentEvent.<CommunicationEvent>builder()
+                            .id(Long.toString(e.seq()))
+                            .event(e.type().name().toLowerCase())
+                            .data(e)
+                            .build())
+                    .doFinally(signal -> ended.tryEmitEmpty());
+            Flux<ServerSentEvent<CommunicationEvent>> keepalive = Flux
+                    .interval(KEEPALIVE_INTERVAL, KEEPALIVE_INTERVAL)
+                    .map(i -> ServerSentEvent.<CommunicationEvent>builder().comment("keepalive").build())
+                    .takeUntilOther(ended.asMono());
+            // The response is only committed with its first write. A tenant with nothing visible
+            // would otherwise get status and headers with the first keepalive, 15 s in, and a
+            // browser would sit in "connecting" for that long: open with a comment frame instead.
+            return Flux.merge(data, keepalive).startWith(CONNECTED);
+        });
     }
 
     /** Browsers echo the last {@code id:} verbatim; anything that is not one of ours means a fresh start. */
