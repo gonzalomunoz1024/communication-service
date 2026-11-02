@@ -65,7 +65,7 @@ GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./s
 | `tests/01-api-contract.spec.ts` | F-27, F-09, F-92 | against the containerised backend: a `/v1` call without `X-Client-Id` is a 401 with an `{error}` body; a reused `externalRef` is a 409 with an `{error}` body (the wording is not asserted); `/actuator/health/readiness` answers 200 without a client id |
 | `tests/02-f90-publish-live-resolve.spec.ts` | F-90 | a person sets the tenant in the header, publishes an outage through the form (the UI sends `X-Client-Id: communication-frontend`, gets 201); a second tab that was already on the feed shows the card **over the stream**: it was not reloaded (a window marker survives) and did not fetch `/v1/feed` again; "View in feed" lands on the card; Resolve with a note sends the retire, the card leaves both tabs (the second one through the `retired` frame), the resolution is announced in a live region, `GET /v1/feed` no longer lists it and the permalink says RETIRED |
 | `tests/03-f91-sidecar-auto-notice.spec.ts` | F-91 | the pod was auto-registered (push-only monitor, publisher `health-sidecar`); `stack.sh app-set DOWN DOWN` turns into an OUTAGE card ("fakeapp is down", MAJOR, service tag, publisher, the pod named in the body) in the open feed within 15 s, with the instance record DOWN; `app-set UP UP` retires it and the card leaves within 15 s; the monitor is UP again with nothing open and `/instances` lists `fakeapp-0` |
-| `tests/04-f92-backend-restart.spec.ts` | F-92, F-61, F-20 | with the feed open, `stack.sh restart-backend` makes the badge say *Reconnecting*; a reopen request carries `?lastEventId=<last seq>`; a notice published over HTTP once the backend is ready appears without a reload while the page heals itself back to *Live*, and the notice from before the restart is still there |
+| `tests/04-f92-backend-restart.spec.ts` | F-92, F-61, F-20 | with the feed open, `stack.sh restart-backend` makes the badge say *Reconnecting*; a reopen request carries `?lastEventId=<last seq>`; the test holds the page's next reopen until a notice published over HTTP once the backend is ready has been fanned out (a stream the test reads itself received it live), so the page can only get it from the replay of the event log: one `created` frame, numbered after that seq, on the stream resumed with `?lastEventId=`, which sends no snapshot frame (the test reads the page's frames over the DevTools protocol and waits up to 10 s for that one), with at most one `GET /v1/feed` (the page's own reload after a reconnect, which by itself would also show the card); the page heals itself back to *Live* without a reload, and the notice from before the restart is still there |
 
 The flows run one at a time, in file order (`workers: 1`), because they share one stack and the last
 one restarts its backend. Every title carries its matrix id, so the HTML report reads like the matrix.
@@ -119,10 +119,10 @@ Every wait gives up after `E2E_WAIT_SECONDS` (default 150) and prints `docker co
 - **Mongo healthcheck** every 2 s: the backend only starts once Mongo answers `ping`, so its readiness
   probe is UP as soon as the JVM is (about 12 s here).
 - **Playwright** `workers: 1`, `retries: 0` (a flaky end-to-end test is a finding, not noise),
-  `timeout: 120 s` per test (F-92 needs the restart plus up to one 30 s reopen backoff), `trace:
-  retain-on-failure`, `screenshot: only-on-failure`, reporters `list` and `html` (never opened by
-  itself). The suite identifies itself to the API as `X-Client-Id: e2e-suite`; the browser as
-  `communication-frontend`, which F-90 checks.
+  `timeout: 120 s` per test (F-92 waits for a backend restart, 17 to 28 s here, plus at most one
+  10 s reopen backoff), `trace: retain-on-failure`, `screenshot: only-on-failure`, reporters `list`
+  and `html` (never opened by itself). The suite identifies itself to the API as `X-Client-Id:
+  e2e-suite`; the browser as `communication-frontend`, which F-90 checks.
 
 ## In CI
 
