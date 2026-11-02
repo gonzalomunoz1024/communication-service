@@ -69,6 +69,21 @@ Any `application.yml` setting can be passed the same way as an environment varia
 | `cyclonedxBom` | CycloneDX SBOM of what ships: the runtime classpath only (`cyclonedxDirectBom` includes `runtimeClasspath`), for the vulnerability scan CI runs on it | `build/reports/cyclonedx/bom.json` |
 | `verifySbomScope` | that SBOM lists no build or test tool (SpotBugs, BCEL, JaCoCo, JUnit, Mockito, AssertJ, embedded MongoDB, Lombok); their advisories must not fail the scan of an application they never run in | task output |
 
+CI also scans what ships, which no Gradle task does: the SBOM above with `anchore/scan-action` (a
+known vulnerability rated high or critical fails the job), and each image a job builds, this one
+(`communication-service:ci`, the root `Dockerfile` over the jar) and the sidecar's (`health-sidecar:ci`),
+with Trivy 0.58.1, pinned by digest in `ci.yml`. A CRITICAL or HIGH vulnerability that has a fixed
+version fails the job wherever it is: in the base image's packages, the jar's libraries or the sidecar
+binary's Go standard library. The same scan on a laptop (the first run downloads Trivy's database and,
+for a jar, its Java index, about 1 GB together, into the `trivy-cache` volume):
+
+```bash
+./gradlew bootJar && docker build -t communication-service:local .
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+  ghcr.io/aquasecurity/trivy:0.58.1 \
+  image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:local
+```
+
 ### Continuous integration
 
 `.github/workflows/ci.yml` runs on every pull request and on pushes to `main`: three independent
@@ -80,6 +95,11 @@ run in progress and the workflow token is read-only.
 | `backend` | Temurin 21, `./gradlew check` ([Build gates](#build-gates)); `build/reports/**` is kept as the `backend-reports` artifact; the CycloneDX SBOM is scanned with `anchore/scan-action` | a gate fails, or a runtime dependency has a known vulnerability rated high or critical |
 | `frontend` | Node 22, in `frontend/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm audit --omit=dev --audit-level=high` | lint, types, tests or the production build fail, or a shipped dependency has a high advisory |
 | `sidecar` | Go from `sidecar/go.mod` plus kustomize, helm and kubeconform, in `sidecar/`: `gofmt -l .`, `go vet ./...`, `CI=true go test -race ./...` (the manifest tests fail instead of skipping when a tool is missing), `govulncheck ./...` (pinned, v1.9.0), `docker build` of the image | a file is not gofmt-formatted, vet, a test or the race detector fails, a known Go vulnerability, or the image build fails |
+
+The `backend` and `sidecar` jobs end by scanning the image they built with Trivy and fail when it has
+a critical or high vulnerability that has a fix ([Build gates](#build-gates)). The `backend` job builds
+its image (`./gradlew bootJar`, `docker build`) once `check` has passed and scans it also when the SBOM
+scan failed, so one run reports both.
 
 Every step is a plain command a developer can run locally; CI configures nothing a laptop
 would not.

@@ -15,6 +15,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The scanner for the images the backend and sidecar jobs build, pinned by digest (docker.io/aquasec/trivy
+# and mirror.gcr.io/aquasec/trivy serve the same digest). Change the tag and the digest together.
+env:
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7
+
 jobs:
   backend:
     name: Backend (Gradle check, SBOM scan)
@@ -29,6 +34,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       # compile with -Werror, unit tests, *IT tests on embedded MongoDB, SpotBugs, JaCoCo threshold, SBOM
       - name: Gradle check
+        id: check
         run: ./gradlew check --no-daemon
       - name: Upload build reports (tests, SpotBugs, JaCoCo, SBOM)
         if: always()
@@ -45,6 +51,20 @@ jobs:
           fail-build: true
           severity-cutoff: high
           output-format: table
+      # The image that ships: the root Dockerfile puts the jar on its base image. Built and scanned even
+      # when the SBOM scan failed, so one run reports both; a critical or high finding that has a fix, in
+      # the base image's packages or in the jar, fails the job.
+      - name: Build the image
+        id: image
+        if: ${{ !cancelled() && steps.check.outcome == 'success' }}
+        run: |
+          ./gradlew bootJar --no-daemon
+          docker build -t communication-service:ci .
+      - name: Scan the image for fixable critical or high vulnerabilities
+        if: ${{ !cancelled() && steps.image.outcome == 'success' }}
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
+          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:ci
 
   frontend:
     name: Frontend (lint, typecheck, tests, build, audit)
@@ -113,3 +133,8 @@ jobs:
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: Build the image
         run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
+      # the image that ships, UBI micro and the binary: a critical or high finding that has a fix fails the job
+      - name: Scan the image for fixable critical or high vulnerabilities
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
+          image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:ci
