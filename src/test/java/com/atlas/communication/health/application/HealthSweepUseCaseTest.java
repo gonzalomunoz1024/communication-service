@@ -137,7 +137,7 @@ class HealthSweepUseCaseTest {
         verify(observation).observe(eq(silent), report.capture(), eq(NOW));
         assertThat(report.getValue().status()).isEqualTo(HealthStatus.DOWN);
         assertThat(report.getValue().source()).isEqualTo(HealthSource.STALE);
-        assertThat(report.getValue().message()).contains(NOW.minusSeconds(120).toString());
+        assertThat(report.getValue().message()).isEqualTo("no health report received since 2026-11-01 11:58:00 UTC");
         verify(observation, never()).observe(eq(fresh), any(), any());
     }
 

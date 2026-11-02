@@ -120,7 +120,7 @@ class HealthMonitoringE2EIT {
                 .jsonPath("$.items[0].title").isEqualTo("vm-api-e2e is down")
                 .jsonPath("$.items[0].externalRef").isEqualTo("health:" + monitor.id() + ":1")
                 .jsonPath("$.items[0].body").value(body -> assertThat((String) body)
-                        .contains("- db: DOWN - error=Connection refused")
+                        .contains("\ndb: DOWN (error=Connection refused)\n")
                         .doesNotContain("ping"));
 
         // same failure again: quiet, no second notice
@@ -211,9 +211,8 @@ class HealthMonitoringE2EIT {
                 .jsonPath("$.items[0].type").isEqualTo("OUTAGE")
                 .jsonPath("$.items[0].title").isEqualTo("billing-e2e is down")
                 .jsonPath("$.items[0].body").value(body -> assertThat((String) body)
-                        .contains("reported by the service")
-                        .contains("cache cluster unreachable")
-                        .contains("- redis: DOWN"));
+                        .contains("\nReported by the service: cache cluster unreachable.\n")
+                        .contains("\nredis: DOWN\n"));
 
         client.get().uri("/v1/health/monitors?tenantId=vmforge")
                 .exchange()

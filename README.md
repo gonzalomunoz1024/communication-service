@@ -236,7 +236,10 @@ forwarded Actuator document carries `groups` and whatever its producer adds.
 | POST | `/v1/health/reports` | push a health report; first contact auto-registers a push-only monitor; 202 |
 | GET | `/v1/health/monitors/{id}/instances` | the pods that report for a monitor (last status, last seen, left cleanly or not); 404 |
 
-A monitor is one `(tenantId, service)` and publishes as `publisher` (default `health-monitor`).
+A monitor is one `(tenantId, service)` and publishes as `publisher` (default `health-monitor`; a
+monitor registered by the health sidecar's first report takes the sidecar's `CS_PUBLISHER`,
+`health-sidecar` by default). Updates and retirements of its notices are signed with the same
+name, so the history of an automated notice names one actor.
 Per-monitor policy, all optional at registration (defaults in `application.yml` under
 `communication.health.defaults`): `intervalSeconds` (≥5), `timeoutMs`, `failureThreshold`,
 `recoveryThreshold`, `downSeverity` (≥ MINOR), `degradedSeverity`, `audience`,
@@ -296,8 +299,11 @@ with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attac
   notice; `recoveryThreshold` consecutive `UP`s retire it (audit note `recovered: …`). A single
   blip publishes nothing.
 - **DOWN → `OUTAGE`** at `downSeverity`; **DEGRADED → `HEALTH`** notice at `degradedSeverity`;
-  title `<service> is down|degraded`, body lists failing components with details,
-  `affectedServices=[service]`, `externalRef=health:<monitorId>:<incident#>`.
+  title `<service> is down|degraded`; the body is plain text like the bodies people write: the
+  status as of the observation (UTC, to the second), where it came from (the probed URL and its
+  answer, the service's own message, its pods with the failing ones named, or how long it has
+  been silent) and the failing components with their details; `affectedServices=[service]`,
+  `externalRef=health:<monitorId>:<incident#>` (the incident's idempotency key).
 - While open: new failing components update the notice in place (`updated` SSE event); a change
   of kind (DOWN ↔ DEGRADED) retires it and opens the right type; recovery retires it. If an
   operator retires an automated notice by hand, the monitor respects it and starts counting

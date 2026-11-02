@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.atlas.communication.health.domain.HealthInstance;
 import com.atlas.communication.health.domain.HealthMonitor;
+import com.atlas.communication.health.domain.HealthNotice;
 import com.atlas.communication.health.domain.HealthReport;
 import com.atlas.communication.health.domain.HealthSource;
 import com.atlas.communication.health.domain.HealthStatus;
@@ -207,7 +208,7 @@ public class HealthSweepUseCase {
     private Mono<HealthMonitor> observeStale(HealthMonitor monitor, List<HealthInstance> known, Instant now) {
         if (known.isEmpty()) {
             return observation.observe(monitor, stale(
-                    "no health report received since " + monitor.staleBaseline(), now), now);
+                    "no health report received since " + HealthNotice.utc(monitor.staleBaseline()), now), now);
         }
         if (scaledToZero(known)) {
             log.debug("monitor {} ({}/{}): every pod left cleanly; not stale", monitor.id(),
@@ -217,7 +218,7 @@ public class HealthSweepUseCase {
         long present = known.stream().filter(i -> !i.left()).count();
         return observation.observe(monitor, stale(present
                 + (present == 1 ? " pod has" : " pods have")
-                + " not reported since " + monitor.staleBaseline()
+                + " not reported since " + HealthNotice.utc(monitor.staleBaseline())
                 + " (" + names(known) + ")", now), now);
     }
 

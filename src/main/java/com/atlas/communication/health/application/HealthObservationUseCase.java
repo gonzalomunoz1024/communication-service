@@ -35,14 +35,15 @@ import reactor.core.publisher.Mono;
  * same monitor concurrently therefore cannot both publish; the loser's save conflicts and its
  * evaluation is dropped. Resolving and updating are idempotent, so they act first and save
  * after.
+ *
+ * <p>Everything the monitor does on a communication (publish, update, retire) is signed with
+ * the monitor's {@code publisher}, so an automated notice carries one name in its history: a
+ * monitor the health sidecar registered publishes and retires as the sidecar's publisher.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class HealthObservationUseCase {
-
-    /** Audit actor for everything the monitor does on a communication. */
-    public static final String ACTOR = "health-monitor";
 
     private final HealthMonitorRepositoryPort monitors;
     private final HealthProbePort probes;
@@ -115,8 +116,8 @@ public class HealthObservationUseCase {
         HealthMonitor claimed = next.withOpen(UUID.randomUUID().toString(),
                 report.effectiveStatus(), report.signature());
         return monitors.save(claimed)
-                .flatMap(saved -> retire(previous, "reclassified as " + report.effectiveStatus()
-                        + ": " + report.summary(), now)
+                .flatMap(saved -> retire(previous, saved.policy().publisher(), "reclassified as "
+                        + report.effectiveStatus() + ": " + report.summary(), now)
                         .then(create(saved, report))
                         .thenReturn(saved)
                         .onErrorResume(ex -> rollbackClaim(saved, ex)));
@@ -136,7 +137,7 @@ public class HealthObservationUseCase {
                     }
                     UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(
                             notice.severity(), notice.title(), notice.body(), null, null,
-                            null, null, null, null, ACTOR, current.version());
+                            null, null, null, null, next.policy().publisher(), current.version());
                     return publishing.update(id, cmd).thenReturn(marked);
                 })
                 .onErrorResume(ResponseStatusException.class, ex -> {
@@ -150,7 +151,8 @@ public class HealthObservationUseCase {
     }
 
     private Mono<HealthMonitor> resolve(HealthMonitor next, String note, Instant now) {
-        return retire(next.state().openCommunicationId(), note, now).thenReturn(next.withClosed());
+        return retire(next.state().openCommunicationId(), next.policy().publisher(), note, now)
+                .thenReturn(next.withClosed());
     }
 
     private Mono<Communication> create(HealthMonitor monitor, HealthReport report) {
@@ -165,8 +167,8 @@ public class HealthObservationUseCase {
     }
 
     /** Retire tolerant of a notice that is already gone or terminal (nothing left to do). */
-    private Mono<Void> retire(String id, String note, Instant now) {
-        return publishing.retire(id, new RetireRequest(ACTOR, note))
+    private Mono<Void> retire(String id, String actor, String note, Instant now) {
+        return publishing.retire(id, new RetireRequest(actor, note))
                 .doOnNext(c -> log.info("retired notice {}: {}", id, note))
                 .onErrorResume(ResponseStatusException.class, ex -> {
                     if (ex.getStatusCode() == HttpStatus.NOT_FOUND
