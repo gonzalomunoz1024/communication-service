@@ -99,7 +99,9 @@ during the outage gets no working stream (each attempt is refused or ended withi
 When the service cannot be reached at all (connection refused, or a 502/503/504 that a proxy in
 front of it answers without the service's `{"error"}` body) both tabs say that it is unreachable
 instead of quoting the status line, and the feed's **Try again** reopens the live stream as well
-as reloading the list.
+as reloading the list. The feed's error state is an alert (`role="alert"`), a new one for every
+failed load, so a screen reader reads out the first failure and each retry that fails again; after
+**Try again** keyboard focus moves to the next **Try again**, or to the list once it loads.
 
 An optional **ServiceNow incident** field ties a notice to the ticket behind it (`ticket.number`,
 `INC0012345`). The service upper-cases the number and, when it knows the instance, adds a link;

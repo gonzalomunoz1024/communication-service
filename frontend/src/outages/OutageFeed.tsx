@@ -75,6 +75,20 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
     return () => clearTimeout(t)
   }, [resolved])
 
+  // "Try again" gives way to what its attempt brings, a new alert with its own Try again or the
+  // list: focus follows it there instead of falling to <body> with the button that was pressed
+  const retrying = useRef(false)
+  const retry = () => {
+    retrying.current = true
+    feed.refresh()
+  }
+  useEffect(() => {
+    if (!retrying.current || feed.loading) return
+    retrying.current = false
+    if (document.activeElement && document.activeElement !== document.body) return
+    ;(document.getElementById(`${id}-retry`) ?? results.current)?.focus({ preventScroll: true })
+  }, [feed.loading, feed.failures, id])
+
   const resolve = allowResolve
     ? async (item: FeedItem, note: string) => {
         await client.retire(item.id, actor, note)
@@ -143,17 +157,21 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
         {!tenantId.trim() ? (
           <EmptyState icon="users" title="Choose a tenant" message="The feed is per tenant. Enter one at the top of the page." />
         ) : feed.error ? (
-          <EmptyState
-            icon="alert-triangle"
-            iconClassName="text-critical"
-            title="Couldn't load the feed"
-            message={feed.error}
-            action={
-              <Button size="sm" icon="refresh" onClick={feed.refresh}>
-                Try again
-              </Button>
-            }
-          />
+          // an alert, so a failed load is read out and not only shown; a new element for every
+          // failure, so a retry that fails the same way is read out again
+          <div key={feed.failures} role="alert">
+            <EmptyState
+              icon="alert-triangle"
+              iconClassName="text-critical"
+              title="Couldn't load the feed"
+              message={feed.error}
+              action={
+                <Button id={`${id}-retry`} size="sm" icon="refresh" onClick={retry}>
+                  Try again
+                </Button>
+              }
+            />
+          </div>
         ) : feed.loading && feed.items.length === 0 ? (
           <div className="flex flex-col gap-3" aria-busy="true">
             {[0, 1, 2].map((i) => (

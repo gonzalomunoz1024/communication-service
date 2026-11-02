@@ -16,6 +16,8 @@ export interface OutageFeed {
   loading: boolean
   /** why the list could not be loaded; a reload of the same list keeps it until that reload answers */
   error: string | null
+  /** how many loads of this list have failed in a row (0 once one succeeds): each failure is news, even with the same `error` */
+  failures: number
   connection: Connection
   /** how many times the page has reopened the stream itself since it was last live (0 otherwise) */
   reconnectAttempt: number
@@ -35,6 +37,7 @@ interface Loaded {
   requestId: string
   items: FeedItem[]
   error: string | null
+  failures: number
   total?: number
   hasNext?: boolean
 }
@@ -46,7 +49,7 @@ interface StreamState {
   attempt: number
 }
 
-const EMPTY: Loaded = { key: '', requestId: '', items: [], error: null }
+const EMPTY: Loaded = { key: '', requestId: '', items: [], error: null, failures: 0 }
 
 /**
  * The visible feed for a filter: one GET /v1/feed page, then, when `live`, the SSE stream
@@ -84,13 +87,14 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
           requestId,
           items: reconcile(prev.items, page.items, since, stableFilter.tenantId),
           error: null,
+          failures: 0,
           total: page.totalElements,
           hasNext: page.hasNext,
         }))
       })
       .catch((e: unknown) => {
         if (cancelled) return
-        setLoaded((prev) => ({ ...prev, key, requestId, error: explainError(e) }))
+        setLoaded((prev) => ({ ...prev, key, requestId, error: explainError(e), failures: (prev.key === key ? prev.failures : 0) + 1 }))
       })
     return () => {
       cancelled = true
@@ -131,7 +135,8 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
   const settled = loaded.requestId === requestId
   // the last failure of this list stays until a reload of it answers (Try again, Refresh, the reload
   // after the stream works again), rather than a skeleton between two answers that say the same
-  const error = !blank && loaded.key === key ? loaded.error : null
+  const sameList = !blank && loaded.key === key
+  const error = sameList ? loaded.error : null
   const current = stream?.streamKey === streamKey ? stream : null
   const phase: Connection = !canStream ? 'off' : (current?.phase ?? 'connecting')
   // a working stream does not make the page live while its list could not be loaded
@@ -149,6 +154,7 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
     items: blank ? [] : sortFeed(revise(loaded.items, now)),
     loading: !blank && !settled,
     error,
+    failures: sameList ? loaded.failures : 0,
     connection,
     reconnectAttempt,
     total: settled && !blank ? loaded.total : undefined,

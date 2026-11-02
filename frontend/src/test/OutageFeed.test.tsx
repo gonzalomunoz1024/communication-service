@@ -191,6 +191,35 @@ describe('OutageFeed', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
+  it('announces a failed load as an alert, a new one for every failed retry, and keeps keyboard focus on Try again', async () => {
+    const user = userEvent.setup()
+    const f = fakeClient([item('a')])
+    vi.mocked(f.client.feed).mockRejectedValueOnce(new ApiError(503, 'database unavailable', true))
+    render(<OutageFeed client={f.client} tenantId="acme" />)
+    const first = await screen.findByRole('alert')
+    expect(first).toHaveTextContent("Couldn't load the feed")
+    expect(first).toHaveTextContent('The service cannot reach its database right now (HTTP 503): database unavailable.')
+
+    // Try again from the keyboard: the alert stays while the reload runs, and a new failure is a new alert
+    let fail: (e: unknown) => void = () => {}
+    vi.mocked(f.client.feed).mockImplementationOnce(() => new Promise((_, reject) => (fail = reject)))
+    within(first).getByRole('button', { name: 'Try again' }).focus()
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('alert')).toBe(first)
+    await act(async () => fail(new ApiError(503, 'database unavailable', true)))
+    const second = screen.getByRole('alert')
+    expect(second).not.toBe(first)
+    expect(second).toHaveTextContent("Couldn't load the feed")
+    expect(within(second).getByRole('button', { name: 'Try again' })).toHaveFocus()
+
+    // the next attempt works: the list takes the alert's place, and focus moves to it rather than to <body>
+    await user.keyboard('{Enter}')
+    expect(await screen.findByText('Notice a')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement?.contains(screen.getByText('Notice a'))).toBe(true)
+  })
+
   it("says the service cannot reach its database for its own 503, and the badge does not say Live beside it", async () => {
     const f = fakeClient()
     vi.mocked(f.client.feed).mockRejectedValue(new ApiError(503, 'database unavailable', true))
