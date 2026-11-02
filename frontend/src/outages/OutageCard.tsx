@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Button, Icon, Input, StateTag, Tag, cx, longDate, relativeTime } from '../ui'
-import { SEVERITY_TONE, titleCase } from './display'
+import { SEVERITY_TONE, isAutomaticReference, titleCase } from './display'
 import { explainError } from './errors'
 import { TicketTag } from './TicketTag'
 import type { FeedItem } from './types'
@@ -67,10 +67,18 @@ export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
           <Tag outline>{titleCase(item.type)}</Tag>
           {item.audience !== 'CUSTOMERS' && <Tag outline>{titleCase(item.audience)}</Tag>}
           {item.ticket && <TicketTag ticket={item.ticket} />}
-          {item.externalRef && item.externalRef !== item.ticket?.number && (
-            <Tag mono outline>
-              {item.externalRef}
+          {isAutomaticReference(item.externalRef) ? (
+            // raised by health monitoring: its health:<monitor>:<n> key means nothing to a reader
+            <Tag outline icon="pulse" title="Raised by an automated health check">
+              Automatic
             </Tag>
+          ) : (
+            item.externalRef &&
+            item.externalRef !== item.ticket?.number && (
+              <Tag mono outline>
+                {item.externalRef}
+              </Tag>
+            )
           )}
           <span className="ml-auto text-caption text-tertiary" title={longDate(item.updatedAt)}>
             Updated {relativeTime(item.updatedAt)}

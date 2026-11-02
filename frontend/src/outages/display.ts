@@ -16,6 +16,14 @@ export const STATUS_TONE: Record<CommunicationStatus, Tone> = {
   RETIRED: 'healthy',
 }
 
+/**
+ * True for the reference the service gives a notice its health monitoring raised
+ * (`health:<monitorId>:<incident>`, HealthMonitor#externalRef): an internal key, not something to show.
+ */
+export function isAutomaticReference(externalRef?: string): boolean {
+  return !!externalRef?.startsWith('health:')
+}
+
 /** "servicenow" → "ServiceNow"; any other tracker title-cased. */
 export function ticketSystemLabel(system?: string): string {
   if (!system || system.toLowerCase() === 'servicenow') return 'ServiceNow'

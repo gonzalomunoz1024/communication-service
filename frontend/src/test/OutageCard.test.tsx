@@ -73,6 +73,31 @@ describe('OutageCard', () => {
     expect(screen.getAllByText(/Starts in 59m/)).toHaveLength(1)
   })
 
+  it('labels an automated notice "Automatic" instead of showing its internal health: reference', () => {
+    // as the service publishes it when a monitored service goes DOWN (confidence/evidence/iter-2/usability/sidecar-pod.txt P6)
+    const automated: FeedItem = {
+      ...item,
+      id: 'n7',
+      publisher: 'health-sidecar',
+      title: 'payments-api is down',
+      body: 'Automated health check reported DOWN at 2026-11-02T04:07:48Z (rolled up from the service pods). This notice is managed automatically.',
+      externalRef: 'health:2c1b983f-a8a2-4bf5-97e5-1e69f6fe9b27:1',
+      ticket: undefined,
+    }
+    render(<OutageCard item={automated} />)
+    expect(screen.queryByText(/health:/)).toBeNull()
+    expect(screen.getByTitle('Raised by an automated health check')).toHaveTextContent(/^Automatic$/)
+  })
+
+  it('still shows a reference a person chose, once, and not when it is the ticket number', () => {
+    const { unmount } = render(<OutageCard item={{ ...item, externalRef: 'payments-2026-11-01' }} />)
+    expect(screen.getByText('payments-2026-11-01')).toBeInTheDocument()
+    expect(screen.queryByText('Automatic')).toBeNull()
+    unmount()
+    render(<OutageCard item={{ ...item, externalRef: 'INC0012345' }} />)
+    expect(screen.getAllByText('INC0012345')).toHaveLength(1)
+  })
+
   it('hides the action when the page cannot resolve', () => {
     render(<OutageCard item={item} />)
     expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument()
