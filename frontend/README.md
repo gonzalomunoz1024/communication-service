@@ -138,7 +138,8 @@ const client = createCommunicationClient('')   // '' = same origin
 `src/App.tsx` is only the shell (header, tenant picker, tabs, theme toggle); nothing in
 `src/outages/` imports from it. `onViewFeed(communication)` is where the host switches to the
 feed of the tenant that was just published to, filtered to that type, so the new notice is on
-screen.
+screen; the shell renders that feed with `autoFocus`, which puts keyboard focus on its list
+(the button that was pressed leaves with the confirmation, which would drop focus to the page).
 
 | File | Role |
 | --- | --- |

@@ -96,6 +96,32 @@ describe('App', () => {
     expect(window.location.hash).toBe('#/feed')
   })
 
+  it('"View in feed" puts keyboard focus on the feed\'s list, while switching tabs leaves it on the tabs', async () => {
+    const svc = stubService()
+    vi.stubGlobal('fetch', svc.fetchMock)
+    localStorage.setItem('comm-tenant', 'acme')
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('tab', { name: /Publish/ }))
+    const form = document.querySelector('form')!
+    await user.type(within(form).getByLabelText(/^Title/), 'Checkout errors')
+    await user.type(within(form).getByLabelText(/^Publisher/), 'web-oncall')
+    await user.click(screen.getByRole('button', { name: 'Publish outage' }))
+    ;(await screen.findByRole('button', { name: 'View in feed' })).focus()
+    await user.keyboard('{Enter}')
+    // the button that was pressed left with the confirmation: focus starts on the feed's results, not on <body>
+    expect(document.activeElement).not.toBe(document.body)
+    expect(await screen.findByText('Checkout errors')).toBeInTheDocument()
+    expect(document.activeElement?.contains(screen.getByText('Checkout errors'))).toBe(true)
+
+    // only "View in feed" moves focus into the feed: from the keyboard, the tabs keep it
+    screen.getByRole('tab', { name: /Feed/ }).focus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: /Publish/ })).toHaveFocus()
+    await user.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('tab', { name: /Feed/ })).toHaveFocus()
+  })
+
   describe('the header tenant field', () => {
     const feedGets = (calls: string[]) => calls.filter((c) => c.startsWith('GET /v1/feed?')).map((c) => tenantOf(c.slice(4)))
 

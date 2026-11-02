@@ -17,6 +17,8 @@ export interface OutageFeedProps {
   defaultType?: CommunicationType | ''
   /** reports the visible count, e.g. for a tab badge */
   onCount?: (count: number) => void
+  /** put keyboard focus on the list when the feed appears, e.g. when the host switches to it with "View in feed" */
+  autoFocus?: boolean
 }
 
 /** The badge next to the Live-updates switch; `waiting` is `off` because no tenant is entered yet, not because anyone paused it. */
@@ -44,7 +46,7 @@ function emptyMessage(type: CommunicationType | '', tenantId: string, service: s
 }
 
 /** The consumer view: what is active or upcoming for a tenant, kept live over SSE. */
-export function OutageFeed({ client, tenantId, actor, allowResolve = true, defaultType = 'OUTAGE', onCount }: OutageFeedProps) {
+export function OutageFeed({ client, tenantId, actor, allowResolve = true, defaultType = 'OUTAGE', onCount, autoFocus }: OutageFeedProps) {
   const id = useId()
   const [service, setService] = useState('')
   const [type, setType] = useState<CommunicationType | ''>(defaultType)
@@ -74,6 +76,11 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
     const t = setTimeout(() => setResolved(null), 8_000)
     return () => clearTimeout(t)
   }, [resolved])
+  // shown in place of the view whose button was pressed ("View in feed"): start keyboard focus on the
+  // list rather than on <body>
+  useEffect(() => {
+    if (autoFocus) results.current?.focus({ preventScroll: true })
+  }, [autoFocus])
 
   // "Try again" gives way to what its attempt brings, a new alert with its own Try again or the
   // list: focus follows it there instead of falling to <body> with the button that was pressed

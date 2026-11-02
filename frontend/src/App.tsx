@@ -41,17 +41,23 @@ export default function App() {
   const [publisher, setPublisher] = useState(() => readStored(PUBLISHER_KEY, ''))
   // the feed's type filter when the tab opens; "View in feed" points it at what was just published
   const [feedType, setFeedType] = useState<CommunicationType | ''>('OUTAGE')
+  // "View in feed" also puts keyboard focus on the feed's list; switching tabs leaves focus on the tabs
+  const [focusFeed, setFocusFeed] = useState(false)
   const [activeCount, setActiveCount] = useState(0)
 
   // the tab lives in the hash so a reload (or a shared link) lands on the same one
   useEffect(() => {
-    const onHash = () => setTab(tabFromHash())
+    const onHash = () => {
+      setTab(tabFromHash())
+      setFocusFeed(false)
+    }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
   const go = (next: Tab) => {
     window.location.hash = next === 'publish' ? '#/publish' : '#/feed'
     setTab(next)
+    setFocusFeed(false)
   }
 
   useEffect(() => {
@@ -123,7 +129,7 @@ export default function App() {
         )}
         <Tabs<Tab> ariaLabel="Sections" tabs={tabs} value={tab} onChange={go} className="mb-5" />
         {tab === 'feed' ? (
-          <OutageFeed client={client} tenantId={tenantId} actor={publisher || undefined} defaultType={feedType} onCount={setActiveCount} />
+          <OutageFeed client={client} tenantId={tenantId} actor={publisher || undefined} defaultType={feedType} onCount={setActiveCount} autoFocus={focusFeed} />
         ) : (
           <PublishOutageForm
             client={client}
@@ -138,10 +144,11 @@ export default function App() {
               }
             }}
             onViewFeed={(c) => {
-              // land on the feed that shows it: its tenant, filtered to its type
+              // land on the feed that shows it: its tenant, filtered to its type, with focus on its list
               showTenant(c.tenantId)
               setFeedType(c.type)
               go('feed')
+              setFocusFeed(true)
             }}
           />
         )}
