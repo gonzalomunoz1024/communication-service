@@ -42,21 +42,25 @@ The sidecar image names the commit under test: `stack.sh` passes `VERSION` (`git
 --always`) and `REVISION` (`git rev-parse HEAD`) to the sidecar's `Dockerfile`, which writes them into
 the `org.opencontainers.image.version` and `.revision` labels and into the binary's version (set either
 variable to override it). Where Red Hat's registry is unreachable, build the sidecar from substitutes: a
-stand-in for `ubi9/go-toolset` at the Go release of `sidecar/go.mod` (1.25) that has the CA bundle at
+stand-in for `ubi9/go-toolset` with Go 1.27.3 or later (`sidecar/go.mod` says `go 1.27.3` and the
+`Dockerfile` builds with `GOTOOLCHAIN=local`, so an older Go stops the build) that has the CA bundle at
 the UBI path the `Dockerfile` copies from, and distroless instead of UBI micro. The variables reach the
 `Dockerfile`'s build args; unset, its own defaults apply.
 
 ```sh
-docker build -t go-toolset:e2e - <<'EOF'
-FROM golang:1.25
-RUN mkdir -p /etc/pki/ca-trust/extracted/pem \
- && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+docker build -t local/go-toolset:1.27 - <<'EOF'
+FROM golang:1.27.3
+RUN mkdir -p /etc/pki/ca-trust/extracted/pem /opt/app-root/src \
+ && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem \
+ && chown 1001:0 /opt/app-root/src
 EOF
-GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up
+GO_IMAGE=local/go-toolset:1.27 BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up
 ```
 
-`golang:1.25` by itself compiles the sidecar but fails the image build at that `COPY`;
-`mirror.gcr.io/library/golang:1.25` is the same image when Docker Hub rate-limits.
+`golang:1.27.3` by itself compiles the sidecar but fails the image build at that `COPY`;
+`mirror.gcr.io/library/golang:1.27.3` is the same image when Docker Hub rate-limits. The build stage's
+working directory is UBI's, owned by UID 1001 as there. The Go 1.25 stand-in an earlier version of this
+page built (`go-toolset:e2e`) now stops at `go.mod requires go >= 1.27.3`.
 
 ## What each test proves
 

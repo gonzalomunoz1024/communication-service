@@ -53,9 +53,9 @@ services:
       context: ../sidecar
       # taken from the environment when set, otherwise the Dockerfile's defaults (the UBI images, dev/unknown).
       # stack.sh sets VERSION and REVISION (git describe --tags --always, git rev-parse HEAD), so the image's
-      # labels name the commit under test. Where the UBI registry is unreachable, GO_IMAGE=go-toolset:e2e
-      # (golang:1.25, the Go release of ../sidecar/go.mod, plus the CA-bundle path the Dockerfile copies
-      # from; README.md shows the build) and BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot
+      # labels name the commit under test. Where the UBI registry is unreachable, GO_IMAGE=local/go-toolset:1.27
+      # (golang:1.27.3, the Go release ../sidecar/go.mod requires, plus the CA-bundle path the Dockerfile
+      # copies from; README.md shows the build) and BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot
       args:
         - GO_IMAGE
         - BASE_IMAGE
