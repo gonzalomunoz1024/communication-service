@@ -18,8 +18,8 @@ test('F-92 the backend restarts mid-stream → Reconnecting → the page resumes
   console.log(`F-92: the badge showed Reconnecting ${((Date.now() - dropped) / 1000).toFixed(1)} s into the restart`)
   const resumed = await resume
   console.log(`F-92: a reopen carried lastEventId=${new URL(resumed.url()).searchParams.get('lastEventId')}`)
-  const restartError = await restart
-  if (restartError) throw restartError
+  // the restart itself succeeded: stack.sh saw the readiness probe UP again (its error otherwise)
+  expect(await restart, 'stack.sh restart-backend').toBeNull()
   const backAt = Date.now()
   console.log(`F-92: the backend was ready again ${((backAt - dropped) / 1000).toFixed(1)} s after the restart began`)
 

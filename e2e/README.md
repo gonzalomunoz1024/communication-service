@@ -33,6 +33,10 @@ npx playwright test                          # about a minute
 
 `npx playwright show-report` opens the HTML report; a failed test keeps its trace under `test-results/`
 (`npx playwright show-trace <file>.zip`). `./stack.sh logs` prints every container's log.
+`npm run typecheck` and `npm run lint` are the suite's static checks: the lint is ESLint with the
+frontend's base (the recommended JavaScript and typescript-eslint rules) plus eslint-plugin-playwright's
+recommended set (unawaited calls, conditional or standalone expects, focused or skipped tests, fixed
+waits), and a warning fails it like an error (`eslint.config.mjs`).
 
 The sidecar image names the commit under test: `stack.sh` passes `VERSION` (`git describe --tags
 --always`) and `REVISION` (`git rev-parse HEAD`) to the sidecar's `Dockerfile`, which writes them into
@@ -125,6 +129,6 @@ Every wait gives up after `E2E_WAIT_SECONDS` (default 150) and prints `docker co
 `.github/workflows/e2e.yml` runs on pushes to `main` and on pull requests (`permissions: contents:
 read`, 30 minute timeout): Java 21 and Node 22, `./gradlew bootJar`, `npm ci && npm run build` in
 `frontend/`, then in `e2e/` `./stack.sh build` (the sidecar's image labelled with the commit), `npm ci`,
-the type-check, `npx playwright install --with-deps chromium`, `./stack.sh up`, `npx playwright test`,
-and `./stack.sh down` whatever happened. On failure it prints the stack's logs and uploads
+the type-check, the lint, `npx playwright install --with-deps chromium`, `./stack.sh up`, `npx playwright
+test`, and `./stack.sh down` whatever happened. On failure it prints the stack's logs and uploads
 `playwright-report/` and `test-results/` (traces, screenshots) as the artifact `e2e-report`.
