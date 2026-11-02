@@ -40,8 +40,10 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 
 ### Container image
 
-The root `Dockerfile` puts the jar Gradle built on a distroless Java 21 runtime, as a non-root
-user; the image build itself needs no network, and the artefact tested is the artefact shipped.
+The root `Dockerfile` puts the jar Gradle built on a distroless Java 21 runtime (Debian 13, pinned
+by digest: a rebuild gets the same OS packages; the `Dockerfile` says how to move the pin), as the
+non-root user 65532; the image build itself needs no network, and the artefact tested is the
+artefact shipped.
 MongoDB stays outside the image: point the container at it.
 
 ```bash
