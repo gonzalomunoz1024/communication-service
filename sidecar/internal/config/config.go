@@ -218,6 +218,28 @@ func FromEnv(get func(string) string) (Config, error) {
 	if cfg.Interval < time.Second {
 		errs = append(errs, errors.New("CS_INTERVAL must be at least 1s"))
 	}
+	// A timeout of 0 or less would mean none at all (net/http and net.Dialer read it so): a probe
+	// or a report that never answers would hold the loop while /healthz stays 200. A heartbeat of 0
+	// or less means nothing either. A retry delay or a grace of 0 turns the second look or the
+	// grace off; only a negative one is refused.
+	for _, d := range []struct {
+		key    string
+		value  time.Duration
+		zeroOK bool
+	}{
+		{"CS_HEARTBEAT", cfg.Heartbeat, false},
+		{"CS_PROBE_TIMEOUT", cfg.ProbeTimeout, false},
+		{"CS_REPORT_TIMEOUT", cfg.ReportTimeout, false},
+		{"CS_RETRY_DELAY", cfg.RetryDelay, true},
+		{"CS_STARTUP_GRACE", cfg.StartupGrace, true},
+	} {
+		switch {
+		case d.zeroOK && d.value < 0:
+			errs = append(errs, fmt.Errorf("%s must not be negative (got %v)", d.key, d.value))
+		case !d.zeroOK && d.value <= 0:
+			errs = append(errs, fmt.Errorf("%s must be more than 0 (got %v)", d.key, d.value))
+		}
+	}
 	if cfg.Heartbeat < cfg.Interval {
 		cfg.Heartbeat = cfg.Interval
 	}

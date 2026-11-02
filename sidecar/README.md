@@ -217,7 +217,7 @@ the one list of them is in the service's README under
 | `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component, or UNKNOWN (a DOWN or degraded report is sent every probe). A failed send is retried at most 30 s apart; keep `CS_HEARTBEAT` + 30 s well below the service's 90 s staleness window. See [What it reports and when](#what-it-reports-and-when) |
 | `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included. The report timeout is longer than the service's own 5 s database timeout, so while the service cannot reach its database its 503 `database unavailable` arrives before the sidecar gives up and `sendError` names that cause, not a timeout |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
-| `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |
+| `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts; `0` turns it off |
 | `CS_LISTEN` | `:9465` | the sidecar's own `/healthz` and `/status` |
 | `CS_LOG_LEVEL` | `info` | lowest level logged: `debug`, `info`, `warn` or `error`; `debug` adds a `reported` line for every report sent, heartbeats and repeats included (see [Debugging](#debugging-my-service-does-not-show-up)) |
 | `CS_CA_FILE` | empty | extra PEM CA bundle for the endpoint (an internal CA); the image carries the UBI bundle |
@@ -225,7 +225,8 @@ the one list of them is in the service's README under
 | `POD_NAME`, `POD_NAMESPACE`, `NODE_NAME`, `CS_VERSION`, `CS_INSTANCE_ID` | Downward API | instance identity |
 
 A value the sidecar cannot use (a required variable missing, an unknown mode, scheme or log
-level, a duration, port or boolean it cannot read) stops it at start with exit code 2 and one
+level, a duration, port or boolean it cannot read, a timeout or `CS_HEARTBEAT` of 0 or less, a
+negative `CS_RETRY_DELAY` or `CS_STARTUP_GRACE`) stops it at start with exit code 2 and one
 ERROR line, `invalid configuration`, that names every such variable at once; a `CS_CA_FILE` it
 cannot read stops it the same way, as `cannot build report client`.
 

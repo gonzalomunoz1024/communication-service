@@ -152,6 +152,53 @@ func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
 	}
 }
 
+// G-4-22 (GAP-sidecar3-1): a timeout or heartbeat of 0 or less, or a negative retry delay or
+// startup grace, is a named error joined with the others, so the process exits 2. A zero
+// CS_REPORT_TIMEOUT or CS_PROBE_TIMEOUT used to mean no timeout at all: a service or app that
+// never answered held the loop while /healthz stayed 200. A retry delay or grace of 0 stays
+// usable (no second look, no grace).
+func TestDurationsTheSidecarCannotUseAreRejected(t *testing.T) {
+	base := func(key, value string) map[string]string {
+		return map[string]string{
+			"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+			"POD_NAME": "payments-api-7f9c6d5b4-x2k4q", key: value,
+		}
+	}
+	for _, tc := range []struct{ key, value, want string }{
+		{"CS_PROBE_TIMEOUT", "0s", "CS_PROBE_TIMEOUT must be more than 0 (got 0s)"},
+		{"CS_PROBE_TIMEOUT", "-1s", "CS_PROBE_TIMEOUT must be more than 0 (got -1s)"},
+		{"CS_REPORT_TIMEOUT", "0s", "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"},
+		{"CS_REPORT_TIMEOUT", "-5s", "CS_REPORT_TIMEOUT must be more than 0 (got -5s)"},
+		{"CS_HEARTBEAT", "0s", "CS_HEARTBEAT must be more than 0 (got 0s)"},
+		{"CS_HEARTBEAT", "-30s", "CS_HEARTBEAT must be more than 0 (got -30s)"},
+		{"CS_RETRY_DELAY", "-2s", "CS_RETRY_DELAY must not be negative (got -2s)"},
+		{"CS_STARTUP_GRACE", "-1m", "CS_STARTUP_GRACE must not be negative (got -1m0s)"},
+	} {
+		_, err := FromEnv(env(base(tc.key, tc.value)))
+		if err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%s=%s: error %v, want one saying %q", tc.key, tc.value, err, tc.want)
+		}
+	}
+	for _, tc := range []struct {
+		key, value string
+		got        func(Config) time.Duration
+		want       time.Duration
+	}{
+		{"CS_RETRY_DELAY", "0", func(c Config) time.Duration { return c.RetryDelay }, 0},
+		{"CS_STARTUP_GRACE", "0s", func(c Config) time.Duration { return c.StartupGrace }, 0},
+		{"CS_PROBE_TIMEOUT", "500ms", func(c Config) time.Duration { return c.ProbeTimeout }, 500 * time.Millisecond},
+		{"CS_REPORT_TIMEOUT", "1s", func(c Config) time.Duration { return c.ReportTimeout }, time.Second},
+		{"CS_HEARTBEAT", "1m", func(c Config) time.Duration { return c.Heartbeat }, time.Minute},
+	} {
+		cfg, err := FromEnv(env(base(tc.key, tc.value)))
+		if err != nil {
+			t.Errorf("%s=%s: unexpected error %v", tc.key, tc.value, err)
+		} else if got := tc.got(cfg); got != tc.want {
+			t.Errorf("%s=%s: got %v, want %v", tc.key, tc.value, got, tc.want)
+		}
+	}
+}
+
 // G-3-14: CS_LOG_LEVEL is the lowest level logged: debug, info, warn or error in any case, info
 // when empty; anything else is a named error joined with the others, so the process exits 2.
 func TestLogLevelIsReadAndValidated(t *testing.T) {

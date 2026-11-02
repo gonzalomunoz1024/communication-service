@@ -91,6 +91,9 @@ func TestRunRejectsAnUnusableValueWithExit2(t *testing.T) {
 	for _, tc := range []struct{ key, value, want string }{
 		{"CS_INSECURE_SKIP_VERIFY", "maybe", `CS_INSECURE_SKIP_VERIFY must be true or false (got "maybe")`},
 		{"CS_LOG_LEVEL", "loud", `CS_LOG_LEVEL must be debug, info, warn or error (got "loud")`},
+		// G-4-22: a zero timeout meant none at all, so a service or app that never answers froze the loop
+		{"CS_REPORT_TIMEOUT", "0s", "CS_REPORT_TIMEOUT must be more than 0 (got 0s)"},
+		{"CS_PROBE_TIMEOUT", "-1s", "CS_PROBE_TIMEOUT must be more than 0 (got -1s)"},
 	} {
 		t.Run(tc.key, func(t *testing.T) {
 			// Bounded, local and blind: should the value be accepted, run stops after 2 s and
