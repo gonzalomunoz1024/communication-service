@@ -16,14 +16,17 @@ public enum HealthStatus {
     UNKNOWN;
 
     /**
-     * Maps a status word, in any case; null/blank is UNKNOWN, unrecognised words are DEGRADED.
-     * The root README lists the words.
+     * Maps a status word, in any case; unrecognised words are DEGRADED. The word is trimmed of
+     * exactly what {@link String#trim()} removes, every character up to U+0020 and no other white
+     * space, as the sidecar trims it; null, or nothing left after trimming, is UNKNOWN. The root
+     * README lists the words.
      */
     public static HealthStatus fromCode(String code) {
-        if (code == null || code.isBlank()) {
+        String word = code == null ? "" : code.trim();
+        if (word.isEmpty()) {
             return UNKNOWN;
         }
-        return switch (code.trim().toUpperCase(Locale.ROOT)) {
+        return switch (word.toUpperCase(Locale.ROOT)) {
             case "UP", "OK", "PASS", "HEALTHY", "GREEN", "SERVING" -> UP;
             case "DOWN", "FAIL", "FAILED", "ERROR", "UNHEALTHY", "OUT_OF_SERVICE", "FATAL", "RED",
                     "NOT_SERVING" -> DOWN;

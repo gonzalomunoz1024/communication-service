@@ -3,6 +3,7 @@ package com.atlas.communication.health.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,6 +39,30 @@ class HealthStatusTest {
         SoftAssertions softly = new SoftAssertions();
         List.of("WARN", "WARNING", "DEGRADED", "PARTIAL", "YELLOW")
                 .forEach(word -> expectEverySpelling(softly, word, HealthStatus.DEGRADED));
+        softly.assertAll();
+    }
+
+    @Test
+    void aStatusIsTrimmedOfExactlyTheCharactersUpToUPlus0020LikeTheSidecar() {
+        // the sidecar's probe tests (sidecar/internal/probe) run the same inputs: String.trim()
+        // removes every character up to U+0020, control characters included, and no other white
+        // space; a status that is nothing but those characters is no status
+        Map<String, HealthStatus> table = new LinkedHashMap<>();
+        table.put("pass ", HealthStatus.UP);
+        table.put("\tpass", HealthStatus.UP);
+        table.put("pass\u0001", HealthStatus.UP);
+        table.put("pass\u00a0", HealthStatus.DEGRADED);
+        table.put("pass\u2003", HealthStatus.DEGRADED);
+        table.put(" ", HealthStatus.UNKNOWN);
+        table.put("\t", HealthStatus.UNKNOWN);
+        table.put("\u0001", HealthStatus.UNKNOWN);
+        table.put("\u00a0", HealthStatus.DEGRADED);
+        table.put("\u2003", HealthStatus.DEGRADED);
+
+        SoftAssertions softly = new SoftAssertions();
+        table.forEach((word, expected) -> softly.assertThat(HealthStatus.fromCode(word))
+                .as("%s", word.chars().mapToObj(c -> String.format("U+%04X", c)).toList())
+                .isEqualTo(expected));
         softly.assertAll();
     }
 

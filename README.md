@@ -342,6 +342,9 @@ with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attac
   `UP`, `OK`, `PASS`, `HEALTHY`, `GREEN`, `SERVING` → UP;
   `DOWN`, `FAIL`, `FAILED`, `ERROR`, `UNHEALTHY`, `OUT_OF_SERVICE`, `FATAL`, `RED`, `NOT_SERVING` → DOWN;
   `UNKNOWN` or no status carries no information; any other word (`WARN`, `DEGRADED`, …) → DEGRADED.
+  A word is trimmed of the characters up to U+0020 (spaces, tabs, control characters) and of no
+  other white space, on both sides alike (`"pass\u00a0"` is an unknown word); a status that is
+  nothing but such characters is no status.
   A document that is `UP` overall but has a component that is DOWN or DEGRADED is treated as
   DEGRADED. Nested components (composite indicators, legacy `details` nesting) are flattened to
   dotted names (`db.primary`); a pushed Boot 2.0/2.1-style document whose components sit under a
