@@ -220,7 +220,7 @@ class HealthMonitorUseCaseTest {
         HealthMonitor stale = probedMonitor(0);
         HealthMonitor fresh = probedMonitor(1); // what the scheduler saved in the meantime
         HealthMonitor recorded = probedMonitor(2);
-        when(monitors.findById("m3")).thenReturn(Mono.just(stale), Mono.just(fresh));
+        when(monitors.findById("m3")).thenReturn(Mono.just(stale)).thenReturn(Mono.just(fresh));
         when(observation.probe(stale, NOW)).thenReturn(Mono.error(modifiedConcurrently()));
         when(observation.probe(fresh, NOW)).thenReturn(Mono.just(recorded));
 
