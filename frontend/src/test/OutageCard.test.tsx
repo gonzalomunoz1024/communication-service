@@ -123,6 +123,34 @@ describe('OutageCard', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Resolve' }))
   })
 
+  it('cancels the confirmation on Escape as Cancel does, with focus back on the action, but not while the call runs', async () => {
+    const user = userEvent.setup()
+    let finish: () => void = () => {}
+    const onRetire = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)))
+    render(<OutageCard item={item} onRetire={onRetire} actor="web-oncall" />)
+    screen.getByRole('button', { name: 'Resolve' }).focus()
+    await user.keyboard('{Enter}fixed{Escape}')
+    // like Cancel: the confirmation closes and focus returns to the button that opened it
+    expect(screen.queryByRole('group')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Resolve' }))
+    expect(onRetire).not.toHaveBeenCalled()
+
+    // from the confirmation's buttons as well
+    await user.keyboard('{Enter}{Tab}{Escape}')
+    expect(screen.queryByRole('group')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Resolve' }))
+
+    // while the resolve runs Cancel is disabled, and Escape leaves the confirmation open too
+    await user.keyboard('{Enter}')
+    const group = screen.getByRole('group')
+    await user.click(within(group).getByRole('button', { name: 'Resolve' }))
+    expect(onRetire).toHaveBeenCalledTimes(1)
+    within(group).getByPlaceholderText('Resolution note (optional)').focus()
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('group')).toBe(group)
+    await act(async () => finish())
+  })
+
   it('does the same for Withdraw, and gives focus back to the confirming button when the service refuses', async () => {
     const user = userEvent.setup()
     const scheduled: FeedItem = { ...item, status: 'SCHEDULED', type: 'MAINTENANCE', startsAt: new Date(Date.now() + 3_600_000).toISOString() }

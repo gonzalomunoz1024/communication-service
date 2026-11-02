@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useId, useState, type KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { Button, Icon, Input, StateTag, Tag, cx, longDate, relativeTime } from '../ui'
 import { SEVERITY_TONE, isAutomaticReference, titleCase } from './display'
@@ -39,6 +39,13 @@ export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
   const confirm = (open: boolean) => {
     flushSync(() => setConfirming(open))
     document.getElementById(`${id}-${open ? 'note' : 'action'}`)?.focus()
+  }
+  // Escape backs out of the confirmation as Cancel does, and like Cancel not while the call runs
+  const onConfirmationKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Escape' || busy) return
+    e.preventDefault()
+    e.stopPropagation()
+    confirm(false)
   }
 
   const retire = async () => {
@@ -123,7 +130,7 @@ export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
         </div>
 
         {confirming && (
-          <div role="group" aria-labelledby={`${id}-question`} className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
+          <div role="group" aria-labelledby={`${id}-question`} onKeyDown={onConfirmationKey} className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
             <p id={`${id}-question`} className="text-caption text-secondary">
               {active
                 ? `Resolve${actor ? ` as ${actor}` : ''}? It leaves tenant ${item.tenantId}'s feed at once and cannot be reopened.`
