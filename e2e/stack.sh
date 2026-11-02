@@ -6,7 +6,11 @@
 #   ./stack.sh down                    remove the containers, the network and the volumes
 #   ./stack.sh restart-backend         restart the backend container and wait for its readiness probe
 #   ./stack.sh app-set <status> <db>   flip the fake app's health: app-set DOWN DOWN, app-set UP UP
-#   ./stack.sh logs                    every container's log (what CI prints when the suite fails)
+#   ./stack.sh stop-mongo              stop the database; the backend keeps running
+#   ./stack.sh start-mongo             start the database again and wait until the backend is ready again
+#   ./stack.sh stop-sidecar            SIGTERM the sidecar (a pod deletion); print its exit code and what it logged
+#   ./stack.sh start-sidecar           start the sidecar again and wait until it has reported
+#   ./stack.sh logs [service...]       the containers' logs, every container's by default (what CI prints on failure)
 #
 # Needs docker compose v2, curl, git and node. GO_IMAGE / BASE_IMAGE in the environment override the images
 # the sidecar is built from (docker-compose.yml); VERSION / REVISION label it (default: git describe --tags
@@ -22,7 +26,7 @@ TIMEOUT=${E2E_WAIT_SECONDS:-150}
 compose() { docker compose -f docker-compose.yml "$@"; }
 log() { printf '%s stack: %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 fail() { log "$*" >&2; exit 1; }
-usage() { sed -n '2,10p' "$0" >&2; exit 2; }
+usage() { sed -n '2,14p' "$0" >&2; exit 2; }
 
 # wait_for <what> <command...>: polls once a second until the command succeeds, for at most TIMEOUT seconds
 wait_for() {
@@ -87,12 +91,34 @@ app_set() {
   curl -fsS -X POST "$APP/__set?status=$1&db=$2"
 }
 
+start_mongo() {
+  compose start mongo
+  wait_for "the backend is ready again" backend_ready
+}
+
+stop_sidecar() {
+  local since
+  since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  compose stop -t 15 sidecar
+  log "the sidecar exited with code $(docker inspect -f '{{.State.ExitCode}}' e2e-sidecar)"
+  compose logs --no-color --since "$since" sidecar
+}
+
+start_sidecar() {
+  compose start sidecar
+  wait_for "the sidecar has reported" sidecar_reported
+}
+
 case "${1:-}" in
   build) build ;;
   up) up ;;
   down) compose down -v --remove-orphans ;;
   restart-backend) restart_backend ;;
   app-set) shift; app_set "$@" ;;
-  logs) compose logs --no-color --timestamps ;;
+  stop-mongo) compose stop mongo ;;
+  start-mongo) start_mongo ;;
+  stop-sidecar) stop_sidecar ;;
+  start-sidecar) start_sidecar ;;
+  logs) shift; compose logs --no-color --timestamps "$@" ;;
   *) usage ;;
 esac

@@ -64,3 +64,65 @@ export async function expectNotReloaded(page: Page): Promise<void> {
 export function card(page: Page, title: string) {
   return page.locator('article', { hasText: title })
 }
+
+/** A health monitor as GET /v1/health/monitors returns it (the fields the suite reads; absent ones are null). */
+export interface Monitor {
+  id: string
+  tenantId: string
+  service: string
+  url?: string
+  policy: {
+    publisher: string
+    intervalSeconds: number
+    failureThreshold: number
+    recoveryThreshold: number
+    downSeverity: string
+    degradedSeverity: string
+  }
+  state: {
+    lastStatus: string
+    unhealthyStreak: number
+    healthyStreak: number
+    openCommunicationId?: string
+    openStatus?: string
+  }
+}
+
+/** One pod's record under a monitor (GET /v1/health/monitors/{id}/instances). */
+export interface Instance {
+  instanceId: string
+  status: string
+  left: boolean
+  message?: string
+}
+
+/** A tenant's monitor for a service, read now. */
+export async function monitorOf(request: APIRequestContext, service: string, tenant = TENANT): Promise<Monitor> {
+  const res = await request.get(`${BACKEND}/v1/health/monitors?tenantId=${tenant}`, { headers })
+  expect(res.status(), await res.text()).toBe(200)
+  const monitor = ((await res.json()) as Monitor[]).find((m) => m.service === service)
+  expect(monitor, `monitor ${tenant}/${service}`).toBeDefined()
+  return monitor!
+}
+
+/** One pod's record under a monitor, read now; undefined until the pod has reported. */
+export async function podOf(request: APIRequestContext, monitorId: string, instanceId: string): Promise<Instance | undefined> {
+  const res = await request.get(`${BACKEND}/v1/health/monitors/${monitorId}/instances`, { headers })
+  expect(res.status(), await res.text()).toBe(200)
+  return ((await res.json()) as Instance[]).find((i) => i.instanceId === instanceId)
+}
+
+/**
+ * Reads every 250 ms until `done` holds and returns that reading, so a test can assert on the very
+ * state that met the condition (expect.poll only says that one did); fails after `timeoutMs`.
+ */
+export async function until<T>(what: string, read: () => Promise<T>, done: (value: T) => boolean, timeoutMs = 20_000): Promise<T> {
+  const deadline = Date.now() + timeoutMs
+  let last: T | undefined
+  while (Date.now() < deadline) {
+    last = await read()
+    if (done(last)) return last
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  throw new Error(`gave up after ${timeoutMs / 1000} s waiting until ${what}; last reading: ${JSON.stringify(last)}`)
+}

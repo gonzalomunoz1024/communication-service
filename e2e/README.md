@@ -27,7 +27,7 @@ cd e2e
 npm ci                                       # @playwright/test 1.63.0, pinned
 npx playwright install chromium              # once per machine, unless a matching Chromium is installed already
 ./stack.sh up                                # builds the images, starts the stack, waits until the pod reports UP
-npx playwright test                          # about a minute
+npx playwright test                          # under two minutes
 ./stack.sh down                              # removes containers, network and volumes
 ```
 
@@ -66,9 +66,26 @@ GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./s
 | `tests/02-f90-publish-live-resolve.spec.ts` | F-90 | a person sets the tenant in the header, publishes an outage through the form (the UI sends `X-Client-Id: communication-frontend`, gets 201); a second tab that was already on the feed shows the card **over the stream**: it was not reloaded (a window marker survives) and did not fetch `/v1/feed` again; "View in feed" lands on the card; Resolve with a note sends the retire, the card leaves both tabs (the second one through the `retired` frame), the resolution is announced in a live region, `GET /v1/feed` no longer lists it and the permalink says RETIRED |
 | `tests/03-f91-sidecar-auto-notice.spec.ts` | F-91 | the pod was auto-registered (push-only monitor, publisher `health-sidecar`); `stack.sh app-set DOWN DOWN` turns into an OUTAGE card ("fakeapp is down", MAJOR, service tag, publisher, the pod named in the body) in the open feed within 15 s, with the instance record DOWN; `app-set UP UP` retires it and the card leaves within 15 s; the monitor is UP again with nothing open and `/instances` lists `fakeapp-0` |
 | `tests/04-f92-backend-restart.spec.ts` | F-92, F-61, F-20 | with the feed open, `stack.sh restart-backend` makes the badge say *Reconnecting*; a reopen request carries `?lastEventId=<last seq>`; the test holds the page's next reopen until a notice published over HTTP once the backend is ready has been fanned out (a stream the test reads itself received it live), so the page can only get it from the replay of the event log: one `created` frame, numbered after that seq, on the stream resumed with `?lastEventId=`, which sends no snapshot frame (the test reads the page's frames over the DevTools protocol and waits up to 10 s for that one), with at most one `GET /v1/feed` (the page's own reload after a reconnect, which by itself would also show the card); the page heals itself back to *Live* without a reload, and the notice from before the restart is still there |
+| `tests/05-f76-sidecar-sigterm.spec.ts` | F-76, F-48, F-91 | `stack.sh stop-sidecar` sends the sidecar SIGTERM, as the kubelet does on a pod deletion: it logs `leaving report sent` and exits 0; the backend keeps pod `fakeapp-0` under monitor `e2e/fakeapp` marked `left: true` with the message `instance shutting down`, and opens no notice, since a service whose pods all left cleanly was scaled down, not broken; `stack.sh start-sidecar` starts a new process and the pod is UP and no longer left |
+| `tests/06-f39-pull-monitor.spec.ts` | F-31, F-37, F-39, F-40, F-41 | a pull monitor registered over HTTP (tenant `e2e-pull`, `url` the fake app's `/actuator/health` on the compose network, `intervalSeconds: 5`, thresholds 2 and 2) answers 201 with its `Location` and the default policy (publisher `health-monitor`, MAJOR / MINOR); the backend's scheduler probes it: `app-set UP DOWN` reads as DEGRADED (status UP, `db` DOWN), one probe publishes nothing, the second opens a HEALTH notice (MINOR, "… is degraded", the `db` component in the body, `externalRef` `health:<monitorId>:1`); `app-set DOWN DOWN` restarts the streak, the HEALTH notice stands after one DOWN probe and the second puts an OUTAGE (MAJOR, "… is down", `health:<monitorId>:2`) in its place and retires it; `app-set UP UP`: one UP probe keeps the OUTAGE, the second retires it. The monitor is deleted (204) at the end, and the test waits until the sidecar's own monitor, which saw the same flips, has nothing open |
+| `tests/07-f92-database-down.spec.ts` | F-92, F-57 | with a page on the feed, `stack.sh stop-mongo`: `GET /v1/feed` answers 503 `{"error":"database unavailable"}` within 8 s (the service's 5 s database timeout); a page opened meanwhile shows *Couldn't load the feed* with that reason and *Try again*; the page that was open keeps its cards, says *Live* and neither reopened its stream nor fetched the list; `stack.sh start-mongo`, with nobody restarting or clicking anything: the late page shows the feed by itself, and the open page's stream, open all along, carries the next notice without a reload |
 
-The flows run one at a time, in file order (`workers: 1`), because they share one stack and the last
-one restarts its backend. Every title carries its matrix id, so the HTML report reads like the matrix.
+The flows run one at a time, in file order (`workers: 1`), because they share one stack and change
+it on purpose: 03 and 06 flip the fake app's health (the sidecar watches it in both), 04 restarts the
+backend, 05 stops the sidecar and 07 the database; each puts it back before it ends, also when it
+fails. Every title carries its matrix id, so the HTML report reads like the matrix.
+
+Timings here, over three runs of the whole suite after the last change (1.7 to 1.8 minutes each; the
+budget is 3):
+
+| Test | Took | Where the time goes |
+| --- | --- | --- |
+| 01, 02 | under 6 s | |
+| 03 | 11 to 14 s | the sidecar cadence (below): the card 5 to 6.5 s after `app-set DOWN DOWN`, gone about 6 s after `app-set UP UP`; 15 s allowed for each |
+| 04 | 22 to 27 s | the backend restart, 19 to 23 s; then the publish, the test's own stream seeing it fanned out (the fan-out polls every 500 ms) and the held reopen let in: the card 2 to 3 s after the backend is ready |
+| 05 | 2 s | the sidecar exits 0.6 to 0.8 s after SIGTERM; the backend marks the pod left at once |
+| 06 | 34 to 36 s | three flips, each confirmed by a second probe 5 s after the first: the HEALTH notice, the OUTAGE and the retirement each come about 10 s after their flip; 20 s allowed for each |
+| 07 | about 25 s | the 503 waits for the 5 s database timeout, and so does the late page's own list request (its error state shows 10.5 to 11 s into the outage); the backend is ready again about 20 s after the database stopped (13 s in earlier runs), and both pages have recovered 1.5 to 2 s later |
 
 ## The stack
 
@@ -96,7 +113,11 @@ reverse proxy would end it, which is what F-92 depends on.
 | `down` | `docker compose down -v --remove-orphans` |
 | `restart-backend` | `docker compose restart backend`, then waits for readiness again; the tests run it in the background so they can watch the page meanwhile |
 | `app-set <status> <db>` | `POST /__set` on the fake app |
-| `logs` | all container logs with timestamps |
+| `stop-mongo` | `docker compose stop mongo`; the backend keeps running and answers 503 until the database is back |
+| `start-mongo` | `docker compose start mongo`, then waits for the backend's readiness probe |
+| `stop-sidecar` | `docker compose stop -t 15 sidecar`: SIGTERM, as on a pod deletion (SIGKILL after 15 s); then prints the sidecar's exit code and what it logged meanwhile |
+| `start-sidecar` | `docker compose start sidecar` (back in the app's network namespace), then waits until it has sent a report |
+| `logs [service...]` | the named containers' logs, all of them by default, with timestamps |
 
 Every wait gives up after `E2E_WAIT_SECONDS` (default 150) and prints `docker compose ps`.
 
@@ -119,7 +140,7 @@ Every wait gives up after `E2E_WAIT_SECONDS` (default 150) and prints `docker co
 - **Mongo healthcheck** every 2 s: the backend only starts once Mongo answers `ping`, so its readiness
   probe is UP as soon as the JVM is (about 12 s here).
 - **Playwright** `workers: 1`, `retries: 0` (a flaky end-to-end test is a finding, not noise),
-  `timeout: 120 s` per test (F-92 waits for a backend restart, 17 to 28 s here, plus at most one
+  `timeout: 120 s` per test (F-92 waits for a backend restart, 13 to 28 s here, plus at most one
   10 s reopen backoff), `trace: retain-on-failure`, `screenshot: only-on-failure`, reporters `list`
   and `html` (never opened by itself). The suite identifies itself to the API as `X-Client-Id:
   e2e-suite`; the browser as `communication-frontend`, which F-90 checks.

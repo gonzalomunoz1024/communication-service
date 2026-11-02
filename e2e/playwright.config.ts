@@ -9,7 +9,7 @@ const BACKEND = 'http://127.0.0.1:28080'
 
 export default defineConfig({
   testDir: './tests',
-  // one stack, one browser at a time: the files run in name order and F-92 restarts the backend
+  // one stack, one browser at a time: the files run in name order, and some restart or stop parts of the stack
   fullyParallel: false,
   workers: 1,
   retries: 0,
