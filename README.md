@@ -183,7 +183,9 @@ with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attac
 - Status vocabulary is Spring Actuator's: `UP`; `DOWN` / `OUT_OF_SERVICE` / `FATAL` → DOWN;
   `UNKNOWN` carries no information; anything else (`WARN`, `DEGRADED`, …) → DEGRADED. A document
   that is `UP` overall but has a `DOWN` component is treated as DEGRADED. Nested components
-  (composite indicators, legacy `details` nesting) are flattened to dotted names (`db.primary`).
+  (composite indicators, legacy `details` nesting) are flattened to dotted names (`db.primary`);
+  a pushed Boot 2.0/2.1-style document whose components sit under a top-level `details` map is
+  read the same way as one with `components`.
 - Probes read `/actuator/health`-style JSON when there is one (any version), otherwise judge by
   HTTP status (2xx up). Connection errors and timeouts are DOWN.
 - Debounced: `failureThreshold` consecutive observations of the same unhealthy status open a

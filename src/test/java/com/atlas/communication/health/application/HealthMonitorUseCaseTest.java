@@ -109,7 +109,7 @@ class HealthMonitorUseCaseTest {
         when(observation.observe(any(), any(), eq(NOW))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
         HealthReportCommand cmd = new HealthReportCommand("vmforge", "billing", "DOWN",
-                Map.of("redis", new ActuatorComponent("DOWN", null, null)), "cache lost", null, "billing-svc", null);
+                Map.of("redis", new ActuatorComponent("DOWN", null, null)), null, "cache lost", null, "billing-svc", null);
         StepVerifier.create(useCase.report(cmd))
                 .assertNext(m -> {
                     assertThat(m.pushOnly()).isTrue();
@@ -135,7 +135,7 @@ class HealthMonitorUseCaseTest {
 
         Instant observedAt = NOW.minusSeconds(5);
         StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
-                        null, null, observedAt, null, null)))
+                        null, null, null, observedAt, null, null)))
                 .expectNext(monitor)
                 .verifyComplete();
         verify(monitors, never()).save(any());
@@ -154,7 +154,7 @@ class HealthMonitorUseCaseTest {
         when(observation.observe(eq(winner), any(), eq(NOW))).thenReturn(Mono.just(winner));
 
         StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "DOWN",
-                        null, null, null, null, null)))
+                        null, null, null, null, null, null)))
                 .expectNext(winner)
                 .verifyComplete();
     }
@@ -212,7 +212,7 @@ class HealthMonitorUseCaseTest {
     // --- reports that name their instance (the health sidecar) ---
 
     private static HealthReportCommand podReport(String pod, String status, boolean leaving) {
-        return new HealthReportCommand("vmforge", "billing", status, null, null, null, "health-sidecar",
+        return new HealthReportCommand("vmforge", "billing", status, null, null, null, null, "health-sidecar",
                 new ReportInstance(pod, "retail-billing", "worker-1", "ocp-east", "1.4.2", "1.0.0", leaving));
     }
 
@@ -307,7 +307,7 @@ class HealthMonitorUseCaseTest {
                 Mono.just(monitor));
 
         StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
-                        null, null, null, null, null)))
+                        null, null, null, null, null, null)))
                 .expectNext(monitor)
                 .verifyComplete();
         verify(monitors, times(2)).findByTenantAndService("vmforge", "billing");
@@ -322,7 +322,7 @@ class HealthMonitorUseCaseTest {
 
         // virtual time: the pauses between attempts add up to seconds of real time otherwise
         StepVerifier.withVirtualTime(() -> useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
-                        null, null, null, null, null)))
+                        null, null, null, null, null, null)))
                 .expectSubscription()
                 .thenAwait(Duration.ofMinutes(1))
                 .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
@@ -342,7 +342,7 @@ class HealthMonitorUseCaseTest {
                 conflict, conflict, conflict, conflict, Mono.just(monitor));
 
         StepVerifier.withVirtualTime(() -> useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
-                        null, null, null, null, null)))
+                        null, null, null, null, null, null)))
                 .expectSubscription()
                 // the first retry is not immediate: a herd of pods must spread out
                 .expectNoEvent(Duration.ofMillis(5))

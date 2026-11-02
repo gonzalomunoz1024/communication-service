@@ -76,6 +76,31 @@ class HealthReportTest {
     }
 
     @Test
+    void pushedLegacyDocumentNestsComponentsUnderDetails() {
+        Map<String, Object> details = Map.of(
+                "db", Map.of("status", "DOWN", "details", Map.of("error", "Connection refused")),
+                "ping", Map.of("status", "UP"),
+                "hello", "world");
+        HealthReportCommand legacy = new HealthReportCommand("vmforge", "vm-api", "DOWN", null, details,
+                null, null, null, null);
+        HealthReport report = legacy.toReport(NOW);
+        assertThat(report.components()).extracting(ComponentHealth::name).containsExactlyInAnyOrder("db", "ping");
+        assertThat(report.failing()).extracting(ComponentHealth::name).containsExactly("db");
+        assertThat(report.signature()).isEqualTo("DOWN[db=DOWN]");
+    }
+
+    @Test
+    void pushedComponentsWinOverALegacyDetailsMap() {
+        HealthReportCommand both = new HealthReportCommand("vmforge", "vm-api", "DOWN",
+                Map.of("redis", new ActuatorComponent("DOWN", null, null)),
+                Map.of("db", Map.of("status", "DOWN")), null, null, null, null);
+        assertThat(both.toReport(NOW).failing()).extracting(ComponentHealth::name).containsExactly("redis");
+        HealthReportCommand neither = new HealthReportCommand("vmforge", "vm-api", "UP", null, null,
+                null, null, null, null);
+        assertThat(neither.toReport(NOW).components()).isEmpty();
+    }
+
+    @Test
     void upWithFailingComponentsIsDegraded() {
         HealthReport report = HealthReport.fromActuator("UP",
                 Map.of("cache", new ActuatorComponent("DOWN", null, null)), null,

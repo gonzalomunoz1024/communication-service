@@ -133,6 +133,33 @@ class RestControllerHealthAdapterTest {
     }
 
     @Test
+    void reportAcceptsALegacyDocumentThatNestsComponentsUnderDetails() {
+        when(useCase.report(any())).thenReturn(Mono.just(monitor()));
+
+        // Spring Boot 2.0/2.1 wrote components under a top-level "details" map
+        String legacyJson = """
+                {"tenantId":"vmforge","service":"vm-api","status":"DOWN",
+                 "details":{"db":{"status":"DOWN","details":{"error":"Connection refused"}},
+                            "ping":{"status":"UP"},
+                            "hello":"world"}}
+                """;
+        client.post().uri("/v1/health/reports")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(legacyJson)
+                .exchange()
+                .expectStatus().isAccepted();
+
+        ArgumentCaptor<HealthReportCommand> cmd = ArgumentCaptor.forClass(HealthReportCommand.class);
+        verify(useCase).report(cmd.capture());
+        assertThat(cmd.getValue().toReport(NOW).components()).hasSize(2);
+        assertThat(cmd.getValue().toReport(NOW).failing()).singleElement().satisfies(db -> {
+            assertThat(db.name()).isEqualTo("db");
+            assertThat(db.detail()).isEqualTo("error=Connection refused");
+        });
+        assertThat(cmd.getValue().toReport(NOW).summary()).isEqualTo("DOWN: db DOWN");
+    }
+
+    @Test
     void reportRequiresAStatus() {
         client.post().uri("/v1/health/reports")
                 .contentType(MediaType.APPLICATION_JSON)
