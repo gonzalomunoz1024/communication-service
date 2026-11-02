@@ -3,6 +3,7 @@ package com.atlas.communication.publishing.application;
 import java.time.Clock;
 import java.time.Instant;
 
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +36,14 @@ public class StatusSweepUseCase {
 
     @Scheduled(fixedDelayString = "${communication.sweep.interval-ms}")
     public void sweepScheduled() {
-        sweep(clock.instant()).block();
+        try {
+            sweep(clock.instant()).block();
+        } catch (DataAccessResourceFailureException ex) {
+            // Mongo is unreachable: one line per skipped run, and the next tick tries again. Left
+            // to escape, Spring's scheduler would log an ERROR with the stack trace every run.
+            log.warn("status sweep skipped: database unavailable: {}", ex.getMessage());
+            log.debug("status sweep skipped", ex);
+        }
     }
 
     /** Runs one sweep pass; returns the number of transitions applied. */

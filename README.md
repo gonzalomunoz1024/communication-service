@@ -95,6 +95,19 @@ Only the health endpoint is exposed, and it sits outside `/v1`, so probes need n
 
 Nothing else under `/actuator` is served (404).
 
+**When Mongo is down.** The service needs its database to start (it creates its indexes first;
+when Mongo cannot be reached it gives up after `communication.mongo.server-selection-timeout`,
+5 s, exits, and the pod is restarted until it can). Once running it survives losing the database: every call
+that needs it answers `503 {"error":"database unavailable"}` within that timeout, readiness reports
+`DOWN` in the same time so the pod leaves the Service while liveness stays `UP`, open SSE streams
+stay up on keepalives, and each scheduler logs one WARN line per skipped run
+(`health sweep skipped: database unavailable: …`, `status sweep skipped: …`) without a stack trace.
+The driver's detail, which names the cluster's addresses, appears in the log only (one WARN line
+per answered call, the stack trace at DEBUG). Calls succeed again within one server selection of
+Mongo coming back. The waits are `communication.mongo.server-selection-timeout` (5 s),
+`connect-timeout` (5 s) and `read-timeout` (15 s per socket read); they win over the same options
+given on the URI.
+
 ## Core semantics
 
 - **Lifecycle**: `DRAFT → (publish) → SCHEDULED/ACTIVE → EXPIRED` (by time) or `RETIRED`

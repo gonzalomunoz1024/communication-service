@@ -3,16 +3,21 @@ package com.atlas.communication;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.HealthEndpointGroup;
 import org.springframework.boot.actuate.health.HealthEndpointGroups;
 import org.springframework.boot.actuate.health.ReactiveHealthContributorRegistry;
 import org.springframework.boot.actuate.health.ReactiveHealthIndicator;
 import org.springframework.boot.actuate.health.Status;
+import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
+import com.mongodb.MongoClientSettings;
 
 /**
  * The operational surface a cluster relies on: liveness and readiness probes answer without a
@@ -32,6 +37,8 @@ class OperationsEndpointsIT {
     private HealthEndpointGroups groups;
     @Autowired
     private ReactiveHealthContributorRegistry contributors;
+    @Autowired
+    private ObjectProvider<MongoClientSettingsBuilderCustomizer> clientCustomizers;
 
     @Test
     void readinessIsUpWhenMongoAnswers() {
@@ -71,6 +78,23 @@ class OperationsEndpointsIT {
         ReactiveHealthIndicator mongo = (ReactiveHealthIndicator) contributors.getContributor("mongo");
         assertThat(mongo).as("the reactive Mongo indicator is registered").isNotNull();
         assertThat(mongo.health().block(Duration.ofSeconds(10)).getStatus()).isEqualTo(Status.UP);
+    }
+
+    @Test
+    void theMongoClientGivesUpOnAnUnreachableDatabaseWithinSeconds() {
+        // the settings the reactive client is built with: Boot applies every customizer, in
+        // order, to a fresh builder (ReactiveMongoClientFactory); with the driver's own defaults
+        // readiness and every API call wait 30 s before answering while Mongo is unreachable
+        MongoClientSettings.Builder builder = MongoClientSettings.builder();
+        clientCustomizers.orderedStream().forEach(customizer -> customizer.customize(builder));
+        MongoClientSettings settings = builder.build();
+
+        assertThat(settings.getClusterSettings().getServerSelectionTimeout(TimeUnit.MILLISECONDS))
+                .as("server selection timeout").isEqualTo(5000);
+        assertThat(settings.getSocketSettings().getConnectTimeout(TimeUnit.MILLISECONDS))
+                .as("connect timeout").isEqualTo(5000);
+        assertThat(settings.getSocketSettings().getReadTimeout(TimeUnit.MILLISECONDS))
+                .as("socket read timeout").isEqualTo(15000);
     }
 
     @Test

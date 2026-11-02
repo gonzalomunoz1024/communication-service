@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -62,7 +63,14 @@ public class HealthSweepUseCase {
     @Scheduled(fixedDelayString = "${communication.health.sweep-interval-ms:5000}",
             initialDelayString = "${communication.health.sweep-interval-ms:5000}")
     public void sweepScheduled() {
-        sweep(clock.instant()).block();
+        try {
+            sweep(clock.instant()).block();
+        } catch (DataAccessResourceFailureException ex) {
+            // Mongo is unreachable: one line per skipped run, and the next tick tries again. Left
+            // to escape, Spring's scheduler would log an ERROR with the stack trace every run.
+            log.warn("health sweep skipped: database unavailable: {}", ex.getMessage());
+            log.debug("health sweep skipped", ex);
+        }
     }
 
     /** Runs one pass; returns the number of monitors evaluated. */

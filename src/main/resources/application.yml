@@ -41,6 +41,15 @@ communication:
     # every /v1 request must name its caller (repository name) in X-Client-Id, or ?clientId= for
     # EventSource clients; identification only, nothing is verified. Set false for local experiments.
     required: true
+  mongo:
+    # how long a call waits for the database before giving up: with the driver's own defaults (30 s
+    # to find a server, no socket timeouts) every request and the readiness probe hang that long
+    # while Mongo is unreachable. A call that gives up answers 503 {"error":"database unavailable"},
+    # readiness reports DOWN and each scheduler logs one WARN line per skipped run. These win over
+    # the same options given on the URI.
+    server-selection-timeout: PT5S
+    connect-timeout: PT5S
+    read-timeout: PT15S
   events:
     # shared event log (communication_events): every instance appends to it and tails it, so SSE
     # subscribers on any node see every event; a client reconnecting with Last-Event-ID gets what

@@ -11,9 +11,11 @@ import java.util.stream.Collectors;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.io.buffer.DataBufferLimitException;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
@@ -31,20 +33,46 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.mongodb.MongoSocketException;
+import com.mongodb.MongoTimeoutException;
 
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
  * Central error mapping: IllegalArgumentException -> 400, binding/input errors -> 400,
- * ResponseStatusException -> its status, everything else -> 500. Body is {"error": "..."}.
+ * ResponseStatusException -> its status, an unreachable database -> 503, everything else -> 500.
+ * Body is {"error": "..."}.
  * <p>
  * Input errors name the field and what was expected: an unknown enum value lists the accepted
  * ones, a bad timestamp says which field and the format, malformed JSON gives line and column, an
  * oversized body names the limit, an unknown path or verb says so instead of talking about
  * "static resources".
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /** What a caller is told while the database cannot be reached; the detail goes to the log. */
+    static final String DATABASE_UNAVAILABLE = "database unavailable";
+
+    /**
+     * The database cannot be reached (no server found within the selection timeout, connection
+     * refused or timed out): 503 with a plain sentence. Spring Data hands these over translated as
+     * {@link DataAccessResourceFailureException}; the driver's own forms are mapped too. The
+     * driver's message names the cluster's addresses, so it goes to the log, not to the caller.
+     */
+    @ExceptionHandler({DataAccessResourceFailureException.class, MongoTimeoutException.class,
+            MongoSocketException.class})
+    public Mono<ResponseEntity<Map<String, String>>> handleDatabaseUnavailable(RuntimeException ex,
+            ServerWebExchange exchange) {
+        ServerHttpRequest request = exchange.getRequest();
+        log.warn("{} {} -> 503, {}: {}", request.getMethod(), request.getPath().value(),
+                DATABASE_UNAVAILABLE, ex.getMessage());
+        log.debug(DATABASE_UNAVAILABLE, ex);
+        return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", DATABASE_UNAVAILABLE)));
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public Mono<ResponseEntity<Map<String, String>>> handleBadRequest(IllegalArgumentException ex) {

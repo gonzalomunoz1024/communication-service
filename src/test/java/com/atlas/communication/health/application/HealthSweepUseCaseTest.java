@@ -1,6 +1,8 @@
 package com.atlas.communication.health.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -19,7 +21,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 
+import com.atlas.communication.LogCapture;
 import com.atlas.communication.common.domain.Audience;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.health.domain.HealthInstance;
@@ -30,6 +34,8 @@ import com.atlas.communication.health.domain.HealthStatus;
 import com.atlas.communication.health.ports.outbound.HealthInstanceRepositoryPort;
 import com.atlas.communication.health.ports.outbound.HealthMonitorRepositoryPort;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -38,6 +44,10 @@ import reactor.test.StepVerifier;
 class HealthSweepUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-11-01T12:00:00Z");
+    /** What Spring Data hands the sweep once the driver gives up on an unreachable Mongo. */
+    private static final String DRIVER_TIMEOUT = "Timed out while waiting for a server that matches"
+            + " ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is"
+            + " {type=UNKNOWN, servers=[{address=localhost:27017, type=UNKNOWN, state=CONNECTING}]";
     private static final HealthProperties.Defaults DEFAULTS = new HealthProperties.Defaults(
             "health-monitor", 30, 5000, 2, 2, Severity.MAJOR, Severity.MINOR, Audience.CUSTOMERS, 50, 90);
     /** No startup grace, so the existing staleness tests see the sweep at work right away. */
@@ -130,6 +140,35 @@ class HealthSweepUseCaseTest {
     void emptySweepIsQuiet() {
         when(monitors.findAll(null)).thenReturn(Flux.empty());
         StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
+    }
+
+    // --- the database is unreachable ---
+
+    @Test
+    void aSweepThatCannotReachTheDatabaseLogsOneWarningWithoutAStackTraceAndCarriesOn() {
+        when(monitors.findAll(null)).thenReturn(Flux.error(new DataAccessResourceFailureException(DRIVER_TIMEOUT)));
+
+        try (LogCapture log = LogCapture.of(HealthSweepUseCase.class)) {
+            // the scheduled entry point: nothing escapes to Spring's scheduler (which would log
+            // ERROR with a stack trace on every run) and the next tick runs as usual
+            assertThatCode(() -> useCase.sweepScheduled()).doesNotThrowAnyException();
+
+            List<ILoggingEvent> warnings = log.atLeast(Level.WARN);
+            assertThat(warnings).hasSize(1);
+            assertThat(warnings.get(0).getLevel()).isEqualTo(Level.WARN);
+            assertThat(warnings.get(0).getFormattedMessage())
+                    .isEqualTo("health sweep skipped: database unavailable: " + DRIVER_TIMEOUT);
+            assertThat(warnings.get(0).getThrowableProxy()).as("stack trace stays at DEBUG").isNull();
+            assertThat(log.events()).filteredOn(e -> e.getLevel() == Level.DEBUG && e.getThrowableProxy() != null)
+                    .as("the stack trace is available at DEBUG").hasSize(1);
+        }
+    }
+
+    @Test
+    void aSweepFailingForAnotherReasonStillSurfaces() {
+        when(monitors.findAll(null)).thenReturn(Flux.error(new IllegalStateException("a bug")));
+        assertThatThrownBy(() -> useCase.sweepScheduled())
+                .isInstanceOf(IllegalStateException.class).hasMessage("a bug");
     }
 
     // --- staleness guards ---
