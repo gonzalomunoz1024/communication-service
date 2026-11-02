@@ -1,0 +1,408 @@
+CLAIM INVENTORY (iteration 1): {'backend': 100, 'frontend': 51, 'sidecar': 48, 'e2e': 56, 'usability': 62} total 317
+SAMPLE (seed 1, 20 % per report, ceil): {'backend': 20, 'frontend': 11, 'sidecar': 10, 'e2e': 12, 'usability': 13} total 66
+
+### backend (20 of 100)
+    1  cmd-1                                    `./gradlew --max-workers=2 --no-daemon clean compileJava compileTestJava`
+    4  cmd-4                                    `./gradlew … dependencies --configuration runtimeClasspath`
+    9  cmd-9                                    SpotBugs 4.9.3 `-effort:max -low` on `build/classes/java/main`, auxclasspath = the jar's `BOOT-INF/lib` (scrat
+   13  cmd-13                                   `check_a2_tenants.py` (tenant summary with the real field name)
+   16  cmd-16                                   `check_d_gaps.py` (42 checks re-verifying G-1-1/4/5/6/7/8/20/21/24 on :8080 and the private :18902)
+   18  cmd-18                                   README cookbook, every command verbatim except the port (private :18903); then 5 + 10 forced probes
+   27  cmd-27                                   log review of the shared backend (access log, level counts, WARN/ERROR)
+   33  feat:F-06                                PASS | A-06a–c; ev/25 C-13a; ev/22 D-20-b/d
+   49  feat:F-22                                PASS | ev/25 C-22a/b
+   50  feat:F-23                                PASS | A-23a/c/d; ev/20c (2/2)
+   56  feat:F-29                                PASS | A-29a–c; ev/24; IT `openApiSpecIsServed`, `OpenApiContractIT` (2)
+   58  feat:F-31                                PASS | ev/21 B-31a/c–f
+   61  feat:F-34                                PASS (note) | B-34a/b; ev/23b (15/15 → 200)
+   63  feat:F-36                                PASS | B-36a–d; D-24-a/b
+   64  feat:F-37                                PASS | B-37a–e, B-34a
+   73  feat:F-46                                PASS | B-46a–c; D-7-b
+   78  feat:F-51                                PASS | ev/10
+   84  feat:F-62 (BE side)                      PASS | A-06a–c
+   98  GAP-backend1-6                           minor (logs) | F-89
+   99  GAP-backend1-7                           minor (build) | builds & static
+
+### frontend (11 of 51)
+    2  cmd-2                                    `npm run lint` (frontend/)
+    7  cmd-9                                    `npm audit --omit=dev` (frontend/)
+   15  cmd-17                                   `node t6-xorigin.js` (static :3127 + shared)
+   18  cmd-20                                   `curl -N --max-time 17 /v1/feed/stream?tenantId=…` (shared :8080)
+   21  feat:F-02                                PASS | t2: draft → `Draft saved`, no View in feed; `GET /v1/feed` absent, permalink 404; `/publish` → 200 ACTI
+   29  feat:F-20                                PASS | t4: `GET /v1/feed/stream?lastEventId=9` on the restarted instance replays `created` 10 + `retired` 11, 
+   38  feat:F-59                                PASS | t3: `Choose a tenant`, 3 skeletons in `aria-busy`, error + Try again, **new empty-state copy for Outage
+   42  feat:F-63                                PASS | t3: rail/tags/chip/externalRef/body/services/times/publisher/`Updated`; Withdraw instead of Resolve bef
+   43  feat:F-64                                PASS | t6: cross-origin static build → CORS error state (documented limitation, preflight without ACAO); same-
+   45  feat:F-66                                PASS | static-checks: typecheck/lint/build 0; 78/78 × 3; coverage report; `test-files.txt`: 12 files incl. `Ap
+   47  GAP-frontend-2                           low (design note) | F-61, F-20
+
+### sidecar (10 of 48)
+    1  cmd-1                                    `cd sidecar && gofmt -l . && go vet ./... && go build ./...`
+    2  cmd-2                                    `go test -count=1 ./...` ×3 (one with `-race`), `go test -v` for the names; once more with kustomize/kubeconfo
+   14  cmd-14                                   `go run golang.org/x/vuln/cmd/govulncheck@latest ./...` and `@v1.1.4 ./...`; reachability of `proxy.golang.org
+   15  cmd-15                                   `git log/diff --stat 191a0c5..HEAD -- sidecar`, removed test lines, `git status`
+   25  feat:F-70                                PASS | `ev/10` STEP B0: Actuator document `DOWN` with `db DOWN` → report DOWN with components, notice body `Fa
+   28  feat:F-73                                PASS | `ev/12` CASE 1: one failed request with the default 2 s retry → stays UP, 1 report, 0 DOWN lines; CASE 
+   34  feat:F-79                                PASS | `ev/13`: no CA → `x509: certificate signed by unknown authority`, sent=0; `CS_CA_FILE` (read-only mount
+   35  feat:F-80                                PARTIAL | `ev/03`: builds from the repo Dockerfile with substituted bases, `User=1001`, `9465/tcp`, OCI title/
+   42  feat:F-87                                PASS | `ev/31`: three sidecars at 1 s probes / 2 s heartbeats for 7.7–11.3 min (309 / 209 / 209 reports): RSS 
+   44  feat:F-89                                PASS | `ev/10` STEP G: 14/14 lines JSON (`time, level, msg, …`): `health sidecar starting` (version/service/te
+
+### e2e (12 of 56)
+    2  cmd-2                                    `python3 -I http_checks.py` (107 HTTP/SSE contract checks against A and B)
+   15  cmd-15                                   `node pod_flows.js silent` (`docker pause e2e1-sidecar`, nothing else deleted)
+   19  cmd-19                                   `grep` of both backend A logs (startup, shutdown, valve, notices, access log, WARN/ERROR) and `docker logs e2e
+   23  feat:F-06                                PASS | http run1 F-06 ×5; iter1 F-06 ×2; ui run2 F-62
+   29  feat:F-18                                PASS | http run1 F-18 ×9; iter1 F-18 ×6
+   30  feat:F-20                                PASS | http run2 F-20 ×5; p92 run1/run2 F-20; probe
+   32  feat:F-36                                PASS | http run1 F-36 ×4
+   36  feat:F-50                                PASS | http run1 F-50 ×2
+   44  feat:F-70                                PASS | slow F-70
+   49  feat:F-88                                PASS | deadapp run2 9/9 (main pod); ordering run2 9/9 (pod 2)
+   50  feat:F-89                                PASS | p91 F-89, deadapp run2 F-89, ordering F-89; iter1 F-89 ×3; `backendA-log-excerpts.txt`
+   52  feat:F-91                                PASS | p91 19/19, deadapp run2, screenshots f91-*, f88-*
+
+### usability (13 of 62)
+    7  cmd-7                                    UX-16 from the user's seat: publish, Resolve, publish the same incident again, follow the banner's advice
+    8  cmd-8                                    Developer walk: README cookbook verbatim (`vmforge`), error walk (`ux1-api`), README paths vs OpenAPI
+   12  feat:F-54 publish form, hints, placehol  SRE | PASS; one hint over-promises (UX-10)
+   19  feat:F-63 cards, chips, relative times   SRE | PASS; capsule still CSS-capitalised (UX-12)
+   22  feat:F-01, F-10 cookbook publish + sche  developer | PASS on a fresh service; second run of the first example 409s (UX-21 residual)
+   27  feat:F-34 monitors list / probe / insta  developer, engineer | PASS: `monitor not-a-monitor not found`
+   36  UX-5                                     — (major) | RESOLVED | F-65 | Every text measured is ≥ 4.5:1. Light: hints/captions/"Updated just now" (tertia
+   41  UX-10                                    minor (minor) | OPEN | F-54, F-63 | The incident hint still says "Optional. The INC tracking this; consumers g
+   42  UX-11                                    — (minor) | RESOLVED | F-59 | "All clear — No outage is active for ux1-sre. A scheduled outage appears here wh
+   47  UX-16                                    major | NEW (introduced by the UX-9 fix) | F-57, F-09 | The banner's first instruction cannot work. `(tenantId
+   48  UX-17                                    minor | NEW | F-65 | After "Publish another", focus is dropped on `<body>` (the next Tab starts at the header 
+   54  UX-23                                    — (minor) | RESOLVED | F-29 | Swagger UI: the scheme is named `X-Client-Id` and the Authorize dialog explains 
+   59  UX-31                                    — (major) | RESOLVED | F-80, F-82 | New "Image" section: the placeholder is named as such, the platform team b
+
+
+FULL CLAIM LIST
+
+## backend
+    1  cmd-1                                    `./gradlew --max-workers=2 --no-daemon clean compileJava compileTestJava`
+    2  cmd-2                                    `./gradlew … test --rerun-tasks` ×3
+    3  cmd-3                                    `./gradlew … integrationTest --rerun-tasks` ×3 (seeded mongod 7.0.45, tests unchanged)
+    4  cmd-4                                    `./gradlew … dependencies --configuration runtimeClasspath`
+    5  cmd-5                                    `./gradlew … cyclonedxBom`
+    6  cmd-6                                    `./gradlew … bootJar`
+    7  cmd-7                                    `git diff origin/main..HEAD -- src/test`, `@Test` counts, skip-marker grep
+    8  cmd-8                                    SBOM scan attempts: `gh api /advisories` (403 repository-bound), `api.osv.dev`, `api.deps.dev`, `ossindex.sona
+    9  cmd-9                                    SpotBugs 4.9.3 `-effort:max -low` on `build/classes/java/main`, auxclasspath = the jar's `BOOT-INF/lib` (scrat
+   10  cmd-10                                   regression tests from `iter-1/fixes.md` looked up in the JUnit XML of runs 2–3
+   11  cmd-11                                   `docker exec mongo7 mongosh … getIndexes()` for the four collections + counters
+   12  cmd-12                                   `python3 -I runner.py check_a_publishing_feed_admin.py` (113 checks, shared :8080, tenants `be1-a-*`, `be1-fee
+   13  cmd-13                                   `check_a2_tenants.py` (tenant summary with the real field name)
+   14  cmd-14                                   `check_a23.py` (admin publisher filter with the iteration-1 publisher name)
+   15  cmd-15                                   `check_b_health.py` (80 checks, :8080 + stub Actuator on :18905)
+   16  cmd-16                                   `check_d_gaps.py` (42 checks re-verifying G-1-1/4/5/6/7/8/20/21/24 on :8080 and the private :18902)
+   17  cmd-17                                   `check_d2_valve.py` (G-1-6 scaled-to-zero scenario on a fresh database, private :18908, health sweep 1 s, stal
+   18  cmd-18                                   README cookbook, every command verbatim except the port (private :18903); then 5 + 10 forced probes
+   19  cmd-19                                   OpenAPI document and Swagger UI checks (`/v3/api-docs`, `/swagger-ui.html`)
+   20  cmd-20                                   `check_c_private.py` (two instances :18900/:18901 on db `be1-verify`, sweep 2 s, health sweep 1 s, stale grace
+   21  cmd-21                                   `check_c2_private.py` (private :18902, db `be1-verify-bv2`)
+   22  cmd-22                                   `check_c3_pods.py` (private :18903, fresh db `be1-verify-bv3`)
+   23  cmd-23                                   `GET /v1/health/monitors` on :18902 to explain C-44a
+   24  cmd-24                                   SIGTERM to a private instance (:18910) with two open `/v1/feed/stream` connections
+   25  cmd-25                                   readiness while its own Mongo container is stopped and after restart (:18911, `be1-mongo2`)
+   26  cmd-26                                   `GET /v1/feed`, `POST /v1/communications` and an already-open stream during a 60 s Mongo stop (:18912, `be1-mo
+   27  cmd-27                                   log review of the shared backend (access log, level counts, WARN/ERROR)
+   28  feat:F-01                                PASS | ev/20 A-01a–d; IT `publishFeedStreamRetireRoundTrip`
+   29  feat:F-02                                PASS | A-02a–e
+   30  feat:F-03                                PASS | A-03a/b
+   31  feat:F-04                                PASS | A-04a–c
+   32  feat:F-05                                PASS | A-05a–d; ev/22 D-20-c
+   33  feat:F-06                                PASS | A-06a–c; ev/25 C-13a; ev/22 D-20-b/d
+   34  feat:F-07                                PASS | ev/20 A-07 group (11); ev/22 D-21-a/b/h/i
+   35  feat:F-08                                PASS | A-08; IT `duplicateExternalRefWithinTenantIsConflict`
+   36  feat:F-09                                PASS | A-09a–h; IT `ticketContracts`
+   37  feat:F-10                                PASS | A-10, A-10b
+   38  feat:F-11                                PASS | A-11a–c; D-20-d
+   39  feat:F-12                                PASS | A-12; IT `staleVersionIsConflict`
+   40  feat:F-13                                PASS | A-13a–c, ev/25 C-13a/b, A-05d; D-20-a–c
+   41  feat:F-14                                PASS | A-14a–l (+a2); D-21-h
+   42  feat:F-15                                PASS | A-15a/b; D-20-a
+   43  feat:F-16                                PASS | A-16a/b
+   44  feat:F-17                                PASS | A-17a/b, ev/25 C-17, A-02c
+   45  feat:F-18                                PASS | A-18a–c/e; ev/22 D-4-s/D-4-p
+   46  feat:F-19                                PASS | A-19
+   47  feat:F-20                                PASS | A-20a–e; ev/22 D-1-a–e; ev/25 C-21d; IT `reconnectingWithLastEventIdReplaysWhatWasMissed` ×3
+   48  feat:F-21                                PASS | ev/25 C-21a–e
+   49  feat:F-22                                PASS | ev/25 C-22a/b
+   50  feat:F-23                                PASS | A-23a/c/d; ev/20c (2/2)
+   51  feat:F-24                                PASS | ev/20b (3/3)
+   52  feat:F-25                                PASS | A-25
+   53  feat:F-26                                PASS | A-26
+   54  feat:F-27                                PASS | A-27a–k; D-4-c; D-8-health/liveness/readiness; unit `ClientIdWebFilterTest` (+2); ev/30
+   55  feat:F-28                                PASS | A-28a–i; D-21-a–i
+   56  feat:F-29                                PASS | A-29a–c; ev/24; IT `openApiSpecIsServed`, `OpenApiContractIT` (2)
+   57  feat:F-30                                PASS (note) | D-8-health/liveness/readiness/h, D-8-xenv/xbean/xconf/xlogg; ev/27; IT `OperationsEndpointsIT` (
+   58  feat:F-31                                PASS | ev/21 B-31a/c–f
+   59  feat:F-32                                PASS | B-32 group (11)
+   60  feat:F-33                                PASS | B-33a–d
+   61  feat:F-34                                PASS (note) | B-34a/b; ev/23b (15/15 → 200)
+   62  feat:F-35                                PASS | B-35a/b
+   63  feat:F-36                                PASS | B-36a–d; D-24-a/b
+   64  feat:F-37                                PASS | B-37a–e, B-34a
+   65  feat:F-38                                PASS | B-38 group (9), B-38a/b; D-24-a/b
+   66  feat:F-39                                PASS | B-39a–d; D-5-a
+   67  feat:F-40                                PASS | B-40a/b; D-5-d
+   68  feat:F-41                                PASS (note) | B-41a–d; ev/22 D-5-b/c/d; IT `anOperatorRetiringTheAutoNoticeMakesTheMonitorCountAgain`
+   69  feat:F-42                                PASS | unit `openClaimsTheMonitorBeforePublishingAnOutage`, `lostClaimRacePublishesNothing`, `publishFailureRe
+   70  feat:F-43                                PASS | ev/25 C-43/C-43b; ev/25b C-43/C-43b
+   71  feat:F-44                                PASS | ev/25 C-44a/b; ev/22 D-6-a/b; ev/22b (`silent is down`); ev/25c C3-48a
+   72  feat:F-45                                PASS (note) | ev/25 C-45a/b; ev/22 D-6-d; ev/22b D-6-d; WARN/INFO lines in ev/25 addendum; unit `silenceIsNotT
+   73  feat:F-46                                PASS | B-46a–c; D-7-b
+   74  feat:F-47                                PASS | B-47a–h
+   75  feat:F-48                                PASS | ev/25c C3-48a–c; B-48a/b; ev/22b D-6-c/c2; ev/25 C-48b/c
+   76  feat:F-49                                PASS | B-49a, B-47h
+   77  feat:F-50                                PASS | B-50/B-50b; ev/22 D-7-a/c; IT `aFleetOfPodsReportingInTheSameInstantIsAccepted`
+   78  feat:F-51                                PASS | ev/10
+   79  feat:F-56 (BE side)                      PASS | A-01a
+   80  feat:F-57 (BE side)                      PASS | A-07 group, A-08, A-28; D-21
+   81  feat:F-58 (BE side)                      PASS | A-14a–l
+   82  feat:F-60 (BE side)                      PASS | A-18a–c, A-27e, D-4-c
+   83  feat:F-61 (BE side)                      PASS | A-20a; D-1-b
+   84  feat:F-62 (BE side)                      PASS | A-06a–c
+   85  feat:F-64 (BE side)                      PASS | A-27d/e
+   86  feat:F-70 (BE side)                      PASS | B-38 (WARN), B-38b
+   87  feat:F-72 (BE side)                      PASS | B-38 (UNKNOWN), B-47e
+   88  feat:F-74 (BE side)                      PASS | B-50; D-7-a/c
+   89  feat:F-75                                PASS | B-46a, B-75 group (3), B-36a
+   90  feat:F-76 (BE side)                      PASS | B-48a
+   91  feat:F-88 (BE side)                      PASS | ev/25c C3-48a, B-47e, D-6-a
+   92  feat:F-89 (BE side)                      PASS (note) | ev/30, ev/25, ev/28
+   93  GAP-backend1-1                           minor (ops) | F-30, F-14, F-01, F-28
+   94  GAP-backend1-2                           major (design; F-45 behaves as specified, needs a product decision) | F-44, F-45
+   95  GAP-backend1-3                           minor (semantics/doc) | F-41
+   96  GAP-backend1-4                           minor | F-34, F-43
+   97  GAP-backend1-5                           minor (build) | builds & static
+   98  GAP-backend1-6                           minor (logs) | F-89
+   99  GAP-backend1-7                           minor (build) | builds & static
+  100  GAP-backend1-8                           minor (process) | builds & static
+
+## frontend
+    1  cmd-1                                    `npm run typecheck` (frontend/)
+    2  cmd-2                                    `npm run lint` (frontend/)
+    3  cmd-3                                    `npm run build` (frontend/)
+    4  cmd-4–6                                  `npm test` × 3 (frontend/)
+    5  cmd-7                                    `npm run test:coverage` (frontend/)
+    6  cmd-8                                    `npm audit` (frontend/)
+    7  cmd-9                                    `npm audit --omit=dev` (frontend/)
+    8  cmd-10                                   `VITE_API_BASE=http://127.0.0.1:8080 npx vite build --outDir <scratch>/dist-xorigin` (frontend/)
+    9  cmd-11                                   `node t1-shell-theme-form.js` (shared :3000/:8080)
+   10  cmd-12                                   `node t2-publish-errors.js` (shared + dead-port :3110 + rp.js :3128)
+   11  cmd-13                                   `node t3-feed.js` (shared)
+   12  cmd-14                                   `node t4-reconnect-sigkill.js` (private :19150/:19151 behind Vite :3150)
+   13  cmd-15                                   `node t4b-replay-in-browser.js` (private :19150 behind rp.js :3129)
+   14  cmd-16                                   `node t5-a11y.js` (shared)
+   15  cmd-17                                   `node t6-xorigin.js` (static :3127 + shared)
+   16  cmd-18                                   `node t7-iter1-gaps.js` (shared)
+   17  cmd-19                                   `node t8-focus-after-resolve.js` (shared)
+   18  cmd-20                                   `curl -N --max-time 17 /v1/feed/stream?tenantId=…` (shared :8080)
+   19  cmd-21                                   `git diff 493be68..HEAD --stat -- frontend/src/test/`
+   20  feat:F-01                                PASS | t2: UI publish → 201 + `Location`, `ACTIVE`, audience `CUSTOMERS`; t3: `created` frame arrives live
+   21  feat:F-02                                PASS | t2: draft → `Draft saved`, no View in feed; `GET /v1/feed` absent, permalink 404; `/publish` → 200 ACTI
+   22  feat:F-06                                PASS | t3: Resolve → `POST /retire {actor, note}` 200, history `ACTIVE -> RETIRED: fixed by failover`; already
+   23  feat:F-07                                PASS | t2: forced OUTAGE@INFO → 400 shown with `The service rejected this.`; blank title + 25 services → 400 n
+   24  feat:F-09                                PASS | t2: `inc0012345` → `{servicenow, INC0012345}`, `externalRef` = number, chip; t3: ticket with url → `a[t
+   25  feat:F-14                                PASS | t3: query strings per filter, `size=500` → 100, `page=-1`/`size=0`/blank tenant → 400, paging math (`ha
+   26  feat:F-15                                PASS | t3: server feed excludes at `expiresAt`, permalink `EXPIRED`; **UI drops the card 149 ms after `expires
+   27  feat:F-16                                PASS | t3: GET side as before; **a future-dated OUTAGE published while the feed is open is not listed; MAINTEN
+   28  feat:F-18                                PASS | `sse-frames-keepalive.txt`: `:connected`, `id:`/`event:snapshot`/`created` lower-cased, `:keepalive` wi
+   29  feat:F-20                                PASS | t4: `GET /v1/feed/stream?lastEventId=9` on the restarted instance replays `created` 10 + `retired` 11, 
+   30  feat:F-27                                PASS | t6: `X-Client-Id: communication-frontend` on every fetch, `?clientId=` on the stream, all 200; t2: head
+   31  feat:F-52                                PASS | t1 (13 checks): title per tab, tenant persisted in `comm-tenant`, deep link `#/publish`, badge = Active
+   32  feat:F-53                                PASS | t1 (7): toggle persists `atlas-theme`, no flash (class set at `readyState=interactive`), follows OS in 
+   33  feat:F-54                                PASS | t1 (21): every field reaches the POST body (local → UTC, services split/deduped, ticket upper-cased, au
+   34  feat:F-55                                PASS | t1 (14): every rule inline with `role=alert` + `aria-invalid`, Timing opens on a timing error, nothing 
+   35  feat:F-56                                PASS | t2 (14): busy state, confirmation card per type, heading focused, Publish another/View in feed, publish
+   36  feat:F-57                                PASS | t2: 409 → `The service rejected this. A notice with the reference <ref> already exists for tenant <tena
+   37  feat:F-58                                PASS | t3: GET on load and on every filter change, stale response ignored, sections with counts, sort order, R
+   38  feat:F-59                                PASS | t3: `Choose a tenant`, 3 skeletons in `aria-busy`, error + Try again, **new empty-state copy for Outage
+   39  feat:F-60                                PASS | t3 (8): `created`/`updated`/`retired` applied without a GET; scheduled → Active now 132 ms after `start
+   40  feat:F-61                                PASS | t4: SIGKILL → `Reconnecting`, `Reconnecting (1)…(5)` with gaps 1 / 2 / 4 / 8 / 16 s; restart → `Live` b
+   41  feat:F-62                                PASS (one defect) | t3: inline confirm, note + actor in the audit, idempotent resolve, **announcement `Resolve
+   42  feat:F-63                                PASS | t3: rail/tags/chip/externalRef/body/services/times/publisher/`Updated`; Withdraw instead of Resolve bef
+   43  feat:F-64                                PASS | t6: cross-origin static build → CORS error state (documented limitation, preflight without ACAO); same-
+   44  feat:F-65                                PASS | t5: **axe wcag2a/2aa/21a/21aa: 0 violations in all six scans (feed, publish, publish-with-errors × ligh
+   45  feat:F-66                                PASS | static-checks: typecheck/lint/build 0; 78/78 × 3; coverage report; `test-files.txt`: 12 files incl. `Ap
+   46  GAP-frontend-1                           low | F-62, F-65
+   47  GAP-frontend-2                           low (design note) | F-61, F-20
+   48  GAP-frontend-3                           low (backend observation, FE tolerates it) | F-18, F-20
+   49  GAP-frontend-4                           cosmetic | F-63
+   50  GAP-frontend-5                           info | F-66
+   51  GAP-frontend-6                           info | F-66
+
+## sidecar
+    1  cmd-1                                    `cd sidecar && gofmt -l . && go vet ./... && go build ./...`
+    2  cmd-2                                    `go test -count=1 ./...` ×3 (one with `-race`), `go test -v` for the names; once more with kustomize/kubeconfo
+    3  cmd-3                                    `go test -count=1 -cover ./...`
+    4  cmd-4                                    `docker build -t health-sidecar:sc1 --build-arg GO_IMAGE=local/go-toolset:1.24 --build-arg BASE_IMAGE=gcr.io/d
+    5  cmd-5                                    host binary with 12 invalid environments; valid pinned-port run + `/status` + SIGTERM
+    6  cmd-6                                    `ev/scripts/g12-lifecycle.sh` — netns holder + `fakeapp:ci` + sidecar (`--user 1000660000:0 --read-only --cap-
+    7  cmd-7                                    `ev/scripts/ladder.sh` — four listeners + recording backend stub; ladder, rediscovery ×3, 500/400/409/202, hea
+    8  cmd-8                                    `ev/scripts/variants.sh` (iteration-0 script, names/image adapted) — flap damping, pins, ignore-ports, grace, 
+    9  cmd-9                                    `ev/scripts/tls.sh` (iteration-0 script adapted) + CASE 4b/5b appended inline — private CA, `CS_CA_FILE`, skip
+   10  cmd-10                                   raw `curl` reports to the private backend (12 vocabulary words + nested composite, 3 × 20 parallel), WARN-afte
+   11  cmd-11                                   `kustomize build` ×7 forms, `helm lint` + `helm template` ×5 (consuming chart via `file://`), `kubeconform -st
+   12  cmd-12                                   `docker run` × 7 UID/flag combinations, `/proc/<pid>/{status,mounts,fd}`, `docker export
+   13  cmd-13                                   soak: three sidecars at `CS_INTERVAL=1s CS_HEARTBEAT=2s` (HTTP probe, HTTP probe + `GODEBUG=gctrace=1`, TCP pr
+   14  cmd-14                                   `go run golang.org/x/vuln/cmd/govulncheck@latest ./...` and `@v1.1.4 ./...`; reachability of `proxy.golang.org
+   15  cmd-15                                   `git log/diff --stat 191a0c5..HEAD -- sidecar`, removed test lines, `git status`
+   16  feat:F-27                                PASS | `ev/11` recorded requests: every POST carries `X-Client-Id: sc1-ladder-repo` (= `CS_CLIENT_ID`), `User-
+   17  feat:F-36                                PASS | `ev/10` STEP A: the first report auto-registers monitor `sc1-app` and its instance; `ev/14` F-38: statu
+   18  feat:F-38                                PASS | `ev/14` F-38: OK/HEALTHY/UP → `UP (1 of 1 pod UP)`; WARN/DEGRADED → `DEGRADED`; DOWN/OUT_OF_SERVICE/FAT
+   19  feat:F-46                                PASS | `ev/14` F-50: 20 instances recorded and listed sorted by id; `ev/10` STEPs A–D: the same `instanceId` i
+   20  feat:F-48                                PASS | `ev/10` STEP E: `left: true`, `instance shutting down` 1 s after SIGTERM; `ev/14` F-48: that monitor th
+   21  feat:F-50                                PASS | `ev/14` F-50: 3 rounds × 20 parallel instance reports → 60 × 202, 0 × 409 (iteration 0: 11 × 409), roll
+   22  feat:F-67                                PASS | `ev/04`: 12 invalid environments → exit 2 naming the variable (both required ones at once, multi-error 
+   23  feat:F-68                                PASS | `ev/11` STEP 1: four listeners in the namespace, `CS_IGNORE_PORTS=9100` hides the backend stub; `ev/12`
+   24  feat:F-69                                PASS | `ev/11` STEPs 1–4: 9003 Actuator preferred over 9001/9002 → `http://127.0.0.1:9002/healthz` → `http://1
+   25  feat:F-70                                PASS | `ev/10` STEP B0: Actuator document `DOWN` with `db DOWN` → report DOWN with components, notice body `Fa
+   26  feat:F-71                                PASS | `ev/12` CASEs 3–5: `CS_PORT=9003 CS_PATH=/ping` → `http://…:9003/ping`; `CS_PROBE=tcp` → `tcp://…:9003`
+   27  feat:F-72                                PASS | `ev/12` CASE 7: pinned never-UP → `starting: waiting for the first healthy answer …` then `… never answ
+   28  feat:F-73                                PASS | `ev/12` CASE 1: one failed request with the default 2 s retry → stays UP, 1 report, 0 DOWN lines; CASE 
+   29  feat:F-74                                PASS | `ev/11` STEP 5: 500 → `sendError` set, retries after 1/2/4 s (3 requests in 12 s); 400 → `report reject
+   30  feat:F-75                                PASS | `ev/11` FIRST/LAST BODY: `tenantId, service, status, components, message, observedAt, publisher, instan
+   31  feat:F-76                                PASS | `ev/10` STEP E: `docker stop` returns in 0.12 s, exit 0, `leaving report sent`; `ev/11` STEP 7: 0.19 s,
+   32  feat:F-77                                PASS | `ev/11` STEPs 2–4: the target switches within one interval + retry (≈ 2 s) each time its port disappear
+   33  feat:F-78                                PASS | `ev/12` CASE 10: `/healthz` 200 `text/plain` `ok`, `/status` 200 JSON, unknown path 404, POST 405; `ev/
+   34  feat:F-79                                PASS | `ev/13`: no CA → `x509: certificate signed by unknown authority`, sent=0; `CS_CA_FILE` (read-only mount
+   35  feat:F-80                                PARTIAL | `ev/03`: builds from the repo Dockerfile with substituted bases, `User=1001`, `9465/tcp`, OCI title/
+   36  feat:F-81                                PASS | `ev/30`: UIDs 1001 (image default), 4242, 65534, 1000660000, 1000700123, gid 0 and gid 1000660000, `--r
+   37  feat:F-82                                PARTIAL | `ev/20` §1: `kustomize build example` → `payments-api` + `health-sidecar`, ConfigMap without hash su
+   38  feat:F-83                                PASS (iteration 0: FAIL) | `ev/20` §3: testdata Deployment (`db-migrate`) and StatefulSet (`fetch-config`) thr
+   39  feat:F-84                                PASS | `ev/20` §4: `helm lint` 0 failures, the library alone is not installable (by design); consuming chart v
+   40  feat:F-85                                PASS | `ev/20` §5, §8: manual YAML renders ConfigMap + container, kubeconform 1.29.0/1.27.0 valid; container b
+   41  feat:F-86                                PARTIAL | `ev/20` §6, `ev/21`: kubeconform `-strict` 1.29.0 valid for classic, native, native-with-init, class
+   42  feat:F-87                                PASS | `ev/31`: three sidecars at 1 s probes / 2 s heartbeats for 7.7–11.3 min (309 / 209 / 209 reports): RSS 
+   43  feat:F-88                                PASS (iteration 0: FAIL) | `ev/10` STEP B: app container stopped while namespace and sidecar stay → DOWN after
+   44  feat:F-89                                PASS | `ev/10` STEP G: 14/14 lines JSON (`time, level, msg, …`): `health sidecar starting` (version/service/te
+   45  GAP-sidecar-1                            minor (test health) | F-83, F-86
+   46  GAP-sidecar-2                            low (security hygiene; no finding known) | F-80
+   47  GAP-sidecar-3                            nit (ops) | F-80, F-89
+   48  GAP-sidecar-4                            nit (docs) | F-88
+
+## e2e
+    1  cmd-1                                    `java -jar communication-service-iter1.jar --server.port=19501 …` (and 19502); `COMM_BACKEND=http://127.0.0.1:
+    2  cmd-2                                    `python3 -I http_checks.py` (107 HTTP/SSE contract checks against A and B)
+    3  cmd-3                                    `python3 -I http_checks.py f20` (resume checks with the last received id, plus an explicit snapshot-id-overlap
+    4  cmd-4                                    `python3 -I f20_probe.py` (three times: snapshot id vs the created event's seq, replay from 0, resume from the
+    5  cmd-5                                    `node ui_flows.js` (Playwright, 39 checks: publish with ticket, second-context live watcher, resolve + announc
+    6  cmd-6                                    `node ui_flows.js` (run 2, counting locator)
+    7  cmd-7                                    `python3 -I iter1_checks.py` (37 checks for the iteration-1 behaviours: first byte on four routes, `:connected
+    8  cmd-8                                    `python3 -I iter1_checks.py access_log` (run 3, counts the exact line; run 2 saw +2 lines because the dead-app
+    9  cmd-9                                    `node pod_flows.js p91` (19 checks: app → sidecar → backend → UI, DOWN/DEGRADED/UP, SIGTERM, restart)
+   10  cmd-10                                   `node pod_flows.js deadapp` (new: `docker stop e2e1-app` while `e2e1-sidecar` keeps running in `e2e1-netns`, b
+   11  cmd-11                                   `node pod_flows.js deadapp` (run 2, checks the first DOWN, then the "not listening" report in `/status` and th
+   12  cmd-12                                   `node pod_flows.js p92` (16 checks: SIGTERM A with the UI and the sidecar connected, exit time, badge transiti
+   13  cmd-13                                   `node pod_flows.js p92` (run 2, same locator as the poller)
+   14  cmd-14                                   `node reconnect_probe.js` (in-page `EventSource` instrumentation, CDP capture of every stream request/response
+   15  cmd-15                                   `node pod_flows.js silent` (`docker pause e2e1-sidecar`, nothing else deleted)
+   16  cmd-16                                   `node pod_flows.js ordering` (pod 2: sidecar before app, app stopped/started, sidecar SIGKILL, port move)
+   17  cmd-17                                   `node pod_flows.js ordering` (run 2, checks `/status`, instance record and log separately)
+   18  cmd-18                                   `node pod_flows.js slow` (slow probe target, wire capture through a stub backend, id limits, WARN pass-through
+   19  cmd-19                                   `grep` of both backend A logs (startup, shutdown, valve, notices, access log, WARN/ERROR) and `docker logs e2e
+   20  cmd-20                                   teardown: `kill` A and B, Vite; `docker rm -f e2e1-sidecar e2e1-app e2e1-netns`
+   21  feat:F-01                                PASS | http run1 F-01 ×5
+   22  feat:F-02                                PASS | http run1 F-02 ×8; ui run2 F-02
+   23  feat:F-06                                PASS | http run1 F-06 ×5; iter1 F-06 ×2; ui run2 F-62
+   24  feat:F-07                                PASS | http run1 F-07 13/13 (iteration 0: 11/13); iter1 F-07 ×6; ui run2 F-55 ×4
+   25  feat:F-09                                PASS | http run1 F-09 ×6, F-08 ×2; ui run2 F-09 ×2
+   26  feat:F-14                                PASS | http run1 F-14 ×13
+   27  feat:F-15                                PASS | http run1 F-15 ×3
+   28  feat:F-16                                PASS | http run1 F-16 ×3, F-17; ui run2 F-16 ×2
+   29  feat:F-18                                PASS | http run1 F-18 ×9; iter1 F-18 ×6
+   30  feat:F-20                                PASS | http run2 F-20 ×5; p92 run1/run2 F-20; probe
+   31  feat:F-27                                PASS | http run1 F-27 8/8 (iteration 0: 7/8)
+   32  feat:F-36                                PASS | http run1 F-36 ×4
+   33  feat:F-38                                PASS | http run1 F-38 ×7
+   34  feat:F-46                                PASS | http run1 F-46 ×4, F-49
+   35  feat:F-48                                PASS | http run1 F-48 ×4 (one silent + one scaled-to-zero among 6 push-only monitors → "silent is down" naming
+   36  feat:F-50                                PASS | http run1 F-50 ×2
+   37  feat:F-56                                PASS | ui run2 F-56 ×4
+   38  feat:F-57                                PASS | ui run2 F-57; p92 F-92 (error state)
+   39  feat:F-58                                PASS | ui run2 F-58 ×3
+   40  feat:F-60                                PASS | ui run2 F-60 ×6; p92 F-60 (Live 5–6 ms after the page settled; iteration 0: 15 s "Connecting")
+   41  feat:F-61                                PASS | p92 run1/run2 F-61 ×4 each; reconnect probe
+   42  feat:F-62                                PASS | ui run2 F-62 ×3
+   43  feat:F-64                                PASS | ui run2 F-64 ×2
+   44  feat:F-70                                PASS | slow F-70
+   45  feat:F-72                                PASS | ordering run2 F-72, F-88
+   46  feat:F-74                                PASS | p92 F-74, F-78, F-92
+   47  feat:F-75                                PASS | slow F-75 ×4
+   48  feat:F-76                                PASS | p91 F-76
+   49  feat:F-88                                PASS | deadapp run2 9/9 (main pod); ordering run2 9/9 (pod 2)
+   50  feat:F-89                                PASS | p91 F-89, deadapp run2 F-89, ordering F-89; iter1 F-89 ×3; `backendA-log-excerpts.txt`
+   51  feat:F-90                                PASS | ui run2 F-90 ×4, F-52 ×2, F-63, screenshots
+   52  feat:F-91                                PASS | p91 19/19, deadapp run2, screenshots f91-*, f88-*
+   53  feat:F-92                                PASS | p92 run2 16/16, probe, silent, slow, iter1 ×37, http F-27/F-20
+   54  GAP-e2e-9                                minor | F-61, F-92
+   55  GAP-e2e-10                               minor | F-20, F-61
+   56  GAP-e2e-11                               minor (ops) | F-89, F-88
+
+## usability
+    1  cmd-1                                    Shared stack check
+    2  cmd-2                                    SRE walk, desktop 1280×800 light (landing, filters, validation, publish, 409, maintenance, view in feed, other
+    3  cmd-3                                    SRE walk follow-up: dark theme desktop, 409 banner geometry, feed field associations, cap notice, proxy 502 fe
+    4  cmd-4                                    Light theme re-measured after the theme transition settled; switch target; focus after "Publish another"
+    5  cmd-5                                    Service unreachable (own dev server at a dead port) + proxy-style 502/503/refused/500 on the shared stack
+    6  cmd-6                                    Stream drop and recovery on a private stack
+    7  cmd-7                                    UX-16 from the user's seat: publish, Resolve, publish the same incident again, follow the banner's advice
+    8  cmd-8                                    Developer walk: README cookbook verbatim (`vmforge`), error walk (`ux1-api`), README paths vs OpenAPI
+    9  cmd-9                                    Swagger UI before/after Authorize, 401 documentation, OpenAPI texts
+   10  cmd-10                                   Platform-engineer walk: `kustomize build` of the example with `component` and `component-native`, the README `
+   11  feat:F-52 tenant picker                  SRE | PASS with friction: still pre-filled with `acme` (UX-13)
+   12  feat:F-54 publish form, hints, placehol  SRE | PASS; one hint over-promises (UX-10)
+   13  feat:F-55 client-side validation         SRE | PASS: first invalid field focused, summary with links, phone too
+   14  feat:F-56, F-58 publish → "View in feed  SRE | PASS: type and tenant follow the item
+   15  feat:F-57, F-09 server errors (409, unr  SRE | PASS for unreachable; **FAIL on advice** for the duplicate 409 (UX-16); banner placement (UX-18)
+   16  feat:F-59 empty states                   SRE | PASS
+   17  feat:F-61 live updates, drop, reconnect  SRE | PASS: created 811 ms, retired 187 ms; SIGKILL → "Reconnecting (n)" in 1 s, Live 3.4 s after readiness; p
+   18  feat:F-62 resolve / withdraw             SRE | PASS: verb matches state, consequence stated, announced
+   19  feat:F-63 cards, chips, relative times   SRE | PASS; capsule still CSS-capitalised (UX-12)
+   20  feat:F-65 accessibility, contrast, keyb  SRE | PASS: 0 axe violations (8 scans), all text ≥ 4.5:1 both themes, logical tab order with visible rings, En
+   21  feat:Feed cap notice (100 of N)          SRE | PASS: "Showing the first 100 of 103 notices. Narrow the filters to see the rest.", tab badge 99+
+   22  feat:F-01, F-10 cookbook publish + sche  developer | PASS on a fresh service; second run of the first example 409s (UX-21 residual)
+   23  feat:F-05 PUT with `expectedVersion`     developer | PASS: 200 then `409 expectedVersion 0 does not match current version 1`; bare 400 when omitted (UX
+   24  feat:F-20 SSE resume (`?lastEventId`, `  developer | PASS: both replay 1289→1300 in order
+   25  feat:F-28 error messages (enum, JSON, d  developer | PASS
+   26  feat:F-29 Swagger UI                     developer | PASS: scheme `X-Client-Id`, 401 documented, Authorize → 200
+   27  feat:F-34 monitors list / probe / insta  developer, engineer | PASS: `monitor not-a-monitor not found`
+   28  feat:F-67 sidecar configuration and mes  engineer | PASS: all missing variables listed at once, scheme check, exit 2
+   29  feat:F-78 `/status`, logs, debugging pa  engineer | PASS: `sendError` explicit for refused and DNS; monitor and instances visible; `left:true` after SI
+   30  feat:F-80, F-82 Kustomize component, na  engineer | PASS: both render; README `images:` snippet repoints the image
+   31  feat:F-84 Helm library chart via a cons  engineer | PASS: container and init-container forms render with the documented values; lint clean
+   32  UX-1                                     — (major) | RESOLVED | F-55 | Submitting the empty form at 1280×800 now focuses the Title input (invalid, ring
+   33  UX-2                                     — (major) | RESOLVED | F-56, F-58 | After "Maintenance scheduled — Goes live in 59m.", "View in feed" lands on
+   34  UX-3                                     — (major) | RESOLVED | F-52, F-56 | Publishing into `ux1-sre-other` from the form's Tenant field: "Live in the
+   35  UX-4                                     — (major) | RESOLVED | F-57 | With nothing behind the dev proxy (502) the feed says "Couldn't load the feed — 
+   36  UX-5                                     — (major) | RESOLVED | F-65 | Every text measured is ≥ 4.5:1. Light: hints/captions/"Updated just now" (tertia
+   37  UX-6                                     — (major) | RESOLVED | F-61 | (a) SIGKILL of the service mid-stream: the badge turns "Reconnecting" within 1 s
+   38  UX-7                                     — (minor) | RESOLVED | F-62 | After the second Resolve click a `role=status` line says "Resolved “Payments API
+   39  UX-8                                     cosmetic (minor) | IMPROVED | F-62 | A not-started notice now offers **Withdraw** with its own confirmation ("
+   40  UX-9                                     — (minor) | RESOLVED in wording, superseded by UX-16 | F-57, F-09 | The 409 now reads "The service rejected th
+   41  UX-10                                    minor (minor) | OPEN | F-54, F-63 | The incident hint still says "Optional. The INC tracking this; consumers g
+   42  UX-11                                    — (minor) | RESOLVED | F-59 | "All clear — No outage is active for ux1-sre. A scheduled outage appears here wh
+   43  UX-12                                    cosmetic (cosmetic) | OPEN | F-63 | The state capsule still renders "Starts In 59m" (`frontend/src/ui/Tag.tsx:
+   44  UX-13                                    minor (minor) | OPEN | F-52 | A first visit still pre-fills `acme` (`frontend/src/App.tsx:28`), so the first s
+   45  UX-14                                    — (minor) | RESOLVED | F-65 | A successful publish focuses the "Outage published" heading (ring, in viewport; 
+   46  UX-15                                    cosmetic (cosmetic) | OPEN | F-54 | The Save-as-draft switch is 30×18 px inside a 288×20 px `<label>`; clickin
+   47  UX-16                                    major | NEW (introduced by the UX-9 fix) | F-57, F-09 | The banner's first instruction cannot work. `(tenantId
+   48  UX-17                                    minor | NEW | F-65 | After "Publish another", focus is dropped on `<body>` (the next Tab starts at the header 
+   49  UX-18                                    minor | NEW | F-57 | The server-error banner is inserted above the buttons; at 1280×800 with the form filled i
+   50  UX-19                                    cosmetic | NEW | F-57 | A 500 with an empty body reads "The service rejected this. 500 Internal Server Error":
+   51  UX-20                                    — (blocker) | RESOLVED | F-20 | `?lastEventId=1288` and the header `Last-Event-ID: 1288` both replay `1289 cre
+   52  UX-21                                    minor (major) | IMPROVED | F-01, F-10 | The cookbook's dates are computed from now (`in2h`, `tomorrow01`, `tom
+   53  UX-22                                    — (major) | RESOLVED | F-28 | `severity: 'HUGE' is not one of [INFO, MINOR, MAJOR, CRITICAL]`; `type: 'DOWNTIM
+   54  UX-23                                    — (minor) | RESOLVED | F-29 | Swagger UI: the scheme is named `X-Client-Id` and the Authorize dialog explains 
+   55  UX-24                                    cosmetic (minor) | IMPROVED | F-05, F-34 | The README now explains `<id>`, `<monitorId>` ("`.[].id` in the mon
+   56  UX-25                                    — (minor) | RESOLVED | F-28 | `no such endpoint: GET /v1/nothing (the API is documented at /swagger-ui.html)`;
+   57  UX-26                                    minor | NEW | F-09 | Neither the 409 (`duplicate externalRef 'REF-1' for tenant 'ux1-api'`) nor the README row
+   58  UX-30                                    — (major) | RESOLVED | F-67 | "Attach it" now says what `CS_TENANT` is ("the tenant id the service groups noti
+   59  UX-31                                    — (major) | RESOLVED | F-80, F-82 | New "Image" section: the placeholder is named as such, the platform team b
+   60  UX-32                                    — (minor) | RESOLVED | F-78, F-89 | New "Debugging: my service does not show up" section: `oc logs … -c health
+   61  UX-33                                    — (minor) | RESOLVED | F-67, F-84 | `CS_PUBLISHER` is in the table; the README says the library chart "fails b
+   62  UX-34                                    — (cosmetic) | RESOLVED | F-82 | The "Attach it" table now says "in the app's namespace" and "optionally, `CS_

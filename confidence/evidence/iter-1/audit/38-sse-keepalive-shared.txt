@@ -1,0 +1,6 @@
+== 02:52:44 frontend cmd-20: curl -sN --max-time 17 on the shared :8080, fresh tenant (read-only)
+02:52:44.759 :connected
+02:52:44.763 
+02:52:59.761 :keepalive
+02:52:59.767 
+== end

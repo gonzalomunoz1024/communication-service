@@ -1,0 +1,48 @@
+== 02:46:35.634 baseline: readiness {"status":"UP"}; ERROR lines so far 0; log lines 22
+== 02:46:37.672 docker stop audit1-mongo (60 s outage)
+  +7.8s readiness -> 000
+  +15.4s readiness -> 000
+  +22.9s readiness -> 000
+  +30.5s readiness -> 000
+  +38.0s readiness -> 000
+  +45.5s readiness -> 000
+  +53.1s readiness -> 000
+  GET /v1/feed during the outage -> 500 after 30.1s; body: {"error":"Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=127.0.0.1:19830, type
+  +60.6s readiness -> 000
+  +68.2s readiness -> 000
+  +75.7s readiness -> 000
+  +83.3s readiness -> 000
+  +90.8s readiness -> 000
+  +98.4s readiness -> 000
+  +106.0s readiness -> 000
+  +113.6s readiness -> 000
+  +121.1s readiness -> 000
+  +128.6s readiness -> 000
+  +136.2s readiness -> 000
+  +143.7s readiness -> 000
+  +151.3s readiness -> 000
+  +158.8s readiness -> 000
+  +166.3s readiness -> 000
+  +173.9s readiness -> 000
+  +181.4s readiness -> 000
+== 02:50:04.109 docker start audit1-mongo
+  readiness back to 200 after 1.2s
+== 02:50:08.578 stream opened before the outage: still open across it? keepalives: 14
+== log during the outage: 606 new lines, 6 new ERROR lines, 'Unexpected error occurred in scheduled task' blocks: 6, WARN lines: 6
+-- first ERROR block head:
+2026-11-02T02:47:10.176Z ERROR 865 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+
+org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[
+	at org.springframework.data.mongodb.core.MongoExceptionTranslator.doTranslateException(MongoExceptionTranslator.java:97) ~[spring-data-mongodb-4.5.13.jar!/:4.5.13]
+-- exception types seen:
+      1 com.mongodb.MongoNodeIsRecoveringException:
+      1 com.mongodb.MongoSocketOpenException:
+      1 com.mongodb.MongoSocketReadException:
+      1 com.mongodb.MongoSocketWriteException:
+      6 org.springframework.dao.DataAccessResourceFailureException:
+
+== 02:53:04.534 second, shorter outage: one readiness call with a 60 s client timeout (the first run's 5 s timeout could not see a 30 s latency)
+{"status":"UP"}
+  readiness -> 503 after 31.0 s
+  liveness during the outage -> 200
+  readiness back to 200 2.0 s after docker start

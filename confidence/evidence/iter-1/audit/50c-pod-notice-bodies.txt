@@ -1,0 +1,21 @@
+== F-70 (sidecar claim): body of the OUTAGE the pod opened when the app's db component was DOWN (db audit1-pod, read-only)
+{"title":"audit1-app is down","severity":"MAJOR","externalRef":"health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:1","body":"Automated health check reported **DOWN** at 2026-11-02T02:40:09.352159225Z (rolled up from the service's pods).\n\n0 of 1 pod UP (DOWN: audit1-app-6d4f8b7c9-ab12c)\n\nFailing components:\n- db: DOWN - database=PostgreSQL\n\nThis notice is managed automatically and is retired once the service reports healthy again."}
+
+== the DEGRADED (HEALTH) notice body
+{"title":"audit1-app is degraded","severity":"MINOR","body":"Automated health check reported **DEGRADED** at 2026-11-02T02:41:01.194329250Z (rolled up from the service's pods).\n\n0 of 1 pod UP (DEGRADED: audit1-app-6d4f8b7c9-ab12c)\n\nThis notice is managed automatically and is retired once the service reports healthy again."}
+
+== the dead-app OUTAGE body (G-1-2 message in the notice)
+
+== all OUTAGE/HEALTH notices of the pod flow (db audit1-pod in the shared mongo7, read-only), in creation order
+{"createdAt":"2026-11-02T02:40:09.367Z","type":"OUTAGE","status":"RETIRED","title":"audit1-app is down","externalRef":"health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:1","firstLines":"Automated health check reported **DOWN** at 2026-11-02T02:40:09.352159225Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: audit1-app-6d4f8b7c9-ab12c)"}
+{"createdAt":"2026-11-02T02:40:39.727Z","type":"HEALTH","status":"RETIRED","title":"audit1-app is degraded","externalRef":"health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:2","firstLines":"Automated health check reported **DEGRADED** at 2026-11-02T02:41:01.194329250Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DEGRADED: audit1-app-6d4f8b7c9-ab12c)"}
+{"createdAt":"2026-11-02T02:41:49.389Z","type":"OUTAGE","status":"RETIRED","title":"audit1-app is down","externalRef":"health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:3","firstLines":"Automated health check reported **DOWN** at 2026-11-02T02:41:49.378613592Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: audit1-app-6d4f8b7c9-ab12c)"}
+{"createdAt":"2026-11-02T02:44:34.122Z","type":"OUTAGE","status":"RETIRED","title":"audit1-app is down","externalRef":"health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:4","firstLines":"Automated health check reported **DOWN** at 2026-11-02T02:44:34.108267300Z (no health report received since 2026-11-02T02:43:02.126Z). |  | 1 pod has not reported since 2026-11-02T02:43:02.126Z (audit1-app-6d4f8b7c9-ab12c)"}
+{"createdAt":"2026-11-02T02:47:27.225Z","type":"OUTAGE","status":"ACTIVE","title":"audit1-app is down","externalRef":"health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:5","firstLines":"Automated health check reported **DOWN** at 2026-11-02T02:47:27.217312029Z (no health report received since 2026-11-02T02:45:55.370Z). |  | 1 pod has not reported since 2026-11-02T02:45:55.370Z (audit1-app-6d4f8b7c9-ab12c)"}
+
+== collections
+counters, communication_events, health_instances, health_monitors, communications
+== instance record of the pod (left flag after SIGTERM, F-76)
+{"instanceId":"audit1-app-6d4f8b7c9-ab12c","status":"UP","left":false,"lastSeenAt":"2026-11-02T02:45:55.370Z","version":"1.0.0-audit","node":"worker-audit"}
+false
+false

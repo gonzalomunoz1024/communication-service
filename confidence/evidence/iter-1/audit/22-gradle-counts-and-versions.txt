@@ -1,0 +1,34 @@
+== unit test XML (build/test-results/test)
+test: 20 classes, 188 tests, 0 failures, 0 errors, 0 skipped
+integrationTest: 8 classes, 39 tests, 0 failures, 0 errors, 0 skipped
+== task lines
+> Task :clean
+> Task :compileJava
+/home/claude/communication-service/src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapter.java:61: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+/home/claude/communication-service/src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:191: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+2 warnings
+> Task :compileTestJava
+/home/claude/communication-service/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthMonitorRepositoryAdapterIT.java:44: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+/home/claude/communication-service/src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapterIT.java:37: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+2 warnings
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+BUILD SUCCESSFUL in 41s
+== resolved versions (cmd-4 / G-1-9)
+ch.qos.logback:logback-classic:1.5.34
+com.fasterxml.jackson.core:jackson-databind:2.21.1
+com.fasterxml.jackson.core:jackson-databind:2.21.4
+io.netty:netty-codec-http:4.1.135.Final
+io.projectreactor.netty:reactor-netty-http:1.2.18
+org.mongodb:mongodb-driver-reactivestreams:5.5.2
+org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.17
+org.springframework.boot:spring-boot:3.5.16
+org.springframework:spring-core:6.2.19
+org.webjars:swagger-ui:5.32.2
+== jar BOOT-INF/lib (running iter1 jar)
+logback-classic-1.5.34.jar
+netty-codec-http-4.1.135.Final.jar
+spring-boot-3.5.16.jar
+spring-core-6.2.19.jar
+swagger-ui-5.32.2.jar

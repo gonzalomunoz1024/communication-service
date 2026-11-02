@@ -1,0 +1,8 @@
+== 02:53:38.354 G-1-23: SIGTERM to the private instance W (pid 4102) with two open /v1/feed/stream connections
+  streams open: yes yes
+  both stream connections ended 33 ms after SIGTERM (curl exit codes: 0 0)
+  process gone 4.11 s after SIGTERM
+  last stream bytes: 225Z","version":0,"history":[{"at":"2026-11-02T02:47:27.225Z","actor":"health-sidecar","action":"created (ACTIVE)"}]}}||
+  W log tail:
+2026-11-02T02:53:40.374Z  INFO 4102 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T02:53:40.376Z  INFO 4102 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete

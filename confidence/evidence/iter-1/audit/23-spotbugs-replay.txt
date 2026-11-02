@@ -1,0 +1,12 @@
+== 02:52:44 SpotBugs 4.9.3 -effort:max -low on build/classes/java/main (fresh from the auditor's Gradle run), auxclasspath = BOOT-INF/lib of the iteration-1 jar (79 jars)
+summary: {'total_classes': '87', 'total_bugs': '50', 'priority_1': None, 'priority_2': '42', 'priority_3': '8', 'num_missing_classes': None}
+by priority: {'2': 42, '3': 8}
+by category: {'MALICIOUS_CODE': 41, 'PERFORMANCE': 3, 'STYLE': 4, 'I18N': 2}
+by type: {'EI_EXPOSE_REP2': 28, 'URF_UNREAD_FIELD': 3, 'UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR': 3, 'EI_EXPOSE_REP': 13, 'DM_CONVERT_CASE': 2, 'REC_CATCH_EXCEPTION': 1}
+  URF_UNREAD_FIELD com/atlas/communication/common/adapters/outbound/CommunicationDocument.java 67
+  URF_UNREAD_FIELD com/atlas/communication/common/adapters/outbound/CommunicationEventDocument.java 34
+  DM_CONVERT_CASE com/atlas/communication/config/GlobalExceptionHandler.java 117
+  DM_CONVERT_CASE com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapter.java 89
+  URF_UNREAD_FIELD com/atlas/communication/health/adapters/outbound/HealthInstanceDocument.java 49
+  REC_CATCH_EXCEPTION com/atlas/communication/health/adapters/outbound/WebClientHealthProbeAdapter.java 77
+== 02:53:03 done

@@ -1,0 +1,67 @@
+== 02:39:23 STEP 0: pod = netns holder (ports 19821->8080 app, 19822->9465 sidecar) + fakeapp:ci + health-sidecar:ci (--user 1000660000:0 --read-only --cap-drop ALL --security-opt no-new-privileges) -> W http://172.17.0.1:19805
+W readiness: {"status":"UP"}
+TIMEOUT after 30s: {"status": "UP", "summary": "UP (1 of 1 pod UP)", "incidents": 0, "streak": 0, "notice": null}
+  /status: {"target": "http://127.0.0.1:8080/actuator/health", "last": "UP", "sent": 3, "upSeen": true, "inst": {"id": "audit1-app-6d4f8b7c9-ab12c", "namespace": "audit1-ns", "node": "worker-audit", "cluster": "ocp-audit", "version": "1.0.0-audit", "sidecar": "ci-iter1"}}
+  monitor id f00c8d74-57b9-41dc-9c70-86b8da58bd94; instances: 
+
+== 02:39:54 STEP 1 (F-70/F-91): app reports DOWN with db DOWN -> sidecar DOWN with components -> OUTAGE in the feed and the UI
+TIMEOUT after 30s: {"status": "DOWN", "summary": "DOWN (0 of 1 pod UP (DOWN: audit1-app-6d4f8b7c9-ab12c)): db DOWN", "incidents": 1, "streak": 3, "notice": "9b290c6c-8e3c-43a3-9018-5b8f0c8b164a"}
+  sidecar lastReport: {"db": {"details": {"database": "PostgreSQL"}, "status": "DOWN"}, "ping": {"status": "UP"}} msg='health document reports DOWN'
+0.1s: [["9b290c6c-8e3c-43a3-9018-5b8f0c8b164a", "audit1-app is down", "MAJOR", "Automated health check reported **DOWN** at 2026-11-02T02:40:09.352159225Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: audit1-app-6d4f8b7c9-a"]]
+  OUTAGE 30.7s after the app went DOWN (change report + heartbeat 10 s)
+UI cards for audit1-pod: ["Active | Major | Outage | health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:1 | Updated just now | audit1-app is down |  | Automated health check reported **DOWN** at 2026-11-02T02:40:09.352159225Z (rolled "]
+
+== 02:40:28 STEP 2 (F-91): app UP but db DOWN -> DEGRADED -> HEALTH notice replaces the OUTAGE
+TIMEOUT after 30s: {"status": "DEGRADED", "summary": "DEGRADED (0 of 1 pod UP (DEGRADED: audit1-app-6d4f8b7c9-ab12c)): db DOWN", "incidents": 2, "streak": 3, "notice": "ab0d521c-f929-49b3-8c2f-a6cb9f0157dc"}
+0.0s: [["ab0d521c-f929-49b3-8c2f-a6cb9f0157dc", "audit1-app is degraded", "MINOR", "Automated health check reported **DEGRADED** at 2026-11-02T02:40:39.702269004Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DEGRADED: audit1-app-6d4"]]
+  outage list now: [] (30.7s)
+
+== 02:40:59 STEP 2b (F-70 E2E): app answers WARN -> sidecar reports WARN -> backend DEGRADED
+  sidecar lastReport status: WARN; monitor: {"status": "DEGRADED", "summary": "DEGRADED (0 of 1 pod UP (DEGRADED: audit1-app-6d4f8b7c9-ab12c))", "incidents": 2, "streak": 4, "notice": "ab0d521c-f929-49b3-8c2f-a6cb9f0157dc"}
+
+== 02:41:04 STEP 3 (F-91): recovery -> notices retired
+TIMEOUT after 30s: {"status": "UP", "summary": "UP (1 of 1 pod UP)", "incidents": 2, "streak": 0, "notice": null}
+0.0s: []
+0.0s: []
+  feed clear 30.6s after recovery; monitor {"status": "UP", "summary": "UP (1 of 1 pod UP)", "incidents": 2, "streak": 0, "notice": null}
+
+== 02:41:35 STEP 4 (G-1-2 / F-88): the app container stops while the netns and the sidecar stay
+  app container: exited exit=2
+TIMEOUT after 30s: {"status": "DOWN", "summary": "DOWN (0 of 1 pod UP (DOWN: audit1-app-6d4f8b7c9-ab12c))", "incidents": 3, "streak": 3, "notice": "68b90819-4b3d-4d29-94d8-ef28dcd41087"}
+  first DOWN 30.4s after the stop: /status lastReport.message='app is not listening (last target http://127.0.0.1:8080/actuator/health)' target=None lastTarget='http://127.0.0.1:8080/actuator/health'
+0.0s: 'app is not listening (last target http://127.0.0.1:8080/actuator/health)' target= None lastTarget= 'http://127.0.0.1:8080/actuator/health'
+  instance record: 
+0.0s: [["68b90819-4b3d-4d29-94d8-ef28dcd41087", "audit1-app is down", "MAJOR", "Automated health check reported **DOWN** at 2026-11-02T02:41:49.378613592Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: audit1-app-6d4f8b7c9-a"]]
+  OUTAGE for the dead app 30.6s after the stop
+UI cards for audit1-pod: ["Active | Major | Outage | health:f00c8d74-57b9-41dc-9c70-86b8da58bd94:3 | Updated just now | audit1-app is down |  | Automated health check reported **DOWN** at 2026-11-02T02:41:49.378613592Z (rolled "]
+  sidecar log since the stop:
+{"time":"2026-11-02T02:41:36.754769044Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T02:41:36.769246738Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+TIMEOUT after 30s: {"status": "UP", "summary": "UP (1 of 1 pod UP)", "incidents": 3, "streak": 0, "notice": null}
+0.0s: []
+  app back: UP and notice retired 30.2s after docker start; target='http://127.0.0.1:8080/actuator/health'
+
+== 02:42:39 STEP 5 (F-76): SIGTERM -> leaving report, prompt exit
+  docker stop took 0.4s, exit code 0; last log lines:
+{"time":"2026-11-02T02:42:39.306001569Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T02:42:39.306364914Z","level":"INFO","msg":"health sidecar stopped"}
+  instance record: ; monitor: {"status": "UP", "summary": "UNKNOWN (no live pod reports)", "incidents": 3, "streak": 0, "notice": null}
+
+== 02:42:39 STEP 6 (F-89): every sidecar log line is JSON with time/level/msg; key messages
+  13 lines, 0 not JSON/without time+level+msg; levels {'INFO': 13}; keys ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'target', 'tenant', 'time', 'version']
+  messages: {'health sidecar starting': 1, 'health target found': 2, 'reported': 7, 'health target gone; will rediscover': 1, 'leaving report sent': 1, 'health sidecar stopped': 1}
+  first line keys: ['endpoint', 'instance', 'level', 'msg', 'probe', 'service', 'tenant', 'time', 'version']
+  first line: {"time": "2026-11-02T02:39:24.337264171Z", "level": "INFO", "msg": "health sidecar starting", "version": "ci-iter1", "service": "audit1-app", "tenant": "audit1-pod", "instance": "audit1-app-6d4f8b7c9-ab12c", "endpoint": "http://172.17.0.1:19805", "probe": "auto"}
+
+== 02:42:39 STEP 7 (cmd-15 / F-48 / F-92): sidecar restarted, then paused (silent, no leaving report) -> after staleAfterSeconds=90 an OUTAGE naming the pod
+TIMEOUT after 30s: {"status": "UP", "summary": "UP (1 of 1 pod UP)", "incidents": 3, "streak": 0, "notice": null}
+  monitors in db audit1-pod now: audit1-pod/audit1-app:UP
+audit1-sidecar
+TIMEOUT after 150s: [["46ecc66c-3914-4e56-ab53-acabcc9cfa71", "audit1-app is down", "MAJOR", "Automated health check reported **DOWN** at 2026-11-02T02:44:34.108267300Z (no health report received since 2026-11-02T02:43:02.126Z). |  | 1 pod has not report"]]
+  OUTAGE naming the pod 150.6s after the pause; valve warnings ('silent at once') in W's log: 0
+audit1-sidecar
+11.6s: []
+  unpaused: notice retired 11.6s later; monitor {"status": "UP", "summary": "UP (1 of 1 pod UP)", "incidents": 4, "streak": 0, "notice": null}
+
+== 02:45:55 STEP 8: teardown
+done

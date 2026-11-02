@@ -1,0 +1,52 @@
+# Pod-flow timeline derived from the service's and the sidecar's own logs (the auditor's poll loop in 50-pod-flow.txt compared the JSON string '"status":"UP"' against python's '"status": "UP"', so every 'TIMEOUT after 30s' / '30.x s' there is the loop's own 30 s limit, not the system's latency; W answered in p50 6 ms, p99 46 ms during the run)
+
+## W (:19805) access-log latency over the run
+n=723 p50=6 p90=14 p99=53 max=2206
+
+## step markers (from 50-pod-flow.txt)
+== 02:39:23 STEP 0: pod = netns holder (ports 19821->8080 app, 19822->9465 sidecar) + fake
+== 02:39:54 STEP 1 (F-70/F-91): app reports DOWN with db DOWN -> sidecar DOWN with compone
+== 02:40:28 STEP 2 (F-91): app UP but db DOWN -> DEGRADED -> HEALTH notice replaces the OU
+== 02:40:59 STEP 2b (F-70 E2E): app answers WARN -> sidecar reports WARN -> backend DEGRAD
+== 02:41:04 STEP 3 (F-91): recovery -> notices retired
+== 02:41:35 STEP 4 (G-1-2 / F-88): the app container stops while the netns and the sidecar
+== 02:42:39 STEP 5 (F-76): SIGTERM -> leaving report, prompt exit
+== 02:42:39 STEP 6 (F-89): every sidecar log line is JSON with time/level/msg; key message
+== 02:42:39 STEP 7 (cmd-15 / F-48 / F-92): sidecar restarted, then paused (silent, no leav
+== 02:45:55 STEP 8: teardown
+
+## sidecar log (every line JSON) — the reports as they were sent
+  02:39:24.339 health target found UP http://127.0.0.1:8080/actuator/health
+  02:39:24.671 reported UP 
+  02:39:56.889 reported DOWN health document reports DOWN
+  02:40:28.966 reported UP 
+  02:41:01.234 reported WARN health document reports WARN
+  02:41:06.712 reported UP 
+  02:41:36.754 health target gone; will rediscover  http://127.0.0.1:8080/actuator/health
+  02:41:36.769 reported DOWN GET http://127.0.0.1:8080/actuator/health: connection refused
+  02:42:09.119 health target found UP http://127.0.0.1:8080/actuator/health
+  02:42:09.143 reported UP 
+  02:42:39.306 leaving report sent  
+  02:42:39.306 health sidecar stopped  
+
+## W: notices opened / retired by the health observation (service time)
+02:40:09.412Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor f00c8d74-57b9-41dc-9c70-86b8da58bd94 opened OUTAGE 9b290c6c-8e3c-43
+02:40:39.727Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : retired notice 9b290c6c-8e3c-43a3-9018-5b8f0c8b164a: reclassified as DEGRAD
+02:40:39.736Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor f00c8d74-57b9-41dc-9c70-86b8da58bd94 opened HEALTH ab0d521c-f929-49
+02:41:18.116Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase       : retired notice ab0d521c-f929-49b3-8c2f-a6cb9f0157dc: recovered: UP (1 of 1 
+02:41:49.395Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor f00c8d74-57b9-41dc-9c70-86b8da58bd94 opened OUTAGE 68b90819-4b3d-4d
+02:42:20.325Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase       : retired notice 68b90819-4b3d-4d29-94d8-ef28dcd41087: recovered: UP (1 of 1 
+02:44:34.132Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor f00c8d74-57b9-41dc-9c70-86b8da58bd94 opened OUTAGE 46ecc66c-3914-4e
+02:45:55.385Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 46ecc66c-3914-4e56-ab53-acabcc9cfa71: recovered: UP (1 of 1 
+02:47:27.233Z  INFO 4102 --- [communication-service] [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase       : monitor f00c8d74-57b9-41dc-9c70-86b8da58bd94 opened OUTAGE a57a85b4-d7a0-4d
+
+## derived timings
+  STEP 1  app set DOWN at ~02:39:55 (step header 02:39:54) -> sidecar DOWN report at once -> OUTAGE opened 02:40:09.41  => ~14-15 s (second DOWN report after the 10 s heartbeat; verifier: 17.2 s)
+  STEP 2  app UP/db DOWN at ~02:40:28 -> HEALTH (DEGRADED) opened 02:40:39.74, OUTAGE retired 02:40:39.73          => ~12 s (verifier: 16.2 s)
+  STEP 3  recovery at ~02:41:04 -> notice retired 02:41:18.12                                                        => ~14 s (verifier: 15.1 s)
+  STEP 4  docker stop app at ~02:41:35.5 -> sidecar 'health target gone' 02:41:36.75 and DOWN 'connection refused' 02:41:36.77 => ~1.3 s (verifier: 2.6-4.1 s);
+          next tick reports 'app is not listening (last target http://127.0.0.1:8080/actuator/health)' (seen in /status and in the OUTAGE body);
+          OUTAGE opened 02:41:49.40 => ~14 s after the stop (verifier: 16-18 s); app restarted ~02:42:08 -> UP, notice retired 02:42:20.33 (~12 s)
+  STEP 5  docker stop -t 10 sidecar: 0.4 s, exit 0, 'leaving report sent' logged; monitor summary 'UNKNOWN (no live pod reports)' (the pod left the rollup at once)
+  STEP 7  sidecar paused ~02:43:03 (last report 02:43:02.126) -> OUTAGE 'no health report received since 02:43:02.126Z ... 1 pod has not reported' opened 02:44:34.13 => 92 s (staleAfterSeconds 90; verifier: 89 s); 0 'silent at once' valve warnings; unpause -> retired 02:45:55.39 (11.6 s)
+  after teardown (docker rm -f = SIGKILL, no leaving report) the pod went silent and another OUTAGE opened at 02:47:27 (90 s later): the staleness rule, as specified (sidecar verifier's O-1)

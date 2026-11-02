@@ -1,0 +1,126 @@
+### f27 2026-11-02T02:42:36.698119Z
+F-27 PASS no X-Client-Id -> 401 {error} :: 401 {'error': 'missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)'}
+F-27 PASS malformed X-Client-Id -> 400 :: 400 {'error': "X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}
+F-27 PASS health report without id -> 401 :: 401 {'error': 'missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)'}
+F-27 PASS stream with ?clientId= and no header -> 200 text/event-stream :: 200 text/event-stream;charset=UTF-8
+F-27 PASS stream without any id -> 401 :: 401 {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?
+F-27 PASS /v3/api-docs exempt (no header) -> 200 :: 200
+F-27 PASS /swagger-ui.html exempt -> 200/302 :: 302 location=/swagger-ui/index.html
+F-27 PASS OPTIONS /v1/feed without id is not 401 :: 200
+### f01 2026-11-02T02:42:37.975164Z
+F-01 PASS POST -> 201 + Location + ACTIVE + audience CUSTOMERS :: 201 location=/v1/communications/62d56bb3-73a3-4836-9638-d68c0d9c0bce status=ACTIVE audience=CUSTOMERS
+F-01 PASS Location names the resource :: /v1/communications/62d56bb3-73a3-4836-9638-d68c0d9c0bce
+F-01 PASS SSE 'created' frame for it (id = seq) :: {'id': '41', 'event': 'created', 't': 0.106}
+F-01 PASS future startsAt -> SCHEDULED :: 201 SCHEDULED
+F-01 PASS past startsAt -> ACTIVE :: 201 ACTIVE
+### f02 2026-11-02T02:42:38.172314Z
+F-02 PASS draft=true -> 201 DRAFT :: 201 DRAFT
+F-02 PASS draft absent from feed :: 200 items=0
+F-02 PASS draft permalink -> 404 :: 404 {'error': 'communication e5dc1435-be34-4b9a-8b2f-672e4fd865d7 not found'}
+F-02 PASS no stream event for a draft :: frames=[]
+F-02 PASS publish draft -> 200 ACTIVE :: 200 ACTIVE
+F-02 PASS CREATED event emitted on publish :: created
+F-02 PASS publish again -> 409 :: 409 {'error': 'only DRAFT communications can be published; e5dc1435-be34-4b9a-8b2f-672e4fd865d7 is ACTIVE'}
+F-02 PASS permalink after publish -> 200 ACTIVE :: 200
+### f06 2026-11-02T02:42:40.132840Z
+F-06 PASS retire -> 200 RETIRED with note+actor in history :: 200 RETIRED last={'at': '2026-11-02T02:42:40.203741152Z', 'actor': 'audit1-admin', 'action': 'ACTIVE -> RETIRED: resolved by e2e'}
+F-06 PASS SSE 'retired' frame :: retired
+F-06 PASS retire again -> 200 idempotent, still RETIRED, no new history :: 200 hist 2->2
+F-06 PASS actor defaults to publisher :: 200 actor=audit1-sre
+F-06 PASS retire EXPIRED -> 409 :: 409 {'error': 'communication 0bdf397b-62da-4f35-b782-509c62ad3342 already expired; retiring would rewrite history'}
+F-18 PASS sweeper emits 'expired' frame :: expired
+### f07 2026-11-02T02:42:45.195075Z
+F-07 PASS missing title -> 400 naming 'title' :: 400 title: must not be blank
+F-07 PASS missing tenantId -> 400 naming 'tenantId' :: 400 tenantId: must not be blank
+F-07 PASS missing publisher -> 400 naming 'publisher' :: 400 publisher: must not be blank
+F-07 PASS title > 200 -> 400 naming 'title' :: 400 title: size must be between 0 and 200
+F-07 PASS body > 16384 bytes -> 400 naming 'body' :: 400 body: size must be between 0 and 16384
+F-07 PASS 21 affectedServices -> 400 naming 'affectedServices' :: 400 affectedServices: size must be between 0 and 20
+F-07 PASS MAINTENANCE without endsAt -> 400 naming 'endsAt' :: 400 MAINTENANCE requires endsAt
+F-07 PASS OUTAGE with INFO severity -> 400 naming 'severity' :: 400 OUTAGE requires severity MINOR or higher
+F-07 PASS endsAt before startsAt -> 400 naming 'endsAt' :: 400 endsAt must be after startsAt
+F-07 PASS expiresAt before startsAt -> 400 naming 'expiresAt' :: 400 expiresAt must be after startsAt
+F-07 PASS ticket without number -> 400 naming 'number' :: 400 ticket.number: must not be blank
+F-07 PASS unknown type -> 400 naming 'type' :: 400 type: 'BOGUS' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]
+F-07 PASS malformed JSON timestamp -> 400 naming 'startsAt' :: 400 startsAt: 'yesterday' is not an ISO-8601 UTC timestamp like 2026-11-01T12:00:00Z
+F-07 PASS GET /v1/feed without tenantId -> 400 :: 400 {'error': "Required query parameter 'tenantId' is not present."}
+F-14 PASS page=-1 -> 400 :: 400 {'error': 'page must be >= 0'}
+F-14 PASS size=0 -> 400 :: 400 {'error': 'size must be >= 1'}
+### f09 2026-11-02T02:42:45.376816Z
+F-09 PASS ticket normalised (INC0077001, system servicenow) and externalRef defaults to it :: 201 ticket={'system': 'servicenow', 'number': 'INC0077001'} externalRef=INC0077001
+F-09 PASS ticket.url present only when servicenow.instance-url configured (unset here -> absent) :: url=None
+F-08 PASS second notice on the same ticket without explicit externalRef -> 409 duplicate :: 409 {'error': "duplicate externalRef 'INC0077001' for tenant 'audit1-ticket-01f500'"}
+F-08 PASS same ticket with its own externalRef -> 201 :: 201 second-01f500
+F-09 PASS malformed ticket.number -> 400 :: 400 {'error': "ticket.number 'ABC' is not a ServiceNow incident number (like INC0012345)"}
+F-09 PASS ticket.url must be http(s) -> 400 :: 400 {'error': 'ticket.url must be an http(s) link'}
+F-09 PASS PUT attaches a ticket later with audit 'ticket attached' :: 200 ticket={'system': 'servicenow', 'number': 'INC0077003'} last={'at': '2026-11-02T02:42:45.465904840Z', 'actor': 'audit1-sre', 'action': 'ticket attached: INC0077003'}
+F-09 PASS feed item carries the ticket :: {'system': 'servicenow', 'number': 'INC0077001'}
+F-12 PASS PUT with stale expectedVersion -> 409 :: 409 {'error': 'expectedVersion 0 does not match current version 1'}
+F-12 PASS PUT without expectedVersion -> 400 :: 400 {'error': 'expectedVersion: must not be null'}
+### f14 2026-11-02T02:42:45.501400Z
+F-14 PASS all 5 visible, sorted severity desc then startsAt desc :: 200 ['b-critical', 'a-major', 'a-minor-incident', 'internal-change', 'maint']
+F-14 PASS Page shape {items,page,size,totalElements,hasNext} :: ['hasNext', 'items', 'page', 'size', 'totalElements']
+F-14 PASS service filter exact match :: ['a-major', 'a-minor-incident', 'maint']
+F-14 PASS type filter :: ['a-minor-incident']
+F-14 PASS severity is an inclusive minimum :: ['a-major', 'b-critical']
+F-14 PASS audience filter :: ['internal-change']
+F-14 PASS paging: size=2 page=0 -> 2 items, hasNext true, total 5 :: True 5
+F-14 PASS paging: last page hasNext false :: 1 False
+F-14 PASS size capped at 100 :: size=100
+F-14 PASS unknown enum filter -> 400 :: 400
+F-14 PASS activeAt in the past -> nothing was active then :: 200 0
+### f15_16 2026-11-02T02:42:45.805153Z
+F-16 PASS MAINTENANCE starting in 3 s listed as SCHEDULED (upcoming) :: SCHEDULED
+F-15 PASS right after startsAt the feed says ACTIVE (effective) regardless of stored status :: feed=ACTIVE stored=ACTIVE (sweeper every 2 s)
+F-15 PASS item with expiresAt=now+2s is visible now :: 
+F-15 PASS 0.2 s after expiresAt: gone from feed, permalink 200 EXPIRED :: feed-has=False permalink=200/EXPIRED stored=EXPIRED
+F-16 PASS maintenance tomorrow visible; outage tomorrow hidden; maintenance in 10 days hidden (P7D) :: m1=True o1=False m2=False
+F-16 PASS includeUpcoming=false hides the upcoming maintenance :: 
+F-17 PASS permalink of a hidden future outage -> 200 SCHEDULED :: 200 SCHEDULED
+### f18 2026-11-02T02:42:51.853289Z
+F-18 PASS one 'snapshot' frame per visible item (2), each with an id :: snapshots=['pre-existing', 'activates']
+F-18 PASS sweeper emits 'activated' when the scheduled start passes :: 3.662s
+F-18 PASS 'updated' frame on PUT with new title :: 200 e2e 01f500 edited
+F-18 PASS 'retired' frame on retire :: 
+F-18 PASS live frame ids are strictly increasing :: [71, 72, 73, 74, 75]
+F-18 PASS frame names are event types lower-cased; data.type matches :: ['activated', 'created', 'retired', 'snapshot', 'updated']
+F-18 PASS stream opens with a ':connected' comment within 1 s of the request (G-1-4) :: first comment=(0.012, ':connected')
+F-18 PASS ':keepalive' comment within ~15 s :: [(15.01, ':keepalive')]
+### f20 2026-11-02T02:43:07.044272Z
+F-20 PASS snapshot id vs live overlap (documented at-least-once: clients upsert by id) :: frames=[('snapshot', '76')] -> resume from 76
+F-20 PASS reconnect with Last-Event-ID header replays RETIRED then CREATED, no snapshot :: status=200 frames=[('retired', 'first'), ('created', 'second')] body=
+F-20 PASS ?lastEventId= query form :: status=200 body=
+F-20 PASS never-issued lastEventId -> fresh snapshot :: status=200 frames=[('snapshot', 'second')] body=
+F-20 PASS non-numeric Last-Event-ID ignored -> snapshot :: status=200 frames=[('snapshot', 'second')] body=
+### f21 2026-11-02T02:43:13.699938Z
+F-21 PASS publish through B -> 'created' on A's stream (and B's) :: A after 0.3s, B after 0.15s
+F-21 PASS retire through A -> 'retired' on B's stream :: 
+F-21 PASS same seq ids on both nodes :: A=79,80 B=79,80
+### f36_38_46_50 2026-11-02T02:43:14.568482Z
+F-36 PASS first push -> 202 + monitor, auto-registered push-only (url null), publisher from report :: 202 url=None publisher=audit1-pusher id=9965fb86-c272-4f53-b8fb-81333f88db4b
+F-36 PASS report without status -> 400 naming status :: 400 {'error': 'status: must not be blank'}
+F-36 PASS report without tenantId -> 400 :: 400 {'error': 'tenantId: must not be blank'}
+F-36 PASS GET monitors?tenantId lists it with state :: 200 n=1
+F-38 PASS status 'OK' -> UP :: 202 lastStatus=UP summary=UP
+F-38 PASS status 'OUT_OF_SERVICE' -> DOWN :: 202 lastStatus=DOWN summary=DOWN
+F-38 PASS status 'WARN' -> DEGRADED :: 202 lastStatus=DEGRADED summary=DEGRADED
+F-38 PASS status 'healthy' -> UP :: 202 lastStatus=UP summary=UP
+F-38 PASS status 'FATAL' -> DOWN :: 202 lastStatus=DOWN summary=DOWN
+F-38 PASS UP overall with a nested DOWN component -> DEGRADED, flattened name db.primary in summary :: 202 lastStatus=DEGRADED summary=DEGRADED: db.primary DOWN
+F-38 PASS UNKNOWN report carries no information (streaks untouched, 202) :: 202 lastStatus=DEGRADED
+F-46 PASS two pods recorded, listed ordered by id with lastSeenAt :: 200 [('pod-a', 'UP', False), ('pod-b', 'UP', False)]
+F-46 PASS repeat report upserts (still 2) :: 2
+F-46 PASS rollup summary counts pods :: UP (2 of 2 pods UP)
+F-46 PASS unknown monitor -> 404 :: 404
+F-49 PASS instance-registered monitor gets staleAfterSeconds 90 and minHealthyPercent 50 :: {'publisher': 'health-monitor', 'intervalSeconds': 30, 'timeoutMs': 5000, 'failureThreshold': 2, 'recoveryThreshold': 2, 'downSeverity': 'MAJOR', 'degradedSeverity': 'MINOR', 'audience': 'CUSTOMERS', 'staleAfterSeconds': 90, 'minHealthyPercent': 50}
+F-48 PASS leaving=true -> instance left=true and dropped from the rollup (1 of 1) :: left=True summary=UP (1 of 1 pod UP)
+F-50 PASS 20 parallel instance reports (fresh service) -> >= 19 x 202 (G-1-7), one monitor, 20 pods recorded :: codes=[202] x20 202s=20 monitors=1 pods=20 summary=UP (20 of 20 pods UP)
+F-50 PASS two more bursts of 20 (same service again, another fresh service) each >= 19 x 202 :: existing=20/20 fresh=20/20 non-202 codes=[]
+F-48 PASS pods silent past the window -> OUTAGE naming them :: items=1 title=silent is down body=Automated health check reported **DOWN** at 2026-11-02T02:43:24.280541151Z (no health report received since 2026-11-02T02:43:18.658Z).
+
+2 pods have not reported state=DOWN (2 pods have not reported since 2026-11-02T02:43:18.658Z (p1, p2))
+F-48 PASS all pods left -> scaled to zero, no notice :: items=0 state=UNKNOWN (no live pod reports) lastStatus=UP
+cleanup tenant audit1-health-01f500: DELETE monitors -> [204, 204, 204, 204, 204, 204]; retire notices -> []
+
+SUMMARY: 108 checks, 108 pass, 0 fail
+exit 0

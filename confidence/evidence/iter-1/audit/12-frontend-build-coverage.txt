@@ -1,0 +1,14 @@
+== npm run build
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-DWe3WsC3.css   30.80 kB │ gzip:  7.04 kB
+dist/assets/index-oOK643_0.js   266.99 kB │ gzip: 83.34 kB
+
+✓ built in 370ms
+build exit 0
+== npm run test:coverage
+ Test Files  12 passed (12)
+      Tests  78 passed (78)
+All files          |   74.07 |    67.53 |   76.23 |   76.25 |                   
+ src/outages       |   92.06 |    87.97 |   85.92 |   92.77 |                   
+ src/ui            |   42.18 |    50.53 |   54.79 |   46.87 |                   
+coverage exit 0

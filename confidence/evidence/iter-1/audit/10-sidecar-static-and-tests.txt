@@ -1,0 +1,90 @@
+== 2026-11-02T02:24:10Z gofmt -l . / go vet ./... / go build ./... / go test -count=1 -v ./... (kustomize=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/tools/kustomize kubeconform=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/tools/kubeconform)
+-- gofmt -l:
+gofmt exit 0
+go vet exit 0
+go build exit 0
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+=== RUN   TestNativeComponentKeepsExistingInitContainers
+    deploy_test.go:198: kubeconform 1.29.0: Summary: 3 resources found parsing stdin - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestNativeComponentKeepsExistingInitContainers (1.42s)
+=== RUN   TestClassicComponentAppendsTheContainer
+    deploy_test.go:212: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+    deploy_test.go:213: kubeconform 1.29.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestClassicComponentAppendsTheContainer (1.51s)
+=== RUN   TestBothComponentsShareTheContainerContract
+--- PASS: TestBothComponentsShareTheContainerContract (0.20s)
+=== RUN   TestManualSnippetSharesTheContainerContract
+    deploy_test.go:267: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestManualSnippetSharesTheContainerContract (0.57s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	3.698s
+=== RUN   TestReportsChangesAndHeartbeats
+--- PASS: TestReportsChangesAndHeartbeats (0.15s)
+=== RUN   TestStartupGraceReportsUnknownUntilFirstUp
+--- PASS: TestStartupGraceReportsUnknownUntilFirstUp (0.05s)
+=== RUN   TestNoListeningPortStaysUnknown
+--- PASS: TestNoListeningPortStaysUnknown (0.01s)
+=== RUN   TestPinnedTargetThatNeverAnswersUpStaysUnknown
+--- PASS: TestPinnedTargetThatNeverAnswersUpStaysUnknown (0.01s)
+=== RUN   TestSendFailuresBackOffAndKeepLatest
+--- PASS: TestSendFailuresBackOffAndKeepLatest (0.01s)
+=== RUN   TestRunSendsLeavingReportOnShutdown
+--- PASS: TestRunSendsLeavingReportOnShutdown (0.01s)
+=== RUN   TestRediscoversWhenPortDisappears
+--- PASS: TestRediscoversWhenPortDisappears (0.02s)
+=== RUN   TestAppThatStopsListeningStaysDownUntilItIsBack
+--- PASS: TestAppThatStopsListeningStaysDownUntilItIsBack (0.02s)
+=== RUN   TestAppNeverSeenUpIsUnknownWhileNothingListens
+--- PASS: TestAppNeverSeenUpIsUnknownWhileNothingListens (0.01s)
+=== RUN   TestUnreadablePortTableIsUnknownNotDown
+--- PASS: TestUnreadablePortTableIsUnknownNotDown (0.01s)
+=== RUN   TestHandler
+--- PASS: TestHandler (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.308s
+=== RUN   TestDeriveService
+--- PASS: TestDeriveService (0.00s)
+=== RUN   TestFromEnvDefaults
+--- PASS: TestFromEnvDefaults (0.00s)
+=== RUN   TestFromEnvOverridesAndValidation
+--- PASS: TestFromEnvOverridesAndValidation (0.00s)
+=== RUN   TestParsePortRanges
+--- PASS: TestParsePortRanges (0.00s)
+=== RUN   TestEveryEnvironmentVariableIsDocumented
+--- PASS: TestEveryEnvironmentVariableIsDocumented (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.025s
+=== RUN   TestParseKeepsOnlyListeningSockets
+--- PASS: TestParseKeepsOnlyListeningSockets (0.00s)
+=== RUN   TestListeningPortsMergesTablesAndSkips
+--- PASS: TestListeningPortsMergesTablesAndSkips (0.03s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.030s
+=== RUN   TestProbeActuatorDocument
+--- PASS: TestProbeActuatorDocument (0.00s)
+=== RUN   TestProbeDownDocumentAndOldActuatorShape
+--- PASS: TestProbeDownDocumentAndOldActuatorShape (0.00s)
+=== RUN   TestProbePlainHTTPClassification
+--- PASS: TestProbePlainHTTPClassification (0.00s)
+=== RUN   TestProbeUnreachableAndTCP
+--- PASS: TestProbeUnreachableAndTCP (0.00s)
+=== RUN   TestNormalize
+--- PASS: TestNormalize (0.00s)
+=== RUN   TestDetectPrefersActuatorOverAnyPort
+--- PASS: TestDetectPrefersActuatorOverAnyPort (0.00s)
+=== RUN   TestDetectFallsBackToRootThenTCP
+--- PASS: TestDetectFallsBackToRootThenTCP (2.50s)
+=== RUN   TestDetectSwitchesToHTTPS
+2026/11/02 02:24:16 http: TLS handshake error from 127.0.0.1:55944: client sent an HTTP request to an HTTPS server
+--- PASS: TestDetectSwitchesToHTTPS (0.01s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.521s
+=== RUN   TestSendPostsReportWithClientId
+--- PASS: TestSendPostsReportWithClientId (0.00s)
+=== RUN   TestSendClassifiesFailures
+--- PASS: TestSendClassifiesFailures (0.00s)
+=== RUN   TestNewClientRejectsBadCAFile
+--- PASS: TestNewClientRejectsBadCAFile (0.02s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.035s
+go test exit 0
