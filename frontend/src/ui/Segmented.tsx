@@ -16,6 +16,12 @@ export interface SegmentedProps<V extends string> {
   onChange: (value: V) => void
   options: SegmentedOption<V>[]
   ariaLabel: string
+  /** id on the group, so a form can find it (and focus its selected segment) */
+  id?: string
+  /** id of the hint/error line that describes the group */
+  describedBy?: string
+  /** the group's value failed validation */
+  invalid?: boolean
   size?: 'sm' | 'md'
   /** stretch to the container, equal segments */
   full?: boolean
@@ -23,7 +29,7 @@ export interface SegmentedProps<V extends string> {
 }
 
 /** iOS-style segmented control: one selected segment lifted on a recessed track. */
-export function Segmented<V extends string>({ value, onChange, options, ariaLabel, size = 'md', full, className }: SegmentedProps<V>) {
+export function Segmented<V extends string>({ value, onChange, options, ariaLabel, id, describedBy, invalid, size = 'md', full, className }: SegmentedProps<V>) {
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return
     e.preventDefault()
@@ -39,8 +45,11 @@ export function Segmented<V extends string>({ value, onChange, options, ariaLabe
 
   return (
     <div
+      id={id}
       role="radiogroup"
       aria-label={ariaLabel}
+      aria-describedby={describedBy}
+      aria-invalid={invalid || undefined}
       onKeyDown={onKeyDown}
       className={cx('inline-flex items-center rounded-md bg-surface-secondary p-0.5', full && 'flex w-full', className)}
     >

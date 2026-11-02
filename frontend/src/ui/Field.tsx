@@ -14,6 +14,11 @@ export interface FieldProps {
   error?: ReactNode
   required?: boolean
   htmlFor?: string
+  /**
+   * id of the hint/error line, for the control's aria-describedby; defaults to `${htmlFor}-note`
+   * when htmlFor is set (pass it for a group control that has no htmlFor)
+   */
+  noteId?: string
   children: ReactNode
   className?: string
   /** label and control side by side (settings rows) */
@@ -21,7 +26,8 @@ export interface FieldProps {
 }
 
 /** Label + control + hint/error. Wrap any Input, Textarea, Select or Switch. */
-export function Field({ label, hint, error, required, htmlFor, children, className, inline }: FieldProps) {
+export function Field({ label, hint, error, required, htmlFor, noteId, children, className, inline }: FieldProps) {
+  const note = noteId ?? (htmlFor ? `${htmlFor}-note` : undefined)
   return (
     <div className={cx(inline ? 'flex items-center justify-between gap-6' : 'flex flex-col gap-1.5', className)}>
       {label && (
@@ -37,7 +43,7 @@ export function Field({ label, hint, error, required, htmlFor, children, classNa
       <div className={cx('min-w-0', inline ? 'flex justify-end' : 'flex flex-col gap-1')}>
         {children}
         {(error || hint) && !inline && (
-          <p className={cx('text-caption', error ? 'text-critical-fg' : 'text-tertiary')} role={error ? 'alert' : undefined}>
+          <p id={note} className={cx('text-caption', error ? 'text-critical-fg' : 'text-tertiary')} role={error ? 'alert' : undefined}>
             {error ?? hint}
           </p>
         )}
