@@ -295,9 +295,18 @@ podman build -t registry.example.com/platform/health-sidecar:1.0.0 \
 `/status`) and the image's `org.opencontainers.image.version` label; `REVISION` becomes
 `org.opencontainers.image.revision`, so a registry UI or a scanner can tell builds apart.
 
-No dependencies outside the Go standard library. The module needs Go 1.25 (`go.mod`), the line
-the default builder image `ubi9/go-toolset:1.25` ships; `go test ./...` on a laptop with an older
-Go downloads that toolchain through the module proxy.
+No dependencies outside the Go standard library. The module needs Go 1.27.3 or later (`go 1.27.3`
+in `go.mod`): older releases carry four HIGH vulnerabilities in standard-library packages the
+sidecar uses (CVE-2026-111943 in `crypto/x509`, CVE-2026-78667 and CVE-2026-78669 in `net/http`,
+CVE-2026-97031 in `crypto/tls`). The image builds with `GOTOOLCHAIN=local`, so a builder with an
+older Go stops the build (`go.mod requires go >= 1.27.3`) instead of producing a vulnerable binary;
+`go test ./...` on a laptop with an older Go downloads Go 1.27.3 through the module proxy.
+
+The default builder is `ubi9/go-toolset:1.27`. Whether Red Hat publishes that tag, with Go 1.27.3 or
+later, could not be checked where this was written (its registry was unreachable there; the image
+was built and scanned with a stand-in carrying Go 1.27.3). If it does not, pass
+`--build-arg GO_IMAGE=` an image with Go 1.27.3 or later and the CA bundle at
+`/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem`, which the final stage copies.
 
 The tests under `deploy/` render the Kustomize snippets with `kustomize`, render the Helm `include`
 lines this README prints, pasted into a consuming chart, with `helm`, and validate every form with

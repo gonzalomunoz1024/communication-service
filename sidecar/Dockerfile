@@ -4,8 +4,12 @@
 #   podman build -t registry.example.com/platform/health-sidecar:1.0.0 \
 #     --build-arg VERSION=1.0.0 --build-arg REVISION=$(git rev-parse HEAD) .
 #
-# GO_IMAGE's Go minor is the module's go line (go.mod); deploy/dockerfile_test.go keeps them equal.
-ARG GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.25
+# GO_IMAGE is on the minor line of the module's Go release (go.mod: go 1.27.3, the first release
+# without the HIGH standard-library vulnerabilities of the 1.25 build). GOTOOLCHAIN=local below makes
+# a builder with an older Go stop the build ("go.mod requires go >= 1.27.3") instead of building a
+# vulnerable binary or downloading another toolchain. deploy/dockerfile_test.go keeps go.mod, this
+# tag, GOTOOLCHAIN and the README in step.
+ARG GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.27
 ARG BASE_IMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.5
 
 FROM ${GO_IMAGE} AS build

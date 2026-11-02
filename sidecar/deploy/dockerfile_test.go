@@ -8,19 +8,36 @@ import (
 	"testing"
 )
 
-// goLine is the Go minor the module requires: go.mod's go directive and the go-toolset tag the
-// Dockerfile builds with by default must both name it, so a toolchain move is one deliberate
-// change to all of them rather than a drift between the two files.
-const goLine = "1.25"
+// goVersion is the oldest Go release the module may be built with: go.mod's go directive names
+// it, so an older toolchain refuses the module instead of building it, and the go-toolset tag the
+// Dockerfile builds with by default is its minor line, so a rebuild takes that line's later
+// patch releases. 1.27.3 is the first release without the four HIGH standard-library
+// vulnerabilities the go1.25.14 build carried (CVE-2026-111943, CVE-2026-78667, CVE-2026-78669,
+// CVE-2026-97031). A toolchain move is one deliberate change to go.mod, the Dockerfile, the
+// README and this constant rather than a drift between them.
+const goVersion = "1.27.3"
 
-// G-2-14: go.mod and the Dockerfile agree on the Go line.
+// G-2-14: go.mod and the Dockerfile agree on the Go line. G-4-2: go.mod names the patch release,
+// the build stage keeps GOTOOLCHAIN=local so a builder older than that release stops the build
+// (go.mod requires go >= ...) instead of building a vulnerable binary or downloading a toolchain,
+// and the README's Build section names both.
 func TestGoModAndDockerfileAgreeOnTheGoLine(t *testing.T) {
-	if got := goDirective(readFile(t, filepath.Join("..", "go.mod"))); got != goLine {
-		t.Errorf("go.mod says go %s, want %s", got, goLine)
+	if got := goDirective(readFile(t, filepath.Join("..", "go.mod"))); got != goVersion {
+		t.Errorf("go.mod says go %s, want %s", got, goVersion)
 	}
+	minor := goVersion[:strings.LastIndex(goVersion, ".")]
 	df := parseDockerfile(t, filepath.Join("..", "Dockerfile"))
-	if got := df.args["GO_IMAGE"]; !strings.HasSuffix(got, "/go-toolset:"+goLine) {
-		t.Errorf("Dockerfile default GO_IMAGE = %q, want a go-toolset:%s tag", got, goLine)
+	if got := df.args["GO_IMAGE"]; !strings.HasSuffix(got, "/go-toolset:"+minor) {
+		t.Errorf("Dockerfile default GO_IMAGE = %q, want a go-toolset:%s tag", got, minor)
+	}
+	if got := df.stages[0].env["GOTOOLCHAIN"]; got != "local" {
+		t.Errorf("the build stage sets GOTOOLCHAIN=%q, want local: an older builder must stop the build, not build or download", got)
+	}
+	build := section(readFile(t, filepath.Join("..", "README.md")), "## Build")
+	for _, want := range []string{"Go " + goVersion, "`go " + goVersion + "`", "go-toolset:" + minor} {
+		if !strings.Contains(build, want) {
+			t.Errorf("the README's Build section should name %s", want)
+		}
 	}
 }
 
@@ -94,7 +111,7 @@ func section(readme, heading string) string {
 }
 
 // dockerfile is the small part of a Dockerfile these tests look at: the global ARG defaults
-// and, per stage, its own ARG defaults and LABELs.
+// and, per stage, its own ARG defaults, ENV values and LABELs.
 type dockerfile struct {
 	args   map[string]string
 	stages []stage
@@ -102,10 +119,11 @@ type dockerfile struct {
 
 type stage struct {
 	args   map[string]string
+	env    map[string]string
 	labels map[string]string
 }
 
-// parseDockerfile joins continuation lines, drops comments and reads ARG, FROM and LABEL.
+// parseDockerfile joins continuation lines, drops comments and reads ARG, FROM, ENV and LABEL.
 func parseDockerfile(t *testing.T, path string) dockerfile {
 	t.Helper()
 	df := dockerfile{args: map[string]string{}}
@@ -127,7 +145,7 @@ func parseDockerfile(t *testing.T, path string) dockerfile {
 		instruction, rest, _ := strings.Cut(line, " ")
 		switch strings.ToUpper(instruction) {
 		case "FROM":
-			df.stages = append(df.stages, stage{args: map[string]string{}, labels: map[string]string{}})
+			df.stages = append(df.stages, stage{args: map[string]string{}, env: map[string]string{}, labels: map[string]string{}})
 		case "ARG":
 			target := df.args
 			if n := len(df.stages); n > 0 {
@@ -135,6 +153,12 @@ func parseDockerfile(t *testing.T, path string) dockerfile {
 			}
 			for k, v := range pairs(rest) {
 				target[k] = v
+			}
+		case "ENV":
+			if n := len(df.stages); n > 0 {
+				for k, v := range pairs(rest) {
+					df.stages[n-1].env[k] = v
+				}
 			}
 		case "LABEL":
 			if n := len(df.stages); n > 0 {
