@@ -99,7 +99,8 @@ Nothing else under `/actuator` is served (404).
 **When Mongo is down.** The service needs its database to start (it creates its indexes first;
 when Mongo cannot be reached it gives up after `communication.mongo.server-selection-timeout`,
 5 s, exits, and the pod is restarted until it can). Once running it survives losing the database: every call
-that needs it answers `503 {"error":"database unavailable"}` within that timeout, readiness reports
+that needs it answers `503 {"error":"database unavailable"}` after that timeout (about 20 s for a database
+that hangs instead, see the end of this paragraph), readiness reports
 `DOWN` within `communication.mongo.readiness-timeout` (1 s, a kubelet's default probe timeout) so
 the pod leaves the Service while liveness stays `UP`, open SSE streams stay up on keepalives, and
 each scheduler logs one WARN line per skipped run (`health sweep skipped: database unavailable: …`,
@@ -114,7 +115,13 @@ line per answered call, the stack trace at DEBUG); the driver's own cluster moni
 above only (`logging.level.org.mongodb.driver.cluster`), so connectivity changes print no INFO stack
 traces. Calls succeed again within one server selection of Mongo coming back. The waits are
 `communication.mongo.server-selection-timeout` (5 s), `connect-timeout` (5 s) and `read-timeout`
-(15 s per socket read); they win over the same options given on the URI.
+(15 s per socket read); they win over the same options given on the URI. How long a call waits for
+its 503 depends on how the database fails. One that refuses connections (stopped, nothing listening
+on its port) costs one `server-selection-timeout`: 5 s. One that stops answering on connections
+already open (a frozen process, `docker pause`, a network black hole) holds a call for `read-timeout`,
+15 s, and the driver retries a read once, which waits one more `server-selection-timeout`: about 20 s
+(15 s for a write, which a standalone server does not retry). Once the driver has given up on such a
+server (within 15 s with a paused mongod) later calls get their 503 after 5 s again.
 
 ## Core semantics
 
