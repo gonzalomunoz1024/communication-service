@@ -124,11 +124,19 @@ Every wait gives up after `E2E_WAIT_SECONDS` (default 150) and prints `docker co
 ## Settings and why
 
 - **Sidecar cadence** `CS_INTERVAL=2s`, `CS_RETRY_DELAY=500ms`, `CS_HEARTBEAT=4s` (defaults 15 s / 2 s / 30 s).
-  The service opens a notice after `failureThreshold` observations and the sidecar re-sends an
-  unchanged status only at the heartbeat, so with the defaults a DOWN app becomes an OUTAGE about
-  45 s after it fails. Here: a probe within 2 s, the second look 0.5 s later, the change report, the
-  next heartbeat at the first 2 s tick 4 s on, the backend's 500 ms fan-out poll: a card in the feed
-  within about 9 s (8.5 s measured), and recovery the same way (6.3 s measured). The tests allow 15 s.
+  The service opens a notice after `failureThreshold` observations in a row and retires it after
+  `recoveryThreshold`, two each here. The sidecar probes every interval (plus up to a fifth of it at
+  random), probes once more `CS_RETRY_DELAY` after an answer that is not UP, sends a change at once,
+  re-sends a DOWN or degraded report after every probe and an unchanged UP report only at the heartbeat
+  ([What it reports and when](../sidecar/README.md#what-it-reports-and-when)): the second DOWN
+  observation comes one probe after the first, the second UP one heartbeat after the first. With the
+  defaults a DOWN app becomes an OUTAGE 19 to 34 s after it fails (40 s at most with the random part),
+  and the notice retires 30 to 45 s after the app recovers (54 s at most). Here: a probe within 2.4 s
+  and the second look 0.5 s later send the first DOWN report, the next probe the second, 2.5 to 2.9 s
+  later (2.85 s measured), and the backend's 500 ms fan-out poll adds the rest: the card 5 to 6.5 s
+  after `app-set DOWN DOWN`. After `app-set UP UP` the first UP report goes out within 2.4 s and the
+  second at the heartbeat, 4 to 4.8 s later (4.5 s measured): the card is gone about 6 s after. The
+  tests allow 15 s for each.
 - **Thresholds** `COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD=2`, `..._RECOVERYTHRESHOLD=2` on the
   backend: the service's own defaults, pinned because the 15 s budget is written for exactly two
   observations; a changed default would otherwise stretch the budget silently. F-91 asserts the

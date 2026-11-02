@@ -33,7 +33,7 @@ test('F-91 the app goes DOWN → the sidecar reports it → an OUTAGE card from 
   await stack('app-set', 'DOWN', 'DOWN')
   const flipped = Date.now()
   try {
-    // the tuned debounce: a probe within 2 s, a second look 0.5 s later, the report, the next heartbeat 4 s on
+    // the tuned debounce: a probe within 2 s and a second look 0.5 s later send the first DOWN report, the next probe the second
     const notice = card(page, TITLE)
     await expect(notice).toBeVisible({ timeout: 15_000 })
     console.log(`F-91: the OUTAGE card appeared ${((Date.now() - flipped) / 1000).toFixed(1)} s after the app went DOWN`)
