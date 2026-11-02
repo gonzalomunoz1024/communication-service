@@ -104,8 +104,12 @@ management.endpoint.health.show-details: always
 
 - Every 15 s (`CS_INTERVAL`) it probes; a non-UP answer is probed once more after 2 s before it
   counts, so a GC pause or a restart in progress is not an outage.
-- It sends a report when the status (or the set of failing components) changes, and a
-  heartbeat every 30 s (`CS_HEARTBEAT`) otherwise. 1,000 pods are about 33 requests/s.
+- While the app is UP it sends a report when the status (or the set of failing components)
+  changes and a heartbeat every 30 s (`CS_HEARTBEAT`) otherwise. While the status is anything
+  but UP (DOWN, a degraded status, UNKNOWN) it sends after every probe, so the service's
+  `failureThreshold` of consecutive observations is reached one probe interval after the first
+  DOWN, not one heartbeat later. 1,000 healthy pods are about 33 requests/s; 1,000 unhealthy
+  ones about 67.
 - Until the app has answered UP once, and for at most 5 minutes (`CS_STARTUP_GRACE`), it
   reports UNKNOWN, which the service ignores: slow starts and rolling deploys never open notices.
   The same applies to a service that boots unhealthy (its endpoint answers but never UP): it is
@@ -113,8 +117,10 @@ management.endpoint.health.show-details: always
   never answers UP stays UNKNOWN after that, with a message pointing at the configuration,
   because a wrong port is far more likely than an outage.
 - Once the app has been UP, an app that stops listening (crashed, crash-looping, killed by its
-  liveness probe) is DOWN, reported as `app is not listening (last target …)` on every probe
-  until it listens again; it is then rediscovered and reported UP.
+  liveness probe) is DOWN, reported as `app is not listening (last target …)` from the probe
+  that finds its port gone and on every probe after it, until it listens again; it is then
+  rediscovered and reported UP. (A pinned `CS_PORT` is never dropped, so its report keeps the
+  probe's own error, e.g. `connection refused`.)
 - On SIGTERM it sends one last report with `instance.leaving: true`, so the pod drops out of
   the service's rollup at once instead of looking dead for the staleness window (90 s).
 - If the communication service is unreachable it keeps only the latest status and retries
@@ -148,7 +154,7 @@ The report body is Actuator's vocabulary plus the instance:
 | `CS_PORT`, `CS_PATH`, `CS_SCHEME` | discovered | pin the target; `CS_PORT` is required for a non-auto mode |
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
 | `CS_IGNORE_PORTS` | `15000-15099` | ports discovery skips, e.g. `15000-15099,9090` |
-| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes |
+| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while the app is UP and nothing changes (every probe is sent while it is not UP) |
 | `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `5s` | per probe / per report |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
 | `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |
@@ -165,10 +171,15 @@ the last send error, which is the first place to look when a service does not sh
 The image has no shell or curl, so read the sidecar from outside the pod:
 
 ```bash
-oc logs <pod> -c health-sidecar                 # JSON lines: target found, reported, report failed
+oc logs <pod> -c health-sidecar                 # JSON lines: target found, reported (each change), report failed
 oc port-forward <pod> 9465:9465 &
 curl -s localhost:9465/status | jq .
 ```
+
+A `reported` line is logged at INFO when the status, the failing components or the message
+change (UP → DOWN, DOWN → UP, a new cause); the sends in between (heartbeats, the repeated
+probes of an app that is not UP) are logged at DEBUG, below the default level, so a dead app
+shows as one DOWN line and then its recovery.
 
 `/status` answers with:
 

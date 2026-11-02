@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -359,6 +361,10 @@ func TestAppThatStopsListeningStaysDownUntilItIsBack(t *testing.T) {
 	h.agent.ProcRoot = procRoot(t)
 	h.advance(15 * time.Second)
 	h.agent.Tick(ctx) // notices the port vanished and drops the target (see the test above)
+	if last := h.agent.Status().Last; last == nil || last.Status != "DOWN" ||
+		!strings.Contains(last.Message, "not listening") || !strings.Contains(last.Message, target) {
+		t.Errorf("the probe that finds the port gone should already say the app is not listening, got %+v", last)
+	}
 	for i := 1; i <= 3; i++ {
 		h.advance(15 * time.Second)
 		h.agent.Tick(ctx)
@@ -558,4 +564,146 @@ func documentedStatusFields(t *testing.T) map[string]bool {
 		t.Fatalf("expected the README /status table to document at least 7 fields, found %v", fields)
 	}
 	return fields
+}
+
+// G-2-16: while the app is not UP every probe is sent, so the service reaches its failure
+// threshold one probe interval after the first DOWN instead of one heartbeat later; an UP app
+// keeps the change-or-heartbeat cadence. Real time through Run: interval 50 ms, heartbeat 10 s,
+// 300 ms of running.
+func TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat(t *testing.T) {
+	for _, tc := range []struct {
+		name, status string
+		min, max     int
+	}{
+		{"DOWN app: one report per probe", "DOWN", 3, 20},
+		{"UP app: the first report, then nothing before the heartbeat", "UP", 1, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := newFakeApp(t, tc.status)
+			cfg := baseConfig()
+			cfg.Interval, cfg.Heartbeat, cfg.StartupGrace = 50*time.Millisecond, 10*time.Second, 0
+			h := newHarness(t, cfg, app.port)
+			h.agent.Now = time.Now // Run's timers are real, so the heartbeat clock must be too
+			ctx, cancel := context.WithCancel(context.Background())
+			done := make(chan struct{})
+			go func() {
+				h.agent.Run(ctx)
+				close(done)
+			}()
+			time.Sleep(300 * time.Millisecond)
+			cancel()
+			select {
+			case <-done:
+			case <-time.After(5 * time.Second):
+				t.Fatal("Run did not return after cancellation")
+			}
+			var sent []report.Report
+			for _, r := range h.sender.all() {
+				if r.Instance == nil || !r.Instance.Leaving {
+					sent = append(sent, r)
+				}
+			}
+			if len(sent) < tc.min || len(sent) > tc.max {
+				t.Fatalf("%d reports in 300 ms at a 50 ms interval, want between %d and %d", len(sent), tc.min, tc.max)
+			}
+			for i, r := range sent {
+				if r.Status != tc.status {
+					t.Errorf("report %d: status %s, want %s", i, r.Status, tc.status)
+				}
+			}
+		})
+	}
+}
+
+// G-2-16: the UP->DOWN and DOWN->UP transitions are logged at INFO with the message and the
+// sends in between at DEBUG; and the probe that finds the port gone already says "app is not
+// listening (last target ...)", the words every later probe carries, instead of its own
+// connection error, so the log line of the transition is the one an operator can act on.
+func TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug(t *testing.T) {
+	app := newFakeApp(t, "UP")
+	h := newHarness(t, baseConfig(), app.port)
+	var logs bytes.Buffer
+	h.agent.log = slog.New(slog.NewJSONHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	ctx := context.Background()
+
+	h.agent.Tick(ctx) // UP
+	target := h.agent.Status().Target
+	app.srv.Close()
+	h.agent.ProcRoot = procRoot(t) // the app dies: its port is gone
+	for i := 0; i < 3; i++ {
+		h.advance(15 * time.Second)
+		h.agent.Tick(ctx) // the first probe finds the port gone, the next two miss discovery
+	}
+	again := newFakeApp(t, "UP")
+	h.agent.ProcRoot = procRoot(t, again.port)
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx) // UP again
+
+	want := "app is not listening (last target " + target + ")"
+	reports := h.sender.all()
+	var statuses []string
+	for _, r := range reports {
+		statuses = append(statuses, r.Status)
+	}
+	if got := strings.Join(statuses, " "); got != "UP DOWN DOWN DOWN UP" {
+		t.Errorf("sent %q, want every DOWN probe sent: \"UP DOWN DOWN DOWN UP\"", got)
+	}
+	for i, r := range reports[1 : len(reports)-1] {
+		if r.Message != want {
+			t.Errorf("DOWN report %d says %q, want %q", i+1, r.Message, want)
+		}
+	}
+
+	var info, debug []string
+	for _, line := range strings.Split(strings.TrimSpace(logs.String()), "\n") {
+		var l struct {
+			Level, Msg, Status, Message string
+		}
+		if err := json.Unmarshal([]byte(line), &l); err != nil {
+			t.Fatalf("log line is not JSON: %q", line)
+		}
+		if l.Msg != "reported" {
+			continue
+		}
+		switch l.Level {
+		case "INFO":
+			info = append(info, l.Status+": "+l.Message)
+		case "DEBUG":
+			debug = append(debug, l.Status+": "+l.Message)
+		default:
+			t.Errorf("unexpected level in %q", line)
+		}
+	}
+	if wantInfo := []string{"UP: ", "DOWN: " + want, "UP: "}; !slices.Equal(info, wantInfo) {
+		t.Errorf("INFO 'reported' lines %q, want the transitions only: %q", info, wantInfo)
+	}
+	if wantDebug := []string{"DOWN: " + want, "DOWN: " + want}; !slices.Equal(debug, wantDebug) {
+		t.Errorf("DEBUG 'reported' lines %q, want the repeated DOWN sends: %q", debug, wantDebug)
+	}
+}
+
+// A report the service rejected (4xx) is not re-sent every probe just because the status is
+// DOWN: the same body cannot do better sooner, so it waits for a change or the heartbeat, and
+// once a body is accepted again the every-probe cadence resumes.
+func TestRejectedDownReportKeepsTheHeartbeatCadence(t *testing.T) {
+	app := newFakeApp(t, "DOWN")
+	cfg := baseConfig()
+	cfg.StartupGrace = 0
+	h := newHarness(t, cfg, app.port)
+	ctx := context.Background()
+	h.sender.fail = &report.PermanentError{Status: 400, Body: "instance.id: size must be between 0 and 253"}
+	h.agent.Tick(ctx) // DOWN, rejected
+	h.sender.fail = nil
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx)
+	if n := len(h.sender.all()); n != 0 {
+		t.Fatalf("a rejected body waits for the heartbeat, got %d sends after 15s", n)
+	}
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx) // 30 s: the heartbeat retries it and it is accepted
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx) // accepted once and still DOWN: every probe again
+	if n := len(h.sender.all()); n != 2 {
+		t.Errorf("after the heartbeat is accepted every DOWN probe is sent again, got %d sends", n)
+	}
 }

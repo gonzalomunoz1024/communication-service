@@ -1,5 +1,6 @@
 // Package agent runs the sidecar's loop: find the app, probe it, smooth the result and report
-// changes plus a heartbeat to the communication service.
+// it to the communication service: changes plus a heartbeat while the app is UP, every probe
+// while it is not.
 package agent
 
 import (
@@ -54,13 +55,19 @@ type Agent struct {
 	lastTarget *probe.Target
 	upSeen     bool
 	last       report.Report
-	lastSig    string
-	lastSend   time.Time
-	sendErr    string
-	dirty      bool
-	backoff    time.Duration
-	nextSend   time.Time
-	sent       int
+	// lastSig and lastMessage are the status/components signature and the message of the last
+	// report the service answered; a change in either is logged at INFO, a repeat at DEBUG.
+	lastSig     string
+	lastMessage string
+	lastSend    time.Time
+	sendErr     string
+	dirty       bool
+	// rejected is set while the last report was refused as permanent (4xx): the same body is
+	// then retried only at the heartbeat or on a change, even while the status is not UP.
+	rejected bool
+	backoff  time.Duration
+	nextSend time.Time
+	sent     int
 }
 
 // New wires an Agent.
@@ -163,12 +170,14 @@ func (a *Agent) observe(ctx context.Context) (probe.Result, *probe.Target) {
 	}
 	if res.Unreachable && !a.cfg.Fixed() {
 		// The port may have moved (the app restarted on a different one): rediscover next tick
-		// if nothing listens there any more.
+		// if nothing listens there any more. From this probe on the report says what every
+		// following one will say, "app is not listening", rather than this probe's own error.
 		if ports, err := a.ports(); err == nil && !contains(ports, target.Port) {
 			a.log.Info("health target gone; will rediscover", "target", target.String())
 			a.mu.Lock()
 			a.target = nil
 			a.mu.Unlock()
+			res.Message = notListening(target)
 		}
 	}
 	return res, target
@@ -196,17 +205,22 @@ func (a *Agent) discover(ctx context.Context) (probe.Result, *probe.Target) {
 		if !upSeen {
 			return probe.Result{Status: probe.UNKNOWN, Message: "no health target found yet"}, nil
 		}
-		msg := "app is not listening"
-		if last != nil {
-			msg += " (last target " + last.String() + ")"
-		}
-		return probe.Result{Status: probe.DOWN, Message: msg, Unreachable: true}, nil
+		return probe.Result{Status: probe.DOWN, Message: notListening(last), Unreachable: true}, nil
 	}
 	a.log.Info("health target found", "target", t.String(), "status", res.Status)
 	a.mu.Lock()
 	a.target, a.lastTarget = &t, &t
 	a.mu.Unlock()
 	return res, &t
+}
+
+// notListening is the DOWN message for an app whose port is gone: the same words on the probe
+// that finds it gone and on every discovery miss after it, naming the target that vanished.
+func notListening(last *probe.Target) string {
+	if last == nil {
+		return "app is not listening"
+	}
+	return "app is not listening (last target " + last.String() + ")"
 }
 
 // detect runs discovery over the pod's listening ports. found is false when no port answered;
@@ -281,8 +295,12 @@ func (a *Agent) instance(leaving bool) *report.Instance {
 	}
 }
 
-// send posts when the status changed, the heartbeat is due, or a failed send is being retried;
-// failures back off exponentially up to a minute, keeping only the latest report.
+// send posts when the status changed, the heartbeat is due, a failed send is being retried, or
+// the status is not UP: the service opens a notice after failureThreshold consecutive
+// observations, so while the app is not UP every probe is sent and the threshold is reached one
+// probe interval after the first DOWN rather than one heartbeat later. Failures back off
+// exponentially up to a minute, keeping only the latest report. A transition (a new status, set
+// of failing components or message) is logged at INFO, the sends in between at DEBUG.
 func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 	a.mu.Lock()
 	sig := signature(rep)
@@ -290,7 +308,9 @@ func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 		a.mu.Unlock()
 		return
 	}
-	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat
+	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
+		(rep.Status != probe.UP && !a.rejected)
+	changed := sig != a.lastSig || rep.Message != a.lastMessage
 	a.mu.Unlock()
 	if !due {
 		return
@@ -300,17 +320,20 @@ func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 	defer a.mu.Unlock()
 	switch {
 	case err == nil:
-		if sig != a.lastSig {
+		if changed {
 			a.log.Info("reported", "status", rep.Status, "message", rep.Message)
+		} else {
+			a.log.Debug("reported", "status", rep.Status, "message", rep.Message)
 		}
-		a.lastSig, a.lastSend, a.sendErr = sig, now, ""
-		a.dirty, a.backoff = false, 0
+		a.lastSig, a.lastMessage, a.lastSend, a.sendErr = sig, rep.Message, now, ""
+		a.dirty, a.backoff, a.rejected = false, 0, false
 		a.sent++
 	case report.IsPermanent(err):
-		// The body is wrong for this service; say so, and try again at the heartbeat cadence.
+		// The body is wrong for this service; say so, and try again at the heartbeat cadence or
+		// on a change, whatever the status: the same body cannot do better sooner.
 		a.log.Error("report rejected", "error", err)
-		a.lastSig, a.lastSend, a.sendErr = sig, now, err.Error()
-		a.dirty, a.backoff = false, 0
+		a.lastSig, a.lastMessage, a.lastSend, a.sendErr = sig, rep.Message, now, err.Error()
+		a.dirty, a.backoff, a.rejected = false, 0, true
 	case ctx.Err() != nil:
 		// Shutting down mid-tick: the leaving report follows and says everything needed.
 	default:
