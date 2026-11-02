@@ -14,6 +14,8 @@ export interface FieldProps {
   error?: ReactNode
   required?: boolean
   htmlFor?: string
+  /** id for the label itself, to name a group control (aria-labelledby) that htmlFor cannot reach */
+  labelId?: string
   /**
    * id of the hint/error line, for the control's aria-describedby; defaults to `${htmlFor}-note`
    * when htmlFor is set (pass it for a group control that has no htmlFor)
@@ -26,12 +28,12 @@ export interface FieldProps {
 }
 
 /** Label + control + hint/error. Wrap any Input, Textarea, Select or Switch. */
-export function Field({ label, hint, error, required, htmlFor, noteId, children, className, inline }: FieldProps) {
+export function Field({ label, hint, error, required, htmlFor, labelId, noteId, children, className, inline }: FieldProps) {
   const note = noteId ?? (htmlFor ? `${htmlFor}-note` : undefined)
   return (
     <div className={cx(inline ? 'flex items-center justify-between gap-6' : 'flex flex-col gap-1.5', className)}>
       {label && (
-        <label htmlFor={htmlFor} className={cx('text-caption font-medium text-secondary', inline && 'shrink-0')}>
+        <label id={labelId} htmlFor={htmlFor} className={cx('text-caption font-medium text-secondary', inline && 'shrink-0')}>
           {label}
           {required && (
             <span className="ml-0.5 text-critical" aria-hidden="true">

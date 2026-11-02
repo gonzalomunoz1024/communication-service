@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
 import type { CommunicationClient } from './api'
@@ -116,12 +116,12 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
-      <Card title="What's happening" subtitle="Consumers of the feed see exactly this.">
+      <Card title="What's happening" titleAs="h2" subtitle="Consumers of the feed see exactly this.">
         <div className="flex flex-col gap-4">
-          <Field label="Type" hint={TYPE_HINT[draft.type]} noteId={note('type')}>
+          <Field label="Type" labelId={f('type-label')} hint={TYPE_HINT[draft.type]} noteId={note('type')}>
             <Segmented<CommunicationType>
               id={f('type')}
-              ariaLabel="Communication type"
+              ariaLabelledBy={f('type-label')}
               describedBy={note('type')}
               className="flex-wrap"
               value={draft.type}
@@ -130,10 +130,10 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
             />
           </Field>
 
-          <Field label="Severity" error={errors.severity} noteId={note('severity')}>
+          <Field label="Severity" labelId={f('severity-label')} error={errors.severity} noteId={note('severity')}>
             <Segmented<Severity>
               id={f('severity')}
-              ariaLabel="Severity"
+              ariaLabelledBy={f('severity-label')}
               describedBy={errors.severity ? note('severity') : undefined}
               invalid={!!errors.severity}
               value={draft.severity}
@@ -198,7 +198,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
         </div>
       </Card>
 
-      <Card title="Who and where">
+      <Card title="Who and where" titleAs="h2">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Tenant" required htmlFor={f('tenant')} error={errors.tenantId} hint="The tenant whose feed this lands in.">
             <Input
@@ -235,6 +235,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
 
       <Card
         title="Timing"
+        titleAs="h2"
         subtitle={showTiming ? 'Times are in your local time zone.' : 'Starts now and stays up until you retire it.'}
         actions={
           <Button size="sm" variant="ghost" icon={showTiming ? 'chevron-down' : 'calendar'} onClick={() => setShowTiming((v) => !v)}>
@@ -305,6 +306,11 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
 
 function Published({ communication: c, onAnother, onViewFeed }: { communication: Communication; onAnother: () => void; onViewFeed?: (communication: Communication) => void }) {
   const live = c.status === 'ACTIVE'
+  // the form (and the button that was pressed) is gone: put focus on the outcome so it is read out and in view
+  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    heading.current?.focus()
+  }, [])
   return (
     <Card className="animate-scale-in">
       <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -312,9 +318,9 @@ function Published({ communication: c, onAnother, onViewFeed }: { communication:
           <Icon name="check" size={22} strokeWidth={2.2} />
         </div>
         <div>
-          <p className="text-title3 font-semibold text-primary">
+          <h2 ref={heading} tabIndex={-1} className="text-title3 font-semibold text-primary outline-none">
             {c.status === 'DRAFT' ? 'Draft saved' : live ? `${titleCase(c.type)} published` : `${titleCase(c.type)} scheduled`}
-          </p>
+          </h2>
           <p className="mt-1 text-sm text-secondary">
             {c.status === 'DRAFT'
               ? 'Consumers will not see it until it is published.'

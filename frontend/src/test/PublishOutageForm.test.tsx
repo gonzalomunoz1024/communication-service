@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ApiError, type CommunicationClient } from '../outages/api'
 import { UNREACHABLE_MESSAGE } from '../outages/errors'
 import { PublishOutageForm } from '../outages/PublishOutageForm'
+import type { Communication } from '../outages/types'
 
 const client = (): CommunicationClient => ({ publish: vi.fn(), feed: vi.fn(), retire: vi.fn(), stream: vi.fn(() => () => {}) })
 const summary = () => screen.getAllByRole('alert').find((el) => /needs? attention/.test(el.textContent ?? ''))
@@ -80,5 +81,40 @@ describe('PublishOutageForm server errors', () => {
     const c = client()
     vi.mocked(c.publish).mockRejectedValue(new ApiError(400, 'title must not be blank'))
     expect(await publish(c)).toHaveTextContent('The service rejected this. title must not be blank')
+  })
+})
+
+describe('PublishOutageForm accessibility', () => {
+  it('names the Type and Severity groups by their visible labels and keeps headings in order', () => {
+    render(<PublishOutageForm client={client()} tenantId="acme" publisher="oncall" />)
+    expect(screen.getByRole('radiogroup', { name: 'Type' })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: 'Severity' })).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(["What's happening", 'Who and where', 'Timing'])
+    expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+  })
+
+  it('moves focus to the outcome once published', async () => {
+    const user = userEvent.setup()
+    const c = client()
+    const saved: Communication = {
+      id: 'c9',
+      tenantId: 'acme',
+      publisher: 'oncall',
+      type: 'OUTAGE',
+      severity: 'MAJOR',
+      title: 'Payments API returning 503s',
+      affectedServices: [],
+      audience: 'CUSTOMERS',
+      status: 'ACTIVE',
+      startsAt: '2026-11-01T20:00:00Z',
+      createdAt: '2026-11-01T20:00:00Z',
+      updatedAt: '2026-11-01T20:00:00Z',
+    }
+    vi.mocked(c.publish).mockResolvedValue(saved)
+    render(<PublishOutageForm client={c} tenantId="acme" publisher="oncall" />)
+    await user.type(screen.getByLabelText(/^Title/), 'Payments API returning 503s')
+    await user.click(screen.getByRole('button', { name: 'Publish outage' }))
+    const heading = await screen.findByRole('heading', { name: 'Outage published' })
+    expect(heading).toHaveFocus()
   })
 })

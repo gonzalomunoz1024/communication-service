@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, EmptyState, Field, Icon, Input, Select, StatusDot, Switch, cx } from '../ui'
 import type { CommunicationClient } from './api'
 import { titleCase } from './display'
 import { OutageCard } from './OutageCard'
-import { COMMUNICATION_TYPES, SEVERITIES, type CommunicationType, type FeedFilter, type Severity } from './types'
+import { COMMUNICATION_TYPES, SEVERITIES, type CommunicationType, type FeedFilter, type FeedItem, type Severity } from './types'
 import { useOutageFeed, type Connection } from './useOutageFeed'
 
 export interface OutageFeedProps {
@@ -27,6 +27,7 @@ const CONNECTION: Record<Connection, { label: string; kind: 'healthy' | 'warning
 
 /** The consumer view: what is active or upcoming for a tenant, kept live over SSE. */
 export function OutageFeed({ client, tenantId, actor, allowResolve = true, defaultType = 'OUTAGE', onCount }: OutageFeedProps) {
+  const id = useId()
   const [service, setService] = useState('')
   const [type, setType] = useState<CommunicationType | ''>(defaultType)
   const [severity, setSeverity] = useState<Severity | ''>('')
@@ -45,21 +46,34 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
     onCount?.(active.length)
   }, [active.length, onCount])
 
+  // the last notice resolved from this page: announced (role=status) and shown for a moment
+  const [resolved, setResolved] = useState<string | null>(null)
+  const list = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!resolved) return
+    const t = setTimeout(() => setResolved(null), 8_000)
+    return () => clearTimeout(t)
+  }, [resolved])
+
   const resolve = allowResolve
-    ? async (item: { id: string }, note: string) => {
+    ? async (item: FeedItem, note: string) => {
         await client.retire(item.id, actor, note)
         feed.remove(item.id)
+        setResolved(item.title)
+        // the card leaves with the button that had focus: keep keyboard focus on the list
+        list.current?.focus({ preventScroll: true })
       }
     : undefined
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end gap-3 rounded-lg border border-stroke-light bg-surface-tertiary p-4">
-        <Field label="Service" className="min-w-48 flex-1">
-          <Input size="sm" mono leading="search" placeholder="Any service" value={service} onChange={(e) => setService(e.target.value)} />
+        <Field label="Service" htmlFor={`${id}-service`} className="min-w-48 flex-1">
+          <Input id={`${id}-service`} size="sm" mono leading="search" placeholder="Any service" value={service} onChange={(e) => setService(e.target.value)} />
         </Field>
-        <Field label="Type" className="w-40">
+        <Field label="Type" htmlFor={`${id}-type`} className="w-40">
           <Select
+            id={`${id}-type`}
             size="sm"
             ariaLabel="Type"
             value={type}
@@ -67,8 +81,9 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
             options={[{ value: '', label: 'All types' }, ...COMMUNICATION_TYPES.map((t) => ({ value: t, label: titleCase(t) }))]}
           />
         </Field>
-        <Field label="Minimum severity" className="w-40">
+        <Field label="Minimum severity" htmlFor={`${id}-severity`} className="w-40">
           <Select
+            id={`${id}-severity`}
             size="sm"
             ariaLabel="Minimum severity"
             value={severity}
@@ -86,6 +101,15 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
           </Button>
         </div>
       </div>
+
+      <p role="status" aria-live="polite" className={cx('flex items-center gap-1.5 text-caption text-secondary', !resolved && 'sr-only')}>
+        {resolved && (
+          <>
+            <Icon name="check" size={12} className="text-healthy-fg" />
+            Resolved “{resolved}”. It has left every consumer's feed.
+          </>
+        )}
+      </p>
 
       {!tenantId.trim() ? (
         <EmptyState icon="users" title="Choose a tenant" message="The feed is per tenant. Enter one at the top of the page." />
@@ -115,7 +139,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
           message={`Nothing ${type ? titleCase(type).toLowerCase() + ' ' : ''}is active or upcoming for ${tenantId}${service.trim() ? ` on ${service.trim()}` : ''}.`}
         />
       ) : (
-        <>
+        <div ref={list} tabIndex={-1} className="flex flex-col gap-5 outline-none">
           <Section title="Active now" count={active.length} tone="critical">
             {active.map((i) => (
               <OutageCard key={i.id} item={i} onRetire={resolve} />
@@ -126,7 +150,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
               <OutageCard key={i.id} item={i} onRetire={resolve} />
             ))}
           </Section>
-        </>
+        </div>
       )}
     </div>
   )

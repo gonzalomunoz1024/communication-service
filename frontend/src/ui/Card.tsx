@@ -4,6 +4,8 @@ import { cx } from './cx'
 export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   title?: ReactNode
   subtitle?: ReactNode
+  /** heading level of the title, so the page's outline stays in order (default h3) */
+  titleAs?: 'h2' | 'h3' | 'h4'
   /** controls at the right of the title */
   actions?: ReactNode
   /** remove the body padding (tables, code) */
@@ -14,7 +16,7 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'>
 }
 
 /** The one card: hairline, soft shadow, optional titled header. */
-export function Card({ title, subtitle, actions, flush, interactive, className, children, ...rest }: CardProps) {
+export function Card({ title, subtitle, titleAs: Heading = 'h3', actions, flush, interactive, className, children, ...rest }: CardProps) {
   const hasHeader = title || subtitle || actions
   return (
     <div
@@ -28,7 +30,7 @@ export function Card({ title, subtitle, actions, flush, interactive, className, 
       {hasHeader && (
         <div className={cx('flex items-start justify-between gap-4 px-5 pt-4', children ? 'pb-3' : 'pb-4')}>
           <div className="min-w-0">
-            {title && <h3 className="text-subheadline font-semibold text-primary">{title}</h3>}
+            {title && <Heading className="text-subheadline font-semibold text-primary">{title}</Heading>}
             {subtitle && <p className="mt-0.5 text-caption text-secondary">{subtitle}</p>}
           </div>
           {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}

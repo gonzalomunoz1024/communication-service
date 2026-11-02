@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, type CommunicationClient, type StreamHandlers } from '../outages/api'
 import { UNREACHABLE_MESSAGE } from '../outages/errors'
@@ -52,6 +53,27 @@ describe('OutageFeed', () => {
     expect(screen.getByText('Reconnecting')).toBeInTheDocument()
     act(() => f.last().onRetry?.(3, 4_000))
     expect(screen.getByText('Reconnecting (3)')).toBeInTheDocument()
+  })
+
+  it('names the filters, announces a resolve and keeps focus on the list', async () => {
+    const user = userEvent.setup()
+    const f = fakeClient([item('a'), item('b')])
+    render(<OutageFeed client={f.client} tenantId="acme" actor="oncall" />)
+    expect(await screen.findByText('Notice a')).toBeInTheDocument()
+    expect(screen.getByLabelText('Service')).toHaveAttribute('placeholder', 'Any service')
+    expect(screen.getByLabelText('Type')).toHaveValue('OUTAGE')
+    expect(screen.getByLabelText('Minimum severity')).toHaveValue('')
+    const status = screen.getByRole('status')
+    expect(status).toHaveTextContent('')
+
+    const card = screen.getByText('Notice a').closest('article')!
+    await user.click(within(card).getByRole('button', { name: 'Resolve' }))
+    await user.type(within(card).getByPlaceholderText('Resolution note (optional)'), 'fixed')
+    await user.click(within(card).getByRole('button', { name: 'Resolve' }))
+    await waitFor(() => expect(screen.queryByText('Notice a')).toBeNull())
+    expect(f.client.retire).toHaveBeenCalledWith('a', 'oncall', 'fixed')
+    expect(status).toHaveTextContent('Resolved “Notice a”. It has left every consumer\'s feed.')
+    expect(document.activeElement?.contains(screen.getByText('Notice b'))).toBe(true)
   })
 
   it('explains an unreachable service instead of showing the status line', async () => {

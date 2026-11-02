@@ -62,6 +62,7 @@ describe('App', () => {
     vi.stubGlobal('fetch', svc.fetchMock)
     const user = userEvent.setup()
     render(<App />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Outage Notifications' })).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Tenant' })).toHaveValue('acme')
 
     await user.click(screen.getByRole('tab', { name: /Publish/ }))

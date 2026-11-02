@@ -67,7 +67,7 @@ export default function App() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-white">
               <Icon name="bell" size={16} strokeWidth={2} />
             </span>
-            <span className="hidden text-footnote font-semibold leading-tight tracking-tight sm:inline">{APP_TITLE}</span>
+            <h1 className="sr-only text-footnote font-semibold leading-tight tracking-tight sm:not-sr-only">{APP_TITLE}</h1>
           </span>
         }
         center={
