@@ -1,0 +1,18 @@
+# curl -sN --max-time 17 -i /v1/feed/stream?tenantId=vf2-keepalive-1793592720&clientId=vf2-verifier  (started 04:12:00.969754025)
+04:12:00.984 HTTP/1.1 200 OK
+04:12:00.988 transfer-encoding: chunked
+04:12:00.992 Content-Type: text/event-stream;charset=UTF-8
+04:12:00.995 
+04:12:00.997 :connected
+04:12:00.999 
+04:12:01.007 id:1638
+04:12:01.009 event:snapshot
+04:12:01.011 data:{"seq":1638,"type":"SNAPSHOT","at":"2026-11-02T04:12:00.982009918Z","communication":{"id":"5666fb94-419d-4ccc-9e6f-2aff55a65362","tenantId":"vf2-keepalive-1793592720","publisher":"vf2-seed","type":"OUTAGE","severity":"MAJOR","title":"keepalive seed","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:12:00.958Z","createdAt":"2026-11-02T04:12:00.958Z","updatedAt":"2026-11-02T04:12:00.958Z","version":0,"history":[{"at":"2026-11-02T04:12:00.958Z","actor":"vf2-seed","action":"created (ACTIVE)"}]}}
+04:12:01.013 
+04:12:01.015 id:1638
+04:12:01.017 event:created
+04:12:01.019 data:{"seq":1638,"type":"CREATED","at":"2026-11-02T04:12:00.963Z","communication":{"id":"5666fb94-419d-4ccc-9e6f-2aff55a65362","tenantId":"vf2-keepalive-1793592720","publisher":"vf2-seed","type":"OUTAGE","severity":"MAJOR","title":"keepalive seed","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T04:12:00.958Z","createdAt":"2026-11-02T04:12:00.958Z","updatedAt":"2026-11-02T04:12:00.958Z","version":0,"history":[{"at":"2026-11-02T04:12:00.958Z","actor":"vf2-seed","action":"created (ACTIVE)"}]}}
+04:12:01.021 
+04:12:15.985 :keepalive
+04:12:15.988 
+# exit 28 (28 = max-time reached, expected)

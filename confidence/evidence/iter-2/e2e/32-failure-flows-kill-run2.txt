@@ -1,0 +1,20 @@
+# node scripts/failure_flows.js kill — run 2 (rewritten kill scenario: streaming page untouched, error state on a second page, CDP capture of every /v1/feed/stream request, response and SSE message; exit code = number of FAIL lines). Exit 1: the one FAIL is the verifier's own check (CDP requestWillBeSent does not expose the Last-Event-ID header the browser adds to its own retry, and the script compared against a miscaptured 'seqN1'); the facts it was about are in 32b-f61-cdp-timeline.txt.
+## kill: SIGKILL backend A under a streaming page (2026-11-02T04:27:58.528Z)
+2026-11-02T04:27:59.299Z PASS F-60 a notice published over HTTP arrives live over the stream (created frame with its seq = the page's last event id) :: 472 ms, seq 84
+2026-11-02T04:27:59.410Z PASS F-61 SIGKILL: the proxy ends the browser's stream and the badge says Reconnecting within a second :: Reconnecting after 58 ms; A alive=true
+2026-11-02T04:27:59.664Z PASS F-57 backend down: 'Couldn't load the feed' + 'The service is unreachable right now…' + Try again (not a bare 502) :: Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again
+2026-11-02T04:27:59.750Z PASS F-92 the second node keeps serving while A is dead (publish via B -> 201) :: id=e7a9d583-efbd-4067-92b3-8750326c72b4
+2026-11-02T04:28:39.345Z FAIL F-61 G-2-11: after the browser's own retry (Last-Event-ID header), every client reopen carries ?lastEventId=<last seq> :: native retry at +3.0s header=undefined status=502; own attempts=6 lastEventIds=84,84,84,84,84,84
+2026-11-02T04:28:39.345Z PASS F-61 G-2-11: the client's delays are 1, 2, 4, 8 then capped at 10 s :: gaps(s)=1.0,2.0,4.0,8.0,10.0,10.0 statuses=502,502,502,502,502,502
+2026-11-02T04:28:39.390Z PASS F-74 sidecar during the outage: 'report failed; will retry' with growing backoff, /status.sendError set, app unaffected :: fails=1s,2s,4s,8s,16s sendError="post http://172.17.0.1:19501/v1/health/reports: Post "http://172.17.0.1:19501/v1"
+2026-11-02T04:28:45.146Z PASS F-92 backend A restarted and ready :: ready after 5738 ms
+2026-11-02T04:28:47.768Z PASS F-61 the page heals by itself within the 10 s cap after the service is back and shows the notice published meanwhile, no reload :: Live 2403 ms after readiness; card 212 ms later; the card from before is still there
+2026-11-02T04:28:47.844Z PASS F-20 wire: the successful reopen carried ?lastEventId=<seq before the kill>; the server replayed the created frame of the notice published via B exactly once, no snapshot :: reopen=tenantId=ve2-kill-mvyrd7h4&clientId=communication-frontend&lastEventId=84; frames on the resumed stream=created#85; GET /v1/feed after recovery=1 (the hook also reloads once after a reconnect: useOutageFeed.ts:98-103)
+2026-11-02T04:28:47.847Z PASS F-61 the replayed notice is shown exactly once (upsert by id) :: cards=1
+2026-11-02T04:28:48.373Z PASS F-74 sidecar recovery: next report accepted, sendError cleared, no notice opened by the outage :: accepted 507 ms after readiness; monitor UP
+2026-11-02T04:28:48.645Z PASS F-57 'Try again' after the restart loads the feed :: 210 ms
+2026-11-02T04:28:55.212Z PASS F-61 G-2-11: the backoff restarted from 1 s after the successful open (second outage: client attempts 1 s and 2 s after the native retry), ids still carried :: native at +3.0s header=undefined; own gaps(s)=1.0,2.0 ids=85,85
+2026-11-02T04:29:06.830Z PASS F-92 second restart: ready and the page is Live again :: ready 5749 ms, Live 5851 ms later
+2026-11-02T04:29:06.954Z PASS F-92 no uncaught page errors during the failure flows :: 
+## summary: 15 pass, 1 fail at 2026-11-02T04:29:07.001Z
+exit=1

@@ -1,0 +1,47 @@
++0.1s instance A up: true
++0.1s instance B up: true
++0.8s badge → Paused
++0.9s stream REQUEST #1 ?lastEventId=(none)
++0.9s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++0.9s stream RESPONSE 200
++0.9s stream REQUEST FAILED net::ERR_ABORTED
++0.9s stream REQUEST #2 ?lastEventId=(none)
++0.9s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++0.9s stream RESPONSE 200
++0.9s badge → Connecting
++1.0s SSE frame snapshot id=9 before the drop
++1.1s badge → Live
++2.1s SIGKILL instance A (pid 13803); last SSE id seen 9
++2.1s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++2.1s badge → Reconnecting
++3.4s through instance B: publish 'missed while down' → 201, retire 'before the drop' → 200
++5.1s stream REQUEST #3 ?lastEventId=(none)
++5.1s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=9
++5.1s stream RESPONSE 502
++5.1s badge → Reconnecting (1)
++6.1s stream REQUEST #4 ?lastEventId=9
++6.1s CDP wire: stream request ?lastEventId=9 Last-Event-ID header=(none)
++6.1s stream RESPONSE 502
++6.2s badge → Reconnecting (2)
++8.1s stream REQUEST #5 ?lastEventId=9
++8.1s CDP wire: stream request ?lastEventId=9 Last-Event-ID header=(none)
++8.1s stream RESPONSE 502
++8.2s badge → Reconnecting (3)
++12.1s stream REQUEST #6 ?lastEventId=9
++12.1s CDP wire: stream request ?lastEventId=9 Last-Event-ID header=(none)
++12.2s stream RESPONSE 502
++12.2s stream REQUEST FAILED net::ERR_ABORTED
++12.2s badge → Reconnecting (4)
++14.4s restarting instance A
++20.2s stream REQUEST #7 ?lastEventId=9
++20.2s CDP wire: stream request ?lastEventId=9 Last-Event-ID header=(none)
++20.2s stream RESPONSE 502
++20.3s badge → Reconnecting (5)
++27.8s A up again: true
++30.2s stream REQUEST #8 ?lastEventId=9
++30.2s CDP wire: stream request ?lastEventId=9 Last-Event-ID header=(none)
++30.2s stream RESPONSE 200
++30.2s badge → Live
++30.2s badge Live again: true
++30.3s SSE frame created id=10 missed while down
++30.3s SSE frame retired id=11 before the drop

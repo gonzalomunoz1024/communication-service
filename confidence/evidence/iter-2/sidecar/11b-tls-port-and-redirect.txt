@@ -1,0 +1,8 @@
+[04:22:03.447] (i) actuator stub served over TLS on 9006 (self-signed, CN=localhost) is the only app port
+  status=UP target='https://127.0.0.1:9006/actuator/health' lastTarget='https://127.0.0.1:9006/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+{"time":"2026-11-02T04:22:05.64882001Z","level":"INFO","msg":"health target found","target":"https://127.0.0.1:9006/actuator/health","status":"UP"}
+[04:22:11.059] (ii) stub 'redirect' on 9007: /health -> 302 /elsewhere, everything else 404
+  status=UP target='http://127.0.0.1:9007/health' lastTarget='http://127.0.0.1:9007/health' upSeen=True msg=None comps=None sent=1 sendErr=None
+{"time":"2026-11-02T04:22:12.671630574Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:9007/health","status":"UP"}
+  requests recorded by the redirect stub target? (the sidecar must not have followed to /elsewhere): sidecar log lines mentioning elsewhere: 0
+[04:22:18.134] DONE

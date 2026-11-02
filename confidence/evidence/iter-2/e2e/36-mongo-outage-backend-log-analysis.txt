@@ -1,0 +1,26 @@
+# backend A log between 2026-11-02T04:23:27 and 2026-11-02T04:24:27 (Mongo stopped at 04:23:27, started at 04:24:24): 85 log lines
+## log lines by level / logger / message pattern
+  31  INFO  cluster                        Waiting for server to become available for operation with ID #. Rema
+  11  WARN  MongoCommunicationEventsAdapter event log poll failed: org.springframework.dao.DataAccessResourceFailu
+   7  INFO  cluster                        Waiting for server to become available for operation with ID #. Remai
+   6  WARN  HealthSweepUseCase             health sweep skipped: database unavailable: Timed out while waiting fo
+   6  INFO  ClientIdWebFilter              client=ve#-app-repo POST /v#/health/reports -> # (# ms)
+   5  WARN  StatusSweepUseCase             status sweep skipped: database unavailable: Timed out while waiting fo
+   3  INFO  cluster                        Exception in monitor thread while connecting to server localhost:#
+   2  INFO  ClientIdWebFilter              client=ve#-failure-checks POST /v#/communications -> # (# ms)
+   2  WARN  GlobalExceptionHandler         GET /v#/feed -> #, database unavailable: Timed out while waiting for
+   2  INFO  ClientIdWebFilter              client=ve#-failure-checks GET /v#/feed -> # (# ms)
+   2  INFO  ClientIdWebFilter              client=communication-frontend GET /v#/feed -> # (# ms)
+   1  WARN  GlobalExceptionHandler         POST /v#/communications -> #, database unavailable: Timed out while 
+   1  WARN  MongoReactiveHealthIndicator   Mongo health check failed
+   1  WARN  GlobalExceptionHandler         POST /v#/health/reports -> #, database unavailable: Timed out while 
+## stack-trace lines attributed to the log line that precedes them (level, logger)
+  58  INFO cluster
+  37  WARN MongoReactiveHealthIndicator
+## exception classes printed (level, logger, class)
+   3  INFO cluster Caused by
+   1  INFO cluster com.mongodb.MongoNodeIsRecoveringException
+   1  INFO cluster com.mongodb.MongoSocketOpenException
+   1  WARN MongoReactiveHealthIndicator org.springframework.dao.DataAccessResourceFailureException
+   1  WARN MongoReactiveHealthIndicator Caused by
+   1  INFO cluster com.mongodb.MongoSocketWriteException

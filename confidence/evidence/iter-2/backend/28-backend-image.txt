@@ -1,0 +1,42 @@
+# 28 - backend container image (root Dockerfile, new in iteration 2): build from the prebuilt jar, run non-root against mongo7, 2026-11-02T04:21:56Z
+
+## docker build -t vb2-backend:test . (context: the jar only, per .dockerignore)
+#4 DONE 0.2s
+
+#6 [2/2] COPY --chown=65532:65532 build/libs/communication-service-*.jar /app/app.jar
+#6 CACHED
+
+#7 exporting to image
+#7 exporting layers 0.0s done
+#7 exporting manifest sha256:1c05d377b46338a0e4dae95053f4eb91d3f9b41825d1851049f9732c8572b795 0.0s done
+#7 exporting config sha256:56ded095cea751400c7cc218109d5e5188b4114c891780008de7ab109b010567 done
+#7 exporting attestation manifest sha256:3bfaa36e80eceaf9d76ae2bbeb30521b19b8d860d0802912ee2de697fa8a5502 0.0s done
+#7 exporting manifest list sha256:d96c28fbe892053c538ddd2129135f736667c02f2ca7ee08ae29e89e09a6281d 0.0s done
+#7 naming to docker.io/library/vb2-backend:test
+#7 naming to docker.io/library/vb2-backend:test done
+#7 unpacking to docker.io/library/vb2-backend:test 0.0s done
+#7 DONE 0.2s
+build exit: 0
+
+## image facts
+User=65532:65532 ExposedPorts={"8080/tcp":{}} Entrypoint=["java","-jar","/app/app.jar"] Size=335075667 Labels={"org.opencontainers.image.description":"Shared customer communications platform: incidents, changes, outages, maintenance and health notices","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"communication-service"}
+
+## run: 127.0.0.1:19180 -> 8080, SPRING_DATA_MONGODB_URI=mongodb://host.docker.internal:27017/vb2_image
+http://127.0.0.1:19180/actuator/health/readiness -> 200 at +1793593333
+process in the container as seen from the host: 65532 65532    java
+readiness: {"status":"UP"} liveness: {"status":"UP"}
+POST /v1/communications -> 201
+GET /v1/feed -> {"total":1,"titles":["from the image"]}
+GET /v1/feed without X-Client-Id -> 401
+
+## container log head
+2026-11-02T04:22:12.166Z  INFO 1 --- [communication-service] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 8080 (http)
+2026-11-02T04:22:12.206Z  INFO 1 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 13.224 seconds (process running for
+2026-11-02T04:22:12.213Z  WARN 1 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in produc
+2026-11-02T04:22:12.219Z  WARN 1 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in pr
+
+## SIGTERM to the container (docker stop, default 10 s grace)
+stopped in 4.441676697 s, exit code 143
+2026-11-02T04:22:14.407Z  INFO 1 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T04:22:14.409Z  INFO 1 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+removed

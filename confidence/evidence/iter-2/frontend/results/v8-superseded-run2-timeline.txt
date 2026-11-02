@@ -1,0 +1,7 @@
++0.5s pod started (vf2-app + vf2-sidecar)
++0.5s monitor: b0493208-c92e-47de-ada2-0771cf5804a7 lastStatus=UP
++1.2s feed Live for vf2-pod, 1 card(s) before the fault
++1.2s fake app set DOWN
++1.2s OUTAGE card appeared after 22 ms
++1.3s fake app set UP
++7.7s OUTAGE card left after 6373 ms

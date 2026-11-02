@@ -1,0 +1,7 @@
+/status fields:
+{'sendError': 'post http://127.0.0.1:9/v1/health/reports: Post "http://127.0.0.1:9/v1/health/reports": dial tcp 127.0.0.1:9: connect: connection refused', 'reportsSent': 0, 'lastSendAt': None, 'upSeen': False, 'target': None}
+lastReport: UNKNOWN 'starting: waiting for the app to listen'
+log (last 3 lines):
+{"time":"2026-11-02T04:17:25.051479109Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter2","service":"lonely","tenant":"ux2-sidecar","instance":"26f9e431339a","endpoint":"http://127.0.0.1:9","probe":"auto"}
+{"time":"2026-11-02T04:17:25.053663327Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9/v1/health/reports: Post \"http://127.0.0.1:9/v1/health/reports\": dial tcp 127.0.0.1:9: connect: connection refused",
+removed

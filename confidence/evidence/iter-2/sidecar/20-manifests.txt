@@ -1,0 +1,117 @@
+== 2026-11-02T04:06:58Z head be19645 | (devel) | v3.16 | kubeconform development
+## 1. kustomize build (relative paths, from sidecar/deploy)
+  kustomize/example -> exit=0 docs=2 kinds=kind: ConfigMap kind: Deployment 
+  testdata/native-with-init -> exit=0 docs=3 kinds=kind: ConfigMap kind: Deployment kind: StatefulSet 
+  (scratch copy of sidecar/deploy, relative component paths) kustomize/example-native -> exit=0 docs=2
+  (scratch copy of sidecar/deploy, relative component paths) kustomize/images-override -> exit=0 docs=2
+  (scratch copy of sidecar/deploy, relative component paths) testdata/classic-with-init -> exit=0 docs=3
+## 2. containers / initContainers per rendered workload
+  example.yaml           ConfigMap/cs-health-sidecar data=['CS_CLUSTER', 'CS_ENDPOINT', 'CS_TENANT']
+  example.yaml           Deployment/payments-api: initContainers=[] containers=['payments-api', 'health-sidecar']
+  native-with-init.yaml  ConfigMap/cs-health-sidecar data=['CS_ENDPOINT', 'CS_TENANT']
+  native-with-init.yaml  Deployment/payments-api: initContainers=[('health-sidecar', 'Always'), ('db-migrate', None)] containers=['payments-api']
+  native-with-init.yaml  StatefulSet/ledger: initContainers=[('health-sidecar', 'Always'), ('fetch-config', None)] containers=['ledger']
+  example-native.yaml    ConfigMap/cs-health-sidecar data=['CS_CLUSTER', 'CS_ENDPOINT', 'CS_TENANT']
+  example-native.yaml    Deployment/payments-api: initContainers=[('health-sidecar', 'Always')] containers=['payments-api']
+  classic-with-init.yaml ConfigMap/cs-health-sidecar data=['CS_ENDPOINT', 'CS_TENANT']
+  classic-with-init.yaml Deployment/payments-api: initContainers=[('db-migrate', None)] containers=['payments-api', 'health-sidecar']
+  classic-with-init.yaml StatefulSet/ledger: initContainers=[('fetch-config', None)] containers=['ledger', 'health-sidecar']
+## 3. Helm: lint the library, lint + template through the consumer chart (file:// dependency)
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+Saving 1 charts
+Deleting outdated charts
+cs-health-sidecar-1.0.0.tgz
+
+1 chart(s) linted, 0 chart(s) failed
+  helm template on the library alone:
+Error: library charts are not installable
+  consumer, classic:
+   exit=0 docs=1
+  consumer, native:
+   exit=0 docs=1
+  consumer, pinned port + extraEnv + cluster + clientId + service literal:
+   exit=0
+     33:            - name: CS_CLUSTER
+     34-              value: "ocp-east"
+     35:            - name: CS_CLIENT_ID
+     36-              value: "payments-repo"
+     37:            - name: CS_PORT
+     38-              value: "8080"
+     39:            - name: CS_PATH
+     40-              value: "/health"
+     57:            - name: CS_SERVICE
+     58-              value: "payments"
+     63:            - name: CS_CA_FILE
+     64-              value: /certs/ca.pem
+  missing endpoint:
+Error: execution error at (my-app/templates/deployment.yaml:31:12): csHealthSidecar.endpoint is required
+
+   exit=1
+  missing tenant:
+Error: execution error at (my-app/templates/deployment.yaml:31:12): csHealthSidecar.tenant is required
+
+   exit=1
+  helm-classic.yaml  initContainers=[] containers=['payments-api', 'health-sidecar']
+  helm-native.yaml   initContainers=[('db-migrate', None), ('health-sidecar', 'Always')] containers=['payments-api']
+## 4. manual YAML
+  docs=2
+## 5. kubeconform -strict
+  example            1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  native-with-init   1.29.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  example-native     1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  classic-with-init  1.29.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  images-override    1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  helm-classic       1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  helm-native        1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  helm-pinned        1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  manual             1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  example            1.27.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  classic-with-init  1.27.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  helm-classic       1.27.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  helm-pinned        1.27.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  manual             1.27.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0 (exit=0)
+  native forms against 1.27.0 (expected to be rejected: restartPolicy on init containers needs 1.29):
+  native-with-init   1.27.0: /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar2/rendered/native-with-init.yaml - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/0' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spec/properties/template/properties/spec/properties/initContainers/items/additionalProperties: additionalProperties 'restartPolicy' not allowed /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar2/rendered/native-with-init.yaml - StatefulSet ledger is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/0' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/statefulset-apps-v1.json#/properties/spec/properties/template/properties/spec/properties/initContainers/items/additionalProperties: additionalProperties 'restartPolicy' not allowed Summary: 3 resources found in 1 file - Valid: 1, Invalid: 2, Errors: 0, Skipped: 0 (exit=1)
+  helm-native        1.27.0: /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar2/rendered/helm-native.yaml - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/1' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spec/properties/template/properties/spec/properties/initContainers/items/additionalProperties: additionalProperties 'restartPolicy' not allowed Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0 (exit=1)
+## 6. restricted-v2 facts per rendered form (sidecar block only) and forbidden keys anywhere
+  example.yaml         Deployment/payments-api containers: securityContext OK ['allowPrivilegeEscalation', 'capabilities', 'readOnlyRootFilesystem', 'runAsNonRoot', 'seccompProfile'] | runAsUser=None | liveness={'path': '/healthz', 'port': 'cs-status'} every 30s | readiness=False startup=False | req={'cpu': '10m', 'memory': '16Mi'} lim={'cpu': '50m', 'memory': '32Mi'} | port=[{'containerPort': 9465, 'name': 'cs-status', 'protocol': 'TCP'}]
+  native-with-init.yaml Deployment/payments-api initContainers: securityContext OK ['allowPrivilegeEscalation', 'capabilities', 'readOnlyRootFilesystem', 'runAsNonRoot', 'seccompProfile'] | runAsUser=None | liveness={'path': '/healthz', 'port': 'cs-status'} every 30s | readiness=False startup=False | req={'cpu': '10m', 'memory': '16Mi'} lim={'cpu': '50m', 'memory': '32Mi'} | port=[{'containerPort': 9465, 'name': 'cs-status', 'protocol': 'TCP'}]
+  native-with-init.yaml StatefulSet/ledger initContainers: securityContext OK ['allowPrivilegeEscalation', 'capabilities', 'readOnlyRootFilesystem', 'runAsNonRoot', 'seccompProfile'] | runAsUser=None | liveness={'path': '/healthz', 'port': 'cs-status'} every 30s | readiness=False startup=False | req={'cpu': '10m', 'memory': '16Mi'} lim={'cpu': '50m', 'memory': '32Mi'} | port=[{'containerPort': 9465, 'name': 'cs-status', 'protocol': 'TCP'}]
+  helm-classic.yaml    Deployment/payments-api containers: securityContext OK ['allowPrivilegeEscalation', 'capabilities', 'readOnlyRootFilesystem', 'runAsNonRoot', 'seccompProfile'] | runAsUser=None | liveness={'path': '/healthz', 'port': 'cs-status'} every 30s | readiness=False startup=False | req={'cpu': '10m', 'memory': '16Mi'} lim={'cpu': '50m', 'memory': '32Mi'} | port=[{'name': 'cs-status', 'containerPort': 9465, 'protocol': 'TCP'}]
+  helm-native.yaml     Deployment/payments-api initContainers: securityContext OK ['allowPrivilegeEscalation', 'capabilities', 'readOnlyRootFilesystem', 'runAsNonRoot', 'seccompProfile'] | runAsUser=None | liveness={'path': '/healthz', 'port': 'cs-status'} every 30s | readiness=False startup=False | req={'cpu': '10m', 'memory': '16Mi'} lim={'cpu': '50m', 'memory': '32Mi'} | port=[{'name': 'cs-status', 'containerPort': 9465, 'protocol': 'TCP'}]
+  manual.yaml          Deployment/payments-api containers: securityContext OK ['allowPrivilegeEscalation', 'capabilities', 'readOnlyRootFilesystem', 'runAsNonRoot', 'seccompProfile'] | runAsUser=None | liveness={'path': '/healthz', 'port': 'cs-status'} every 30s | readiness=False startup=False | req={'cpu': '10m', 'memory': '16Mi'} lim={'cpu': '50m', 'memory': '32Mi'} | port=[{'name': 'cs-status', 'containerPort': 9465, 'protocol': 'TCP'}]
+## 7. drift between the forms (flattened sidecar block; restartPolicy ignored)
+kustomize-classic: Deployment/payments-api containers keys=29 restartPolicy=None image=registry.example.com/platform/health-sidecar:1.0.0
+kustomize-native: Deployment/payments-api initContainers keys=30 restartPolicy=Always image=registry.example.com/platform/health-sidecar:1.0.0
+manual: Deployment/payments-api containers keys=29 restartPolicy=None image=registry.example.com/platform/health-sidecar:1.0.0
+helm-classic: Deployment/payments-api containers keys=36 restartPolicy=None image=registry.example.com/platform/health-sidecar:1.0.0
+helm-native: Deployment/payments-api initContainers keys=37 restartPolicy=Always image=registry.example.com/platform/health-sidecar:1.0.0
+diff kustomize-classic vs kustomize-native: 
+diff kustomize-classic vs manual: none
+diff kustomize-classic vs helm-classic: 
+   .envFrom[0].configMapRef.name: kustomize-classic='cs-health-sidecar' helm-classic=None
+   .env[CS_ENDPOINT].name: kustomize-classic=None helm-classic='CS_ENDPOINT'
+   .env[CS_ENDPOINT].value: kustomize-classic=None helm-classic='https://cs.example.com'
+   .env[CS_HEARTBEAT].name: kustomize-classic=None helm-classic='CS_HEARTBEAT'
+   .env[CS_HEARTBEAT].value: kustomize-classic=None helm-classic='30s'
+   .env[CS_INTERVAL].name: kustomize-classic=None helm-classic='CS_INTERVAL'
+   .env[CS_INTERVAL].value: kustomize-classic=None helm-classic='15s'
+   .env[CS_TENANT].name: kustomize-classic=None helm-classic='CS_TENANT'
+   .env[CS_TENANT].value: kustomize-classic=None helm-classic='retail'
+diff kustomize-classic vs helm-native: 
+   .envFrom[0].configMapRef.name: kustomize-classic='cs-health-sidecar' helm-native=None
+   .env[CS_ENDPOINT].name: kustomize-classic=None helm-native='CS_ENDPOINT'
+   .env[CS_ENDPOINT].value: kustomize-classic=None helm-native='https://cs.example.com'
+   .env[CS_HEARTBEAT].name: kustomize-classic=None helm-native='CS_HEARTBEAT'
+   .env[CS_HEARTBEAT].value: kustomize-classic=None helm-native='30s'
+   .env[CS_INTERVAL].name: kustomize-classic=None helm-native='CS_INTERVAL'
+   .env[CS_INTERVAL].value: kustomize-classic=None helm-native='15s'
+   .env[CS_TENANT].name: kustomize-classic=None helm-native='CS_TENANT'
+   .env[CS_TENANT].value: kustomize-classic=None helm-native='retail'
+## 8. README images: override rewrites only the sidecar image
+27:      - image: registry.example.com/retail/payments-api:1.4.2
+59:        image: registry.apps.example.com/platform/health-sidecar:1.0.0
+## 9. the removed JSON-patch native file stays removed: ls: cannot access 'kustomize/component/add-native-sidecar.yaml': No such file or directory
+## DONE

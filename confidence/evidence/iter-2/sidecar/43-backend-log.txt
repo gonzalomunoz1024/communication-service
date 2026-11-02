@@ -1,0 +1,41 @@
+== private backend :19300 log (db vs2_main, 541 lines, 2026-11-02T04:25:26Z) — backend-side lines named by F-89, as seen during the sidecar scenarios
+## level counts:
+    528  INFO 
+      2  WARN 
+## rejected calls (expect INFO, e.g. the 254-char id, the bad client id, missing status):
+2026-11-02T04:00:12.714Z  INFO 14863 --- [communication-service] [           main] org.mongodb.driver.client                : MongoClient with metadata {"driver": {"name": "mongo-java-driver|reactive-streams|spring-boot", "version
+2026-11-02T04:11:35.603Z  INFO 14863 --- [communication-service] [or-http-epoll-3] c.a.c.config.ClientIdWebFilter           : client=len-app POST /v1/health/reports -> 400 (91 ms)
+2026-11-02T04:11:46.400Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-pinned POST /v1/health/reports -> 202 (27 ms)
+2026-11-02T04:11:50.401Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-5] c.a.c.config.ClientIdWebFilter           : client=vs2-verifier GET /v1/feed -> 200 (6 ms)
+2026-11-02T04:18:45.666Z  INFO 14863 --- [communication-service] [or-http-epoll-2] c.a.c.config.ClientIdWebFilter           : rejected POST /v1/health/reports with 401: missing X-Client-Id header: identify the calling system by it
+2026-11-02T04:18:45.681Z  INFO 14863 --- [communication-service] [or-http-epoll-3] c.a.c.config.ClientIdWebFilter           : rejected POST /v1/health/reports with 400: X-Client-Id must be 1-100 characters: letters, digits, '.', '
+2026-11-02T04:18:45.767Z  INFO 14863 --- [communication-service] [or-http-epoll-3] c.a.c.config.ClientIdWebFilter           : client=vs2-contract-repo POST /v1/health/reports -> 400 (3 ms)
+2026-11-02T04:18:45.780Z  INFO 14863 --- [communication-service] [or-http-epoll-4] c.a.c.config.ClientIdWebFilter           : client=vs2-contract-repo POST /v1/health/reports -> 400 (2 ms)
+## sweep / rollup transitions (vs2-app, roll-app, vs2-never-up):
+2026-11-02T04:09:58.379Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-app-repo POST /v1/health/reports -> 202 (652 ms)
+2026-11-02T04:09:58.770Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (61 ms)
+2026-11-02T04:10:00.574Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-pinned POST /v1/health/reports -> 202 (61 ms)
+2026-11-02T04:10:01.172Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (15 ms)
+2026-11-02T04:10:03.265Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (16 ms)
+2026-11-02T04:10:03.935Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-pinned POST /v1/health/reports -> 202 (22 ms)
+2026-11-02T04:10:05.457Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (19 ms)
+2026-11-02T04:10:07.026Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=vs2-pinned POST /v1/health/reports -> 202 (21 ms)
+2026-11-02T04:10:07.756Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (14 ms)
+2026-11-02T04:10:10.020Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (22 ms)
+2026-11-02T04:10:10.148Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=vs2-pinned POST /v1/health/reports -> 202 (14 ms)
+2026-11-02T04:10:12.199Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (18 ms)
+2026-11-02T04:10:13.199Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=vs2-pinned POST /v1/health/reports -> 202 (14 ms)
+2026-11-02T04:10:14.287Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=vs2-never-up POST /v1/health/reports -> 202 (14 ms)
+## notice opened / retired:
+2026-11-02T04:10:43.542Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : monitor a243a467-3e16-4632-a206-2f6a88615ac8 opened OUTAGE f6eb98da-f5ef-419f-89da-ccac408e3160 for vs2-
+2026-11-02T04:11:26.870Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor ad9c7e6a-2216-479b-9426-6d9d0a9a49a7 opened HEALTH ea6194b3-4202-4527-9c16-1f579135996c for vs2-
+2026-11-02T04:11:47.998Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : retired notice f6eb98da-f5ef-419f-89da-ccac408e3160: recovered: UP (1 of 1 pod UP)
+2026-11-02T04:11:56.451Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase       : monitor a243a467-3e16-4632-a206-2f6a88615ac8 opened OUTAGE e8b05bcd-eb0c-43ab-938f-3f7d66b56f19 for vs2-
+2026-11-02T04:12:01.268Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase       : monitor 957c121c-69a4-4f39-888d-d785e8e288c3 opened OUTAGE 84aef006-e89c-4749-b651-7dfc7840a652 for vs2-
+2026-11-02T04:12:48.361Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-5] c.a.c.h.a.HealthObservationUseCase       : retired notice e8b05bcd-eb0c-43ab-938f-3f7d66b56f19: recovered: UP (1 of 1 pod UP)
+2026-11-02T04:12:58.002Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : retired notice ea6194b3-4202-4527-9c16-1f579135996c: reclassified as DOWN: DOWN (1 pod has not reported 
+2026-11-02T04:12:58.007Z  INFO 14863 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : monitor ad9c7e6a-2216-479b-9426-6d9d0a9a49a7 opened OUTAGE 5b04776d-3b9a-437a-9184-cc73cea891b3 for vs2-
+## staleness pause (valve disabled here with stale-pause-min-silent=1000):
+## stack traces: 0 lines mention Exception; WARN/ERROR with 'at ' frames: 0
+## secret-looking strings: 1
+## client id at debug (default level is INFO, so none expected): 3

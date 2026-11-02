@@ -1,0 +1,98 @@
+
+### S1 Kustomize as shipped: kustomize build deploy/kustomize/example (classic component)
+kustomize exit 0
+4:  CS_ENDPOINT: https://communication.apps.example.com
+6:kind: ConfigMap
+11:kind: Deployment
+27:      containers:
+28:      - image: registry.example.com/retail/payments-api:1.4.2
+58:        - configMapRef:
+60:        image: registry.example.com/platform/health-sidecar:1.0.0
+67:        name: health-sidecar
+85:          runAsNonRoot: true
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+### S2 native form: README says 'point components at ../component-native'
+1:# Example overlay: an existing app plus the sidecar component and the ConfigMap it reads.
+2:# For the native sidecar form (OpenShift 4.16+) point components at ../component-native instead.
+9:components:
+10:  - ../component-native
+kustomize exit 0
+27:      containers:
+36:      initContainers:
+68:        name: health-sidecar
+80:        restartPolicy: Always
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+### S3 README 'Image' section: the images: override appended literally to the example kustomization
+28:      - image: registry.example.com/retail/payments-api:1.4.2
+60:        image: registry.apps.example.com/platform/health-sidecar:1.0.0
+
+### S4 helm template on the library chart alone (README: fails by design)
+Error: library charts are not installable
+
+### S5 consuming chart written from the README alone: dependency + include under containers + two values
+helm dependency build exit 0
+(a) the include pasted literally as the README prints it:
+   helm template exit 0
+
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/usability2/sidecar-work/helm-literal.yaml - Deployment my-app is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.29.0-standalone-strict/deployment-apps-v1.json#/properties/spec/additionalProperties: additionalProperties 'resources', 'securityContext', 'image', 'imagePullPolicy', 'env', 'livenessProbe', 'ports' not allowed
+Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+(b) with '| nindent 8', as the template file's own comment shows:
+   helm template exit 0
+16:          image: registry.example.com/retail/my-app:1.0.0
+17-        - name: health-sidecar
+18:          image: registry.example.com/platform/health-sidecar:1.0.0
+19-          imagePullPolicy: IfNotPresent
+21:            - name: CS_ENDPOINT
+22-              value: "https://communication.apps.example.com"
+23:            - name: CS_TENANT
+24-              value: "retail"
+68:            runAsNonRoot: true
+69-            capabilities:
+Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+
+1 chart(s) linted, 0 chart(s) failed
+(c) tenant left empty -> what the engineer reads:
+Error: execution error at (my-app/templates/deployment.yaml:15:12): csHealthSidecar.tenant is required
+
+(d) the README's Helm image override values:
+16:          image: registry.example.com/retail/my-app:1.0.0
+18:          image: registry.apps.example.com/platform/health-sidecar:1.0.0
+(e) native form: include cs-health-sidecar.initContainer under initContainers
+   helm template exit 0
+14:      initContainers:
+15:        - restartPolicy: Always
+16:          name: health-sidecar
+Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+
+### S6 plain YAML snippet: kubeconform, and is its container block the Kustomize one?
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+   identical settings (ignoring indentation): True | lines 51 51
+
+### S7 the image with missing or wrong configuration (README: CS_ENDPOINT and CS_TENANT required)
+{"time":"2026-11-02T04:09:30.131972805Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit 2
+{"time":"2026-11-02T04:09:30.491559541Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+exit 2
+{"time":"2026-11-02T04:09:30.867112158Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT is required when CS_PROBE=tcp"}
+exit 2
+{"time":"2026-11-02T04:09:31.272062217Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"fast\""}
+exit 2
+shell in the image (README: none)?
+docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: "/bin/sh": stat /bin/sh: no such file or directory
+
+
+### S8 README 'Build' commands on this host (go go1.24.7, go.mod wants 1.25)
+3:go 1.25
+go vet exit 0
+go build exit 0
+   binary: 6906148 bytes
+README laptop command (wrong port on purpose, 4 s):
+{"time":"2026-11-02T04:09:32.638404028Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0","service":"demo","tenant":"ux2-laptop","instance":"vm","endpoint":"http://127.0.0.1:19600","probe":"auto"}
+{"time":"2026-11-02T04:09:34.659880235Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the first healthy answer from http://127.0.0.1:8089/actuator/health"}
+{"time":"2026-11-02T04:09:36.655273897Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T04:09:36.655445215Z","level":"INFO","msg":"health sidecar stopped"}
+
+### S9 image labels/user of the ci build (README: version + revision labels)
+user=1001 exposed={"9465/tcp":{}} version=ci-iter2 revision=6fd1088 size=16319253

@@ -1,0 +1,40 @@
+# docker logs e2e2-sidecar (health-sidecar:e2e2 built from sidecar/Dockerfile at be19645; UID 1000660000, read-only, cap-drop ALL; CS_INTERVAL=3s CS_HEARTBEAT=10s CS_RETRY_DELAY=1s) — whole log at 2026-11-02T04:40:24Z, 39 lines, every line JSON; levels: {'INFO': 22, 'WARN': 17}
+{"time":"2026-11-02T04:06:57.486416669Z","level":"INFO","msg":"health sidecar starting","version":"e2e2","service":"ve2-app","tenant":"ve2","instance":"ve2-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T04:06:57.489580694Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:06:58.031440084Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:19:25.890696432Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T04:19:33.539460861Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:19:50.10987071Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:20:04.570001418Z","level":"INFO","msg":"reported","status":"WARN","message":"health document reports WARN"}
+{"time":"2026-11-02T04:20:08.095995202Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:20:22.064613003Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T04:20:22.064729968Z","level":"INFO","msg":"health sidecar stopped"}
+{"time":"2026-11-02T04:20:26.349094337Z","level":"INFO","msg":"health sidecar starting","version":"e2e2","service":"ve2-app","tenant":"ve2","instance":"ve2-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T04:20:26.351745348Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:20:26.364888885Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:20:30.694879434Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T04:20:30.705648096Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+{"time":"2026-11-02T04:20:38.303518303Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:20:38.321019306Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:22:26.090552592Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"1s"}
+{"time":"2026-11-02T04:22:29.19191146Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"2s"}
+{"time":"2026-11-02T04:22:32.219391145Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"4s"}
+{"time":"2026-11-02T04:22:38.897602348Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"8s"}
+{"time":"2026-11-02T04:22:48.632786903Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"16s"}
+{"time":"2026-11-02T04:23:18.473435869Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"1s"}
+{"time":"2026-11-02T04:23:37.215622223Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","in":"1s"}
+{"time":"2026-11-02T04:23:45.591758165Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","in":"2s"}
+{"time":"2026-11-02T04:23:53.947950225Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","in":"4s"}
+{"time":"2026-11-02T04:24:02.283700591Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","in":"8s"}
+{"time":"2026-11-02T04:24:13.366117727Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","in":"16s"}
+{"time":"2026-11-02T04:25:58.685828726Z","level":"INFO","msg":"health sidecar starting","version":"e2e2","service":"ve2-app","tenant":"ve2","instance":"ve2-app-6d4f8b7c9-ab12c","endpoint":"http://172.17.0.1:19501","probe":"auto"}
+{"time":"2026-11-02T04:25:58.690511208Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:25:58.713121Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:28:04.187908378Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"1s"}
+{"time":"2026-11-02T04:28:07.591028327Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"2s"}
+{"time":"2026-11-02T04:28:11.01099839Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"4s"}
+{"time":"2026-11-02T04:28:17.593346774Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"8s"}
+{"time":"2026-11-02T04:28:27.589005579Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"16s"}
+{"time":"2026-11-02T04:28:57.983164355Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19501/v1/health/reports: Post \"http://172.17.0.1:19501/v1/health/reports\": dial tcp 172.17.0.1:19501: connect: connection refused","in":"1s"}
+{"time":"2026-11-02T04:30:11.672356903Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-02T04:30:19.617760697Z","level":"INFO","msg":"reported","status":"UP","message":""}

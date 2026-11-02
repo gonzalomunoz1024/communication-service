@@ -1,0 +1,49 @@
+# 30 - shared backend log review (scratchpad/logs/backend-iter2.log, iteration-2 jar on :8080), 2026-11-02T03:59:01Z
+
+## size and level counts
+43 /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/logs/backend-iter2.log
+ERROR  0
+WARN   3
+INFO   29
+DEBUG  0
+TRACE  0
+
+## first lines (startup)
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44417 -Dhttp.nonProxyHosts=localhos
+
+  .   ____          _            __ _ _
+19:2026-11-02T03:49:49.979Z  INFO 2562 --- [communication-service] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 8080 (http)
+20:2026-11-02T03:49:49.999Z  INFO 2562 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 4.6 seconds (process running 
+
+## every WARN and ERROR line (trimmed)
+21:2026-11-02T03:49:50.004Z  WARN 2562 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=fal
+22:2026-11-02T03:49:50.005Z  WARN 2562 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabl
+34:2026-11-02T03:54:51.806Z  WARN 2562 --- [communication-service] [ntLoopGroup-3-7] c.a.c.h.application.HealthSweepUseCase   : 24 of 25 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service
+
+## access-log sample (client=... lines), first 5 and counts by status
+2026-11-02T03:50:11.260Z  INFO 2562 --- [communication-service] [or-http-epoll-2] c.a.c.config.ClientIdWebFilter           : client=orchestrator GET /v1/health/monitors -> 200 (51 ms)
+2026-11-02T03:50:31.096Z  INFO 2562 --- [communication-service] [ntLoopGroup-3-6] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (158 ms)
+2026-11-02T03:51:04.782Z  INFO 2562 --- [communication-service] [ntLoopGroup-3-6] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (23 ms)
+2026-11-02T03:51:39.249Z  INFO 2562 --- [communication-service] [ntLoopGroup-3-6] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (19 ms)
+2026-11-02T03:52:12.471Z  INFO 2562 --- [communication-service] [ntLoopGroup-3-5] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (18 ms)
+status counts:
+     16 -> 202
+      2 -> 200
+
+## health/notice lines (opened/retired/closed externally/valve)
+34:2026-11-02T03:54:51.806Z  WARN 2562 --- [communication-service] [ntLoopGroup-3-7] c.a.c.h.application.HealthSweepUseCase   : 24 of 25 push-only monitors are silent at once; not declaring them DOWN until some report again (can the cluster
+
+## secrets check (passwords/tokens/credentials in the log)
+1
+
+## Addendum (verifier, 2026-11-02T04:24:25Z): level counts of the private instances' logs after all checks
+  :19100  ERROR=0 WARN=24 INFO=194  distinct ERROR messages: 
+  :19101  ERROR=0 WARN=22 INFO=66  distinct ERROR messages: 
+  :19110  ERROR=4 WARN=27 INFO=65  distinct ERROR messages: 2026-11-02T04:22:24.617Z ERROR 12788 --- [communication-service] [or-http-epoll-4] o.s.w.s|2026-11-02T04:22:24.619Z ERROR 12788 --- [communication-service] [or-http-epoll-4] r.n.htt|2026-11-02T04:22:29.631Z ERROR 12788 --- [communication-service] [or-http-epoll-1] o.s.w.s|2026-11-02T04:22:29.631Z ER
+  :19120  ERROR=0 WARN=4 INFO=146  distinct ERROR messages: 
+  :19130  ERROR=0 WARN=2 INFO=29  distinct ERROR messages: 
+  :19131  ERROR=0 WARN=3 INFO=48  distinct ERROR messages: 
+  :19140  ERROR=0 WARN=4 INFO=90  distinct ERROR messages: 
+  :19150  ERROR=0 WARN=3 INFO=29  distinct ERROR messages: 
+  (:19110 is the Mongo-outage instance: its ERROR lines are the startup-without-Mongo and the stream-during-outage cases in 27/27b; the pair's WARN lines are the scheduler losing probe races in G27 and the valve transitions)
+  scheduler WARN example: 2026-11-02T04:10:37.816Z  WARN 12402 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.application.HealthSweepUseCase   : skipping monitor becd20fe-10c3-4483-9ac4-ea216b6bce1e (vb2-race-9492fc/slow-app): 409 CONFLICT

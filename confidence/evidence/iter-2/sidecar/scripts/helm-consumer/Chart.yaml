@@ -1,0 +1,7 @@
+apiVersion: v2
+name: my-app
+version: 0.1.0
+dependencies:
+  - name: cs-health-sidecar
+    version: 1.0.0
+    repository: file:///home/claude/communication-service/sidecar/deploy/helm/cs-health-sidecar

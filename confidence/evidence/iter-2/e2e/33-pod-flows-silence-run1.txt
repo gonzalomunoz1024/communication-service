@@ -1,0 +1,14 @@
+## silence: SIGKILL sidecar and app (no leaving report) -> DOWN after the 90 s window (2026-11-02T04:24:28.057Z)
+2026-11-02T04:25:58.291Z PASS F-48 a pod that vanished without leaving: OUTAGE after the 90 s staleness window, naming the pod :: notice 89.6 s after the kill (~91.4 s after the last report); title="ve2-app is down" body="Automated health check reported **DOWN** at 2026-11-02T04:25:57.638608795Z (no health report received since 2026-11-02T04:24:26.638Z). 1 pod has not reported since 2026-11-02T04:24:26.638Z (ve2-app-6d"
+2026-11-02T04:25:58.388Z PASS F-48 instance record: not left, lastSeenAt from before the kill :: {"monitorId":"c2a39254-5b1d-4799-ae89-7ba4df4e22fe","instanceId":"ve2-app-6d4f8b7c9-ab12c","status":"UP","components":[],"namespace":"ve2-ns","node":"worker-7","cluster":"sandbox","version":"2.1.0","s
+2026-11-02T04:25:58.389Z PASS F-48 the staleness valve did not pause (no "silent at once" warning) :: valve warnings before=0 after=0
+2026-11-02T04:26:12.188Z PASS F-48 pod back -> UP -> notice retired, card gone :: retired 13.3 s after the start
+## logs: JSON slog from the sidecar, INFO lines from the backend (2026-11-02T04:26:12.189Z)
+2026-11-02T04:26:12.231Z PASS F-89 every sidecar log line is JSON; start line names version/service/tenant/instance/endpoint :: lines=31 non-json=0 start={"time":"2026-11-02T04:06:57.486416669Z","level":"INFO","msg":"health sidecar starting","version":"e2e2","service":"ve2-app","tenant":"ve2","instance":"ve2-app-6d4f8b7c9-ab12c","endpoint":"http://172.
+2026-11-02T04:26:12.232Z PASS F-89 sidecar messages present: starting, target found, reported, leaving report sent, target gone :: msgs=health sidecar starting | health target found | reported | leaving report sent | health sidecar stopped | health target gone; will rediscover | report failed; will retry
+2026-11-02T04:26:12.232Z PASS F-89 no DEBUG noise at the default level; WARN only for send failures :: {"INFO":20,"WARN":11}
+2026-11-02T04:26:12.237Z FAIL F-89 backend: INFO access log per identified request (sidecar POSTs), notice open/retire at INFO, no ERROR with stack traces :: sidecar access lines=98 opened=7 retired=7 ERROR=0 stacktrace-lines=89 WARN kinds=SpringDoc /v#/api-docs endpoint is enabled by default. To disable it in production, set th || SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, se || event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed o || health sweep skipp
+2026-11-02T04:26:12.239Z PASS F-89 no secrets or Mongo URIs with credentials in the logs :: 
+2026-11-02T04:26:12.239Z PASS F-91 no page errors / console errors in the UI during the pod flows :: 
+## summary: 9 pass, 1 fail at 2026-11-02T04:26:12.294Z
+exit=1

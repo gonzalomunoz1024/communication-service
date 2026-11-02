@@ -1,0 +1,86 @@
+== 2026-11-02T04:18:45Z private backend http://127.0.0.1:19300
+[04:18:45.657] F-27: client id rules on POST /v1/health/reports
+  no X-Client-Id -> 401 {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}
+  X-Client-Id: 'bad id!' -> 400 {"error":"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}
+  OPTIONS without id -> 200
+  /swagger-ui.html without id -> 302
+[04:18:45.727] F-36: first report auto-registers a push-only monitor; status missing/blank -> 400; tenant/service missing -> 400
+  UP -> 202 {"id":"4efb7c6a-e91b-4685-98f0-dbe3a9189caa","tenantId":"vs2-contract","service":"svc-a","policy":{"publisher":"health-sidecar","intervalSeconds":30,"timeoutMs"
+
+  no status -> 400 {"error":"status: must not be blank"}
+
+  blank status -> 400 {"error":"status: must not be blank"}
+
+  no tenant -> 400 {"error":"tenantId: must not be blank"}
+
+  no service -> 400 {"error":"service: must not be blank"}
+
+  monitor:    svc-a url=None publisher=None UP 'UP (1 of 1 pod UP)'
+[04:18:45.837] F-38/F-70: vocabulary words, each as its own service, then the monitor's lastStatus/lastSummary
+  UP              -> 202 {"id":"21bcabc5-cfa9-45f2-bfe4-c5c768d5050b","tenantId":"vs2-contract","service":"voc-UP","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs
+
+  OK              -> 202 {"id":"5240f1be-c266-4618-b1c4-6d767a2e8f6d","tenantId":"vs2-contract","service":"voc-OK","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs
+
+  HEALTHY         -> 202 {"id":"4c6e5820-9b40-4b92-9b39-0a7b0bc7d8fa","tenantId":"vs2-contract","service":"voc-HEALTHY","policy":{"publisher":"health-monitor","intervalSeconds":30,"time
+
+  DOWN            -> 202 {"id":"00df8fea-db3f-46a8-ab91-b8dfb3fa6b7c","tenantId":"vs2-contract","service":"voc-DOWN","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeout
+
+  OUT_OF_SERVICE  -> 202 {"id":"2c9995b5-887e-4318-a166-a1bcec8afba7","tenantId":"vs2-contract","service":"voc-OUT_OF_SERVICE","policy":{"publisher":"health-monitor","intervalSeconds":3
+
+  FATAL           -> 202 {"id":"a533109d-df3f-49b7-8d2b-0c2ee77459a0","tenantId":"vs2-contract","service":"voc-FATAL","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeou
+
+  UNHEALTHY       -> 202 {"id":"b4000773-6e0f-4328-a6b4-54cee569156a","tenantId":"vs2-contract","service":"voc-UNHEALTHY","policy":{"publisher":"health-monitor","intervalSeconds":30,"ti
+
+  UNKNOWN         -> 202 {"id":"a91f42ba-7efd-4288-9808-a5bb2fbbbb7d","tenantId":"vs2-contract","service":"voc-UNKNOWN","policy":{"publisher":"health-monitor","intervalSeconds":30,"time
+
+  WARN            -> 202 {"id":"95da4dc1-1c3d-445f-a8ff-6d0831cee9f6","tenantId":"vs2-contract","service":"voc-WARN","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeout
+
+  DEGRADED        -> 202 {"id":"878465df-bc2e-4f05-8331-25a46456c318","tenantId":"vs2-contract","service":"voc-DEGRADED","policy":{"publisher":"health-monitor","intervalSeconds":30,"tim
+
+  PASS            -> 202 {"id":"f2f0414f-4820-495a-99d4-780d3eb6c5b8","tenantId":"vs2-contract","service":"voc-PASS","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeout
+
+  FOO             -> 202 {"id":"5a321a75-bae6-4a45-b0db-829d91e9340a","tenantId":"vs2-contract","service":"voc-FOO","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutM
+
+  nested composite (UP overall, db.primary DOWN, legacy details) -> 202 {"id":"530ce563-06dd-4ec8-aac7-6c9f7509b81c","tenantId":"vs2-contract","service":"voc-NESTED","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeo
+
+   voc-DEGRADED     lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-DEGRADED-0))'
+   voc-DOWN         lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-DOWN-0))'
+   voc-FATAL        lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-FATAL-0))'
+   voc-FOO          lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-FOO-0))'
+   voc-HEALTHY      lastStatus=UP        summary='UP (1 of 1 pod UP)'
+   voc-NESTED       lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-NESTED-0)): db.primary DOWN, cache.redis DOWN'
+   voc-OK           lastStatus=UP        summary='UP (1 of 1 pod UP)'
+   voc-OUT_OF_SERVICE lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-OUT_OF_SERVICE-0))'
+   voc-PASS         lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-PASS-0))'
+   voc-UNHEALTHY    lastStatus=DOWN      summary='DOWN (0 of 1 pod UP (DOWN: voc-UNHEALTHY-0))'
+   voc-UNKNOWN      lastStatus=UNKNOWN   summary='UNKNOWN (1 pod starting, none reporting yet)'
+   voc-UP           lastStatus=UP        summary='UP (1 of 1 pod UP)'
+   voc-WARN         lastStatus=DEGRADED  summary='DEGRADED (0 of 1 pod UP (DEGRADED: voc-WARN-0))'
+[04:18:47.109] F-46: per-instance records: two pods, then the same pod again -> still 2; unknown monitor -> 404
+  pod a -> 202 {"id":"1b14129f-3509-4e6f-84f8-ee82e5a9bc44","tenantId":"vs2-contract","service":"inst-svc","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeout
+
+  pod b -> 202 {"id":"1b14129f-3509-4e6f-84f8-ee82e5a9bc44","tenantId":"vs2-contract","service":"inst-svc","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeout
+
+  pod a -> 202 {"id":"1b14129f-3509-4e6f-84f8-ee82e5a9bc44","tenantId":"vs2-contract","service":"inst-svc","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeout
+
+  monitor 1b14129f-3509-4e6f-84f8-ee82e5a9bc44 instances:
+  instances: 2
+    {"monitorId":"1b14129f-3509-4e6f-84f8-ee82e5a9bc44","instanceId":"inst-svc-a","status":"UP","components":[],"namespace":"ns","node":"n1","cluster":"c1","version":"1.0","sidecar":"vs2","left":false,"lastSeenAt":"2026-11-02T04:18:47.791Z"}
+    {"monitorId":"1b14129f-3509-4e6f-84f8-ee82e5a9bc44","instanceId":"inst-svc-b","status":"UP","components":[],"namespace":"ns","node":"n1","cluster":"c1","version":"1.0","sidecar":"vs2","left":false,"lastSeenAt":"2026-11-02T04:18:47.446Z"}
+  unknown monitor -> 404
+[04:18:48.194] F-50: 3 rounds x 20 parallel instance reports for one service -> count 202 / 409 / other
+  round 1:      20 202 
+  round 2:      20 202 
+  round 3:      20 202 
+  par-svc: UP 'UP (20 of 20 pods UP)' version=60
+  instances recorded: 20
+[04:18:49.687] F-48 silence rule: the two side pods of 10-lifecycle were SIGKILLed at 2026-11-02T04:13:42Z (no leaving report); instance-stale-after 90 s
+  tenant vs2-pod monitors 307 s after the kill:
+  monitor {"id":"a243a467-3e16-4632-a206-2f6a88615ac8","service":"vs2-app"} state: {"lastStatus":"UP","lastSummary":"UNKNOWN (no live pod reports)"}
+  monitor {"id":"9cc93215-e007-4247-b6cd-33dc642fc468","service":"vs2-never-up"} state: {"lastStatus":"DOWN","lastSummary":"DOWN (1 pod has not reported since 2026-11-02T04:13:42.464Z (vs2-never-up-0))"}
+  monitor {"id":"23acb296-a03c-491b-9ce8-2ed4fc9dfd5b","service":"vs2-pinned"} state: {"lastStatus":"DOWN","lastSummary":"DOWN (1 pod has not reported since 2026-11-02T04:13:40.217Z (vs2-pinned-0))"}
+  feed items: 2
+    {"id":"13e1ed73-db71-4c44-917d-131353438319","type":"OUTAGE","status":"ACTIVE","severity":"MAJOR","title":"vs2-never-up is down","startsAt":"2026-11-02T04:15:14.154Z","publisher":"health-sidecar"}
+    {"id":"b54ac44a-e1a4-405d-bdc7-5460beaf1637","type":"OUTAGE","status":"ACTIVE","severity":"MAJOR","title":"vs2-pinned is down","startsAt":"2026-11-02T04:15:12.117Z","publisher":"health-sidecar"}
+  (vs2-app left cleanly with SIGTERM in STEP E: scaled to zero, must not be stale)
+[04:18:49.771] DONE

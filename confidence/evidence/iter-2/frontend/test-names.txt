@@ -1,0 +1,142 @@
+# vitest test names (npx vitest run --reporter=verbose, Tests 141 passed (141))
+ ✓ src/test/Tabs.test.tsx > Tabs > is a tablist with one selected, focusable tab; counts are badges, zero is hidden, disabled tabs are inert
+ ✓ src/test/Tabs.test.tsx > Tabs > switches on click
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > moves focus to the first invalid field and lists every problem next to the button
+ ✓ src/test/Tabs.test.tsx > Tabs > moves with the arrow keys, skipping disabled tabs and wrapping around
+ ✓ src/test/Tabs.test.tsx > Tabs > leaves other keys alone
+ ✓ src/test/Tabs.test.tsx > Tabs > does nothing on a key when every tab is disabled
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > opens the timing card and focuses the end time a maintenance window lacks
+ ✓ src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > focuses the severity group when an outage is filed as Info
+ ✓ src/test/App.test.tsx > App > the tenant the page opens on > is none on a first visit, with a prompt that goes once a tenant is typed and remembered
+ ✓ src/test/App.test.tsx > App > the tenant the page opens on > is the tenant used last in this browser
+ ✓ src/test/App.test.tsx > App > the tenant the page opens on > is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service is unreachable instead of quoting a proxy status
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > quotes the service's reason for a rejection
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > calls a 5xx a failure of the service, not a rejection
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > moves focus to the banner and scrolls it into view, since it lands below the buttons
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > names the Type and Severity groups by their visible labels and keeps headings in order
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > promises a chip for the ServiceNow incident, and a link only when the service knows the instance
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > makes the whole Save-as-draft row the click target of its switch
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > loads the page, then follows the stream state
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > reloads the list once the stream is back after being down
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > refresh reopens the stream right away while it is down, and only then
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > moves focus to the outcome once published
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > retires a card at its expiry and starts a scheduled one on time, without a frame
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > reports when the service has more than the first page
+ ✓ src/test/useOutageFeed.test.tsx > useOutageFeed > applies frames, surfaces load errors and clears everything for a blank tenant
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > shows the connection state, including the reopen attempt
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > keeps keyboard focus on the page after resolving the only notice
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > says when the service has more than the first page
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an empty feed in terms of what the feed lists
+ ✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > moves focus to the Title field on "Publish another"
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains a 409 for a reused incident number: the reference is permanent, a follow-up needs a new one
+ ✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > shows the service's own words when its 409 already explains the permanent key and names the notice
+ ✓ src/test/Segmented.test.tsx > Segmented > is a radiogroup with one checked, focusable segment and the rest out of the tab order
+ ✓ src/test/Segmented.test.tsx > Segmented > can be named by a visible label instead
+ ✓ src/test/Segmented.test.tsx > Segmented > selects on click
+ ✓ src/test/Segmented.test.tsx > Segmented > moves the selection and focus with the arrow keys, skipping disabled segments and wrapping around
+ ✓ src/test/Segmented.test.tsx > Segmented > leaves other keys alone
+ ✓ src/test/Segmented.test.tsx > Segmented > does nothing on a key when every segment is disabled
+ ✓ src/test/Segmented.test.tsx > Segmented > stretches to the container and shrinks its text when asked
+ ✓ src/test/kit-layout.test.tsx > PageHeader > renders the eyebrow, the h1, the subtitle, the actions, the back link and the children
+ ✓ src/test/kit-layout.test.tsx > PageHeader > is just the title when nothing else is given
+ ✓ src/test/kit-layout.test.tsx > Card > titles itself at the heading level the page asks for, with subtitle and actions
+ ✓ src/test/kit-layout.test.tsx > Card > has no header without a title, and takes the interactive and flush variants
+ ✓ src/test/kit-layout.test.tsx > Card > lays out rows with a label, a description and a value, plain or stacked
+ ✓ src/test/kit-layout.test.tsx > Checkbox > is a labelled native checkbox that reports its new state
+ ✓ src/test/kit-layout.test.tsx > Checkbox > cannot be toggled while disabled
+ ✓ src/test/kit-layout.test.tsx > Select > is a labelled native select with a placeholder, hints after the labels and disabled options
+ ✓ src/test/kit-layout.test.tsx > Select > can be disabled as a whole and drawn small and monospaced
+ ✓ src/test/kit-layout.test.tsx > StatusDot > is an image named by its kind when it stands alone
+ ✓ src/test/kit-layout.test.tsx > StatusDot > is decoration next to its label, and can take any colour variable
+ ✓ src/test/kit-layout.test.tsx > Badge > shows the count, caps it at the maximum and hides zero unless asked
+ ✓ src/test/OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation
+ ✓ src/test/OutageCard.test.tsx > OutageCard > offers Withdraw instead of Resolve for a notice that has not started
+ ✓ src/test/OutageCard.test.tsx > OutageCard > says who resolves and whose feed the notice leaves before asking to confirm
+ ✓ src/test/OutageCard.test.tsx > OutageCard > names the tenant in the withdraw confirmation too, and leaves the actor out when none is known
+ ✓ src/test/OutageCard.test.tsx > OutageCard > shows an upcoming notice as Scheduled, with its start once and in sentence case
+ ✓ src/test/OutageCard.test.tsx > OutageCard > hides the action when the page cannot resolve
+ ✓ src/test/api.test.ts > feedQuery > drops empty filters
+ ✓ src/test/api.test.ts > createCommunicationClient > posts JSON, says who is calling and returns the body
+ ✓ src/test/api.test.ts > createCommunicationClient > sends a custom client id on every call
+ ✓ src/test/api.test.ts > createCommunicationClient > surfaces the service error text
+ ✓ src/test/api.test.ts > createCommunicationClient > stream > identifies itself in the query because EventSource cannot set headers
+ ✓ src/test/StateTag.test.tsx > StateTag > shows its text as written, in sentence case, instead of capitalising every word
+ ✓ src/test/format.test.ts > relativeTime > rounds to the nearest unit, in the past and in the future
+ ✓ src/test/format.test.ts > relativeTime > treats a few seconds ahead as clock skew, not as the future
+ ✓ src/test/format.test.ts > relativeTime > falls back to the short date beyond a month and to a dash for an unreadable input
+ ✓ src/test/format.test.ts > relativeTime > accepts a Date, a number or an ISO string for both instants
+ ✓ src/test/format.test.ts > duration > picks the unit by size and drops a zero remainder
+ ✓ src/test/format.test.ts > duration > clamps negatives to zero and dashes out nothing and infinity
+ ✓ src/test/format.test.ts > formatNumber > groups digits and picks the fraction digits from the magnitude
+ ✓ src/test/format.test.ts > formatNumber > honours explicit digits, compact notation and a locale
+ ✓ src/test/format.test.ts > formatNumber > dashes out nothing
+ ✓ src/test/format.test.ts > percent > formats values and ratios, whole numbers without decimals
+ ✓ src/test/format.test.ts > bytes > uses binary units and trims trailing zeros
+ ✓ src/test/format.test.ts > bytes > keeps the sign and dashes out nothing
+ ✓ src/test/format.test.ts > shortDate, dayLabel, longDate, isoDate > shows the time today, the day and time this year, and the date otherwise
+ ✓ src/test/format.test.ts > shortDate, dayLabel, longDate, isoDate > labels a day with its year only when it is not this year
+ ✓ src/test/format.test.ts > shortDate, dayLabel, longDate, isoDate > writes the full date and time, and the ISO calendar date in UTC
+ ✓ src/test/format.test.ts > shortDate, dayLabel, longDate, isoDate > takes another locale for the date words
+ ✓ src/test/format.test.ts > truncateMiddle and plural > keeps both ends of a long identifier and leaves short ones alone
+ ✓ src/test/format.test.ts > truncateMiddle and plural > pluralises with the regular -s or the given plural, and groups the count
+ ✓ src/test/errors.test.ts > explainError > says the service is unreachable for a failed connection or a proxy error
+ ✓ src/test/errors.test.ts > explainError > passes the service's own words through for a rejection
+ ✓ src/test/errors.test.ts > explainError > says the service failed, not that it rejected anything, for a 5xx
+ ✓ src/test/errors.test.ts > explainPublishError > explains a bare duplicate-externalRef 409 in the form's terms: the key is permanent, so a follow-up needs a new reference
+ ✓ src/test/errors.test.ts > explainPublishError > shows the service's own explanation of a duplicate reference when it sends one
+ ✓ src/test/errors.test.ts > explainPublishError > leaves every other error to explainError
+ ✓ src/test/errors.test.ts > client with the service down > turns a failed connection into an ApiError with status 0
+ ✓ src/test/errors.test.ts > client with the service down > tells a 5xx with an empty body from one the service explained
+ ✓ src/test/kit-colours.test.tsx > kit colour recipes > tinted capsules use the readable text hue
+ ✓ src/test/kit-colours.test.tsx > kit colour recipes > field errors are 12 px in the readable critical hue
+ ✓ src/test/kit-colours.test.tsx > kit colour recipes > the warning outline button keeps its text readable
+ ✓ src/test/stream.test.ts > reconnectDelay > doubles from one second and caps at ten, which bounds how long a restart goes unnoticed
+ ✓ src/test/stream.test.ts > stream liveness > reports open and the browser-side reconnects without reopening anything itself
+ ✓ src/test/stream.test.ts > stream liveness > reopens with backoff and the last sequence number once the browser has given up
+ ✓ src/test/stream.test.ts > stream liveness > starts the backoff again from one second after a successful open
+ ✓ src/test/stream.test.ts > stream liveness > keeps asking for the replay on every attempt while the service is away
+ ✓ src/test/stream.test.ts > stream liveness > keeps resuming while a resumed connection does open
+ ✓ src/test/stream.test.ts > stream liveness > starts from a fresh snapshot when no frame was ever received
+ ✓ src/test/stream.test.ts > stream liveness > stops reopening once unsubscribed
+ ✓ src/test/stream.test.ts > stream liveness > delivers parsed frames and skips malformed ones
+ ✓ src/test/validation.test.ts > validate > accepts a minimal outage
+ ✓ src/test/validation.test.ts > validate > requires tenant, publisher and title
+ ✓ src/test/validation.test.ts > validate > enforces the severity floor for outages and incidents only
+ ✓ src/test/validation.test.ts > validate > requires an end for maintenance and orders the times
+ ✓ src/test/validation.test.ts > validate > takes an optional ServiceNow incident and checks its shape
+ ✓ src/test/validation.test.ts > validate > caps the title at 200 characters and the service list at 20
+ ✓ src/test/validation.test.ts > parseServices > splits on commas and newlines, trims, dedupes
+ ✓ src/test/validation.test.ts > toRequest > leaves optional fields out and sends instants
+ ✓ src/test/validation.test.ts > toRequest > sends draft only when set
+ ✓ src/test/validation.test.ts > toRequest > sends the incident upper-cased as a ServiceNow ticket, or no ticket at all
+ ✓ src/test/contrast.test.ts > light theme contrast > every text role reads on every surface (4.5:1)
+ ✓ src/test/contrast.test.ts > light theme contrast > white text reads on the accent and critical fills (primary/danger buttons, badges)
+ ✓ src/test/contrast.test.ts > light theme contrast > each semantic text token reads on its tint and on the plain surfaces (4.5:1)
+ ✓ src/test/contrast.test.ts > light theme contrast > the accent and critical hues work as 3:1 graphics (focus ring, dots, icons) on the main surfaces
+ ✓ src/test/contrast.test.ts > light theme contrast > keeps the secondary/tertiary hierarchy
+ ✓ src/test/contrast.test.ts > dark theme contrast > every text role reads on every surface (4.5:1)
+ ✓ src/test/contrast.test.ts > dark theme contrast > white text reads on the accent and critical fills (primary/danger buttons, badges)
+ ✓ src/test/contrast.test.ts > dark theme contrast > each semantic text token reads on its tint and on the plain surfaces (4.5:1)
+ ✓ src/test/contrast.test.ts > dark theme contrast > the accent and critical hues work as 3:1 graphics (focus ring, dots, icons) on the main surfaces
+ ✓ src/test/contrast.test.ts > dark theme contrast > keeps the secondary/tertiary hierarchy
+ ✓ src/test/contrast.test.ts > semantic text utilities > maps a *-fg utility onto the *-text token of every hue and job state
+ ✓ src/test/feed-state.test.ts > effectiveStatus > derives time-based states instead of trusting the stored one
+ ✓ src/test/feed-state.test.ts > applyEvent > inserts, then updates by id
+ ✓ src/test/feed-state.test.ts > applyEvent > ignores an update older than what is shown
+ ✓ src/test/feed-state.test.ts > applyEvent > removes retired and expired items
+ ✓ src/test/feed-state.test.ts > applyEvent > does not add a draft
+ ✓ src/test/feed-state.test.ts > applyEvent > lists scheduled maintenance inside the upcoming window, like GET /v1/feed
+ ✓ src/test/feed-state.test.ts > applyEvent > does not list a scheduled outage, incident or change until it starts
+ ✓ src/test/feed-state.test.ts > applyEvent > keeps the ticket when projecting
+ ✓ src/test/feed-state.test.ts > applyEvent > drops history when projecting
+ ✓ src/test/feed-state.test.ts > inFeed > matches the service rule at the window boundary
+ ✓ src/test/feed-state.test.ts > reconcile > takes the page and keeps items the stream touched after the request started
+ ✓ src/test/feed-state.test.ts > reconcile > never carries another tenant over
+ ✓ src/test/feed-state.test.ts > revise and nextChange > moves statuses across start and expiry boundaries and drops what left the feed
+ ✓ src/test/feed-state.test.ts > sortFeed > orders active before scheduled, then by severity, then latest start
+ ✓ src/test/job-state.test.ts > jobState > folds the API status words onto the six tinted states, whatever their case
+ ✓ src/test/job-state.test.ts > stateTone > gives each state its capsule tone

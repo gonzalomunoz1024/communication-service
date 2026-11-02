@@ -1,0 +1,3 @@
+{"time":"2026-11-02T04:31:03.335775977Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter2","service":"vf2-fake-app","tenant":"vf2-pod","instance":"vf2-fake-app-5d7c9b8f6-q1w2e","endpoint":"http://172.17.0.1:19200","probe":"auto"}
+{"time":"2026-11-02T04:31:03.33888919Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:31:03.35862766Z","level":"INFO","msg":"reported","status":"UP","message":""}

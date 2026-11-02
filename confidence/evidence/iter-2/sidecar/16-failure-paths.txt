@@ -1,0 +1,28 @@
+[04:09:58.679] CASE 1 (slow backend): stub delays every answer 7000 ms > CS_REPORT_TIMEOUT=5s (default) -> timeout error, backoff; delay removed -> accepted
+  status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr='post http://127.0.0.1:9100/v1/health/reports: Post "http://127.0.0.1:9'
+{"time":"2026-11-02T04:10:08.502213837Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: Post \"http://127.0.0.1:9100/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","in":"1s"}
+{"time":"2026-11-02T04:10:15.579323223Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: Post \"http://127.0.0.1:9100/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","in":"2s"}
+  after removing the delay: status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=4 sendErr=None
+[04:10:27.364] CASE 2 (backend down, then back): stop the stub container -> connection refused with 1,2,4,8 s backoff; start it -> next retry accepted
+  status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=4 sendErr='post http://127.0.0.1:9100/v1/health/reports: Post "http://127.0.0.1:9'
+"msg":"report failed; will retry",http://127.0.0.1:9100/v1/health/reports\": dial tcp 127.0.0.1:9100: connect: connection refused","in":"1
+"msg":"report failed; will retry",http://127.0.0.1:9100/v1/health/reports\": dial tcp 127.0.0.1:9100: connect: connection refused","in":"2
+"msg":"report failed; will retry",http://127.0.0.1:9100/v1/health/reports\": dial tcp 127.0.0.1:9100: connect: connection refused","in":"4
+  after the stub is back: status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=7 sendErr=None
+[04:10:56.208] CASE 3 (Mongo down behind the service): private Mongo vs2-mongo (:19301) + private backend :19302 (db vs2_mdown); pause Mongo -> service answers 503 -> sidecar retries (not permanent); unpause -> accepted
+  backend :19302 ready after 7s (pid 1375)
+  status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  monitor before:   monitor {"id":"c5ecb0b6-ef72-45ac-9da8-512b9dfa4aea","service":"fail-app"}
+vs2-mongo
+  [04:11:14.878] Mongo paused
+  direct POST while Mongo is paused: 503 {"error":"database unavailable"} after 20.1 s
+  status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr='post http://172.17.0.1:19302/v1/health/reports: Post "http://172.17.0.'
+{"time":"2026-11-02T04:11:19.883660704Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: Post \"http://172.17.0.1:19302/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awai
+{"time":"2026-11-02T04:11:27.220841834Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: Post \"http://172.17.0.1:19302/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awai
+{"time":"2026-11-02T04:11:34.498038671Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: Post \"http://172.17.0.1:19302/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awai
+vs2-mongo
+  [04:11:55.162] Mongo unpaused
+  status=UP target='http://127.0.0.1:8080/actuator/health' lastTarget='http://127.0.0.1:8080/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=4 sendErr=None
+  monitor after:   monitor {"id":"c5ecb0b6-ef72-45ac-9da8-512b9dfa4aea","service":"fail-app"}
+[04:12:17.846] DONE (backend :19302 and vs2-mongo removed)

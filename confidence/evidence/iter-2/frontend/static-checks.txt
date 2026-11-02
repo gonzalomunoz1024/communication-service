@@ -1,0 +1,107 @@
+# Frontend Verifier iteration 2 — static checks (cwd frontend/), commit be196455ea919e0e58e0f950e69e26b72f70f5d2 2026-11-02T03:54:13Z
+# One line per command: name | exit | wall time. Raw outputs trimmed below.
+commit be196455ea919e0e58e0f950e69e26b72f70f5d2 2026-11-02T03:54:13Z
+01-lint | exit 0 | 5.9s
+02-typecheck | exit 0 | 4.7s
+03-vite-build | exit 0 | 1.5s
+04-test-run1 | exit 0 | 13.5s
+05-test-run2 | exit 0 | 11.8s
+06-test-run3 | exit 0 | 12.9s
+07-coverage | exit 0 | 14.2s
+08-audit | exit 0 | 0.6s
+09-audit-omit-dev | exit 0 | 0.5s
+10-audit-json | exit 0 | 0.6s
+11-default-tenant-build | exit 0 | 1.4s
+12-xorigin-build | exit 0 | 1.0s
+13-badclientid-build | exit 0 | 0.9s
+DONE 2026-11-02T03:55:23Z
+
+## 01 npm run lint (no output = clean)
+
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+
+
+## 02 npm run typecheck
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+
+## 03 npx vite build --outDir <scratch>/frontend2/dist (frontend/dist left to the E2E Verifier)
+✓ 47 modules transformed.
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-AK2MvNYg.css   31.12 kB │ gzip:  7.09 kB
+dist/assets/index-CATUeeII.js   268.29 kB │ gzip: 83.73 kB
+✓ built in 688ms
+
+## 04-test-run1.txt npm test
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+   Start at  03:54:26
+   Duration  12.71s (environment 42%, tests 38%, setup 13%, import 4%, transform 3%)
+
+## 05-test-run2.txt npm test
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+   Start at  03:54:39
+   Duration  11.02s (tests 41%, environment 39%, setup 16%, import 3%, transform 1%)
+
+## 06-test-run3.txt npm test
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+   Start at  03:54:51
+   Duration  12.09s (tests 43%, environment 41%, setup 11%, import 3%, transform 1%)
+
+## 07 npm run test:coverage (summary + per-file table)
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+All files          |   93.49 |    90.73 |   89.42 |   93.99 |                   
+ src               |   97.56 |      100 |     100 |   97.29 |                   
+  App.tsx          |   97.56 |      100 |     100 |   97.29 | 17                
+ src/outages       |   94.01 |    88.88 |    88.4 |   94.86 |                   
+  OutageCard.tsx   |   80.95 |     82.5 |   83.33 |      85 | 40-41,117         
+  OutageFeed.tsx   |   86.27 |    81.81 |   73.68 |   88.63 | 39,91-99,109,170  
+  TicketTag.tsx    |      80 |    57.14 |     100 |      75 | 19                
+  api.ts           |     100 |    86.11 |     100 |     100 | 81,121,138-171    
+  display.ts       |   85.71 |       75 |     100 |   83.33 | 22                
+  feed-state.ts    |     100 |    98.07 |     100 |     100 | 25                
+  useOutageFeed.ts |   97.14 |    92.85 |     100 |     100 | 73-83,106         
+  validation.ts    |   97.77 |    96.42 |     100 |     100 | 70,80             
+ src/ui            |   92.05 |    91.86 |   89.18 |   92.03 |                   
+  Button.tsx       |     100 |     91.3 |     100 |     100 | 99-100            
+  EmptyState.tsx   |     100 |    83.33 |     100 |     100 | 21                
+  Field.tsx        |     100 |    83.78 |     100 |     100 | ...55,190,198-199 
+  Icon.tsx         |     100 |     62.5 |     100 |     100 | 144-147           
+  Segmented.tsx    |   94.44 |    93.54 |     100 |     100 | 39,80             
+  Tabs.tsx         |   94.11 |       95 |     100 |     100 | 28                
+  Tag.tsx          |     100 |       84 |     100 |     100 | 51-56,102         
+  ThemeToggle.tsx  |     100 |    66.66 |     100 |     100 | 10,14             
+  format.ts        |     100 |    98.27 |     100 |     100 | 109,130           
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+Statements   : 93.49% ( 719/769 )
+Branches     : 90.73% ( 783/863 )
+Functions    : 89.42% ( 203/227 )
+Lines        : 93.99% ( 595/633 )
+
+## 08 npm audit
+found 0 vulnerabilities
+## 09 npm audit --omit=dev
+found 0 vulnerabilities
+## 10 npm audit --json metadata
+{"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, "total": 0}
+dependencies {"prod": 4, "dev": 304, "optional": 50, "peer": 0, "peerOptional": 0, "total": 307}
+
+## 11 VITE_DEFAULT_TENANT=vf2-default npx vite build --outDir <scratch>/frontend2/dist-default-tenant
+dist-default-tenant/assets/index-CXu2QaaV.js   268.29 kB │ gzip: 83.73 kB
+✓ built in 657ms
+## 12 VITE_API_BASE=http://127.0.0.1:8080 npx vite build --outDir <scratch>/frontend2/dist-xorigin
+dist-xorigin/assets/index-d7jCzkbs.js   268.31 kB │ gzip: 83.75 kB
+✓ built in 305ms
+## 13 VITE_CLIENT_ID='bad id!' npx vite build --outDir <scratch>/frontend2/dist-badclientid
+dist-badclientid/assets/index-DM20OtVx.js   268.29 kB │ gzip: 83.73 kB
+✓ built in 263ms
+
+## 14 npx vitest run --reporter=verbose (4th run, for the test names → test-names.txt)
+ Test Files  18 passed (18)
+      Tests  141 passed (141)
+   Duration  21.14s (environment 45%, tests 35%, setup 15%, import 3%, transform 1%)

@@ -1,0 +1,15 @@
+Frontend Verifier iteration 2 - private stacks (infra.sh status) at 2026-11-02T04:37:36Z, before teardown
+backend :19200 pid=18917 health=200
+backend :19201 pid=9782 health=200
+backend :19202 pid=10050 health=200
+front :3200 200
+front :3201 200
+front :3202 200
+front :3203 200
+front :3204 200
+front :3205 200
+front :3206 200
+vf2-mongo Up 10 minutes 127.0.0.1:27117->27017/tcp
+
+shared stack (read-only use): backend :8080 health=200, frontend :3000 200
+docker (vf2-* only mine): vf2-mongo 

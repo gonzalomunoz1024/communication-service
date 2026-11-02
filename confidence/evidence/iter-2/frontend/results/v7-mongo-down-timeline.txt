@@ -1,0 +1,5 @@
++4.6s feed Live on backend C
++4.9s docker stop vf2-mongo
++10.0s GET /v1/feed → 503 {"error":"database unavailable"} after 5028 ms
++36.8s docker start vf2-mongo
++38.3s backend C answers 200 again 1501 ms after mongo started

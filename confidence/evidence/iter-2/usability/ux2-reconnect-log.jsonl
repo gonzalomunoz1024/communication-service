@@ -1,0 +1,8 @@
+{"step": "ensure-A", "at": "2026-11-02T04:22:01.701Z", "state": "started"}
+{"step": "seed", "at": "2026-11-02T04:22:03.040Z", "status": 201}
+{"step": "before", "at": "2026-11-02T04:22:07.358Z", "cards": 3, "badge": "Live"}
+{"step": "killed", "at": "2026-11-02T04:22:07.364Z", "pids": [18697]}
+{"step": "outage-timeline", "at": "2026-11-02T04:22:35.719Z", "timeline": [{"t": 0, "badge": "Live"}, {"t": 0.5, "badge": "Reconnecting"}, {"t": 3.6, "badge": "Reconnecting (1)"}, {"t": 4.6, "badge": "Reconnecting (2)"}, {"t": 6.1, "badge": "Reconnecting (3)"}, {"t": 10.2, "badge": "Reconnecting (4)"}, {"t": 18.2, "badge": "Reconnecting (5)"}], "cards": 3, "errorState": 0}
+{"step": "restarted", "at": "2026-11-02T04:22:43.159Z", "readyAfterMs": 7371}
+{"step": "published-after-ready", "at": "2026-11-02T04:22:43.628Z", "status": 201, "msAfterReady": 469}
+{"step": "recovery", "at": "2026-11-02T04:22:45.738Z", "liveAfterReadyMs": 2538, "newCardAfterReadyMs": 2568, "badge": "Live", "cards": 4, "reconnectAttemptsSeen": 6}

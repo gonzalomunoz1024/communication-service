@@ -1,0 +1,47 @@
+# Frontend Verifier, iteration 2: automated browser checks aggregated per feature
+
+| file | passed | failed |
+|---|---|---|
+| v1-shell-theme-form.json | 62 | 0 |
+| v2-publish-errors.json | 42 | 0 |
+| v3-feed.json | 53 | 1 |
+| v3b-snapshot-per-open.json | 3 | 0 |
+| v4-reconnect.json | 7 | 0 |
+| v4b-replay-static.json | 7 | 0 |
+| v4c-reconnect-phase2.json | 7 | 0 |
+| v5-a11y.json | 33 | 0 |
+| v6-builds.json | 8 | 0 |
+| v7-e2e-flows.json | 10 | 1 |
+| v8-pod-ui.json | 4 | 0 |
+| **total** | **236** | **2** |
+
+| feature | checks passed | checks failed | failed checks |
+|---|---|---|---|
+| F-01 | 1 | 0 | - |
+| F-02 | 5 | 0 | - |
+| F-06 | 3 | 0 | - |
+| F-07 | 2 | 0 | - |
+| F-09 | 3 | 0 | - |
+| F-14 | 2 | 0 | - |
+| F-15 | 3 | 0 | - |
+| F-16 | 4 | 0 | - |
+| F-18 | 4 | 1 | v3-feed.json: on open the browser receives one lower-cased `snapshot` frame per visible item (the pre-existing notice), with a numeric id |
+| F-20 | 8 | 0 | - |
+| F-27 | 4 | 0 | - |
+| F-52 | 18 | 0 | - |
+| F-53 | 8 | 0 | - |
+| F-54 | 24 | 0 | - |
+| F-55 | 15 | 0 | - |
+| F-56 | 14 | 0 | - |
+| F-57 | 16 | 0 | - |
+| F-58 | 8 | 0 | - |
+| F-59 | 9 | 0 | - |
+| F-60 | 7 | 0 | - |
+| F-61 | 12 | 0 | - |
+| F-62 | 8 | 0 | - |
+| F-63 | 5 | 0 | - |
+| F-64 | 4 | 0 | - |
+| F-65 | 35 | 0 | - |
+| F-90 | 3 | 0 | - |
+| F-91 | 4 | 0 | - |
+| F-92 | 7 | 1 | v7-e2e-flows.json: an id never issued (999999999) or long expired from the log (1), as ?lastEventId= or as the Last-Event-ID header → 200 with a fresh snapshot (the fallback the client relies on) |

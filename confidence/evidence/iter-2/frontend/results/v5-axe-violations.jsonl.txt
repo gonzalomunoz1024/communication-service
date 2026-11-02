@@ -1,0 +1,9 @@
+# one top-level key per line
+feed-light: []
+publish-light: []
+publish-errors-light: []
+publish-banner-light: []
+feed-dark: []
+publish-dark: []
+publish-errors-dark: []
+publish-banner-dark: []

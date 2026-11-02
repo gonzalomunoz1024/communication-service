@@ -1,0 +1,23 @@
+# every request the real sidecar (e2e2-sidecar3, health-sidecar:e2e2) sent to the capture stub (capture.js :19560); mode = what the stub answered
+## first request verbatim (headers + body)
+{
+ "host": "172.17.0.1:19560",
+ "user-agent": "health-sidecar/e2e2",
+ "content-length": "336",
+ "accept": "application/json",
+ "content-type": "application/json",
+ "x-client-id": "ve2-cap-repo",
+ "accept-encoding": "gzip"
+}
+{"tenantId":"ve2cap","service":"ve2-cap","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T04:21:08.843Z","publisher":"health-sidecar","instance":{"id":"ve2-cap-0","namespace":"cap-ns","node":"node-c","cluster":"cl","version":"3.0.0","sidecar":"e2e2"}}
+## timeline
+# 1 +   0.0s gap= 0.0s stub-mode=ok   POST /v1/health/reports body.status=UP instance.leaving=None
+# 2 +   4.5s gap= 4.5s stub-mode=slow POST /v1/health/reports body.status=UP instance.leaving=None
+# 3 +   7.7s gap= 3.2s stub-mode=ok   POST /v1/health/reports body.status=UP instance.leaving=None
+# 4 +  12.3s gap= 4.6s stub-mode=400  POST /v1/health/reports body.status=UP instance.leaving=None
+# 5 +  16.8s gap= 4.5s stub-mode=500  POST /v1/health/reports body.status=UP instance.leaving=None
+# 6 +  18.8s gap= 2.0s stub-mode=500  POST /v1/health/reports body.status=UP instance.leaving=None
+# 7 +  21.1s gap= 2.3s stub-mode=ok   POST /v1/health/reports body.status=UP instance.leaving=None
+# 8 +  25.7s gap= 4.6s stub-mode=ok   POST /v1/health/reports body.status=UP instance.leaving=None
+# 9 +  30.0s gap= 4.4s stub-mode=ok   POST /v1/health/reports body.status=UP instance.leaving=None
+## reading: #2 the first send under 'slow' (4.5 s heartbeat) timed out after CS_REPORT_TIMEOUT=1s; #3 retried 3.2 s later (backoff 1 s + jitter + next tick); #4 answered 400 -> 'report rejected', next send only at the heartbeat (#5, +4.5 s); #5/#6 answered 500 -> backoff 1 s then 2 s (#6 at +2.0 s); #7 the retry after the stub recovered -> 202 (2.3 s after #6; logged at DEBUG because nothing changed, which is why the log-based check in pod-flows-run1 reported it late)

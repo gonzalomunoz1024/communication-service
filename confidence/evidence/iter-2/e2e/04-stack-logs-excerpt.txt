@@ -1,0 +1,21 @@
+# e2e stack logs after run 3 (excerpt of 791 lines): sidecar lines, backend notice lines, WARN/ERROR summary
+## e2e-sidecar
+e2e-sidecar  | 2026-11-02T03:59:45.657544848Z {"time":"2026-11-02T03:59:45.655683507Z","level":"INFO","msg":"health sidecar starting","version":"dev","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:8080","probe":"auto"}
+e2e-sidecar  | 2026-11-02T03:59:45.658556192Z {"time":"2026-11-02T03:59:45.658415743Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+e2e-sidecar  | 2026-11-02T03:59:46.009829394Z {"time":"2026-11-02T03:59:46.009645976Z","level":"INFO","msg":"reported","status":"UP","message":""}
+e2e-sidecar  | 2026-11-02T03:59:55.546715569Z {"time":"2026-11-02T03:59:55.546507263Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+e2e-sidecar  | 2026-11-02T04:00:00.517884447Z {"time":"2026-11-02T04:00:00.513945549Z","level":"INFO","msg":"reported","status":"UP","message":""}
+e2e-sidecar  | 2026-11-02T04:00:09.662089114Z {"time":"2026-11-02T04:00:09.661877687Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: Post \"http://e2e-backend:8080/v1/health/reports\": dial tcp 172.19.0.3:8080: connect: connection refused","in":"1s"}
+e2e-sidecar  | 2026-11-02T04:00:11.941915355Z {"time":"2026-11-02T04:00:11.929130165Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: Post \"http://e2e-backend:8080/v1/health/reports\": dial tcp 172.19.0.3:8080: connect: connection refused","in":"2s"}
+e2e-sidecar  | 2026-11-02T04:00:16.337016875Z {"time":"2026-11-02T04:00:16.335307863Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: Post \"http://e2e-backend:8080/v1/health/reports\": dial tcp 172.19.0.3:8080: connect: connection refused","in":"4s"}
+e2e-sidecar  | 2026-11-02T04:00:20.817172212Z {"time":"2026-11-02T04:00:20.817020912Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: Post \"http://e2e-backend:8080/v1/health/reports\": dial tcp 172.19.0.3:8080: connect: connection refused","in":"8s"}
+e2e-sidecar  | 2026-11-02T04:00:32.099965467Z {"time":"2026-11-02T04:00:32.099818496Z","level":"WARN","msg":"report failed; will retry","error":"post http://e2e-backend:8080/v1/health/reports: Post \"http://e2e-backend:8080/v1/health/reports\": dial tcp 172.19.0.3:8080: connect: connection refused","in":"16s"}
+## e2e-backend notice/retire/access lines around F-91
+e2e-backend  | 2026-11-02T03:59:58.421896234Z 2026-11-02T03:59:58.420Z  INFO 1 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : monitor 6eadafa9-688a-4ad0-8b42-caaadbc48b97 opened OUTAGE 62954f10-1733-4b95-92f1-b92dfd270
+e2e-backend  | 2026-11-02T04:00:04.800811613Z 2026-11-02T04:00:04.799Z  INFO 1 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : retired notice 62954f10-1733-4b95-92f1-b92dfd270b5f: recovered: UP (1 of 1 pod UP)
+## e2e-backend WARN/ERROR (count by kind)
+      2 WARN o.s.core.events.SpringDocAppInitializer: SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it i
+      2 WARN o.s.core.events.SpringDocAppInitializer: SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in pr
+## e2e-app /__set lines
+e2e-app  | 2026-11-02T03:59:53.254722802Z {"time":"2026-11-02T03:59:53.254537959Z","level":"INFO","msg":"health set","status":"DOWN","db":"DOWN"}
+e2e-app  | 2026-11-02T03:59:59.304680766Z {"time":"2026-11-02T03:59:59.304258167Z","level":"INFO","msg":"health set","status":"UP","db":"UP"}

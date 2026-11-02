@@ -1,0 +1,45 @@
+[04:09:58.475] F-73 CASE 1: default CS_RETRY_DELAY=2s; app fails exactly ONE health request -> stays UP (no DOWN sent)
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  stub backend saw 1 reports: ['UP']
+  DOWN lines in sidecar log: 0
+[04:10:12.747] F-73 CASE 2: CS_RETRY_DELAY=0; app fails exactly one request -> DOWN is reported
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=3 sendErr=None
+  stub backend saw 3 reports: ['UP', 'DOWN', 'UP']
+[04:10:26.504] F-71 CASE 3: CS_PORT=9003 + CS_PATH=/ping (auto) -> http://127.0.0.1:9003/ping; '/ping' answers 200 -> UP
+  status=UP target='http://127.0.0.1:9003/ping' lastTarget='http://127.0.0.1:9003/ping' upSeen=True msg=None comps=None sent=1 sendErr=None
+[04:10:30.956] F-71 CASE 4: CS_PROBE=tcp CS_PORT=9003 (CS_PATH ignored) -> tcp://127.0.0.1:9003 UP
+  status=UP target='tcp://127.0.0.1:9003' lastTarget='tcp://127.0.0.1:9003' upSeen=True msg=None comps=None sent=1 sendErr=None
+[04:10:35.362] F-71 CASE 5: CS_PROBE=actuator CS_PORT=9003 -> http://127.0.0.1:9003/actuator/health
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+[04:10:39.755] F-71 CASE 5b: CS_PROBE=http CS_PORT=9003 (no path) -> http://127.0.0.1:9003/ ; CS_SCHEME=https on a plain port -> DOWN with a TLS error
+  status=UP target='http://127.0.0.1:9003/' lastTarget='http://127.0.0.1:9003/' upSeen=True msg=None comps=None sent=1 sendErr=None
+[04:10:44.274] F-68 CASE 6: CS_IGNORE_PORTS=9100,9003 with CS_STARTUP_GRACE=6s -> UNKNOWN 'starting' then 'no health target found after 6s ... set CS_PORT and CS_PATH'
+  status=UNKNOWN target=None lastTarget=None upSeen=False msg='starting: waiting for the app to listen' comps=None sent=2 sendErr=None
+  status=UNKNOWN target=None lastTarget=None upSeen=False msg='no health target found after 6s: no listening port answered; set CS_PORT and CS_PATH' comps=None sent=5 sendErr=None
+[04:10:54.756] F-72 CASE 7: pinned port that never answers UP (app DOWN) with CS_STARTUP_GRACE=6s -> 'waiting for the first healthy answer', then 'never answered UP since start; check CS_PORT...'
+  status=UNKNOWN target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=False msg='starting: waiting for the first healthy answer from http://127.0.0.1:9003/actuator/health' comps=None sent=2 sendErr=None
+  status=UNKNOWN target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=False msg='health target http://127.0.0.1:9003/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME' comps=None sent=5 sendErr=None
+  then the app comes UP -> UP; then DOWN again -> DOWN now counts (upSeen)
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=6 sendErr=None
+  status=DOWN target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=9 sendErr=None
+[04:11:15.354] F-70 CASE 8: app says {status:WARN} after having been UP -> report WARN -> PRIVATE backend monitor DEGRADED (tenant vs2-warn)
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  status=WARN target='http://127.0.0.1:9005/actuator/health' lastTarget='http://127.0.0.1:9005/actuator/health' upSeen=True msg='health document reports WARN' comps={"cache":{"status":"WARN"}} sent=4 sendErr=None
+  private backend monitor: warn-app DEGRADED 'DEGRADED (0 of 1 pod UP (DEGRADED: var-app-1)): cache DEGRADED'
+[04:11:29.280] F-75 CASE 9: instance id of 253 chars accepted by the private backend; 254 chars -> 400 permanent 'report rejected' (tenant vs2-len)
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+  status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=0 sendErr='report rejected: HTTP 400 {"error":"instance.id: size must be between '
+{"time":"2026-11-02T04:11:35.603082254Z","level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"error\":\"instance.id: size must be between 0 and 253\"}"}
+  vs2-len monitors: [('len-app', 'UP (1 of 1 pod UP)')]
+[04:11:40.823] F-78 CASE 10: /healthz, /status, unknown path, wrong method, HEAD
+  GET /healthz -> 200 text/plain
+  GET /status -> 200 application/json
+  GET /nope -> 404 text/plain; charset=utf-8
+  GET /status/x -> 404 text/plain; charset=utf-8
+  POST /status -> 405
+  POST /healthz -> 405
+  /healthz body: ok
+  ReadHeaderTimeout: a client that sends nothing is closed after ~5 s: 5.0 s
+[04:11:49.859] DONE

@@ -1,0 +1,34 @@
+# ./stack.sh up (run 1, fresh; images rebuilt from the prebuilt jar + frontend/dist; sidecar from local/go-toolset:1.25 + distroless)
+## 2026-11-02T03:57:15.050Z ./stack.sh up  (GO_IMAGE=local/go-toolset:1.25 BASE_IMAGE=gcr.io/distroless/static-debian12:latest)
+ Image fakeapp:e2e Building 
+ Image health-sidecar:e2e Building 
+#27 naming to docker.io/library/fakeapp:e2e done
+#33 naming to docker.io/library/communication-service:e2e done
+#37 naming to docker.io/library/health-sidecar:e2e done
+ Image health-sidecar:e2e Built 
+ Image fakeapp:e2e Built 
+ Image communication-service:e2e Built 
+03:57:44 stack: the backend is ready (6 s)
+03:57:45 stack: the fake app answers UP (0 s)
+03:57:47 stack: the sidecar has reported (2 s)
+03:57:47 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+03:57:47 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+exit=0 elapsed=32.174118664 s
+
+# ./stack.sh up (run 3, fresh)
+03:59:44 stack: the backend is ready (7 s)
+03:59:45 stack: the fake app answers UP (0 s)
+03:59:46 stack: the sidecar has reported (1 s)
+03:59:47 stack: the backend sees the pod UP (monitor e2e/fakeapp) (1 s)
+03:59:47 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+exit=0 elapsed=17.128132134 s
+
+# docker compose ps (run 1)
+NAME          IMAGE                       COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+e2e-app       fakeapp:e2e                 "/fakeapp"               app       2 seconds ago    Up 2 seconds              127.0.0.1:28090->8080/tcp, 127.0.0.1:28091->9465/tcp
+e2e-backend   communication-service:e2e   "java -jar /app/app.…"   backend   15 seconds ago   Up 9 seconds              127.0.0.1:28080->8080/tcp
+e2e-mongo     mongo:7.0                   "docker-entrypoint.s…"   mongo     15 seconds ago   Up 15 seconds (healthy)   27017/tcp
+e2e-sidecar   health-sidecar:e2e          "/usr/local/bin/heal…"   sidecar   2 seconds ago    Up 1 second               
+
+# ./stack.sh down (before run 3)
+ Container e2e-sidecar Removed   Container e2e-app Removed   Container e2e-backend Removed   Container e2e-mongo Removed   Network e2e Removed  exit=0 

@@ -1,0 +1,32 @@
+== 2026-11-02T04:10:29Z binary /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar2/bin/health-sidecar-vs2: go1.25.14
+  no env                                                         exit=2 ERROR invalid configuration | CS_ENDPOINT is required (the communication service base URL) // CS_TENANT is required 
+  CS_ENDPOINT only                                               exit=2 ERROR invalid configuration | CS_TENANT is required 
+  endpoint without scheme                                        exit=2 ERROR invalid configuration | CS_ENDPOINT must start with http:// or https:// 
+  no CS_SERVICE, bare pod name without suffix (Q3: derived unchanged) exit=0 (after SIGTERM) {"time":"2026-11-02T04:10:29.664832549Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-vs2","service":"bare","tenant":"t","instance":"bare","endpoint":"http://127.0.0.1:1","probe":"tcp"}
+  no CS_SERVICE, no POD_NAME (hostname fallback?)                exit=0 (after SIGTERM) {"time":"2026-11-02T04:10:30.895196739Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-vs2","service":"vm","tenant":"t","instance":"vm","endpoint":"http://127.0.0.1:1","probe":"tcp"}
+  CS_PROBE=bogus                                                 exit=2 ERROR invalid configuration | CS_PROBE must be auto, actuator, http or tcp (got "bogus") // CS_PORT is required when CS_PROBE=bogus 
+  CS_PROBE=tcp without CS_PORT                                   exit=2 ERROR invalid configuration | CS_PORT is required when CS_PROBE=tcp 
+  CS_PORT=70000                                                  exit=2 ERROR invalid configuration | CS_PORT out of range: 70000 
+  CS_PORT=abc                                                    exit=2 ERROR invalid configuration | CS_PORT: strconv.Atoi: parsing "abc": invalid syntax 
+  CS_SCHEME=ftp                                                  exit=2 ERROR invalid configuration | CS_SCHEME must be http or https (got "ftp") 
+  CS_INTERVAL=500ms                                              exit=2 ERROR invalid configuration | CS_INTERVAL must be at least 1s 
+  CS_INTERVAL=soon                                               exit=2 ERROR invalid configuration | CS_INTERVAL: time: invalid duration "soon" 
+  CS_IGNORE_PORTS=1-2-3                                          exit=2 ERROR invalid configuration | CS_IGNORE_PORTS: bad port range "1-2-3" 
+  CS_CA_FILE missing                                             exit=2 ERROR cannot build report client | CS_CA_FILE: open /nonexistent.pem: no such file or directory 
+  [harness noise trimmed: a BrokenPipeError traceback from the evidence script's own `head` pipe, not from the sidecar]
+  CS_INSECURE_SKIP_VERIFY=maybe                                  exit=0 INFO health sidecar starting |  INFO health target found |  WARN report failed; will retry | post http://x/v1/health/reports: Post "http://x/v1/health/reports": dial tcp: lookup x on 8.8.8.8:53: no such host 
+  several errors at once (probe, scheme, interval)               exit=2 ERROR invalid configuration | CS_ENDPOINT is required (the communication service base URL) // CS_TENANT is required // CS_PROBE must be auto, actuator, http or tcp (got "bogus") // CS_PORT is required when CS_PROBE=bogus // CS_SCHEME must be http or https (got "ftp") // CS_INTERVAL must be at least 1s 
+## DeriveService (CS_SERVICE empty): run with CS_PORT pinned and read /status.service
+  POD_NAME=payments-api-7f9c6d5b4-x2k4q     -> service=payments-api instance=payments-api-7f9c6d5b4-x2k4q
+  POD_NAME=payments-api-x2k4q               -> service=payments-api instance=payments-api-x2k4q
+  POD_NAME=ledger-0                         -> service=ledger instance=ledger-0
+  POD_NAME=web-abcde                        -> service=web-abcde instance=web-abcde
+  POD_NAME=bare                             -> service=bare instance=bare
+## valid pinned run on the host (README 'try it on a laptop' shape) with CS_HEARTBEAT < CS_INTERVAL (raised) and CS_PATH without leading slash; SIGTERM -> exit 0
+  /status: {"version":"1.0.0-vs2","service":"demo","tenant":"retail","instance":"vm","target":"http://127.0.0.1:19391/status","lastTarget":"http://127.0.0.1:19391/status","upSeen":true,"lastReport":{"tenantId":"retail","service":"demo","status":"UP","observedAt":"2026-11-02T04:16:15.471Z","publisher":"health-sidecar","instance":{"id":"vm",
+  exit=0 after 0.0 s
+{"time":"2026-11-02T04:16:15.471197747Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-vs2","service":"demo","tenant":"retail","instance":"vm","endpoint":"http://127.0.0.1:1","probe":"auto"}
+{"time":"2026-11-02T04:16:17.476876926Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 127.0.0.1:1: connect: 
+{"time":"2026-11-02T04:16:17.981448646Z","level":"WARN","msg":"leaving report failed","error":"post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 127.0.0.1:1: connect: conn
+{"time":"2026-11-02T04:16:17.981599141Z","level":"INFO","msg":"health sidecar stopped"}
+## DONE

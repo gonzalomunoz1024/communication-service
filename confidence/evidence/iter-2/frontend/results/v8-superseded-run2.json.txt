@@ -1,0 +1,26 @@
+[
+  {
+    "feature": "F-91",
+    "name": "app UP → the sidecar reports and the backend auto-registers a monitor (tenant vf2-pod, service vf2-fake-app) in state UP whose instances name the pod",
+    "ok": true,
+    "evidence": "{\"monitor\":{\"id\":\"b0493208-c92e-47de-ada2-0771cf5804a7\",\"service\":\"vf2-fake-app\",\"lastStatus\":\"UP\"},\"instances\":[{\"monitorId\":\"b0493208-c92e-47de-ada2-0771cf5804a7\",\"instanceId\":\"vf2-fake-app-5d7c9b8f6-q1w2e\",\"status\":\"UP\",\"components\":[],\"namespace\":\"vf2-ns\",\"node\":\"worker-1\",\"cluster\":\"sandbox\",\"version\":\"1.0.0\",\"sidecar\":\"ci-iter2\",\"left\":false,\"lastSeenAt\":\"2026-11-02T04:31:03.344Z\"}],\"sidecarStatus\":{\"reportsSent\":1},\"sidecarContainer\":\"user=1000660000:0 readonly=true capdrop=[ALL] secopt=[no-new-privileges] net=container:e0481788e253c9daf555437283ef0949e8bc3b60b1cd2265107e9c4b34574645\"}"
+  },
+  {
+    "feature": "F-91",
+    "name": "app DOWN → after the failure threshold an OUTAGE '<service> is down' appears live in the UI feed (default filter Type=Outage) 22 ms after the fault, published by health-sidecar (the publisher the sidecar registers its monitor with; run 1 wrongly expected the retire actor 'health-monitor' here), severity Major; the instances endpoint names the pod",
+    "ok": true,
+    "evidence": "{\"msUntilCard\":22,\"cardText\":\"ActiveMajorOutagehealth:b0493208-c92e-47de-ada2-0771cf5804a7:2Updated 1m agovf2-fake-app is downAutomated health check reported **DOWN** at 2026-11-02T04:29:48.524008949Z (no health report received since 2026-11-02T04:28\",\"notice\":{\"title\":\"vf2-fake-app is down\",\"type\":\"OUTAGE\",\"severity\":\"MAJOR\",\"publisher\":\"health-sidecar\",\"affectedServices\":[\"vf2-fake-app\"]},\"instances\":[{\"monitorId\":\"b0493208-c92e-47de-ada2-0771cf5804a7\",\"instanceId\":\"vf2-fake-app-5d7c9b8f6-q1w2e\",\"status\":\"UP\",\"components\":[],\"namespace\":\"vf2-ns\",\"node\":\"worker-1\",\"cluster\":\"sandbox\",\"version\":\"1.0.0\",\"sidecar\":\"ci-iter2\",\"left\":false,\"lastSeenAt\":\"2026-11-02T04:31:03.344Z\"}]}"
+  },
+  {
+    "feature": "F-91",
+    "name": "app UP → the notice is retired (status RETIRED) and the card leaves the UI feed 6373 ms after recovery, without a refresh",
+    "ok": true,
+    "evidence": "{\"msUntilGone\":6373,\"status\":\"RETIRED\",\"lastHistory\":{\"at\":\"2026-11-02T04:31:10.153Z\",\"actor\":\"health-monitor\",\"action\":\"ACTIVE -> RETIRED: recovered: UP (1 of 1 pod UP)\"}}"
+  },
+  {
+    "feature": "F-91",
+    "name": "no page errors while the auto notice came and went",
+    "ok": true,
+    "evidence": "{\"pageErrors\":[]}"
+  }
+]

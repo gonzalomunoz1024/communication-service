@@ -1,0 +1,80 @@
++0.1s instance A up: true
++0.2s instance B up: true
++0.6s badge → Paused
++0.6s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++0.6s stream REQUEST #1 ?lastEventId=(none)
++0.7s SSE frame snapshot id=2 before the drop
++0.7s stream RESPONSE 200
++0.7s badge → Live
++0.7s stream REQUEST FAILED net::ERR_ABORTED
++0.7s stream REQUEST #2 ?lastEventId=(none)
++0.8s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++0.8s stream RESPONSE 200
++0.8s SSE frame snapshot id=2 before the drop
++0.8s feed Live with one item
++0.9s SIGKILL instance A (pid 9772); last SSE id seen 2
++0.9s A down: true
++0.9s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++1.0s badge → Reconnecting
++3.9s stream REQUEST #3 ?lastEventId=(none)
++3.9s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=2
++3.9s stream RESPONSE 502
++4.0s badge → Reconnecting (1)
++4.9s stream REQUEST #4 ?lastEventId=2
++4.9s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++4.9s stream RESPONSE 502
++5.0s badge → Reconnecting (2)
++6.9s stream REQUEST #5 ?lastEventId=2
++6.9s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++7.0s stream RESPONSE 502
++7.0s badge → Reconnecting (3)
++11.0s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++11.0s stream REQUEST #6 ?lastEventId=2
++11.0s stream RESPONSE 502
++11.0s badge → Reconnecting (4)
++19.0s stream REQUEST #7 ?lastEventId=2
++19.0s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++19.0s stream RESPONSE 502
++19.0s badge → Reconnecting (5)
++29.0s stream REQUEST #8 ?lastEventId=2
++29.0s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++29.0s stream RESPONSE 502
++29.1s badge → Reconnecting (6)
++39.0s stream REQUEST #9 ?lastEventId=2
++39.0s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++39.0s stream RESPONSE 502
++39.0s badge → Reconnecting (7)
++49.0s stream REQUEST #10 ?lastEventId=2
++49.0s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++49.0s stream RESPONSE 502
++49.1s badge → Reconnecting (8)
++52.9s restarting instance A
++59.0s stream REQUEST #11 ?lastEventId=2
++59.0s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++59.0s stream RESPONSE 502
++59.0s badge → Reconnecting (9)
++59.8s A up again: true
++69.0s stream REQUEST #12 ?lastEventId=2
++69.0s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=(none)
++69.0s stream RESPONSE 200
++69.1s badge → Live
++69.1s badge Live again: true (9.4 s after A answered)
++69.7s SSE frame created id=3 published after the restart
++71.3s SIGKILL instance A again (pid 9378); last SSE id seen 3
++71.3s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++71.4s badge → Reconnecting
++73.3s through instance B: publish 'missed while down' → 201, retire 'before the drop' → 200
++74.3s stream REQUEST #13 ?lastEventId=2
++74.3s CDP wire: stream request ?lastEventId=2 Last-Event-ID header=3
++74.3s stream RESPONSE 502
++74.4s badge → Reconnecting (1)
++75.3s stream REQUEST #14 ?lastEventId=3
++75.3s CDP wire: stream request ?lastEventId=3 Last-Event-ID header=(none)
++75.4s stream RESPONSE 502
++75.4s badge → Reconnecting (2)
++77.4s stream REQUEST #15 ?lastEventId=3
++77.4s CDP wire: stream request ?lastEventId=3 Last-Event-ID header=(none)
++77.4s stream RESPONSE 502
++77.4s badge → Reconnecting (3)
++79.3s SCRIPT ERROR Cannot read properties of undefined (reading 'at')
+instance A restarted for the later scripts

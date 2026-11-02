@@ -1,0 +1,64 @@
+# 10 - Mongo indexes on the shared mongo7 (db communication), 2026-11-02T03:58:59Z
+
+## communication_events (1314 docs)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"events_tenant_seq_idx","key":{"tenantId":1,"_id":1}}
+  {"name":"events_ttl_idx","key":{"at":1},"expireAfterSeconds":86400}
+## communications (905 docs)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"sweep_activation_idx","key":{"status":1,"startsAt":1}}
+  {"name":"feed_idx","key":{"tenantId":1,"status":1,"startsAt":-1}}
+  {"name":"sweep_expiry_idx","key":{"status":1,"expiresAt":1}}
+  {"name":"affectedServices","key":{"affectedServices":1}}
+  {"name":"external_ref_idx","key":{"tenantId":1,"externalRef":1},"unique":true,"partial":{"externalRef":{"$exists":true}}}
+## counters (1 docs)
+  {"name":"_id_","key":{"_id":1}}
+## health_instances (157 docs)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"instance_monitor_idx","key":{"monitorId":1,"instanceId":1}}
+  {"name":"instance_ttl_idx","key":{"lastSeenAt":1},"expireAfterSeconds":86400}
+## health_monitors (101 docs)
+  {"name":"_id_","key":{"_id":1}}
+  {"name":"monitor_tenant_service_idx","key":{"tenantId":1,"service":1},"unique":true}
+## counters docs
+  {"_id":"communication_events","value":{"high":0,"low":1314,"unsigned":false}}
+
+## databases present (verifier tenants of all iterations)
+  admin 40960
+  audit-main 720896
+  audit-valve 344064
+  audit1-main 847872
+  audit1-pod 655360
+  audit1-reconnect 278528
+  audit1-valve 741376
+  audit1-valve2 425984
+  be-verify 688128
+  be-verify-bv2 655360
+  be-verify-bv3 409600
+  be1-shutdown 278528
+  be1-shutdown2 278528
+  be1-valve-23619 425984
+  be1-verify 638976
+  be1-verify-bv2 655360
+  be1-verify-bv3 688128
+  bea-shutdown 278528
+  communication 1638400
+  config 73728
+  e2e 745472
+  e2e1 770048
+  fe1-reconnect 458752
+  fe_reconnect 458752
+  fix-bec 344064
+  fix-fe 475136
+  fix-sc 655360
+  fixsc2_live 458752
+  local 40960
+  sc1-main 720896
+  sc_silent 237568
+  sc_silent2 458752
+  ux1 458752
+  ux2 73728
+  uxdrop 73728
+  uxdrop3 73728
+  uxdrop4 458752
+  vf2_reconnect 73728

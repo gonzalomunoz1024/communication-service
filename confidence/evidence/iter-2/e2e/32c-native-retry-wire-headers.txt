@@ -1,0 +1,14 @@
+# node scripts/native_retry_header.js (2026-11-02 04:41Z): the streaming page's requests during 'kill -9' of backend A, with the headers as sent on the wire (CDP Network.requestWillBeSentExtraInfo) next to the renderer's view (Network.requestWillBeSent). Times relative to the kill.
+# Reading: the first request after the drop (+3.05 s) is Chrome's own EventSource retry: same URL (no lastEventId query), header Last-Event-ID: 131 on the wire; it got a 502 from the preview proxy, which closes the EventSource (a non-200 response is fatal for EventSource). The client then reopened at +1, +2, +4, +8 s, every attempt with ?lastEventId=131 (a fresh EventSource sends no header); the +8 s attempt found A ready and was answered 200; the page was Live again at +18.6 s (A ready at about +14.4 s). Exit 0.
+published: 201
+kill -9 A (pid 23721) at 2026-11-02T04:41:38.641Z: ok
+backend A pid 26745
+  -0.676 s  status=200  query=?tenantId=ve2-hdr-mvyrurm1&type=OUTAGE&clientId=communication-frontend  requestWillBeSent.Last-Event-ID=(absent)  wire(ExtraInfo).Last-Event-ID=(absent)  frames=-
+  -0.613 s  status=200  query=?tenantId=ve2-hdr-mvyrurm1&clientId=communication-frontend  requestWillBeSent.Last-Event-ID=(absent)  wire(ExtraInfo).Last-Event-ID=(absent)  frames=created#131
+   3.050 s  status=502  query=?tenantId=ve2-hdr-mvyrurm1&clientId=communication-frontend  requestWillBeSent.Last-Event-ID=(absent)  wire(ExtraInfo).Last-Event-ID=131  frames=-
+   4.057 s  status=502  query=?tenantId=ve2-hdr-mvyrurm1&clientId=communication-frontend&lastEventId=131  requestWillBeSent.Last-Event-ID=(absent)  wire(ExtraInfo).Last-Event-ID=(absent)  frames=-
+   6.062 s  status=502  query=?tenantId=ve2-hdr-mvyrurm1&clientId=communication-frontend&lastEventId=131  requestWillBeSent.Last-Event-ID=(absent)  wire(ExtraInfo).Last-Event-ID=(absent)  frames=-
+A ready again 6254 ms after the restart command
+page Live again at +18.6 s after the kill
+  10.066 s  status=502  query=?tenantId=ve2-hdr-mvyrurm1&clientId=communication-frontend&lastEventId=131  wire(ExtraInfo).Last-Event-ID=(absent)  frames=-
+  18.074 s  status=200  query=?tenantId=ve2-hdr-mvyrurm1&clientId=communication-frontend&lastEventId=131  wire(ExtraInfo).Last-Event-ID=(absent)  frames=-

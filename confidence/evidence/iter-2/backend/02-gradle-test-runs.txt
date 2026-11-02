@@ -1,0 +1,40 @@
+# 02 - unit and integration suites, three executions, HEAD be19645
+
+Run 1 = check --rerun-tasks (01-gradle-check-run1.txt). The orchestrator's plain 'test integrationTest' repeat runs were Gradle
+UP-TO-DATE no-ops (nothing had changed since run 1), so they executed no test; they are recorded below and the real repeat
+runs 2 and 3 used the task-level --rerun option (test --rerun integrationTest --rerun), which re-executes only the two test tasks.
+
+## no-op runs (plain test integrationTest)
+- gradle-run2.txt: > Task :test UP-TO-DATE > Task :integrationTest UP-TO-DATE  BUILD SUCCESSFUL in 24s EXIT=0
+- gradle-run3.txt: > Task :test UP-TO-DATE > Task :integrationTest UP-TO-DATE  BUILD SUCCESSFUL in 14s EXIT=0
+
+## executed runs
+run 1 (check --rerun-tasks): test: classes=22 tests=208 failures=0 errors=0 skipped=0 sum_time=12.6s
+run 1 (check --rerun-tasks): integrationTest: classes=8 tests=42 failures=0 errors=0 skipped=0 sum_time=12.3s
+run 2 (test --rerun integrationTest --rerun): test: classes=22 tests=208 failures=0 errors=0 skipped=0 sum_time=10.4s
+run 2 (test --rerun integrationTest --rerun): integrationTest: classes=8 tests=42 failures=0 errors=0 skipped=0 sum_time=7.1s
+run 3 (test --rerun integrationTest --rerun): test: classes=22 tests=208 failures=0 errors=0 skipped=0 sum_time=14.0s
+run 3 (test --rerun integrationTest --rerun): integrationTest: classes=8 tests=42 failures=0 errors=0 skipped=0 sum_time=7.4s
+distinct test cases across the 3 runs: 250; cases with differing outcomes or missing in a run: 0 []
+all three runs: 250 cases passed 3/3
+
+## wall clock per run
+- gradle-check-1: BUILD SUCCESSFUL in 1m 29s | Mon Nov  2 03:53:52 UTC 2026 -> Mon Nov  2 03:55:22 UTC 2026
+- gradle-rerun2: BUILD SUCCESSFUL in 50s | Mon Nov  2 04:03:13 UTC 2026 -> Mon Nov  2 04:04:04 UTC 2026
+- gradle-rerun3: BUILD SUCCESSFUL in 56s | Mon Nov  2 04:04:04 UTC 2026 -> Mon Nov  2 04:05:01 UTC 2026
+
+## iteration-2 regression tests named in confidence/iter-2/fixes.md, looked up in run 3's JUnit XML
+  GlobalExceptionHandlerTest.aStatusWithoutReasonLowerCasesItsPhraseTheSameWayInEveryLocale: pass
+  GlobalExceptionHandlerTest.anUnreachableDatabaseIs503WithoutTheDriversClusterDescription: pass
+  RestControllerFeedAdapterTest.eventNamesAreLowerCasedTheSameWayInEveryLocale: pass
+  MongoClientConfigTest: 2 tests, 2 pass
+  OperationsEndpointsIT.theMongoClientGivesUpOnAnUnreachableDatabaseWithinSeconds: pass
+  HealthObservationUseCaseTest.afterAnOperatorsRetireTheNoticeReopensOnTheThresholdthFailingObservation: pass
+  HealthMonitorTest.anOperatorsRetireStartsTheCountAgainWithTheObservationThatNoticedIt: pass
+  FeedUseCaseTest.theSnapshotIsStampedWithTheLogHeadReadBeforeItIsQueried: pass
+  MongoCommunicationEventsAdapterTest.headIsTheEndOfTheLogEvenWhileTheCursorTrailsIt: pass
+  OpenApiContractIT.theIdempotencyKeyAndTheVersionCheckExplainThemselves: pass
+  MongoCommunicationRepositoryAdapterIT.theExternalRefStaysTakenAfterItsHolderIsRetired: pass
+  HealthSweepUseCaseTest: 16 tests, 16 pass
+  StatusSweepUseCaseTest: 5 tests, 5 pass
+  HealthMonitorUseCaseTest: 19 tests, 19 pass

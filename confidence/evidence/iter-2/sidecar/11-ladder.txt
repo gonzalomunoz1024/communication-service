@@ -1,0 +1,77 @@
+[04:09:59.109] STEP 1 (F-68/F-69): ports 9001 (404 everywhere), 9002 (/healthz), 9003 (/actuator/health), backend stub 9100 (CS_IGNORE_PORTS=9100); start sidecar CS_INTERVAL=2s CS_HEARTBEAT=6s CS_RETRY_DELAY=1s
+[04:10:03.376] after start (expect target http://127.0.0.1:9003/actuator/health): status=UP target='http://127.0.0.1:9003/actuator/health' lastTarget='http://127.0.0.1:9003/actuator/health' upSeen=True msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 sendErr=None
+[04:10:03.429] STEP 2 (F-77): stop 9003 -> rediscovery to 9002 /healthz
+  status=UP target='http://127.0.0.1:9002/healthz' lastTarget='http://127.0.0.1:9002/healthz' upSeen=True msg=None comps=None sent=3 sendErr=None
+[04:10:12.569] STEP 3: stop 9002 -> fallback to 9001 '/' (404 on root counts as UP)
+  status=UP target='http://127.0.0.1:9001/' lastTarget='http://127.0.0.1:9001/' upSeen=True msg=None comps=None sent=5 sendErr=None
+[04:10:21.695] STEP 4: stop 9001, raw TCP listener on 9004 -> tcp://127.0.0.1:9004
+  status=UP target='tcp://127.0.0.1:9004' lastTarget='tcp://127.0.0.1:9004' upSeen=True msg=None comps=None sent=7 sendErr=None
+[04:10:31.069] STEP 5 (F-74): backend answers 500 -> backoff; 400 -> rejected (permanent); 409 -> retried; 202 -> clear
+  status=UP target='tcp://127.0.0.1:9004' lastTarget='tcp://127.0.0.1:9004' upSeen=True msg=None comps=None sent=7 sendErr='post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {"stub":"answer'
+  requests during 12 s of 500s: 3
+[04:10:43.205] now 400
+  status=UP target='tcp://127.0.0.1:9004' lastTarget='tcp://127.0.0.1:9004' upSeen=True msg=None comps=None sent=7 sendErr='report rejected: HTTP 400 {"stub":"answered 400"}'
+  requests during 12 s of 400s: 2
+  /status while the send error is set (for the README field check): ['instance', 'lastReport', 'lastSendAt', 'lastTarget', 'reportsSent', 'sendError', 'service', 'target', 'tenant', 'upSeen', 'version']
+[04:10:55.371] now 409
+  status=UP target='tcp://127.0.0.1:9004' lastTarget='tcp://127.0.0.1:9004' upSeen=True msg=None comps=None sent=7 sendErr='post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {"stub":"answer'
+  requests during 12 s of 409s: 3
+[04:11:07.490] now 202
+  status=UP target='tcp://127.0.0.1:9004' lastTarget='tcp://127.0.0.1:9004' upSeen=True msg=None comps=None sent=9 sendErr=None
+[04:11:16.531] STEP 6 (F-74 heartbeat while UP): nothing changing, CS_HEARTBEAT=6s: count requests over 24 s (expect 4)
+  requests before=17 after=20 -> 3 in 24 s
+[04:11:40.610] STEP 7 (F-76): docker stop sidecar (SIGTERM) -> final request with instance.leaving=true
+  stop took 0.13 s; exit code: 0
+[04:11:40.828] SIDECAR LOG:
+{"time":"2026-11-02T04:09:59.365596979Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-vs2","service":"ladder-app","tenant":"vs2-ladder","instance":"ladder-app-6d4f8b7c9-abcde","endpoint":"http://127.0.0.1:9100","probe":"auto"}
+{"time":"2026-11-02T04:09:59.37612171Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:9003/actuator/health","status":"UP"}
+{"time":"2026-11-02T04:09:59.377200869Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:10:04.698677499Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9003/actuator/health"}
+{"time":"2026-11-02T04:10:04.699487737Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:9003/actuator/health)"}
+{"time":"2026-11-02T04:10:06.894036372Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:9002/healthz","status":"UP"}
+{"time":"2026-11-02T04:10:06.894518114Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:10:14.577742715Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9002/healthz"}
+{"time":"2026-11-02T04:10:14.578272299Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:9002/healthz)"}
+{"time":"2026-11-02T04:10:16.866099434Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:9001/","status":"UP"}
+{"time":"2026-11-02T04:10:16.866747443Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:10:24.636688933Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9001/"}
+{"time":"2026-11-02T04:10:24.637078717Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:9001/)"}
+{"time":"2026-11-02T04:10:26.749831183Z","level":"INFO","msg":"health target found","target":"tcp://127.0.0.1:9004","status":"UP"}
+{"time":"2026-11-02T04:10:26.753263514Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T04:10:33.212806738Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {\"stub\":\"answered 500\"}","in":"1s"}
+{"time":"2026-11-02T04:10:35.421396908Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {\"stub\":\"answered 500\"}","in":"2s"}
+{"time":"2026-11-02T04:10:39.702851715Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 500 {\"stub\":\"answered 500\"}","in":"4s"}
+{"time":"2026-11-02T04:10:44.080410253Z","level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"stub\":\"answered 400\"}"}
+{"time":"2026-11-02T04:10:50.519416024Z","level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"stub\":\"answered 400\"}"}
+{"time":"2026-11-02T04:10:57.410394215Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {\"stub\":\"answered 409\"}","in":"1s"}
+{"time":"2026-11-02T04:10:59.435589314Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {\"stub\":\"answered 409\"}","in":"2s"}
+{"time":"2026-11-02T04:11:03.903052791Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9100/v1/health/reports: HTTP 409 {\"stub\":\"answered 409\"}","in":"4s"}
+{"time":"2026-11-02T04:11:40.673144011Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T04:11:40.67331531Z","level":"INFO","msg":"health sidecar stopped"}
+[04:11:40.886] RECORDED REQUESTS (F-75/F-27 wire contract):
+total 21
+04:09:59.377 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:04.699 POST /v1/health/reports status= DOWN msg= app is not listening (last target http://127.0.0.1:9003/actu leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:06.894 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:14.578 POST /v1/health/reports status= DOWN msg= app is not listening (last target http://127.0.0.1:9002/heal leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:16.866 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:24.636 POST /v1/health/reports status= DOWN msg= app is not listening (last target http://127.0.0.1:9001/) leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:26.752 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:33.212 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:35.421 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:39.702 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:44.079 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:50.519 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:57.410 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:10:59.435 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:11:03.902 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:11:08.486 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:11:14.934 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:11:21.762 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:11:28.246 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:11:34.488 POST /v1/health/reports status= UP msg=  leaving= None | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+04:11:40.672 POST /v1/health/reports status= UP msg= instance shutting down leaving= True | X-Client-Id= vs2-ladder-repo UA= health-sidecar/1.0.0-vs2 CT= application/json Accept= application/json
+FIRST BODY: {"components": {"db": {"details": {"database": "PostgreSQL"}, "status": "UP"}, "ping": {"status": "UP"}}, "instance": {"cluster": "sandbox", "id": "ladder-app-6d4f8b7c9-abcde", "namespace": "vs2-ns", "node": "node-a", "sidecar": "1.0.0-vs2", "version": "2.3.4"}, "observedAt": "2026-11-02T04:09:59.366Z", "publisher": "health-sidecar", "service": "ladder-app", "status": "UP", "tenantId": "vs2-ladder"}
+LAST BODY: {"instance": {"cluster": "sandbox", "id": "ladder-app-6d4f8b7c9-abcde", "leaving": true, "namespace": "vs2-ns", "node": "node-a", "sidecar": "1.0.0-vs2", "version": "2.3.4"}, "message": "instance shutting down", "observedAt": "2026-11-02T04:11:40.672Z", "publisher": "health-sidecar", "service": "ladder-app", "status": "UP", "tenantId": "vs2-ladder"}
+HEADER NAMES SEEN: ['Accept', 'Accept-Encoding', 'Content-Length', 'Content-Type', 'User-Agent', 'X-Client-Id']
+[04:11:41.416] DONE

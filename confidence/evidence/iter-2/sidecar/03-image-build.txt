@@ -1,0 +1,94 @@
+== 2026-11-02T04:00:01Z head be196455ea919e0e58e0f950e69e26b72f70f5d2
+## Dockerfile defaults (what production would pull):
+8:ARG GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.25
+9:ARG BASE_IMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.5
+## registry.access.redhat.com reachability: HTTP 000 (CONNECT via proxy)
+## builder stand-in: local/go-toolset:1.25 = go version go1.25.14 linux/amd64 with the UBI CA bundle path; base stand-in gcr.io/distroless/static-debian12:latest
+## docker build -t health-sidecar:vs2 --build-arg GO_IMAGE=local/go-toolset:1.25 --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:latest --build-arg VERSION=1.0.0-vs2 --build-arg REVISION=be196455ea919e0e58e0f950e69e26b72f70f5d2 sidecar/
+exit=0
+#1 DONE 0.0s
+#2 DONE 0.0s
+#3 DONE 0.0s
+#4 DONE 0.0s
+#5 DONE 0.0s
+#6 DONE 0.1s
+#7 DONE 0.1s
+#5 DONE 0.0s
+#12 DONE 41.4s
+#14 DONE 0.0s
+#15 exporting to image
+#15 exporting layers
+## docker image inspect health-sidecar:vs2
+User=1001 ExposedPorts={"9465/tcp":{}} Entrypoint=["/usr/local/bin/health-sidecar"] Cmd=null WorkingDir=/ Size=16319351 bytes
+Labels:
+  org.opencontainers.image.description = Probes the app in its pod and reports health to the communication service
+  org.opencontainers.image.revision = be196455ea919e0e58e0f950e69e26b72f70f5d2
+  org.opencontainers.image.source = https://github.com/gonzalomunoz1024/communication-service
+  org.opencontainers.image.title = health-sidecar
+  org.opencontainers.image.version = 1.0.0-vs2
+Size: 16319351 bytes = 16.3 MB (distroless stand-in; UBI micro size not measurable here)
+## layers:
+0B	ENTRYPOINT ["/usr/local/bin/health-sidecar"]
+0B	EXPOSE [9465/tcp]
+0B	USER 1001
+6.84MB	COPY /tmp/health-sidecar /usr/local/bin/heal…
+246kB	COPY /etc/pki/ca-trust/extracted/pem/tls-ca-…
+0B	LABEL org.opencontainers.image.title=health-…
+0B	ARG REVISION=be196455ea919e0e58e0f950e69e26b…
+0B	ARG VERSION=1.0.0-vs2
+319kB	bazel build //common:cacerts_debian12_amd64_…
+16.4kB	bazel build //common:os_release_debian12
+12.3kB	bazel build //static:nsswitch
+8.19kB	bazel build //common:tmp
+12.3kB	bazel build //common:group
+16.4kB	bazel build //common:home
+12.3kB	bazel build //common:passwd
+4.1kB	bazel build //common:rootfs
+152kB	bazel build @bookworm//media-types/amd64:dat…
+4.24MB	bazel build @bookworm//tzdata/amd64:data_sta…
+86kB	bazel build @bookworm//netbase/amd64:data_st…
+582kB	bazel build @bookworm//base-files/amd64:data…
+## binary extracted from the image
+-rwxr-xr-x 1 root root 6815928 Nov  2 04:00 /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar2/bin/health-sidecar-vs2
+-rw-r--r-- 1 root root  224449 Nov  1 23:17 /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar2/ca-bundle.crt
+go version -m:
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar2/bin/health-sidecar-vs2: go1.25.14
+	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+	build	-buildmode=exe
+	build	-compiler=gc
+	build	-trimpath=true
+	build	CGO_ENABLED=0
+	build	GOARCH=amd64
+	build	GOOS=linux
+	build	GOAMD64=v1
+CA bundle certificates: 150
+binary is static: 0 NEEDED entries; 0 INTERP
+## image filesystem (setuid/world-writable check)
+-rwxr-xr-x 0/0 .dockerenv
+-rwxr-xr-x 0/0 dev/console
+-rw-r--r-- 0/0 etc/debian_version
+-rw-r--r-- 0/0 etc/dpkg/origins/debian
+-rw-r--r-- 0/0 etc/ethertypes
+-rw-r--r-- 0/0 etc/group
+-rw-r--r-- 0/0 etc/host.conf
+-rwxr-xr-x 0/0 etc/hostname
+-rwxr-xr-x 0/0 etc/hosts
+-rw-r--r-- 0/0 etc/issue
+-rw-r--r-- 0/0 etc/issue.net
+-rw-r--r-- 0/0 etc/mime.types
+lrwxrwxrwx 0/0 etc/mtab
+-rw-r--r-- 0/0 etc/nsswitch.conf
+lrwxrwxrwx 0/0 etc/os-release
+-rw-r--r-- 0/0 etc/passwd
+-rw-r--r-- 0/0 etc/pki/tls/certs/ca-bundle.crt
+-rw-r--r-- 0/0 etc/protocols
+-rwxr-xr-x 0/0 etc/resolv.conf
+-rw-r--r-- 0/0 etc/rpc
+setuid-setgid files: 0
+## run with no environment -> exit 2 listing both required variables
+{"time":"2026-11-02T04:00:47.048565096Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit=2
+## run as an arbitrary UID with the restricted-v2 flags and a wrong endpoint, 4 s, then stop (sanity; full matrix in 30-restricted-v2)
+/status: {"version":"1.0.0-vs2","service":"smoke","tenant":"vs2","instance":"8e17c3352169","target":"http://127.0.0.1:9465/healthz","lastTarget":"http://127.0.0.1:9465/healthz","upSeen":true,"lastReport":{"tenantId":"vs2","service":"smoke","status":"UP","observedAt":"2026-11-02T04:00:50.779Z","publisher":"health-sidecar","instance":{"id":"8e17c3352169","sidecar":"1.0.0-vs2"}},"sendError":"post http://127.0
+## DONE

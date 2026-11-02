@@ -1,0 +1,10 @@
+Frontend Verifier iteration 2 - why v7's "expired id" premise did not hold on the shared stack (read-only query, 2026-11-02T04:30Z)
+
+$ docker exec mongo7 mongosh --quiet communication --eval '... communication_events oldest/newest by _id, TTL index ...'
+{"count":1675,"oldest":[{"_id":1,"at":"2026-11-01T23:27:04.470Z","tenantId":"repro"}],"newest":[{"_id":1675,"at":"2026-11-02T04:27:14.654Z","tenantId":"vf2-lei-mvyrbfzt"}]}
+TTL index: {"key":{"at":1},"expireAfterSeconds":86400}   (communication.events.retention: P1D, src/main/resources/application.yml:58)
+
+Reading: the shared log still holds every event since seq 1 (count 1675 == head 1675, oldest 5 h old, retention 1 day), so
+GET /v1/feed/stream?tenantId=vf2-lei-...&lastEventId=1 was a legitimate resume (MongoCommunicationEventsAdapter.canResumeAfter:
+oldest.seq <= seq + 1) and the service correctly replayed the tenant's one `created` frame instead of sending a snapshot.
+The expired-id fallback itself is exercised in v7b-expired-lastEventId.txt on my private backend C by deleting the old events.

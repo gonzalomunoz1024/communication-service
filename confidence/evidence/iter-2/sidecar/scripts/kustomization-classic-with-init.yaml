@@ -1,0 +1,9 @@
+# scratch: the classic component on workloads that already have init containers
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: [workloads.yaml]
+components: [../../kustomize/component]
+configMapGenerator:
+  - name: cs-health-sidecar
+    options: {disableNameSuffixHash: true}
+    literals: [CS_ENDPOINT=https://communication.apps.example.com, CS_TENANT=retail]
