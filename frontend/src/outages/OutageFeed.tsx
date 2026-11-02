@@ -110,7 +110,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
       ) : feed.items.length === 0 ? (
         <EmptyState
           icon="check"
-          iconClassName="text-healthy"
+          iconClassName="text-healthy-fg"
           title="All clear"
           message={`Nothing ${type ? titleCase(type).toLowerCase() + ' ' : ''}is active or upcoming for ${tenantId}${service.trim() ? ` on ${service.trim()}` : ''}.`}
         />

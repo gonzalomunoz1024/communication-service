@@ -11,7 +11,7 @@ const VARIANT: Record<ButtonVariant, string> = {
   ghost: 'rounded-full text-secondary hover:bg-surface-secondary hover:text-primary',
   capsule:
     'rounded-full border border-stroke-light text-secondary hover:bg-surface-secondary hover:text-primary',
-  'warning-outline': 'rounded-md border border-warning font-medium text-warning hover:bg-warning-tint',
+  'warning-outline': 'rounded-md border border-warning font-medium text-warning-fg hover:bg-warning-tint',
   danger: 'rounded-md bg-critical font-medium text-white shadow-sm hover:brightness-110',
 }
 

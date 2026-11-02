@@ -204,7 +204,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
       </Card>
 
       {serverError && (
-        <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical">
+        <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical-fg">
           <Icon name="alert-triangle" size={16} className="mt-0.5 shrink-0" />
           <span>
             <span className="font-medium">The service rejected this.</span> {serverError}
@@ -235,7 +235,7 @@ function Published({ communication: c, onAnother, onViewFeed }: { communication:
   return (
     <Card className="animate-scale-in">
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <div className={cx('flex h-12 w-12 items-center justify-center rounded-full', live ? 'bg-healthy-tint text-healthy' : 'bg-accent-tint text-accent')}>
+        <div className={cx('flex h-12 w-12 items-center justify-center rounded-full', live ? 'bg-healthy-tint text-healthy-fg' : 'bg-accent-tint text-accent-fg')}>
           <Icon name="check" size={22} strokeWidth={2.2} />
         </div>
         <div>

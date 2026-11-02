@@ -6,10 +6,10 @@ export type Tone = 'neutral' | 'accent' | 'healthy' | 'warning' | 'critical'
 
 const TONE: Record<Tone, string> = {
   neutral: 'bg-surface-secondary text-secondary',
-  accent: 'bg-accent-tint text-accent',
-  healthy: 'bg-healthy-tint text-healthy',
-  warning: 'bg-warning-tint text-warning',
-  critical: 'bg-critical-tint text-critical',
+  accent: 'bg-accent-tint text-accent-fg',
+  healthy: 'bg-healthy-tint text-healthy-fg',
+  warning: 'bg-warning-tint text-warning-fg',
+  critical: 'bg-critical-tint text-critical-fg',
 }
 
 const DOT: Record<Tone, string> = {
@@ -62,12 +62,12 @@ export function Tag({ tone = 'neutral', children, icon, dot, pulse, mono, upperc
 export type JobState = 'queued' | 'running' | 'waiting' | 'succeeded' | 'failed' | 'cancelled'
 
 const STATE_CLASS: Record<JobState, string> = {
-  queued: 'bg-state-queued-tint text-state-queued',
-  running: 'bg-state-running-tint text-state-running',
-  waiting: 'bg-state-waiting-tint text-state-waiting',
-  succeeded: 'bg-state-succeeded-tint text-state-succeeded',
-  failed: 'bg-state-failed-tint text-state-failed',
-  cancelled: 'bg-state-cancelled-tint text-state-cancelled',
+  queued: 'bg-state-queued-tint text-state-queued-fg',
+  running: 'bg-state-running-tint text-state-running-fg',
+  waiting: 'bg-state-waiting-tint text-state-waiting-fg',
+  succeeded: 'bg-state-succeeded-tint text-state-succeeded-fg',
+  failed: 'bg-state-failed-tint text-state-failed-fg',
+  cancelled: 'bg-state-cancelled-tint text-state-cancelled-fg',
 }
 
 const STATE_DOT: Record<JobState, string> = {

@@ -83,3 +83,9 @@ const client = createCommunicationClient('')   // '' = same origin
 | `outages/useOutageFeed.ts` | Hook: GET once, then keep the list live |
 | `outages/PublishOutageForm.tsx` | The publish tab |
 | `outages/OutageFeed.tsx`, `OutageCard.tsx` | The feed tab and one item |
+
+Colour: text in a semantic hue uses the `text-*-fg` utilities (`text-critical-fg`,
+`text-accent-fg`, `text-state-failed-fg`, …), which map to the `--color-*-text` tokens and reach
+WCAG AA on the surfaces and on the matching `bg-*-tint`; the plain hue (`bg-critical`,
+`text-accent`) is for fills, dots, rails and icons. `src/test/contrast.test.ts` computes the
+ratios from `src/ui/atlas.css`, so a token change that drops below 4.5:1 fails the suite.

@@ -37,7 +37,7 @@ export function Field({ label, hint, error, required, htmlFor, children, classNa
       <div className={cx('min-w-0', inline ? 'flex justify-end' : 'flex flex-col gap-1')}>
         {children}
         {(error || hint) && !inline && (
-          <p className={cx('text-caption2', error ? 'text-critical' : 'text-tertiary')} role={error ? 'alert' : undefined}>
+          <p className={cx('text-caption', error ? 'text-critical-fg' : 'text-tertiary')} role={error ? 'alert' : undefined}>
             {error ?? hint}
           </p>
         )}

@@ -6,7 +6,7 @@ export interface EmptyStateProps {
   icon: IconName
   title: string
   message?: ReactNode
-  /** tint the icon (e.g. 'text-healthy' for positive empty states) */
+  /** tint the icon (e.g. 'text-healthy-fg' for positive empty states) */
   iconClassName?: string
   /** a button or link under the message */
   action?: ReactNode

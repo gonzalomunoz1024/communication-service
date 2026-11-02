@@ -106,7 +106,7 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
                 Resolve
               </Button>
             </div>
-            {error && <p className="text-caption text-critical" role="alert">{error}</p>}
+            {error && <p className="text-caption text-critical-fg" role="alert">{error}</p>}
           </div>
         )}
       </div>
