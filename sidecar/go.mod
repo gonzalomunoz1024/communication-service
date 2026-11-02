@@ -1,3 +1,3 @@
 module github.com/gonzalomunoz1024/communication-service/sidecar
 
-go 1.24
+go 1.25

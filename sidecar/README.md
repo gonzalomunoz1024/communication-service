@@ -203,10 +203,17 @@ The usual causes, in order:
 cd sidecar
 go test ./...
 go build -ldflags="-s -w -X main.version=1.0.0" -o health-sidecar ./cmd/health-sidecar
-podman build -t registry.example.com/platform/health-sidecar:1.0.0 --build-arg VERSION=1.0.0 .
+podman build -t registry.example.com/platform/health-sidecar:1.0.0 \
+  --build-arg VERSION=1.0.0 --build-arg REVISION=$(git rev-parse HEAD) .
 ```
 
-No dependencies outside the Go standard library. To try it on a laptop against a local
+`VERSION` becomes the binary's version (the `sidecar` field of every report, the `User-Agent`,
+`/status`) and the image's `org.opencontainers.image.version` label; `REVISION` becomes
+`org.opencontainers.image.revision`, so a registry UI or a scanner can tell builds apart.
+
+No dependencies outside the Go standard library. The module needs Go 1.25 (`go.mod`), the line
+the default builder image `ubi9/go-toolset:1.25` ships; `go test ./...` on a laptop with an older
+Go downloads that toolchain through the module proxy. To try it on a laptop against a local
 communication service and a local app on port 8080:
 
 ```bash
