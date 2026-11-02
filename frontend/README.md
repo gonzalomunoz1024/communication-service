@@ -29,9 +29,14 @@ The live stream passes the same id as `?clientId=`, because `EventSource` cannot
 The browser keeps the stream open by itself and retries a dropped socket with `Last-Event-ID`,
 but it gives up for good once a retry is answered with anything other than 200 (a restart or a
 proxy error). When that happens the client reopens the stream itself, with exponential backoff
-(1 s, 2 s, … 30 s, shown as **Reconnecting (n)** in the badge) and `?lastEventId=<last seq>` so
-the service replays what was missed; after it is back, the list is reloaded once from `/v1/feed`
-in case the replay did not cover the gap. **Try again** in the error state reopens it at once.
+(1 s, 2 s, 4 s, 8 s, then every 10 s, shown as **Reconnecting (n)** in the badge; the cap is how
+long a page can take to notice that the service is back, and the backoff starts again from 1 s
+after every successful open). Every attempt carries `?lastEventId=<last seq>`, failed ones
+included, so the first one that reaches the service gets a replay of what was missed; an id the
+service cannot resume from (too old, or never issued by its event log) is answered with a fresh
+snapshot, never an error, so the client has nothing to drop. After the stream is back the list is
+reloaded once from `/v1/feed` in case the replay did not cover the gap. **Try again** in the
+error state reopens it at once.
 
 `npm test` runs the unit and component tests (vitest; pure modules in Node, components in
 jsdom with Testing Library), `npm run test:coverage` adds a V8 coverage report (`coverage/`),

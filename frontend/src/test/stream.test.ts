@@ -46,8 +46,9 @@ class FakeEventSource {
 const latest = () => FakeEventSource.instances[FakeEventSource.instances.length - 1]
 
 describe('reconnectDelay', () => {
-  it('doubles from one second and caps at thirty', () => {
-    expect([1, 2, 3, 4, 5, 6, 7, 20].map(reconnectDelay)).toEqual([1_000, 2_000, 4_000, 8_000, 16_000, 30_000, 30_000, RECONNECT_MAX_MS])
+  it('doubles from one second and caps at ten, which bounds how long a restart goes unnoticed', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 20].map(reconnectDelay)).toEqual([1_000, 2_000, 4_000, 8_000, 10_000, 10_000, 10_000, RECONNECT_MAX_MS])
+    expect(RECONNECT_MAX_MS).toBe(10_000)
   })
 })
 
@@ -96,16 +97,17 @@ describe('stream liveness', () => {
     expect(FakeEventSource.instances).toHaveLength(2)
     expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=12')
 
-    // the resume never opened (service still down, or it refused the replay): the next attempt
-    // starts from a fresh snapshot rather than retrying a request that may never succeed
+    // the resume never opened (the proxy answered 502 while the service restarts): that is not a
+    // refusal, so the next attempts still ask for the replay
     latest().giveUp()
     expect(onRetry).toHaveBeenLastCalledWith(2, 2_000)
     vi.advanceTimersByTime(2_000)
-    expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web')
+    expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=12')
     latest().giveUp()
     expect(onRetry).toHaveBeenLastCalledWith(3, 4_000)
     vi.advanceTimersByTime(4_000)
     expect(FakeEventSource.instances).toHaveLength(4)
+    expect(latest().url).toContain('lastEventId=12')
 
     // a successful open resets the backoff, and frames seen on it are resumed from next time
     latest().open()
@@ -114,6 +116,43 @@ describe('stream liveness', () => {
     expect(onRetry).toHaveBeenLastCalledWith(1, 1_000)
     vi.advanceTimersByTime(1_000)
     expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=20')
+    stop()
+  })
+
+  it('starts the backoff again from one second after a successful open', () => {
+    const onRetry = vi.fn()
+    const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {}, onRetry })
+    latest().open()
+    // a long outage: the delay reaches the cap and stays there
+    for (let i = 1; i <= 6; i++) {
+      latest().giveUp()
+      expect(onRetry).toHaveBeenLastCalledWith(i, reconnectDelay(i))
+      vi.advanceTimersByTime(reconnectDelay(i))
+    }
+    expect(onRetry).toHaveBeenLastCalledWith(6, RECONNECT_MAX_MS)
+    // the service is back: this attempt opens, and the next outage is retried after one second again
+    latest().open()
+    latest().giveUp()
+    expect(onRetry).toHaveBeenLastCalledWith(1, 1_000)
+    stop()
+  })
+
+  it('keeps asking for the replay on every attempt while the service is away', () => {
+    const stop = client().stream({ tenantId: 'acme' }, { onEvent: () => {} })
+    latest().open()
+    latest().frame('created', { seq: 98, type: 'CREATED' })
+    // the browser's own retry and the client's first attempts all meet the proxy's 502
+    for (let i = 1; i <= 4; i++) {
+      latest().giveUp()
+      vi.advanceTimersByTime(reconnectDelay(i))
+      expect(latest().url, `attempt ${i + 1}`).toBe('http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=98')
+    }
+    // the first attempt that reaches the service is a resume, and what it delivers moves the cursor on
+    latest().open()
+    latest().frame('created', { seq: 99, type: 'CREATED' })
+    latest().giveUp()
+    vi.advanceTimersByTime(1_000)
+    expect(latest().url).toContain('lastEventId=99')
     stop()
   })
 

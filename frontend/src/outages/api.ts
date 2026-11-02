@@ -47,9 +47,14 @@ export interface CommunicationClient {
 
 const EVENT_TYPES: CommunicationEventType[] = ['SNAPSHOT', 'CREATED', 'UPDATED', 'ACTIVATED', 'EXPIRED', 'RETIRED']
 
-/** Reopen backoff: 1 s, 2 s, 4 s … capped at 30 s. */
+/**
+ * Reopen backoff: 1 s, 2 s, 4 s, 8 s, then every 10 s. The cap is how long a page can take to
+ * notice that the service is back after a long outage (each attempt is one cheap request that a
+ * proxy answers at once while the service is down); it starts again from 1 s after every
+ * successful open.
+ */
 export const RECONNECT_BASE_MS = 1_000
-export const RECONNECT_MAX_MS = 30_000
+export const RECONNECT_MAX_MS = 10_000
 
 /** Delay before the client's own reopen attempt `attempt` (1-based). */
 export function reconnectDelay(attempt: number): number {
@@ -130,10 +135,15 @@ export function createCommunicationClient(
      * `Last-Event-ID`, so the service replays what was missed) but gives up for good after any
      * non-200 answer, e.g. a proxy's 502 while the service restarts. When that happens the client
      * reopens the stream itself with exponential backoff, passing the last sequence number it saw
-     * as `?lastEventId=` (a fresh EventSource sends no header). The service's 15 s keepalive
-     * comments are not visible through the EventSource API, so a half-open socket that never
-     * closes cannot be detected here; proxies end the client connection when the upstream dies
-     * (the dev proxy in vite.config.ts does the same), which is what makes the browser notice.
+     * as `?lastEventId=` (a fresh EventSource sends no header) on every attempt, failed ones
+     * included: an attempt that never opened met a proxy or a restarting service, not a refusal,
+     * and the first one that gets through is then a real resume. The service never rejects a
+     * numeric id; one it cannot resume from (too old, or never issued by its log) is answered with
+     * a fresh snapshot, which the feed applies like any other, so there is nothing to drop here.
+     * The service's 15 s keepalive comments are not visible through the EventSource API, so a
+     * half-open socket that never closes cannot be detected here; proxies end the client
+     * connection when the upstream dies (the dev proxy in vite.config.ts does the same), which is
+     * what makes the browser notice.
      */
     stream: (filter, { onEvent, onConnection, onRetry }) => {
       let source: EventSource | null = null
@@ -157,27 +167,19 @@ export function createCommunicationClient(
       const open = () => {
         // EventSource cannot set headers, so the stream identifies itself in the query instead
         const extra: Record<string, string | number> = { clientId }
-        const resume = lastSeq !== undefined
-        if (resume) extra.lastEventId = lastSeq as number
+        if (lastSeq !== undefined) extra.lastEventId = lastSeq
         const es = new EventSource(`${root}/v1/feed/stream?${feedQuery(filter, extra)}`)
         source = es
-        let opened = false
         EVENT_TYPES.forEach((t) => es.addEventListener(t.toLowerCase(), listener))
         es.onopen = () => {
-          opened = true
+          // the service answered: the next outage, whenever it comes, is retried from 1 s again
           attempt = 0
           onConnection?.(true)
         }
         es.onerror = () => {
           onConnection?.(false)
           // CONNECTING: the browser retries on its own; CLOSED: it gave up, so we take over
-          if (es.readyState === EventSource.CLOSED && !stopped && source === es) {
-            // a resume that never opened (the service refused or could not serve the replay) must not
-            // keep the page off the air: the next attempt starts from a fresh snapshot instead, and
-            // useOutageFeed reloads the list once the stream is back anyway
-            if (resume && !opened) lastSeq = undefined
-            reopen()
-          }
+          if (es.readyState === EventSource.CLOSED && !stopped && source === es) reopen()
         }
       }
 
