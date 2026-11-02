@@ -215,7 +215,7 @@ the one list of them is in the service's README under
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
 | `CS_IGNORE_PORTS` | `15000-15099` | ports discovery skips, e.g. `15000-15099,9090` |
 | `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component, or UNKNOWN (a DOWN or degraded report is sent every probe). A failed send is retried at most 30 s apart; keep `CS_HEARTBEAT` + 30 s well below the service's 90 s staleness window. See [What it reports and when](#what-it-reports-and-when) |
-| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included. The report timeout is longer than the service's own 5 s database timeout, so while the service cannot reach its database its 503 `database unavailable` arrives before the sidecar gives up and `sendError` names that cause, not a timeout |
+| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included; what a report gets while the service's own database is down is described below the table |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
 | `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts; `0` turns it off |
 | `CS_LISTEN` | `:9465` | the sidecar's own `/healthz` and `/status` |
@@ -223,6 +223,16 @@ the one list of them is in the service's README under
 | `CS_CA_FILE` | empty | extra PEM CA bundle for the endpoint (an internal CA); the image carries the UBI bundle |
 | `CS_INSECURE_SKIP_VERIFY` | `false` | skip TLS verification to the endpoint (local experiments only): `true` or `false`, also `1`/`0`, `yes`/`no`, `on`/`off` in any case |
 | `POD_NAME`, `POD_NAMESPACE`, `NODE_NAME`, `CS_VERSION`, `CS_INSTANCE_ID` | Downward API | instance identity |
+
+While the communication service cannot reach its own database, what a report gets depends on how
+the database fails. One that refuses connections (stopped, nothing listening) makes the service
+answer `503 {"error":"database unavailable"}` after its 5 s `server-selection-timeout`, inside the
+report timeout, so `sendError` names that cause. One that hangs (a frozen process, a network black
+hole) holds the service's answer for its 15 s `read-timeout` plus a retried read, about 20 s, so a
+report sent then ends at the report timeout with `context deadline exceeded` in `sendError` and is
+retried with the backoff like any failed send; once the service's driver has given up on that
+database, later reports get the 503 after 5 s again. Either way the app is unaffected and the
+reports get through once the database is back.
 
 A value the sidecar cannot use (a required variable missing, an unknown mode, scheme or log
 level, a duration, port or boolean it cannot read, a timeout or `CS_HEARTBEAT` of 0 or less, a

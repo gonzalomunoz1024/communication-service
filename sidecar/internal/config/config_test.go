@@ -1,7 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -128,12 +132,16 @@ func TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly(t *testing.T) {
 	}
 }
 
-// G-3-15: a report waits longer than the service's own database timeout (5 s,
-// communication.mongo.server-selection-timeout in its application.yml): while the service
-// cannot reach its database it answers 503 "database unavailable" after those 5 s, and that
-// answer must arrive before the sidecar gives up, so /status.sendError names the real cause
-// instead of "context deadline exceeded". An explicit CS_REPORT_TIMEOUT still wins.
-func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
+// G-3-15, G-4-23: what a report gets while the service cannot reach its own database depends on
+// how the database fails, and the README states both cases. One that refuses connections makes
+// the service answer 503 "database unavailable" after its server-selection-timeout (5 s), inside
+// the 10 s report timeout, so /status.sendError names that cause. One that hangs holds the call
+// for the service's read-timeout (15 s) and a retried read, about 20 s, past the report timeout,
+// so that report ends as "context deadline exceeded" and is retried. The service's two figures
+// are read from its application.yml (GAP-sidecar3-2: this test hard-coded 5 s as the service's
+// only database timeout and so encoded the README's wrong claim). An explicit CS_REPORT_TIMEOUT
+// still wins.
+func TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts(t *testing.T) {
 	vars := map[string]string{
 		"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
 		"POD_NAME": "payments-api-7f9c6d5b4-x2k4q",
@@ -142,14 +150,53 @@ func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	const serviceDatabaseTimeout = 5 * time.Second
-	if cfg.ReportTimeout != 10*time.Second || cfg.ReportTimeout <= serviceDatabaseTimeout {
-		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s: longer than the service's %v database timeout", cfg.ReportTimeout, serviceDatabaseTimeout)
+	service, err := os.ReadFile("../../../src/main/resources/application.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection := serviceTimeout(t, string(service), "server-selection-timeout")
+	read := serviceTimeout(t, string(service), "read-timeout")
+	if cfg.ReportTimeout != 10*time.Second {
+		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s", cfg.ReportTimeout)
+	}
+	if cfg.ReportTimeout <= selection {
+		t.Errorf("the %v report timeout must outlast the service's %v server-selection-timeout, or a refused database shows as a timeout instead of its 503", cfg.ReportTimeout, selection)
+	}
+	if cfg.ReportTimeout >= read {
+		t.Errorf("the README says a report to a service whose database hangs (%v read-timeout plus a retried read) ends as a timeout; with a %v report timeout it does not", read, cfg.ReportTimeout)
+	}
+	readme, err := os.ReadFile("../../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	section := configurationSection(string(readme))
+	for _, want := range []string{
+		fmt.Sprintf("%d s `server-selection-timeout`", int(selection.Seconds())), "database unavailable",
+		fmt.Sprintf("%d s `read-timeout`", int(read.Seconds())), "context deadline exceeded",
+	} {
+		if !strings.Contains(section, want) {
+			t.Errorf("the README's configuration section should say what a report gets while the service's database refuses connections and while it hangs, with %q", want)
+		}
 	}
 	vars["CS_REPORT_TIMEOUT"] = "3s"
 	if cfg, err := FromEnv(env(vars)); err != nil || cfg.ReportTimeout != 3*time.Second {
 		t.Errorf("an explicit CS_REPORT_TIMEOUT should win: %v %v", cfg.ReportTimeout, err)
 	}
+}
+
+// serviceTimeout reads one of the communication service's database timeouts from its
+// application.yml, written as PT<n>S or <n>s.
+func serviceTimeout(t *testing.T, yml, key string) time.Duration {
+	t.Helper()
+	m := regexp.MustCompile(`(?m)^\s+` + regexp.QuoteMeta(key) + `:\s*(?:PT(\d+)S|(\d+)s)\s*$`).FindStringSubmatch(yml)
+	if m == nil {
+		t.Fatalf("the service's application.yml has no %s of whole seconds", key)
+	}
+	n, err := strconv.Atoi(m[1] + m[2])
+	if err != nil {
+		t.Fatal(err)
+	}
+	return time.Duration(n) * time.Second
 }
 
 // G-4-22 (GAP-sidecar3-1): a timeout or heartbeat of 0 or less, or a negative retry delay or
