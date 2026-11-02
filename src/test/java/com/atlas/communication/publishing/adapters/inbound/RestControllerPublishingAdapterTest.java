@@ -104,6 +104,117 @@ class RestControllerPublishingAdapterTest {
     }
 
     @Test
+    void anUnknownEnumValueNamesTheFieldAndTheAcceptedValues() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "BOGUS",
+                        "severity", "MAJOR", "title", "down"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("type: 'BOGUS' is not one of [")
+                        .contains("OUTAGE").contains("MAINTENANCE"));
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    void aBadTimestampNamesTheFieldAndTheFormat() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "down", "expiresAt", "tomorrow at six"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("expiresAt: 'tomorrow at six' is not an ISO-8601"));
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    void aNestedBadValueCarriesTheDottedPath() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"tenantId\":\"vmforge\",\"publisher\":\"sre\",\"type\":\"OUTAGE\","
+                        + "\"severity\":\"MAJOR\",\"title\":\"down\",\"affectedServices\":\"vm-api\"}")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("affectedServices: expected a JSON array"));
+    }
+
+    @Test
+    void malformedJsonSaysWhere() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"tenantId\": \"vmforge\", \"publisher\": }")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("malformed JSON at line 1, column"));
+    }
+
+    @Test
+    void anOversizedBodyIs413NamingTheLimit() {
+        String huge = "{\"tenantId\":\"vmforge\",\"publisher\":\"sre\",\"type\":\"OUTAGE\","
+                + "\"severity\":\"MAJOR\",\"title\":\"" + "x".repeat(300 * 1024) + "\"}";
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(huge)
+                .exchange()
+                .expectStatus().isEqualTo(413)
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .contains("request body exceeds the limit of 256 KB"));
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    void anUnknownPathIs404ThatSaysSo() {
+        client.get().uri("/v1/nothing").exchange()
+                .expectStatus().isNotFound()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("no such endpoint: GET /v1/nothing"));
+    }
+
+    @Test
+    void theWrongVerbIs405ListingTheAllowedOnes() {
+        client.delete().uri("/v1/communications").exchange()
+                .expectStatus().isEqualTo(405)
+                .expectHeader().exists("Allow")
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("DELETE is not allowed on /v1/communications; allowed: ")
+                        .contains("POST"));
+    }
+
+    @Test
+    void theWrongContentTypeIs415NamingJson() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.TEXT_PLAIN)
+                .bodyValue("tenantId=vmforge")
+                .exchange()
+                .expectStatus().isEqualTo(415)
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("Content-Type 'text/plain").contains("send application/json"));
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    void aBadQueryParameterNamesItAndTheAcceptedValues() {
+        client.get().uri("/v1/communications?tenantId=vmforge&type=BOGUS").exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("type: 'BOGUS' is not one of [").contains("OUTAGE"));
+    }
+
+    @Test
     void updateCarriesTheTicketToTheUseCase() {
         when(useCase.update(any(), any())).thenAnswer(inv -> Mono.just(outageFrom(
                 new CreateCommunicationCommand("vmforge", "sre", com.atlas.communication.common.domain.CommunicationType.OUTAGE,
