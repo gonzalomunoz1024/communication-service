@@ -119,7 +119,7 @@ class MongoCommunicationEventsAdapterTest {
     void streamAfterReplaysTheGapThenContinuesLiveExactlyOnce() {
         when(sequence.current()).thenReturn(Mono.just(12L));
         adapter.initialise().block();
-        when(repository.findByTenantIdAndSeqGreaterThanAndSeqLessThanEqualOrderBySeqAsc("vmforge", 9, 12))
+        when(repository.findTenantEventsInWindow("vmforge", 9, 12))
                 .thenReturn(Flux.just(doc(10, "a"), doc(12, "b")));
 
         List<CommunicationEvent> seen = new ArrayList<>();
@@ -140,7 +140,7 @@ class MongoCommunicationEventsAdapterTest {
     void streamAfterWithNothingMissedIsJustLive() {
         when(sequence.current()).thenReturn(Mono.just(5L));
         adapter.initialise().block();
-        when(repository.findByTenantIdAndSeqGreaterThanAndSeqLessThanEqualOrderBySeqAsc("vmforge", 5, 5))
+        when(repository.findTenantEventsInWindow("vmforge", 5, 5))
                 .thenReturn(Flux.empty());
 
         List<CommunicationEvent> seen = new ArrayList<>();

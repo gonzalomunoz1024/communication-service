@@ -142,8 +142,7 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
                     .subscribe(buffer::tryEmitNext, buffer::tryEmitError, buffer::tryEmitComplete);
             long replayedUpTo = Math.max(cursor.get(), afterSeq);
             Flux<CommunicationEvent> replay = repository
-                    .findByTenantIdAndSeqGreaterThanAndSeqLessThanEqualOrderBySeqAsc(
-                            tenantId, afterSeq, replayedUpTo)
+                    .findTenantEventsInWindow(tenantId, afterSeq, replayedUpTo)
                     .map(CommunicationEventDocument::toDomain);
             return Flux.concat(replay, buffer.asFlux().filter(e -> e.seq() > replayedUpTo))
                     .doFinally(signal -> live.dispose());
