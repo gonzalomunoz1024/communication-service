@@ -3,7 +3,7 @@
  * app and render <PublishOutageForm/> and <OutageFeed/> with a client from createCommunicationClient().
  */
 export { createCommunicationClient, DEFAULT_CLIENT_ID, ApiError, isApiError, feedQuery, reconnectDelay, type ClientOptions, type CommunicationClient, type StreamHandlers } from './api'
-export { explainError, explainPublishError, isRejection, isUnreachable, UNREACHABLE_MESSAGE } from './errors'
+export { duplicateReference, explainError, explainPublishError, isRejection, isUnreachable, nextReference, UNREACHABLE_MESSAGE, type DuplicateReference } from './errors'
 export { PublishOutageForm, type PublishOutageFormProps } from './PublishOutageForm'
 export { OutageFeed, type OutageFeedProps } from './OutageFeed'
 export { OutageCard, type OutageCardProps } from './OutageCard'

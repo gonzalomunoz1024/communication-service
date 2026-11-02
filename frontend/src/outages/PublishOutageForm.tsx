@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
 import type { CommunicationClient } from './api'
 import { SEVERITY_TONE, TYPE_HINT, titleCase } from './display'
-import { explainPublishError, isRejection } from './errors'
+import { duplicateReference, explainPublishError, isRejection } from './errors'
 import { TicketTag } from './TicketTag'
 import { AUDIENCES, COMMUNICATION_TYPES, SEVERITIES, type Communication, type CommunicationType, type Severity, type Audience } from './types'
 import { TITLE_MAX, emptyDraft, parseServices, toRequest, validate, type DraftErrors, type OutageDraft } from './validation'
@@ -46,8 +46,11 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
   const [draft, setDraft] = useState<OutageDraft>(() => emptyDraft(tenantId, publisher))
   const [errors, setErrors] = useState<DraftErrors>({})
   const [submitting, setSubmitting] = useState(false)
-  /** why the last publish failed: the service's words for a rejection (4xx), or that it failed or could not be reached */
-  const [serverError, setServerError] = useState<{ text: string; rejected: boolean } | null>(null)
+  /**
+   * why the last publish failed: the service's words for a rejection (4xx), or that it failed or could not
+   * be reached; `said` keeps the service's own sentence when the form explained it in its own terms
+   */
+  const [serverError, setServerError] = useState<{ text: string; rejected: boolean; said?: string } | null>(null)
   const [published, setPublished] = useState<Communication | null>(null)
   const [showTiming, setShowTiming] = useState(false)
 
@@ -88,12 +91,13 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
     setErrors({})
     setSubmitting(true)
     setServerError(null)
+    const request = toRequest(effective)
     try {
-      const saved = await client.publish(toRequest(effective))
+      const saved = await client.publish(request)
       setPublished(saved)
       onPublished?.(saved)
     } catch (err) {
-      setServerError({ text: explainPublishError(err), rejected: isRejection(err) })
+      setServerError({ text: explainPublishError(err, request), rejected: isRejection(err), said: duplicateReference(err, request)?.said })
     } finally {
       setSubmitting(false)
     }
@@ -295,10 +299,18 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
       {serverError && (
         <div ref={banner} tabIndex={-1} role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical-fg outline-none">
           <Icon name="alert-triangle" size={16} className="mt-0.5 shrink-0" />
-          <span>
-            {serverError.rejected && <span className="font-medium">The service rejected this. </span>}
-            {serverError.text}
-          </span>
+          <div className="flex min-w-0 flex-col gap-1">
+            <span>
+              {serverError.rejected && <span className="font-medium">The service rejected this. </span>}
+              {serverError.text}
+            </span>
+            {serverError.said && (
+              <details className="text-caption">
+                <summary className="w-fit cursor-pointer font-medium">What the service said</summary>
+                <p className="mt-1 break-words">{serverError.said}</p>
+              </details>
+            )}
+          </div>
         </div>
       )}
 

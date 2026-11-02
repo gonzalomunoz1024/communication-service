@@ -86,7 +86,11 @@ An optional **ServiceNow incident** field ties a notice to the ticket behind it 
 the feed card shows the ticket as a chip that opens the incident. The number also becomes the
 notice's `externalRef` unless **External reference** is filled in, and that key is permanent per
 tenant (a retired notice keeps it): a second notice for the same incident needs another External
-reference, which is what the 409 banner says.
+reference, which is what the 409 banner says. The banner recognises that 409 by its status and the
+word `externalRef`, names the field the reference came from and suggests a value (a follow-up's
+number goes up: `INC0012345-2`, then `INC0012345-3`; any other reference gets `-2`); the service's
+own sentence, which names the notice holding the reference by id, is folded under **What the
+service said**.
 
 ## Porting to another UI
 

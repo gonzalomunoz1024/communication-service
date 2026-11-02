@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError, type CommunicationClient } from '../outages/api'
@@ -227,12 +227,52 @@ describe('PublishOutageForm duplicate reference', () => {
     expect(screen.getByLabelText(/^ServiceNow incident/)).toHaveValue('INC0012345')
   })
 
-  it("shows the service's own words when its 409 already explains the permanent key and names the notice", async () => {
+  it("keeps the service's own words in a details element when its 409 explains the permanent key and names the notice", async () => {
     const c = client()
     const explained = "externalRef 'INC0012345' is already used in tenant 'acme' by communication c42 (RETIRED); the key is permanent, so a follow-up needs another externalRef"
     vi.mocked(c.publish).mockRejectedValue(new ApiError(409, explained))
     const alert = await publishIncident(c)
-    expect(alert).toHaveTextContent(`The service rejected this. ${explained}`)
+    expect(alert).toHaveTextContent('The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference).')
+    expect(within(alert).getByText('What the service said').closest('details')).toHaveTextContent(explained)
     expect(alert).not.toHaveTextContent(/retire that/i)
+  })
+
+  it("explains the service's current 409 sentence in the form's words, with that sentence one click away", async () => {
+    const c = client()
+    // the 409 body the service sends today (communication-service-iter2.jar, POST /v1/communications twice with one ticket)
+    const said =
+      "externalRef 'INC0012345' is already used by notice 37f5f540-93b0-4641-8034-326848d8e50d in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2)."
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, said, true))
+    const alert = await publishIncident(c)
+    expect(alert).toHaveTextContent(
+      'The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2.',
+    )
+    // the notice id and "idempotency key" are the service's terms: kept, but folded away
+    const summary = within(alert).getByText('What the service said')
+    const details = summary.closest('details')!
+    expect(details).not.toHaveAttribute('open')
+    const sentence = within(details).getByText(said)
+    expect(sentence).not.toBeVisible()
+    await userEvent.setup().click(summary)
+    expect(details).toHaveAttribute('open')
+    expect(sentence).toBeVisible()
+  })
+
+  it('names the External reference that was typed and suggests the next follow-up number', async () => {
+    const c = client()
+    const said =
+      "externalRef 'INC0012345-2' is already used by notice 42fe0701-4438-4ae6-9173-c060fdf38f63 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2-2)."
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, said, true))
+    const user = userEvent.setup()
+    render(<PublishOutageForm client={c} tenantId="acme" publisher="oncall" />)
+    await user.type(screen.getByLabelText(/^Title/), 'Payments API returning 503s')
+    await user.type(screen.getByLabelText(/^ServiceNow incident/), 'INC0012345')
+    await user.type(screen.getByLabelText(/^External reference/), 'INC0012345-2')
+    await user.click(screen.getByRole('button', { name: 'Publish outage' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      'The service rejected this. INC0012345-2 is already the External reference of a notice in tenant acme. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as INC0012345-3.',
+    )
+    expect(screen.getByLabelText(/^External reference/)).toHaveValue('INC0012345-2')
   })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError, createCommunicationClient, isApiError } from '../outages/api'
-import { UNREACHABLE_MESSAGE, explainError, explainPublishError, isRejection, isUnreachable } from '../outages/errors'
+import { UNREACHABLE_MESSAGE, duplicateReference, explainError, explainPublishError, isRejection, isUnreachable, nextReference } from '../outages/errors'
 
 describe('explainError', () => {
   it('says the service is unreachable for a failed connection or a proxy error', () => {
@@ -67,10 +67,55 @@ describe('explainPublishError', () => {
     )
     expect(text).not.toMatch(/retire that/i)
   })
-  it("shows the service's own explanation of a duplicate reference when it sends one", () => {
+  it("explains a duplicate reference in the form's terms whatever the service's sentence says around it", () => {
     const explained =
       "externalRef 'INC0012345' is already used in tenant 'acme' by communication c42 (RETIRED); the key is permanent, so a follow-up needs another externalRef"
-    expect(explainPublishError(new ApiError(409, explained))).toBe(explained)
+    expect(explainPublishError(new ApiError(409, explained))).toBe(
+      'INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2.',
+    )
+    expect(duplicateReference(new ApiError(409, explained))?.said).toBe(explained)
+  })
+  it("explains the service's current duplicate-reference sentence without its notice id or client-library terms", () => {
+    // the 409 body the service sends today (communication-service-iter2.jar, POST /v1/communications twice with one ticket)
+    const said =
+      "externalRef 'INC0012345' is already used by notice 37f5f540-93b0-4641-8034-326848d8e50d in tenant fixfe3. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2)."
+    const e = new ApiError(409, said, true)
+    expect(duplicateReference(e)).toEqual({ reference: 'INC0012345', tenantId: 'fixfe3', fromTicket: true, next: 'INC0012345-2', said })
+    const text = explainPublishError(e)
+    expect(text).toBe(
+      'INC0012345 is already the reference of a notice in tenant fixfe3 (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC0012345-2.',
+    )
+    expect(text).not.toMatch(/37f5f540|idempotency|retry the same publish|externalRef/)
+  })
+  it('names the External reference the person typed, and suggests the next follow-up number, from the request that was sent', () => {
+    const said =
+      "externalRef 'INC0012345-2' is already used by notice 42fe0701-4438-4ae6-9173-c060fdf38f63 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2-2)."
+    const sent = { tenantId: 'acme', publisher: 'oncall', type: 'OUTAGE', severity: 'MAJOR', title: 't', externalRef: 'INC0012345-2', ticket: { system: 'servicenow', number: 'INC0012345' } } as const
+    expect(explainPublishError(new ApiError(409, said, true), sent)).toBe(
+      'INC0012345-2 is already the External reference of a notice in tenant acme. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as INC0012345-3.',
+    )
+    // the ticket number became the reference because External reference was left empty
+    const fromTicket = { ...sent, externalRef: undefined }
+    expect(duplicateReference(new ApiError(409, said.replaceAll('INC0012345-2', 'INC0012345'), true), fromTicket)).toMatchObject({ reference: 'INC0012345', fromTicket: true, next: 'INC0012345-2' })
+  })
+  it('reads the reference and the tenant from the sentence when no request is at hand, with or without the holder', () => {
+    const noHolder = new ApiError(409, "externalRef 'O'Brien-7' is already used in tenant acme.eu. externalRef is a permanent idempotency key: give a follow-up notice a new value.", true)
+    expect(duplicateReference(noHolder)).toMatchObject({ reference: "O'Brien-7", tenantId: 'acme.eu', next: "O'Brien-8" })
+    // not a duplicate key: another 409, or a 400 that names the field
+    expect(duplicateReference(new ApiError(409, 'communication c1 was modified concurrently; reload and retry', true))).toBeNull()
+    expect(duplicateReference(new ApiError(400, 'externalRef: size must be between 0 and 128', true))).toBeNull()
+    expect(explainPublishError(new ApiError(400, 'externalRef: size must be between 0 and 128', true))).toBe('externalRef: size must be between 0 and 128')
+  })
+  it('suggests the next follow-up number, and -2 for anything else', () => {
+    expect(['INC0012345', 'INC0012345-1', 'INC0012345-2', 'INC0012345-9', 'payments-2026-11-01', 'payments-2026-11-12', 'v2'].map(nextReference)).toEqual([
+      'INC0012345-2',
+      'INC0012345-2',
+      'INC0012345-3',
+      'INC0012345-10',
+      'payments-2026-11-01-2',
+      'payments-2026-11-12-2',
+      'v2-2',
+    ])
   })
   it('leaves every other error to explainError', () => {
     expect(explainPublishError(new ApiError(409, 'communication c1 was modified concurrently; reload and retry'))).toBe('communication c1 was modified concurrently; reload and retry')
