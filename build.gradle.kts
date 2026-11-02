@@ -42,6 +42,9 @@ dependencies {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+    // Deprecation, removal and unchecked warnings fail the build: an API marked for removal
+    // (ensureIndex in Spring Data MongoDB 4.5) must be replaced before the next major upgrade.
+    options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:removal", "-Xlint:unchecked", "-Werror"))
 }
 
 tasks.withType<Test> {

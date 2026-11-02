@@ -48,7 +48,7 @@ class OpenApiContractIT {
         assertThat(paths.fieldNames()).toIterable().contains(
                 "/v1/communications", "/v1/communications/{id}", "/v1/feed", "/v1/feed/stream",
                 "/v1/admin/communications", "/v1/health/monitors", "/v1/health/reports");
-        paths.fields().forEachRemaining(path -> path.getValue().fields().forEachRemaining(op -> {
+        paths.properties().forEach(path -> path.getValue().properties().forEach(op -> {
             JsonNode unauthorized = op.getValue().path("responses").path("401");
             assertThat(unauthorized.isMissingNode())
                     .as("%s %s documents 401", op.getKey(), path.getKey()).isFalse();

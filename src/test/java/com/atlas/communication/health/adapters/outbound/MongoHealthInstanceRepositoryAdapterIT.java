@@ -34,7 +34,7 @@ class MongoHealthInstanceRepositoryAdapterIT {
     void setUp() {
         adapter = new MongoHealthInstanceRepositoryAdapter(repository);
         // the entity's indexes are created on first use in the app; make them explicit here
-        template.indexOps(HealthInstanceDocument.class).ensureIndex(new Index()
+        template.indexOps(HealthInstanceDocument.class).createIndex(new Index()
                 .on("lastSeenAt", Sort.Direction.ASC)
                 .named("instance_ttl_idx")
                 .expire(HealthInstanceDocument.TTL_SECONDS)).block();

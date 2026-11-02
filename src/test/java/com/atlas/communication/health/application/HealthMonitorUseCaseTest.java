@@ -148,7 +148,7 @@ class HealthMonitorUseCaseTest {
     void concurrentFirstPushesConvergeOnTheWinnersMonitor() {
         HealthMonitor winner = existing();
         when(monitors.findByTenantAndService("vmforge", "billing"))
-                .thenReturn(Mono.empty(), Mono.just(winner));
+                .thenReturn(Mono.empty()).thenReturn(Mono.just(winner));
         when(monitors.save(any())).thenReturn(Mono.error(
                 new ResponseStatusException(HttpStatus.CONFLICT, "already exists")));
         when(observation.observe(eq(winner), any(), eq(NOW))).thenReturn(Mono.just(winner));
@@ -302,9 +302,9 @@ class HealthMonitorUseCaseTest {
     void aConcurrentUpdateIsRetriedWithAFreshMonitor() {
         HealthMonitor monitor = existing();
         when(monitors.findByTenantAndService("vmforge", "billing")).thenReturn(Mono.just(monitor));
-        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
-                Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently")),
-                Mono.just(monitor));
+        when(observation.observe(eq(monitor), any(), eq(NOW)))
+                .thenReturn(Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently")))
+                .thenReturn(Mono.just(monitor));
 
         StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
                         null, null, null, null, null, null)))
@@ -338,8 +338,9 @@ class HealthMonitorUseCaseTest {
         Mono<HealthMonitor> conflict = Mono.error(
                 new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently"));
         // four pods got there first: the fifth attempt goes through
-        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
-                conflict, conflict, conflict, conflict, Mono.just(monitor));
+        when(observation.observe(eq(monitor), any(), eq(NOW)))
+                .thenReturn(conflict).thenReturn(conflict).thenReturn(conflict).thenReturn(conflict)
+                .thenReturn(Mono.just(monitor));
 
         StepVerifier.withVirtualTime(() -> useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
                         null, null, null, null, null, null)))

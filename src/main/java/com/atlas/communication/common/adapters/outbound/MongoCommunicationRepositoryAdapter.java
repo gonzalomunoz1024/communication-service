@@ -58,7 +58,7 @@ public class MongoCommunicationRepositoryAdapter implements CommunicationReposit
                 .named("external_ref_idx")
                 .unique()
                 .partial(PartialIndexFilter.of(Criteria.where("externalRef").exists(true)));
-        template.indexOps(CommunicationDocument.class).ensureIndex(externalRefIndex).block();
+        template.indexOps(CommunicationDocument.class).createIndex(externalRefIndex).block();
     }
 
     @Override

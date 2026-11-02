@@ -188,7 +188,7 @@ public class MongoCommunicationEventsAdapter implements CommunicationEventsPort 
     private Mono<Void> ensureTtlIndex() {
         Index ttl = new Index().on("at", Sort.Direction.ASC).named(TTL_INDEX)
                 .expire(properties.retention());
-        return template.indexOps(CommunicationEventDocument.class).ensureIndex(ttl)
+        return template.indexOps(CommunicationEventDocument.class).createIndex(ttl)
                 .onErrorResume(MongoCommunicationEventsAdapter::isIndexConflict, ex -> updateTtl())
                 .then();
     }
