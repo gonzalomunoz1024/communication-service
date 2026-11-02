@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiError, type CommunicationClient } from '../outages/api'
@@ -8,6 +8,21 @@ import { PublishOutageForm } from '../outages/PublishOutageForm'
 import type { Communication } from '../outages/types'
 
 const client = (): CommunicationClient => ({ publish: vi.fn(), feed: vi.fn(), retire: vi.fn(), stream: vi.fn(() => () => {}) })
+/** What the service answers to a publish from the tests below. */
+const publishedOutage = (): Communication => ({
+  id: 'c9',
+  tenantId: 'acme',
+  publisher: 'oncall',
+  type: 'OUTAGE',
+  severity: 'MAJOR',
+  title: 'Payments API returning 503s',
+  affectedServices: [],
+  audience: 'CUSTOMERS',
+  status: 'ACTIVE',
+  startsAt: '2026-11-01T20:00:00Z',
+  createdAt: '2026-11-01T20:00:00Z',
+  updatedAt: '2026-11-01T20:00:00Z',
+})
 const summary = () => screen.getAllByRole('alert').find((el) => /needs? attention/.test(el.textContent ?? ''))
 
 describe('PublishOutageForm validation', () => {
@@ -82,6 +97,22 @@ describe('PublishOutageForm server errors', () => {
     vi.mocked(c.publish).mockRejectedValue(new ApiError(400, 'title must not be blank'))
     expect(await publish(c)).toHaveTextContent('The service rejected this. title must not be blank')
   })
+
+  it('moves focus to the banner and scrolls it into view, since it lands below the buttons', async () => {
+    // jsdom has no layout and no scrollIntoView; the component must tolerate that and call it when present
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    try {
+      const c = client()
+      vi.mocked(c.publish).mockRejectedValue(new ApiError(409, "duplicate externalRef 'INC0012345' for tenant 'acme'"))
+      const alert = await publish(c)
+      await waitFor(() => expect(alert).toHaveFocus())
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+      expect(scrollIntoView.mock.contexts).toContain(alert)
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView
+    }
+  })
 })
 
 describe('PublishOutageForm accessibility', () => {
@@ -116,6 +147,20 @@ describe('PublishOutageForm accessibility', () => {
     await user.click(screen.getByRole('button', { name: 'Publish outage' }))
     const heading = await screen.findByRole('heading', { name: 'Outage published' })
     expect(heading).toHaveFocus()
+  })
+
+  it('moves focus to the Title field on "Publish another"', async () => {
+    const user = userEvent.setup()
+    const c = client()
+    vi.mocked(c.publish).mockResolvedValue(publishedOutage())
+    render(<PublishOutageForm client={c} tenantId="acme" publisher="oncall" />)
+    await user.type(screen.getByLabelText(/^Title/), 'Payments API returning 503s')
+    await user.click(screen.getByRole('button', { name: 'Publish outage' }))
+    await user.click(await screen.findByRole('button', { name: 'Publish another' }))
+    // the confirmation (and the button that was pressed) is gone: the empty form's first field takes over
+    const title = screen.getByLabelText(/^Title/)
+    expect(title).toHaveValue('')
+    expect(title).toHaveFocus()
   })
 })
 

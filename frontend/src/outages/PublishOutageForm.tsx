@@ -99,6 +99,15 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
     }
   }
 
+  // the banner is rendered under the cards, which at a laptop height can be below the fold: bring
+  // it into view and give it focus, so it is read out and the next Tab stays near the buttons
+  const banner = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!serverError) return
+    banner.current?.focus({ preventScroll: true })
+    banner.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [serverError])
+
   const reset = () => {
     setDraft((d) => ({ ...emptyDraft(d.tenantId, d.publisher), type: d.type }))
     setErrors({})
@@ -107,8 +116,15 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
     setShowTiming(false)
   }
 
+  // "Publish another": the confirmation (with the button that was pressed) gives way to the empty
+  // form, so focus would fall to <body>; render the form first, then start the person at its first field
+  const another = () => {
+    flushSync(reset)
+    document.getElementById(f('title'))?.focus()
+  }
+
   if (published) {
-    return <Published communication={published} onAnother={reset} onViewFeed={onViewFeed} />
+    return <Published communication={published} onAnother={another} onViewFeed={onViewFeed} />
   }
 
   const services = parseServices(draft.services)
@@ -277,7 +293,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
       )}
 
       {serverError && (
-        <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical-fg">
+        <div ref={banner} tabIndex={-1} role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical-fg outline-none">
           <Icon name="alert-triangle" size={16} className="mt-0.5 shrink-0" />
           <span>
             {serverError.rejected && <span className="font-medium">The service rejected this. </span>}

@@ -76,6 +76,20 @@ describe('OutageFeed', () => {
     expect(document.activeElement?.contains(screen.getByText('Notice b'))).toBe(true)
   })
 
+  it('keeps keyboard focus on the page after resolving the only notice', async () => {
+    const user = userEvent.setup()
+    const f = fakeClient([item('a')])
+    render(<OutageFeed client={f.client} tenantId="acme" actor="oncall" />)
+    const card = (await screen.findByText('Notice a')).closest('article')!
+    await user.click(within(card).getByRole('button', { name: 'Resolve' }))
+    await user.click(within(card).getByRole('button', { name: 'Resolve' }))
+    await waitFor(() => expect(screen.queryByText('Notice a')).toBeNull())
+    expect(screen.getByRole('status')).toHaveTextContent('Resolved “Notice a”. It has left every consumer\'s feed.')
+    // the card that held focus is gone and so is the list: focus must land on what replaced it, not on <body>
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement?.contains(screen.getByText('All clear'))).toBe(true)
+  })
+
   it('says when the service has more than the first page', async () => {
     const f = fakeClient([item('a')], { totalElements: 240, hasNext: true })
     render(<OutageFeed client={f.client} tenantId="acme" />)

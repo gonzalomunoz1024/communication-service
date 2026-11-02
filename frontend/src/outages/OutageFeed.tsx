@@ -62,7 +62,9 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
 
   // the last notice resolved from this page: announced (role=status) and shown for a moment
   const [resolved, setResolved] = useState<string | null>(null)
-  const list = useRef<HTMLDivElement>(null)
+  // one focus target for the list and for what replaces it: the card that held focus leaves, and
+  // when it was the last one the list itself gives way to the empty state
+  const results = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!resolved) return
     const t = setTimeout(() => setResolved(null), 8_000)
@@ -76,8 +78,9 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
         setResolved(
           item.status === 'ACTIVE' ? `Resolved “${item.title}”. It has left every consumer's feed.` : `Withdrew “${item.title}”. Consumers will not see it.`,
         )
-        // the card leaves with the button that had focus: keep keyboard focus on the list
-        list.current?.focus({ preventScroll: true })
+        // the card leaves with the button that had focus: keep keyboard focus on the results,
+        // whether the list remains or "All clear" takes its place (the wrapper outlives both)
+        results.current?.focus({ preventScroll: true })
       }
     : undefined
 
@@ -127,52 +130,54 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
         )}
       </p>
 
-      {!tenantId.trim() ? (
-        <EmptyState icon="users" title="Choose a tenant" message="The feed is per tenant. Enter one at the top of the page." />
-      ) : feed.error ? (
-        <EmptyState
-          icon="alert-triangle"
-          iconClassName="text-critical"
-          title="Couldn't load the feed"
-          message={feed.error}
-          action={
-            <Button size="sm" icon="refresh" onClick={feed.refresh}>
-              Try again
-            </Button>
-          }
-        />
-      ) : feed.loading && feed.items.length === 0 ? (
-        <div className="flex flex-col gap-3" aria-busy="true">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="skeleton h-28 rounded-lg" />
-          ))}
-        </div>
-      ) : feed.items.length === 0 ? (
-        <EmptyState
-          icon="check"
-          iconClassName="text-healthy-fg"
-          title="All clear"
-          message={emptyMessage(type, tenantId, service.trim())}
-        />
-      ) : (
-        <div ref={list} tabIndex={-1} className="flex flex-col gap-5 outline-none">
-          <Section title="Active now" count={active.length} tone="critical">
-            {active.map((i) => (
-              <OutageCard key={i.id} item={i} onRetire={resolve} />
+      <div ref={results} tabIndex={-1} className="outline-none">
+        {!tenantId.trim() ? (
+          <EmptyState icon="users" title="Choose a tenant" message="The feed is per tenant. Enter one at the top of the page." />
+        ) : feed.error ? (
+          <EmptyState
+            icon="alert-triangle"
+            iconClassName="text-critical"
+            title="Couldn't load the feed"
+            message={feed.error}
+            action={
+              <Button size="sm" icon="refresh" onClick={feed.refresh}>
+                Try again
+              </Button>
+            }
+          />
+        ) : feed.loading && feed.items.length === 0 ? (
+          <div className="flex flex-col gap-3" aria-busy="true">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton h-28 rounded-lg" />
             ))}
-          </Section>
-          <Section title="Upcoming" count={upcoming.length} tone="accent">
-            {upcoming.map((i) => (
-              <OutageCard key={i.id} item={i} onRetire={resolve} />
-            ))}
-          </Section>
-          {feed.truncated && (
-            <p className="text-caption text-tertiary">
-              Showing the first {feed.items.length} of {feed.total} notices. Narrow the filters to see the rest.
-            </p>
-          )}
-        </div>
-      )}
+          </div>
+        ) : feed.items.length === 0 ? (
+          <EmptyState
+            icon="check"
+            iconClassName="text-healthy-fg"
+            title="All clear"
+            message={emptyMessage(type, tenantId, service.trim())}
+          />
+        ) : (
+          <div className="flex flex-col gap-5">
+            <Section title="Active now" count={active.length} tone="critical">
+              {active.map((i) => (
+                <OutageCard key={i.id} item={i} onRetire={resolve} />
+              ))}
+            </Section>
+            <Section title="Upcoming" count={upcoming.length} tone="accent">
+              {upcoming.map((i) => (
+                <OutageCard key={i.id} item={i} onRetire={resolve} />
+              ))}
+            </Section>
+            {feed.truncated && (
+              <p className="text-caption text-tertiary">
+                Showing the first {feed.items.length} of {feed.total} notices. Narrow the filters to see the rest.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
