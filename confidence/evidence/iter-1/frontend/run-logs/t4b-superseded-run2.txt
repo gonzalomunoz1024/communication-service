@@ -1,0 +1,9 @@
+PASS [F-61] (a) after the stream is cut the badge shows 'Reconnecting', the browser's own retry (≈3 s) carries Last-Event-ID=<last id seen> (seen on the wire by CDP and by the proxy), and the badge returns to Live :: {"lastIdBefore":11,"wireHeaders":[{"at":1793584617392,"url":"/v1/feed/stream?tenantId=fe1-replay-mvylyx64&clientId=communication-frontend","lastEventId":"11"}],"requests":[{"at":1793584617392,"q":null,"status":200}],"badges":["Reconnecting","Live"]}
+PASS [F-20] (a) the service replays the frame missed during the drop ('created', id > last id) with no snapshot frames, and the card appears :: {"lastIdBefore":11,"frames":["created#12 seed a","created#13 missed during drop 1"]}
+PASS [F-61] (b) a 502 to the browser's retry closes the EventSource; the client reopens with ?lastEventId=<last id> after ~1 s (badge 'Reconnecting (1)'), then Live :: {"lastIdBefore":13,"requests":[{"at":1793584621546,"q":null,"status":502},{"at":1793584622550,"q":"13","status":200}],"wireHeaders":[{"at":1793584621547,"url":"/v1/feed/stream?tenantId=fe1-replay-mvylyx64&clientId=communication-frontend","lastEventId":"13"},{"at":1793584622551,"url":"/v1/feed/stream?tenantId=fe1-replay-mvylyx64&clientId=communication-frontend&lastEventId=13","lastEventId":null}],"
+PASS [F-20] (b) ?lastEventId= replays the missed frame (created, id > last id) with no snapshot frames :: {"lastIdBefore":13,"frames":["created#14 missed during drop 2"]}
+FAIL [F-61] the list reloads once after each recovery (useOutageFeed: reload when the stream comes back), not on a loop :: {"feedGets":5}
+PASS [F-61] no page errors :: {"pageErrors":[]}
+
+== t4b-replay-in-browser: 6 checks, 1 failed
+   FAILED [F-61] the list reloads once after each recovery (useOutageFeed: reload when the stream comes back), not on a loop

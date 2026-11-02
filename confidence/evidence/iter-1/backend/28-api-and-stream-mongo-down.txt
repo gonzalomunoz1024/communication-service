@@ -1,0 +1,19 @@
+# Resilience: API calls and an open SSE stream while Mongo is down (private :18912 on its own Mongo container be1-mongo3 :27020, iteration-1 jar)
+## before: publish #1 and open a stream
+POST /v1/communications -> 201
+## Mongo stopped at 01:52:45
+{"error":"Timed out while waiting for a server that matches ReadPreferenceServerSelector{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27020, type
+{"error":"Timed out while waiting for a server that matches WritableServerSelector. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27020, type=UNKNOWN, state=CONNECTING, ex
+{"status":"UP"} -> 200 liveness in 0.007891s
+## Mongo started again at 01:53:45
+GET /v1/feed -> 200 in 0.042536s
+POST /v1/communications (#2 after recovery) -> 201
+## stream opened before the outage (01:53:56): keepalives=4, event lines: event:snapshot event:created event:created , titles: "title":"before outage" "title":"before outage" "title":"after recovery" , ended? 0
+## app log during the outage: 6 WARN/ERROR lines, 6 timeout lines, 322 lines total; first error line:
+2026-11-02T01:53:15.977Z ERROR 16149 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+## status codes from the instance's INFO access log (the two bodies above were trimmed before the curl -w suffix)
+2026-11-02T01:52:42.120Z client=be1-verifier POST /v1/communications -> 201 (401 ms)
+2026-11-02T01:53:15.539Z client=be1-verifier GET /v1/feed -> 500 (30041 ms)
+2026-11-02T01:53:45.571Z client=be1-verifier POST /v1/communications -> 500 (30015 ms)
+2026-11-02T01:53:50.891Z client=be1-verifier GET /v1/feed -> 200 (39 ms)
+2026-11-02T01:53:50.931Z client=be1-verifier POST /v1/communications -> 201 (22 ms)

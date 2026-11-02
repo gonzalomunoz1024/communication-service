@@ -1,0 +1,296 @@
+[
+  {
+    "feature": "F-14",
+    "name": "seeded 7 items via API (5 visible now/upcoming, 2 hidden future)",
+    "ok": true,
+    "evidence": "[201,201,201,201,201,201,201]"
+  },
+  {
+    "feature": "F-58",
+    "name": "default filter Type=Outage: GET /v1/feed?tenantId&type=OUTAGE&page=0&size=100, two outages, CRITICAL before MAJOR",
+    "ok": true,
+    "evidence": "{\"q\":\"?tenantId=fe1-feed-mvylrcjs&type=OUTAGE&page=0&size=100\",\"titles\":[\"outage critical checkout\",\"outage major payments\"]}"
+  },
+  {
+    "feature": "F-58",
+    "name": "'All types' drops the type param; Active now 4 + Upcoming 1; sorted active first, severity desc, then latest start",
+    "ok": true,
+    "evidence": "{\"q\":\"?tenantId=fe1-feed-mvylrcjs&page=0&size=100\",\"activeCount\":\"4\",\"upcomingCount\":\"1\",\"titles\":[\"outage critical checkout\",\"outage major payments\",\"incident minor payments\",\"change info other\",\"maintenance tomorrow\"]}"
+  },
+  {
+    "feature": "F-16",
+    "name": "future OUTAGE and maintenance outside the 7-day window are hidden; maintenance tomorrow is under Upcoming",
+    "ok": true,
+    "evidence": "[\"outage critical checkout\",\"outage major payments\",\"incident minor payments\",\"change info other\",\"maintenance tomorrow\"]"
+  },
+  {
+    "feature": "F-63",
+    "name": "upcoming card shows the 'Starts in …' state tag and timing",
+    "ok": true,
+    "evidence": "Starts in 24hInfoMaintenanceUpdated just nowmaintenance tomorrowpayments-apiStarts in 24hExpected end in 1dfe-seedWithdraw"
+  },
+  {
+    "feature": "F-63",
+    "name": "an item that has not started offers 'Withdraw' instead of 'Resolve' (G-1-16)",
+    "ok": true,
+    "evidence": "Withdraw button present"
+  },
+  {
+    "feature": "F-58",
+    "name": "Service filter 'payments-api' → service param, exact match on affectedServices",
+    "ok": true,
+    "evidence": "{\"q\":\"?tenantId=fe1-feed-mvylrcjs&service=payments-api&page=0&size=100\",\"titles\":[\"outage major payments\",\"incident minor payments\",\"maintenance tomorrow\"]}"
+  },
+  {
+    "feature": "F-65",
+    "name": "the Service filter is reachable as getByLabel('Service') (G-1-15)",
+    "ok": true,
+    "evidence": "label association works"
+  },
+  {
+    "feature": "F-58",
+    "name": "Minimum severity MAJOR → severity param, only MAJOR and CRITICAL",
+    "ok": true,
+    "evidence": "{\"q\":\"?tenantId=fe1-feed-mvylrcjs&severity=MAJOR&page=0&size=100\",\"titles\":[\"outage critical checkout\",\"outage major payments\"]}"
+  },
+  {
+    "feature": "F-58",
+    "name": "Refresh issues a new GET /v1/feed",
+    "ok": true,
+    "evidence": "before=8 after=9"
+  },
+  {
+    "feature": "F-63",
+    "name": "card: Active tag, Critical, Outage, Internal audience, ticket chip (plain: no url from this backend), externalRef tag, title, pre-wrapped body, service chip, Started/Expected end/publisher/Updated",
+    "ok": true,
+    "evidence": "{\"richText\":\"ActiveCriticalOutageInternalINC0012345ref-mvylrcjsUpdated just nowoutage critical checkoutline one\\nline twocheckout-webStarted just nowExpected end in 2hfe-seedResolve\",\"rail\":\"absolute inset-y-0 left-0 w-1 bg-critical\",\"chipLink\":0,\"chipTitle\":\"ServiceNow INC0012345\",\"hoverTitles\":[\"ServiceNow INC0012345\",\"2 Nov 2026, 01:51:00\",\"2 Nov 2026, 01:51:00\",\"2 Nov 2026, 03:51:00\"]}"
+  },
+  {
+    "feature": "F-63",
+    "name": "audience CUSTOMERS not tagged; no ticket → no chip; externalRef absent → no tag; rail colour by severity (MAJOR → warning)",
+    "ok": true,
+    "evidence": "ActiveMajorOutageUpdated just nowoutage major paymentspayments-apiStarted 1h agofe-seedResolve"
+  },
+  {
+    "feature": "F-09",
+    "name": "ticket with url → chip is a link opening in a new tab (target=_blank rel=noreferrer) with the external icon",
+    "ok": true,
+    "evidence": "{\"href\":\"https://acme.service-now.com/nav_to.do?uri=incident.do?sysparm_query=number=INC0099999\",\"target\":\"_blank\"}"
+  },
+  {
+    "feature": "F-58",
+    "name": "no console/page errors on the feed",
+    "ok": true,
+    "evidence": "{\"errors\":[],\"console\":[]}"
+  },
+  {
+    "feature": "F-58",
+    "name": "a slow stale response (all types) arriving after a newer request (Outage) is ignored",
+    "ok": true,
+    "evidence": "[\"outage critical checkout\",\"outage with ticket url\",\"outage major payments\"]"
+  },
+  {
+    "feature": "F-14",
+    "name": "size=500 is capped to 100; page=-1 → 400; size=0 → 400; blank tenantId → 400; paging math (size 2: hasNext then last page)",
+    "ok": true,
+    "evidence": "{\"bigSize\":100,\"neg\":400,\"zero\":400,\"blank\":400,\"one\":[2,true],\"two\":[1,false]}"
+  },
+  {
+    "feature": "F-59",
+    "name": "empty tenant → 'Choose a tenant'",
+    "ok": true,
+    "evidence": "shown"
+  },
+  {
+    "feature": "F-59",
+    "name": "loading with no items → three skeleton cards in an aria-busy container",
+    "ok": true,
+    "evidence": "skeletons=3"
+  },
+  {
+    "feature": "F-59",
+    "name": "no items, Type=Outage → 'No outage is active for <tenant>. A scheduled outage appears here when it starts.' (iteration-1 copy)",
+    "ok": true,
+    "evidence": "All clearNo outage is active for fe1-empty-mvylrcjs. A scheduled outage appears here when it starts."
+  },
+  {
+    "feature": "F-59",
+    "name": "'All clear' message names the service filter ('for <tenant> on nothing-here')",
+    "ok": true,
+    "evidence": "All clearNo outage is active for fe1-empty-mvylrcjs on nothing-here. A scheduled outage appears here when it starts."
+  },
+  {
+    "feature": "F-59",
+    "name": "Type=Maintenance → 'No maintenance is active or planned within 7 days for <tenant>.'",
+    "ok": true,
+    "evidence": "All clearNo maintenance is active or planned within 7 days for fe1-empty-mvylrcjs."
+  },
+  {
+    "feature": "F-59",
+    "name": "All types → 'Nothing is active for <tenant>, and no maintenance is planned within 7 days. Other scheduled notices appear when they start.'",
+    "ok": true,
+    "evidence": "All clearNothing is active for fe1-empty-mvylrcjs, and no maintenance is planned within 7 days. Other scheduled notices appear when they start."
+  },
+  {
+    "feature": "F-59",
+    "name": "error → 'Couldn't load the feed' + the service text + Try again",
+    "ok": true,
+    "evidence": "Couldn't load the feedfeed exploded (probe)"
+  },
+  {
+    "feature": "F-59",
+    "name": "Try again recovers to the normal state",
+    "ok": true,
+    "evidence": "All clear after retry"
+  },
+  {
+    "feature": "F-60",
+    "name": "EventSource URL carries tenantId and clientId=communication-frontend (type omitted for All types)",
+    "ok": true,
+    "evidence": "http://127.0.0.1:3000/v1/feed/stream?tenantId=fe1-live-mvylrcjs&clientId=communication-frontend"
+  },
+  {
+    "feature": "F-60",
+    "name": "created event → card appears without a new GET /v1/feed",
+    "ok": true,
+    "evidence": "feedRequests before=4 after=4"
+  },
+  {
+    "feature": "F-60",
+    "name": "updated event → card text changes in place",
+    "ok": true,
+    "evidence": "PUT=200 cards=1"
+  },
+  {
+    "feature": "F-60",
+    "name": "retired event → card removed",
+    "ok": true,
+    "evidence": "card gone"
+  },
+  {
+    "feature": "F-16",
+    "name": "G-1-11: a future-dated OUTAGE published while the feed is open is NOT listed (live frame filtered like the GET)",
+    "ok": true,
+    "evidence": "{\"liveTitles\":[\"maintenance in 3 days live\"],\"serverTitles\":[\"maintenance in 3 days live\"]}"
+  },
+  {
+    "feature": "F-16",
+    "name": "G-1-11: a MAINTENANCE 3 days out published while the feed is open IS listed under Upcoming; one 10 days out is not",
+    "ok": true,
+    "evidence": "{\"maintAppeared\":true,\"underUpcoming3d\":true,\"liveTitles\":[\"maintenance in 3 days live\"],\"serverTitles\":[\"maintenance in 3 days live\"]}"
+  },
+  {
+    "feature": "F-16",
+    "name": "G-1-11: a reload agrees with the live view",
+    "ok": true,
+    "evidence": "{\"live\":[\"maintenance in 3 days live\"],\"reloaded\":[\"maintenance in 3 days live\"]}"
+  },
+  {
+    "feature": "F-15",
+    "name": "after expiresAt the server feed excludes the item at once and the permalink says EXPIRED",
+    "ok": true,
+    "evidence": "{\"inFeed\":false,\"permalink\":\"EXPIRED\"}"
+  },
+  {
+    "feature": "F-15",
+    "name": "G-1-16: the UI drops the expired card by its own timer at expiresAt (gone 149 ms after expiresAt, without waiting for the sweeper's frame)",
+    "ok": true,
+    "evidence": "{\"msAfterExpiresAt\":149}"
+  },
+  {
+    "feature": "F-60",
+    "name": "scheduled item first listed under Upcoming, moved to Active now 132 ms after startsAt",
+    "ok": true,
+    "evidence": "{\"underUpcoming\":true,\"msAfterStartsAt\":132}"
+  },
+  {
+    "feature": "F-15",
+    "name": "G-1-16: with Live updates off the card still leaves at expiresAt (no stream, no new GET)",
+    "ok": true,
+    "evidence": "{\"msAfterExpiresAt\":512,\"feedRequestsSinceRefresh\":0,\"badge\":\"Paused\"}"
+  },
+  {
+    "feature": "F-60",
+    "name": "'Live updates' off → Paused and no updates arrive; on → Connecting then Live and the snapshot brings the missed item",
+    "ok": true,
+    "evidence": "{\"notShownWhilePaused\":true,\"states\":[\"Live\"]}"
+  },
+  {
+    "feature": "F-60",
+    "name": "no console/page errors during live updates",
+    "ok": true,
+    "evidence": "{\"errors\":[],\"console\":[]}"
+  },
+  {
+    "feature": "F-65",
+    "name": "the feed has a polite live region (role=status) for announcements (G-1-15)",
+    "ok": true,
+    "evidence": "count=1"
+  },
+  {
+    "feature": "F-62",
+    "name": "Resolve opens the inline confirm ('Resolving retires it…') with a note input and Cancel",
+    "ok": true,
+    "evidence": "ActiveMajorOutageUpdated just nowto be resolvedStarted just nowfe-resolverResolving retires it: it leaves every consumer's feed and cannot be reopened.CancelResolve"
+  },
+  {
+    "feature": "F-62",
+    "name": "Cancel closes the confirm row",
+    "ok": true,
+    "evidence": "closed"
+  },
+  {
+    "feature": "F-62",
+    "name": "Resolve → POST /retire {actor: publisher, note}; 200; card removed at once",
+    "ok": true,
+    "evidence": "{\"status\":200,\"body\":{\"actor\":\"fe-resolver\",\"note\":\"fixed by failover\"}}"
+  },
+  {
+    "feature": "F-62",
+    "name": "G-1-15: after resolving, the live region announces 'Resolved “<title>”. It has left every consumer's feed.' and focus moves to the list",
+    "ok": false,
+    "evidence": "{\"announced\":\"Resolved “to be resolved”. It has left every consumer's feed.\",\"focusAfter\":\"body tabindex=null class=\"}"
+  },
+  {
+    "feature": "F-06",
+    "name": "server: status RETIRED and the audit history carries the actor and note",
+    "ok": true,
+    "evidence": "{\"status\":\"RETIRED\",\"last\":{\"at\":\"2026-11-02T01:51:34.117Z\",\"actor\":\"fe-resolver\",\"action\":\"ACTIVE -> RETIRED: fixed by failover\"}}"
+  },
+  {
+    "feature": "F-06",
+    "name": "resolving an item already retired elsewhere → 200 (idempotent) and the card is gone",
+    "ok": true,
+    "evidence": "status=200"
+  },
+  {
+    "feature": "F-62",
+    "name": "G-1-16: a not-started item offers Withdraw: confirm says 'Withdrawing retires it before it starts…', note placeholder 'Reason (optional)'",
+    "ok": true,
+    "evidence": "Starts in 24hInfoMaintenanceUpdated just nowplanned windowsvcStarts in 24hExpected end in 1dfe-seedWithdrawing retires it before it starts: consumers never see it and it cannot be reopened.CancelWithdraw"
+  },
+  {
+    "feature": "F-62",
+    "name": "G-1-16: Withdraw → POST /retire 200, card gone, announcement 'Withdrew “<title>”. Consumers will not see it.', server RETIRED",
+    "ok": true,
+    "evidence": "{\"status\":200,\"announced\":\"Withdrew “planned window”. Consumers will not see it.\",\"server\":\"RETIRED\"}"
+  },
+  {
+    "feature": "F-06",
+    "name": "retiring an EXPIRED item (past expiresAt, sweeper not yet run) → 409",
+    "ok": true,
+    "evidence": "{\"status\":409,\"error\":\"communication e49180d4-cc51-4dbb-91dd-4013bdf3292d already expired; retiring would rewrite history\"}"
+  },
+  {
+    "feature": "F-62",
+    "name": "Q11: a fresh browser (no publisher yet) resolves with no actor; the server records the item's publisher as the actor",
+    "ok": true,
+    "evidence": "{\"body\":\"{}\",\"lastActor\":\"original-publisher\",\"action\":\"ACTIVE -> RETIRED\"}"
+  },
+  {
+    "feature": "F-58",
+    "name": "G-1-16: 103 active items (server hasNext=true, total=103); UI shows 100 and says so",
+    "ok": true,
+    "evidence": "{\"created\":103,\"shown\":100,\"heading\":\"100\",\"totalElements\":103,\"hasNext\":true,\"note\":\"Showing the first 100 of 103 notices. Narrow the filters to see the rest.\"}"
+  }
+]

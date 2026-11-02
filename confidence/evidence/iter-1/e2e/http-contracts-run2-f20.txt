@@ -1,0 +1,9 @@
+### f20 2026-11-02T01:48:31.044169Z
+F-20 PASS snapshot id vs live overlap (documented at-least-once: clients upsert by id) :: frames=[('snapshot', '70'), ('created', '71')] -> resume from 71
+F-20 PASS reconnect with Last-Event-ID header replays RETIRED then CREATED, no snapshot :: status=200 frames=[('retired', 'first'), ('created', 'second')] body=
+F-20 PASS ?lastEventId= query form :: status=200 body=
+F-20 PASS never-issued lastEventId -> fresh snapshot :: status=200 frames=[('snapshot', 'second')] body=
+F-20 PASS non-numeric Last-Event-ID ignored -> snapshot :: status=200 frames=[('snapshot', 'second')] body=
+
+SUMMARY: 5 checks, 5 pass, 0 fail
+EXIT=0

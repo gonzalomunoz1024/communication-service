@@ -1,0 +1,5 @@
+Error: connect ECONNREFUSED 127.0.0.1:19150
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)
+1:56:41 AM [vite] http proxy error: /v1/feed/stream?tenantId=fe1-reconnect-mvylxnh0&clientId=communication-frontend
+Error: connect ECONNREFUSED 127.0.0.1:19150
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16)

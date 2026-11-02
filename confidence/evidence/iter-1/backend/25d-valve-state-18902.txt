@@ -1,0 +1,21 @@
+# Why C-44a on :18902 (db be1-verify-bv2) stayed UNKNOWN: that instance's staleness valve has been paused since 01:34:44 (my own D-6 monitors in the same database never report again)
+## valve log lines of :18902 (all of them)
+2026-11-02T01:34:44.818Z  WARN 30649 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.application.HealthSweepUseCase   : 3 of 8 push-only monitors are silent at once; not declaring them DOWN unti
+## monitors in the database now (01:57:39Z): push-only monitors with staleAfterSeconds; silent = lastReportAt older than staleAfterSeconds
+monitors total=15 stale-capable=14 silent=14 share=100% (pause needs >= 2 silent and > 30 %)
+   be1-p-eb963b stale-1 UP silent 609s ago
+   be1-valve-b37912 s1 DOWN silent 1392s ago
+   be1-valve-b37912 s2 UP silent 1379s ago
+   be1-valve-b37912 s3 UP silent 1379s ago
+   be1-valve2-b37912 a UP silent 1365s ago
+   be1-valve2-b37912 b UP silent 1365s ago
+   be1-valve2-b37912 c UP silent 1365s ago
+   be1-valve2-b37912 silent UP silent 1377s ago
+   be1-valve2-b37912 zero UP silent 1377s ago
+   be1-valve3-b37912 a UP silent 1352s ago
+   be1-valve3-b37912 b UP silent 1352s ago
+   be1-valve3-b37912 c UP silent 1363s ago
+   be1-valve3-b37912 d UP silent 1363s ago
+   be1-valve3-b37912 e UP silent 1363s ago
+## the C-44a monitor now
+   stale-1 UP UP

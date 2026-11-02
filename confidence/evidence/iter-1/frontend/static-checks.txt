@@ -1,0 +1,213 @@
+== typecheck
+
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+TYPECHECK_RC=0
+== lint
+
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+
+LINT_RC=0
+== build
+
+> @atlas/communication-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 47 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-DWe3WsC3.css   30.80 kB │ gzip:  7.04 kB
+dist/assets/index-oOK643_0.js   266.99 kB │ gzip: 83.34 kB
+
+✓ built in 980ms
+BUILD_RC=0
+== test run 1
+
+> @atlas/communication-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+
+
+ Test Files  12 passed (12)
+      Tests  78 passed (78)
+   Start at  01:30:43
+   Duration  10.45s (environment 43%, tests 40%, setup 13%, import 3%, transform 2%)
+
+    Isolate  12 workers spawned · ~1.25s startup each (spawn + environment, per file)
+             at least ~3.75s faster with isolate: false — reuses workers across files instead of one per file
+
+TEST_RC_1=0
+== test run 2
+
+> @atlas/communication-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+
+
+ Test Files  12 passed (12)
+      Tests  78 passed (78)
+   Start at  01:30:54
+   Duration  10.14s (tests 41%, environment 35%, setup 19%, import 3%, transform 2%)
+
+    Isolate  12 workers spawned · ~1.07s startup each (spawn + environment, per file)
+             at least ~3.20s faster with isolate: false — reuses workers across files instead of one per file
+
+TEST_RC_2=0
+== test run 3
+
+> @atlas/communication-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+
+
+ Test Files  12 passed (12)
+      Tests  78 passed (78)
+   Start at  01:31:05
+   Duration  11.86s (environment 42%, tests 36%, setup 16%, import 4%, transform 2%)
+
+    Isolate  12 workers spawned · ~1.43s startup each (spawn + environment, per file)
+             at least ~4.29s faster with isolate: false — reuses workers across files instead of one per file
+
+TEST_RC_3=0
+== coverage
+
+> @atlas/communication-frontend@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.5 /home/claude/communication-service/frontend
+      Coverage enabled with v8
+
+
+ Test Files  12 passed (12)
+      Tests  78 passed (78)
+   Start at  01:31:18
+   Duration  18.67s (tests 40%, environment 34%, setup 16%, transform 5%, worker 3%, import 2%)
+
+    Isolate  12 workers spawned · ~1.75s startup each (spawn + environment, per file)
+             at least ~5.25s faster with isolate: false — reuses workers across files instead of one per file
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   74.07 |    67.53 |   76.23 |   76.25 |                   
+ src               |      95 |      100 |   93.33 |   94.28 |                   
+  App.tsx          |      95 |      100 |   93.33 |   94.28 | 15,83             
+ src/outages       |   92.06 |    87.97 |   85.92 |   92.77 |                   
+  OutageCard.tsx   |   80.95 |    83.33 |   83.33 |      85 | 38-39,115         
+  OutageFeed.tsx   |   86.27 |    79.54 |   73.68 |   88.63 | 39,88-96,106,166  
+  ...utageForm.tsx |   80.85 |       80 |    67.5 |   81.48 | ...26,231-255,291 
+  TicketTag.tsx    |      80 |    57.14 |     100 |      75 | 19                
+  api.ts           |   98.64 |    87.17 |     100 |    98.5 | 75                
+  display.ts       |   85.71 |       75 |     100 |   83.33 | 22                
+  feed-state.ts    |     100 |    98.07 |     100 |     100 | 25                
+  useOutageFeed.ts |   97.14 |    92.85 |     100 |     100 | 73-83,106         
+  validation.ts    |   97.77 |    96.42 |     100 |     100 | 70,80             
+ src/ui            |   42.18 |    50.53 |   54.79 |   46.87 |                   
+  Badge.tsx        |     100 |     87.5 |     100 |     100 | 30                
+  Button.tsx       |     100 |     91.3 |     100 |     100 | 99-100            
+  Card.tsx         |      40 |    65.62 |      50 |      40 | 56-65             
+  EmptyState.tsx   |     100 |    83.33 |     100 |     100 | 21                
+  Field.tsx        |   66.66 |    70.27 |   57.14 |   64.28 | 134-145,187       
+  Icon.tsx         |     100 |     62.5 |     100 |     100 | 144-147           
+  PageHeader.tsx   |       0 |        0 |       0 |       0 | 21                
+  Segmented.tsx    |   27.77 |    35.48 |      50 |   35.71 | 36-45             
+  Select.tsx       |   66.66 |    72.72 |   66.66 |   66.66 | 38                
+  StatusDot.tsx    |      80 |    66.66 |     100 |     100 | 28,30-35          
+  Tabs.tsx         |   29.41 |       60 |      50 |   38.46 | 25-32             
+  Tag.tsx          |     100 |       76 |     100 |     100 | 51-56,96-102      
+  ThemeToggle.tsx  |     100 |    66.66 |     100 |     100 | 10,14             
+  format.ts        |   21.62 |    12.93 |      25 |   23.25 | 32-131,152-169    
+  job-state.ts     |   33.33 |    51.85 |      50 |   42.85 | 19-30             
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 74.07% ( 560/756 )
+Branches     : 67.53% ( 572/847 )
+Functions    : 76.23% ( 170/223 )
+Lines        : 76.25% ( 472/619 )
+================================================================================
+COVERAGE_RC=0
+== audit
+# npm audit report
+
+minimatch  <11.0.1
+Severity: moderate
+minimatch has potential denial of service via globparts amplification - https://github.com/advisories/GHSA-g3hv-75wg-m249
+fix available via `npm audit fix --force`
+Will install typescript-eslint@8.14.0, which is a breaking change
+node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch
+node_modules/minimatch
+  @eslint/config-array  *
+  Depends on vulnerable versions of minimatch
+  node_modules/@eslint/config-array
+    eslint  0.7.1 - 2.0.0-rc.1 || >=4.1.0
+    Depends on vulnerable versions of @eslint-community/eslint-utils
+    Depends on vulnerable versions of @eslint/config-array
+    Depends on vulnerable versions of @eslint/eslintrc
+    Depends on vulnerable versions of minimatch
+    node_modules/eslint
+      @eslint-community/eslint-utils  *
+      Depends on vulnerable versions of eslint
+      node_modules/@eslint-community/eslint-utils
+        @typescript-eslint/utils  *
+        Depends on vulnerable versions of @eslint-community/eslint-utils
+        Depends on vulnerable versions of @typescript-eslint/typescript-estree
+        Depends on vulnerable versions of eslint
+        node_modules/@typescript-eslint/utils
+          @typescript-eslint/eslint-plugin  *
+          Depends on vulnerable versions of @typescript-eslint/parser
+          Depends on vulnerable versions of @typescript-eslint/type-utils
+          Depends on vulnerable versions of @typescript-eslint/utils
+          Depends on vulnerable versions of eslint
+          node_modules/@typescript-eslint/eslint-plugin
+            typescript-eslint  *
+            Depends on vulnerable versions of @typescript-eslint/eslint-plugin
+            Depends on vulnerable versions of @typescript-eslint/parser
+            Depends on vulnerable versions of @typescript-eslint/typescript-estree
+            Depends on vulnerable versions of @typescript-eslint/utils
+            Depends on vulnerable versions of eslint
+            node_modules/typescript-eslint
+          @typescript-eslint/type-utils  >=5.9.2-alpha.0
+          Depends on vulnerable versions of @typescript-eslint/typescript-estree
+          Depends on vulnerable versions of @typescript-eslint/utils
+          Depends on vulnerable versions of eslint
+          node_modules/@typescript-eslint/type-utils
+      @typescript-eslint/parser  *
+      Depends on vulnerable versions of @typescript-eslint/typescript-estree
+      Depends on vulnerable versions of eslint
+      node_modules/@typescript-eslint/parser
+      eslint-plugin-react-refresh  *
+      Depends on vulnerable versions of eslint
+      node_modules/eslint-plugin-react-refresh
+  @eslint/eslintrc  0.0.1 || >=0.1.1
+  Depends on vulnerable versions of minimatch
+  node_modules/@eslint/eslintrc
+  @typescript-eslint/typescript-estree  >=6.16.0
+  Depends on vulnerable versions of minimatch
+  node_modules/@typescript-eslint/typescript-estree
+
+12 moderate severity vulnerabilities
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+AUDIT_RC=1
+== audit omit dev
+found 0 vulnerabilities
+AUDIT_PROD_RC=0

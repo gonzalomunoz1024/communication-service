@@ -1,0 +1,77 @@
+{
+ "url": "http://localhost:8080/swagger-ui/index.html",
+ "title": "Communication Service v1 OAS 3.1",
+ "tags": [
+  "Admin\n\nCross-tenant oversight (path-segregated for future auth)",
+  "Feed\n\nConsumer-facing feed and live stream",
+  "Health\n\nAutomated outages: probe services' health endpoints or accept pushed health reports, and publish/retire communications from them",
+  "Publishing\n\nPublisher teams manage their communications"
+ ],
+ "authorizeButton": 1,
+ "authDialog": [
+  "X-Client-Id (apiKey) Click Authorize and paste the repository name of the system you are calling from (e.g. vmforge-tools). Required on every /v1 request; identification only, nothing is verified. EventSource clients send ?clientId= instead. Name: X-Client-Id In: header Value: Authorize Close"
+ ],
+ "feedOpFound": 1,
+ "feedDocumentedResponses": [
+  "Code",
+  "200",
+  "401"
+ ],
+ "noAuth": {
+  "status": "401",
+  "body": "Error: Unauthorized Response body Download { \"error\": \"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)\" } Response headers content-length: 140 content-type: application/json ",
+  "undocumentedLabel": 0
+ },
+ "withAuth": {
+  "status": "200",
+  "bodyStart": "Response body Download { \"items\": [], \"page\": 0, \"size\": 20, \"totalElements\": 0, \"hasNext\": false } Response headers con"
+ },
+ "openapi": {
+  "paths": 16,
+  "securitySchemes": {
+   "X-Client-Id": {
+    "type": "apiKey",
+    "description": "Click Authorize and paste the repository name of the system you are calling from (e.g. vmforge-tools). Required on every /v1 request; identification only, nothing is verified. EventSource clients send ?clientId= instead.",
+    "name": "X-Client-Id",
+    "in": "header"
+   }
+  },
+  "globalSecurity": [
+   {
+    "X-Client-Id": []
+   }
+  ],
+  "feedGetResponses": [
+   "200",
+   "401"
+  ],
+  "feed401Text": "No X-Client-Id header (or ?clientId= on the stream)",
+  "putSummary": "Update content; requires expectedVersion",
+  "putDescription": "",
+  "expectedVersion": [
+   {
+    "schema": "UpdateCommunicationCommand",
+    "expectedVersion": {
+     "type": "integer",
+     "format": "int64"
+    }
+   }
+  ],
+  "probePath": "/v1/health/monitors/{id}/probe",
+  "probeSummary": "Probe a monitor now and apply the result",
+  "probeIdParam": [
+   {
+    "name": "id"
+   }
+  ],
+  "streamParams": [
+   "tenantId",
+   "service",
+   "type",
+   "severity",
+   "audience",
+   "lastEventId",
+   "Last-Event-ID"
+  ]
+ }
+}

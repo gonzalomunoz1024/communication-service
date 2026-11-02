@@ -1,0 +1,12 @@
+{
+ "ticket": "INC5407384",
+ "first": "published",
+ "resolved": {
+  "gone": true,
+  "status": [
+   "Resolved “Retire-then-republish”. It has left every consumer's feed."
+  ]
+ },
+ "second": "The service rejected this. A notice with the reference INC5407384 already exists for tenant ux1-sre (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.",
+ "third": "published with another external reference"
+}

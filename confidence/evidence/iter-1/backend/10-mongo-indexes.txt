@@ -1,0 +1,163 @@
+# Mongo indexes on the shared database 'communication' (iteration 1)
+## communications
+[
+  {
+    name: '_id_',
+    key: {
+      _id: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'sweep_activation_idx',
+    key: {
+      status: 1,
+      startsAt: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'feed_idx',
+    key: {
+      tenantId: 1,
+      status: 1,
+      startsAt: -1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'sweep_expiry_idx',
+    key: {
+      status: 1,
+      expiresAt: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'affectedServices',
+    key: {
+      affectedServices: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'external_ref_idx',
+    key: {
+      tenantId: 1,
+      externalRef: 1
+    },
+    unique: true,
+    partial: {
+      externalRef: {
+        '$exists': true
+      }
+    },
+    ttl: undefined
+  }
+]
+## communication_events
+[
+  {
+    name: '_id_',
+    key: {
+      _id: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'events_tenant_seq_idx',
+    key: {
+      tenantId: 1,
+      _id: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'events_ttl_idx',
+    key: {
+      at: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: 86400
+  }
+]
+## health_monitors
+[
+  {
+    name: '_id_',
+    key: {
+      _id: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'monitor_tenant_service_idx',
+    key: {
+      tenantId: 1,
+      service: 1
+    },
+    unique: true,
+    partial: undefined,
+    ttl: undefined
+  }
+]
+## health_instances
+[
+  {
+    name: '_id_',
+    key: {
+      _id: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'instance_monitor_idx',
+    key: {
+      monitorId: 1,
+      instanceId: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  },
+  {
+    name: 'instance_ttl_idx',
+    key: {
+      lastSeenAt: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: 86400
+  }
+]
+## counters
+[
+  {
+    name: '_id_',
+    key: {
+      _id: 1
+    },
+    unique: undefined,
+    partial: undefined,
+    ttl: undefined
+  }
+]

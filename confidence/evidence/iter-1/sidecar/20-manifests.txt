@@ -1,0 +1,99 @@
+== kustomize (devel) | kubeconform development | helm v3.16
+
+== 1. classic example: kustomize build /home/claude/communication-service/sidecar/deploy/kustomize/example
+rc=0
+  ConfigMap cs-health-sidecar keys ['CS_CLUSTER', 'CS_ENDPOINT', 'CS_TENANT'] no-hash
+   Deployment payments-api containers ['payments-api', 'health-sidecar'] initContainers []
+    sidecar: image registry.example.com/platform/health-sidecar:1.0.0 pullPolicy IfNotPresent envFrom [{'configMapRef': {'name': 'cs-health-sidecar'}}] env ['POD_NAME=metadata.name', 'POD_NAMESPACE=metadata.namespace', 'NODE_NAME=spec.nodeName', "CS_SERVICE=metadata.labels['app.kubernetes.io/name']", "CS_VERSION=metadata.labels['app.kubernetes.io/version']"]
+    ports [{'containerPort': 9465, 'name': 'cs-status', 'protocol': 'TCP'}] liveness {'httpGet': {'path': '/healthz', 'port': 'cs-status'}, 'periodSeconds': 30} False False False
+    resources {'limits': {'cpu': '50m', 'memory': '32Mi'}, 'requests': {'cpu': '10m', 'memory': '16Mi'}} securityContext {'allowPrivilegeEscalation': False, 'capabilities': {'drop': ['ALL']}, 'readOnlyRootFilesystem': True, 'runAsNonRoot': True, 'seccompProfile': {'type': 'RuntimeDefault'}}
+
+== 2. native example: copy of the example pointing at ../component-native
+Error: accumulating components: loader.New "new root '/home/claude/communication-service/sidecar/deploy/kustomize/component-native' cannot be absolute"
+rc=1
+
+== 3. G-1-18: workloads that ALREADY have init containers (repo testdata native-with-init: Deployment with db-migrate, StatefulSet with fetch-config) through component-native
+rc=0
+   Deployment payments-api containers ['payments-api'] initContainers [('health-sidecar', 'Always', 'registry.example.com/platform/health-sidecar:1.0.0'), ('db-migrate', None, 'registry.example.com/retail/payments-api:1.4.2')]
+   StatefulSet ledger containers ['ledger'] initContainers [('health-sidecar', 'Always', 'registry.example.com/platform/health-sidecar:1.0.0'), ('fetch-config', None, 'registry.example.com/retail/ledger:2.0.0')]
+   source workloads.yaml init containers:
+18:      initContainers:
+19:        - name: db-migrate
+23:        - name: payments-api
+45:      initContainers:
+46:        - name: fetch-config
+
+== 3b. same workloads through the CLASSIC component (init containers must be untouched, sidecar appended to containers)
+Error: accumulating components: loader.New "new root '/home/claude/communication-service/sidecar/deploy/kustomize/component' cannot be absolute"
+rc=1
+
+== 3c. old JSON-patch file must be gone
+add-sidecar.yaml
+kustomization.yaml
+
+== 4. Helm library chart through a consuming chart
+
+1 chart(s) linted, 0 chart(s) failed
+Error: library charts are not installable
+5:  image:
+6:    repository: registry.example.com/platform/health-sidecar
+7:    tag: 1.0.0
+8:    pullPolicy: IfNotPresent
+10:  endpoint: https://communication.apps.example.com
+11:  tenant: retail
+12:  cluster: ""
+14:  service: ""
+15:  clientId: ""
+17:  probe: auto
+18:  port: ""
+19:  path: ""
+20:  scheme: ""
+21:  interval: 15s
+22:  heartbeat: 30s
+24:  extraEnv: []
+25:  resources:
+26:    requests:
+29:    limits:
+--- 4a. without endpoint/tenant:
+Use --debug flag to render out invalid YAML
+--- 4b. container form:
+rc=0
+--- 4c. initContainer form:
+rc=0
+   helm-classic containers ['payments-api', 'health-sidecar'] initContainers []
+    image registry.example.com/platform/health-sidecar:1.0.0 pull IfNotPresent env ['CS_ENDPOINT', 'CS_TENANT', 'CS_CLUSTER', 'CS_INTERVAL', 'CS_HEARTBEAT', 'POD_NAME', 'POD_NAMESPACE', 'NODE_NAME', 'CS_SERVICE', 'CS_VERSION'] False securityContext {'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': True, 'runAsNonRoot': True, 'capabilities': {'drop': ['ALL']}, 'seccompProfile': {'type': 'RuntimeDefault'}}
+   helm-native containers ['payments-api'] initContainers [('db-migrate', None), ('health-sidecar', 'Always')]
+    image registry.example.com/platform/health-sidecar:1.0.0 pull IfNotPresent env ['CS_ENDPOINT', 'CS_TENANT', 'CS_INTERVAL', 'CS_HEARTBEAT', 'POD_NAME', 'POD_NAMESPACE', 'NODE_NAME', 'CS_SERVICE', 'CS_VERSION'] False securityContext {'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': True, 'runAsNonRoot': True, 'capabilities': {'drop': ['ALL']}, 'seccompProfile': {'type': 'RuntimeDefault'}}
+
+== 5. manual YAML
+  ConfigMap cs-health-sidecar ['CS_CLUSTER', 'CS_ENDPOINT', 'CS_TENANT']
+  manual sidecar: pull IfNotPresent ports [{'name': 'cs-status', 'containerPort': 9465, 'protocol': 'TCP'}] securityContext {'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': True, 'runAsNonRoot': True, 'capabilities': {'drop': ['ALL']}, 'seccompProfile': {'type': 'RuntimeDefault'}} resources {'requests': {'cpu': '10m', 'memory': '16Mi'}, 'limits': {'cpu': '50m', 'memory': '32Mi'}} liveness {'httpGet': {'path': '/healthz', 'port': 'cs-status'}, 'periodSeconds': 30}
+
+== 6. kubeconform -strict
+  classic            1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  classic            1.27.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  native             1.29.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+  native             1.27.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+  native-with-init   1.29.0: Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+  native-with-init   1.27.0: Summary: 3 resources found in 1 file - Valid: 1, Invalid: 2, Errors: 0, Skipped: 0
+  classic-with-init  1.29.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+  classic-with-init  1.27.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+  helm-classic       1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  helm-classic       1.27.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  helm-native        1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  helm-native        1.27.0: Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+  manual             1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  manual             1.27.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+== 7. forbidden/required keys across all rendered forms
+  classic            runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=1 readOnlyRoot=1 runAsNonRoot=1 dropALL=2 seccompRuntimeDefault=1
+  native             runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=0 readOnlyRoot=0 runAsNonRoot=0 dropALL=0 seccompRuntimeDefault=0
+  native-with-init   runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=2 readOnlyRoot=2 runAsNonRoot=2 dropALL=4 seccompRuntimeDefault=2
+  classic-with-init  runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=0 readOnlyRoot=0 runAsNonRoot=0 dropALL=0 seccompRuntimeDefault=0
+  helm-classic       runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=1 readOnlyRoot=1 runAsNonRoot=1 dropALL=1 seccompRuntimeDefault=1
+  helm-native        runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=1 readOnlyRoot=1 runAsNonRoot=1 dropALL=1 seccompRuntimeDefault=1
+  manual             runAsUser=0 privileged=0 hostNetwork=0 hostPath=0 allowPrivEsc_false=1 readOnlyRoot=1 runAsNonRoot=1 dropALL=1 seccompRuntimeDefault=1
+
+== 8. drift between the three snippet sources (container block fields)
+   classic vs native differing keys: none
+   classic vs manual differing keys: none

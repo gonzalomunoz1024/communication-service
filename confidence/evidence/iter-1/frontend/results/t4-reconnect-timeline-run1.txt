@@ -1,0 +1,66 @@
++0.0s started instance B on :19151 (boots while phase 1 runs)
++0.1s instance A up: true
++1.5s badge → Connecting
++1.5s stream REQUEST #1 ?lastEventId=(none) Last-Event-ID=(none)
++1.5s stream REQUEST FAILED net::ERR_ABORTED
++1.6s stream REQUEST #2 ?lastEventId=(none) Last-Event-ID=(none)
++1.6s stream RESPONSE 200
++1.6s stream REQUEST FAILED net::ERR_ABORTED
++1.6s stream REQUEST #3 ?lastEventId=(none) Last-Event-ID=(none)
++1.7s stream RESPONSE 200
++1.7s SSE frame snapshot id=1 before the drop
++1.8s badge → Live
++1.8s feed Live with one item
++1.8s SIGKILL instance A (pid 4815)
++1.9s A down: true
++1.9s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++2.0s badge → Reconnecting
++4.9s stream REQUEST #4 ?lastEventId=(none) Last-Event-ID=(none)
++4.9s stream RESPONSE 502
++5.0s badge → Reconnecting (1)
++5.9s stream REQUEST #5 ?lastEventId=1 Last-Event-ID=(none)
++5.9s stream RESPONSE 502
++5.9s badge → Reconnecting (2)
++7.9s stream REQUEST #6 ?lastEventId=(none) Last-Event-ID=(none)
++7.9s stream RESPONSE 502
++8.0s badge → Reconnecting (3)
++11.9s stream REQUEST #7 ?lastEventId=(none) Last-Event-ID=(none)
++11.9s stream RESPONSE 502
++12.0s badge → Reconnecting (4)
++15.9s restarting instance A
++19.9s stream REQUEST #8 ?lastEventId=(none) Last-Event-ID=(none)
++20.0s stream RESPONSE 502
++20.1s badge → Reconnecting (5)
++23.1s A up again: true
++36.0s stream REQUEST #9 ?lastEventId=(none) Last-Event-ID=(none)
++36.0s stream RESPONSE 200
++36.0s badge → Live
++36.2s SSE frame snapshot id=1 before the drop
++36.5s badge Live again: true (13.4 s after A answered)
++37.2s SSE frame created id=2 published after the restart
++38.0s instance B up: true
++38.0s SIGKILL instance A again (pid 13282); last SSE id seen 2
++38.1s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++38.2s badge → Reconnecting
++40.1s through instance B: publish 'missed while down' → 201, retire 'before the drop' → 200
++41.1s stream REQUEST #10 ?lastEventId=(none) Last-Event-ID=(none)
++41.1s stream RESPONSE 502
++41.2s badge → Reconnecting (1)
++42.1s stream REQUEST #11 ?lastEventId=2 Last-Event-ID=(none)
++42.1s stream RESPONSE 502
++42.2s badge → Reconnecting (2)
++43.1s restarting instance A
++44.1s stream REQUEST #12 ?lastEventId=(none) Last-Event-ID=(none)
++44.1s stream RESPONSE 502
++44.2s badge → Reconnecting (3)
++48.1s stream REQUEST #13 ?lastEventId=(none) Last-Event-ID=(none)
++48.1s stream RESPONSE 502
++48.3s badge → Reconnecting (4)
++51.2s A up again: true
++56.1s stream REQUEST #14 ?lastEventId=(none) Last-Event-ID=(none)
++56.2s stream RESPONSE 200
++56.2s badge → Live
++56.3s SSE frame snapshot id=4 missed while down
++56.3s SSE frame snapshot id=4 published after the restart
++56.5s badge Live again: true
+stopped instance B (pid 13075, SIGTERM)

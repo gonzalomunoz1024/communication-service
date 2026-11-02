@@ -1,0 +1,19 @@
+# Iteration 1: admin search by publisher (re-check of A-23b with this runs publisher)
+
+Checks: 2/2 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| A-23b | F-23 | PASS | cross-tenant search by publisher -> tenants ['be1-x1-3d3359', 'be1-x2-3d3359'] |
+| A-23c | F-23 | PASS | publisher + tenant filter -> ['be1-x1-3d3359'] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:8080/v1/communications body={"tenantId": "be1-x1-3d3359", "publisher": "be1-pub-3d3359", "type": "CHANGE", "severity": "INFO", "title": "by publisher"} -> 201 {"id":"6b8852a2-5752-43bd-95cb-e7312382d871","tenantId":"be1-x1-3d3359","publisher":"be1-pub-3d3359","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T01:34:11.180437232Z","createdAt":"2026-11-02T01:34:11.180437232Z","updatedAt":"2026-11-02T01:34:11.180437232Z","version":0,"history":[{"at":"2026-11-02T01:3
+POST http://localhost:8080/v1/communications body={"tenantId": "be1-x2-3d3359", "publisher": "be1-pub-3d3359", "type": "CHANGE", "severity": "INFO", "title": "by publisher"} -> 201 {"id":"5c6c8a76-cd1f-41f1-b67e-a14579402956","tenantId":"be1-x2-3d3359","publisher":"be1-pub-3d3359","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T01:34:11.189187050Z","createdAt":"2026-11-02T01:34:11.189187050Z","updatedAt":"2026-11-02T01:34:11.189187050Z","version":0,"history":[{"at":"2026-11-02T01:3
+GET http://localhost:8080/v1/admin/communications?publisher=be1-pub-3d3359&size=100 body= -> 200 {"items":[{"id":"5c6c8a76-cd1f-41f1-b67e-a14579402956","tenantId":"be1-x2-3d3359","publisher":"be1-pub-3d3359","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T01:34:11.189Z","createdAt":"2026-11-02T01:34:11.189Z","updatedAt":"2026-11-02T01:34:11.189Z","version":0,"history":[{"at":"2026-11-02T01:34:11.189
+  [PASS] A-23b (F-23): cross-tenant search by publisher -> tenants ['be1-x1-3d3359', 'be1-x2-3d3359']
+GET http://localhost:8080/v1/admin/communications?publisher=be1-pub-3d3359&tenantId=be1-x1-3d3359 body= -> 200 {"items":[{"id":"6b8852a2-5752-43bd-95cb-e7312382d871","tenantId":"be1-x1-3d3359","publisher":"be1-pub-3d3359","type":"CHANGE","severity":"INFO","title":"by publisher","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T01:34:11.180Z","createdAt":"2026-11-02T01:34:11.180Z","updatedAt":"2026-11-02T01:34:11.180Z","version":0,"history":[{"at":"2026-11-02T01:34:11.180
+  [PASS] A-23c (F-23): publisher + tenant filter -> ['be1-x1-3d3359']
+```

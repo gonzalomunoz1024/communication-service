@@ -1,0 +1,5 @@
+PASS [F-62] G-1-15 focus after resolve (two items, resolve the first): focus is on the list container (div tabindex=-1), not lost to <body> :: {"focus":"div tabindex=-1 role=null class=flex flex-col gap-5 outline-none","announced":"Resolved “focus item 0”. It has left every consumer's feed.","emptyStateShown":false}
+FAIL [F-62] G-1-15 focus after resolve (single item, resolve it): focus is on the list container (div tabindex=-1), not lost to <body> :: {"focus":"body tabindex=null role=null class=","announced":"Resolved “focus item 0”. It has left every consumer's feed.","emptyStateShown":true}
+
+== t8-focus-after-resolve: 2 checks, 1 failed
+   FAILED [F-62] G-1-15 focus after resolve (single item, resolve it): focus is on the list container (div tabindex=-1), not lost to <body>

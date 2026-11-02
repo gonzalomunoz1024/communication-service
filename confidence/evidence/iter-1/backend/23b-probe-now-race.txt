@@ -1,0 +1,5 @@
+# Probe-now vs scheduler race (observation from the cookbook run): 5 forced probes on the vm-api monitor (unresolvable host, slow DNS failure) and on a stub /down monitor (fast)
+vm-api monitor 622504d9-5dcf-410c-bb5a-9c0642ce8b4a
+200 200 200 200 200 
+fast monitor 6f611874-b8e0-4db8-82f0-7cc78b3e17b5 (interval 5 s, instance sweep 1 s)
+200 200 200 200 200 200 200 200 200 200 

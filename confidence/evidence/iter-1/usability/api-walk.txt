@@ -1,0 +1,385 @@
+# API walk, iteration 1 — 2026-11-02T02:01:32Z, code 0e14838, service {"status":"UP"}
+
+### C0 dates relative to now (verbatim)
+in2h=2026-11-02T04:01:32Z tomorrow01=2026-11-03T01:00:00Z tomorrow03=2026-11-03T03:00:00Z
+
+### S0 live stream opened in a second terminal (verbatim command, kept open for the walk)
+
+### C1 publish an outage tied to its ServiceNow incident (verbatim)
+
+->
+->{"id":"c937a0a5-957a-4aa4-b31a-768b9195537b","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T02:01:33.835041119Z","expiresAt":"2026-11-02T04:01:32Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T02:01:33.835041119Z","updatedAt":"2026-11-02T02:01:33.835041119Z","version":0,"history":[{"at":"2026-11-02T02:01:33.835041119Z","actor":"vmforge-sre","action":"created (ACTIVE)"}]}
+->
+id=
+
+### C2 schedule a maintenance window for tomorrow night (verbatim)
+
+->
+->{"id":"d2b796a2-8f2a-46a3-a910-8b165ca6304c","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T02:01:33.889310161Z","updatedAt":"2026-11-02T02:01:33.889310161Z","version":0,"history":[{"at":"2026-11-02T02:01:33.889310161Z","actor":"vmforge-sre",
+->
+id2=
+
+### C3 what VMForge shows its customers right now (verbatim)
+
+->
+->{"items":[{"id":"c937a0a5-957a-4aa4-b31a-768b9195537b","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T02:01:33.835Z","expiresAt":"2026-11-02T04:01:32Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"updatedAt":"2026-11-02T02:01:33.835Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+->
+
+### C4 live stream (verbatim, 4 s)
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0:connected
+
+id:1287
+event:snapshot
+data:{"seq":1287,"type":"SNAPSHOT","at":"2026-11-02T02:01:33.952407129Z","communication":{"id":"c937a0a5-957a-4aa4-b31a-768b9195537b","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-[closed after 4 s]
+
+### C5 resume after a disconnect, verbatim lastEventId=1234 (4 s)
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0:connected
+
+id:1288
+event:created
+data:{"seq":1288,"type":"CREATED","at":"2026-11-02T02:01:33.839Z","communication":{"id":"c937a0a5-957a-4aa4-b31a-768b9195537b","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating **elevated errors**.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T02:01:33.835Z","expiresAt":"2026-11-02T04:01:32Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"creat[closed after 4 s]
+
+### C6 change the body with expectedVersion:0 (verbatim with <id>)
+
+->
+->{"error":"no such endpoint: PUT /v1/communications/ (the API is documented at /swagger-ui.html)"}
+->
+
+### C6b the same PUT again with the stale expectedVersion:0 (someone else got there first)
+
+->
+->{"error":"no such endpoint: PUT /v1/communications/ (the API is documented at /swagger-ui.html)"}
+->
+
+### C7 retire (verbatim with <id>)
+
+->
+->{"error":"no such endpoint: POST /v1/communications//retire (the API is documented at /swagger-ui.html)"}
+->
+
+### C8 admin: everything retired, across tenants (verbatim; first 400 chars)
+
+->
+->{"items":[{"id":"c050c7ca-3c90-4076-b887-50b2daccaedf","tenantId":"ux1-sre","publisher":"api-sre","type":"OUTAGE","severity":"CRITICAL","title":"Live-pushed outage","affectedServices":["search-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T01:33:38.040Z","createdAt":"2026-11-02T01:33:38.040Z","updatedAt":"2026-11-02T01:33:38.877Z","version":1,"history":[{"at":"2026-11-02T
+->
+
+
+### C9 health: monitors for vmforge, and a probe with a made-up <monitorId>
+
+->
+->[]
+->
+
+->
+->{"error":"monitor not-a-monitor not found"}
+->
+
+### C10 what the second terminal received (event ids), then a real resume from the first id
+id:1288	event:created
+id:1289	event:created
+first id seen = 
+--- resume from lastEventId= (4 s): events replayed in order?
+id:1289	event:snapshot
+id:1289	event:snapshot
+--- the browser way: Last-Event-ID header
+id:1289	event:snapshot
+id:1289	event:snapshot
+
+### C11 clean-up: retire the maintenance so vmforge is left as found
+
+->
+->{"error":"no such endpoint: POST /v1/communications//retire (the API is documented at /swagger-ui.html)"}
+->
+
+## Error walk (tenant ux1-api): the messages a developer meets on first mistakes
+
+### E1 wrong enum value
+
+->
+->{"error":"severity: 'HUGE' is not one of [INFO, MINOR, MAJOR, CRITICAL]"}
+->
+
+### E2 malformed JSON (trailing comma)
+
+->
+->{"error":"malformed JSON at line 1, column 86: Unexpected character ('}' (code 125)): was expecting double-quote to start field name"}
+->
+
+### E3 PUT without expectedVersion
+
+->
+->{"error":"expectedVersion: must not be null"}
+->
+
+### E4 PUT with a stale expectedVersion (99)
+
+->
+->{"error":"expectedVersion 99 does not match current version 0"}
+->
+
+### E5 unknown path
+
+->
+->{"error":"no such endpoint: GET /v1/nothing (the API is documented at /swagger-ui.html)"}
+->
+
+### E6 non-JSON body
+
+->
+->{"error":"Content-Type 'text/plain' is not supported here; send application/json or application/*+json or application/x-ndjson"}
+->
+
+### E7 oversized body (300 KB title)
+
+->
+->{"error":"request body exceeds the limit of 256 KB (spring.codec.max-in-memory-size)"}
+->
+
+### E8 expiresAt in the past, no startsAt
+
+->
+->{"error":"expiresAt must be after startsAt"}
+->
+
+### E9 maintenance with endsAt before startsAt
+
+->
+->{"error":"endsAt must be after startsAt"}
+->
+
+### E10 no X-Client-Id
+
+->
+->{"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}
+->
+
+### E11 unknown type
+
+->
+->{"error":"type: 'DOWNTIME' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"}
+->
+
+### E12 bad ticket number
+
+->
+->{"error":"ticket.number 'INC-42' is not a ServiceNow incident number (like INC0012345)"}
+->
+
+### E13 feed size over the cap
+
+->
+->{"items":[{"id":"ef06b8c0-a979-4d18-8917-9817591f4ba3","tenantId":"ux1-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"for put","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T02:01:48.165Z","updatedAt":"2026-11-02T02:01:48.165Z"}],"page":0,"s
+->
+
+### E14 retire an unknown id
+
+->
+->{"error":"communication 00000000-0000-0000-0000-000000000000 not found"}
+->
+
+### E15 missing required fields
+
+->
+->{"error":"publisher: must not be blank; severity: must not be null; tenantId: must not be blank; title: must not be blank"}
+->
+
+### E16 outage with severity INFO
+
+->
+->{"error":"OUTAGE requires severity MINOR or higher"}
+->
+
+### E17 wrong date format
+
+->
+->{"error":"expiresAt: 'tomorrow' is not an ISO-8601 UTC timestamp like 2026-11-01T12:00:00Z"}
+->
+
+### E18 publish with a duplicate externalRef (409 text)
+
+->
+->{"error":"duplicate externalRef 'REF-1' for tenant 'ux1-api'"}
+->
+
+### E19 retire twice (idempotent?)
+
+->
+->{"id":"ef06b8c0-a979-4d18-8917-9817591f4ba3","tenantId":"ux1-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","
+->
+
+->
+->{"id":"ef06b8c0-a979-4d18-8917-9817591f4ba3","tenantId":"ux1-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","
+->
+
+### E20 publish a DRAFT then publish it twice
+draft status: {"id":"2ac2fb57-31ab-4410-8df7-bf73c2af02f0","tenantId":"ux1-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"draft","affectedServices":[],"audience":"CUSTOMERS","status":"DRAFT","star
+
+->
+->{"id":"2ac2fb57-31ab-4410-8df7-bf73c2af02f0","tenantId":"ux1-api","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"draft","affectedServices":[],"audience":"CUSTOMERS","status":"ACTIVE","s
+->
+
+->
+->{"error":"only DRAFT communications can be published; 2ac2fb57-31ab-4410-8df7-bf73c2af02f0 is ACTIVE"}
+->
+
+### D1 every path in the README tables exists in the OpenAPI document
+ok  /v1/communications
+MISSING /v1/health/**
+ok  /v1/feed/stream
+ok  /v1/feed
+ok  /v1/communications/{id}
+MISSING /v1/**
+ok  /v1/communications/{id}/publish
+ok  /v1/communications/{id}/retire
+ok  /v1/feed/{id}
+MISSING /v1/admin/**
+ok  /v1/admin/communications
+ok  /v1/admin/tenants
+ok  /v1/admin/communications/{id}/retire
+ok  /v1/admin/communications/{id}
+ok  /v1/health/monitors
+ok  /v1/health/monitors/{id}
+ok  /v1/health/monitors/{id}/probe
+ok  /v1/health/reports
+ok  /v1/health/monitors/{id}/instances
+openapi paths: 16
+
+# Cookbook re-run — 2026-11-02T02:03:45Z
+
+### leftovers of the first run retired first (so INC0012345 is free again in vmforge)
+retire c937a0a5-957a-4aa4-b31a-768b9195537b: 200
+retire d2b796a2-8f2a-46a3-a910-8b165ca6304c: 200
+
+### C0 dates relative to now (verbatim)
+in2h=2026-11-02T04:03:46Z tomorrow01=2026-11-03T01:00:00Z tomorrow03=2026-11-03T03:00:00Z
+
+### S0 live stream in a second terminal (verbatim command, kept open 60 s)
+
+### C1 publish an outage tied to its ServiceNow incident (verbatim)
+{"error":"duplicate externalRef 'INC0012345' for tenant 'vmforge'"}
+-> HTTP 409
+<id> = 
+
+### C2 schedule a maintenance window for tomorrow night (verbatim)
+{"id":"24506b07-2392-4f24-a3e9-12a235cf3868","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","creat
+-> HTTP 201
+<id2> = 
+
+### C3 what VMForge shows its customers right now (verbatim)
+{"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+-> HTTP 200
+
+### C4 live stream (verbatim, closed after 4 s; -N output)
+id:1295	event:snapshot
+id:1296	event:created
+[closed]
+
+### C5 resume after a disconnect, verbatim lastEventId=1234 (4 s)
+id:1288	event:created
+id:1289	event:created
+id:1294	event:retired
+id:1295	event:retired
+id:1296	event:created
+[closed]
+
+### C6 change the body: expectedVersion:0 (verbatim with <id>)
+{"error":"no such endpoint: PUT /v1/communications/ (the API is documented at /swagger-ui.html)"}
+-> HTTP 404
+
+### C6b the same PUT again (stale expectedVersion:0)
+{"error":"no such endpoint: PUT /v1/communications/ (the API is documented at /swagger-ui.html)"}
+-> HTTP 404
+
+### C7 retire (verbatim with <id>)
+{"error":"no such endpoint: POST /v1/communications//retire (the API is documented at /swagger-ui.html)"}
+-> HTTP 404
+
+### C8 admin: everything retired, across tenants (verbatim; counts only)
+{"items":[{"id":"c050c7ca-3c90-4076-b887-50b2daccaedf","tenantId":"ux1-sre","publisher":"api-sre","type":"OUTAGE","sever
+-> HTTP 200
+
+### C9 health: monitors for vmforge (verbatim), then a probe with a made-up <monitorId>
+[]
+-> HTTP 200
+{"error":"monitor not-a-monitor not found"}
+-> HTTP 404
+
+### C10 the second terminal's events so far, then a real resume from the first id (replay in order?)
+id:1296	event:created
+first id seen = 1296
+--- ?lastEventId=1296
+--- Last-Event-ID: 1296 header
+
+### C11 clean-up: retire the maintenance
+{"error":"no such endpoint: POST /v1/communications//retire (the API is documented at /swagger-ui.ht
+-> HTTP 404
+
+### E13 again: feed size=500 — what size comes back?
+{"page":0,"size":100,"totalElements":2,"items":2}
+
+### clean-up ux1-api: retire what the error walk left active
+ux1-api active now: 0
+
+# Cookbook fix-up — 2026-11-02T02:05:43Z: the <id> steps on the maintenance the re-run created (the outage cannot be re-created, see R1), header resume, externalRef semantics
+<id> (the scheduled maintenance) = 24506b07-2392-4f24-a3e9-12a235cf3868
+
+### C6 change the body with expectedVersion:0
+{"id":"24506b07-2392-4f24-a3e9-12a235cf3868","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","body":"Mitigation in progress.","affectedS
+-> HTTP 200
+
+### C6b again with the stale expectedVersion:0
+{"error":"expectedVersion 0 does not match current version 1"}
+-> HTTP 409
+
+### C7 retire
+{"id":"24506b07-2392-4f24-a3e9-12a235cf3868","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","bo
+-> HTTP 200
+
+### resume with the browser header Last-Event-ID: 1288 (4 s): replay in order
+Terminated
+
+### R1 externalRef semantics: is a retired notice's reference free again? (tenant ux1-ref)
+{"id":"3b61d0c5-fdce-4a21-b78e-2e07e5e720bf","tenantId":"ux1-ref","publisher":"p","type":"OUTAGE","severity":"MAJOR","ti
+-> HTTP 201
+retire 3b61d0c5-fdce-4a21-b78e-2e07e5e720bf -> 200
+status now: "status":"RETIRED"
+publish the same ticket again:
+{"error":"duplicate externalRef 'INC0007777' for tenant 'ux1-ref'"}
+-> HTTP 409
+the same ticket in another tenant:
+{"id":"75dfd1da-3387-497e-9685-50e3896300a1","tenantId":"ux1-ref-2","publisher":"p","type":"OUTAGE","severity":"MAJOR","
+-> HTTP 201
+cleaned ux1-ref tenants
+vmforge live now: "totalElements":0
+
+# Resume re-check — 2026-11-02T02:06:19Z: header vs query parameter, same id, 8 s each
+### ?lastEventId=1288
+Terminated
+### Last-Event-ID: 1288 header
+Terminated
+### Last-Event-ID: 1288 header, verbose status line
+Terminated
+
+# Resume re-check 2 — 2026-11-02T02:07:18Z: curl --max-time instead of timeout(1) (the pipelines above lost curl's output when timeout killed it; the backend was healthy: readiness 200 in 5 ms)
+### ?lastEventId=1288 (max-time 4)
+id:1289 event:created
+id:1294 event:retired
+id:1295 event:retired
+id:1296 event:created
+id:1299 event:updated
+id:1300 event:retired
+### Last-Event-ID: 1288 header (max-time 4)
+id:1289 event:created
+id:1294 event:retired
+id:1295 event:retired
+id:1296 event:created
+id:1299 event:updated
+id:1300 event:retired
+### plain stream (max-time 3): first bytes
+:connected
+
+

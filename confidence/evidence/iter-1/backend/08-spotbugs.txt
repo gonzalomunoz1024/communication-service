@@ -1,0 +1,54 @@
+# SpotBugs 4.9.3 (-effort:max -low) on build/classes/java/main of HEAD, auxclasspath = BOOT-INF/lib of the iteration-1 jar; run from a scratch Gradle project, the repository build was not changed
+# summary: {'total_classes': '87', 'total_bugs': '50', 'priority_1': None, 'priority_2': '42', 'priority_3': '8', 'num_missing_classes': None}
+# by priority (1=high,2=medium,3=low): {'2': 42, '3': 8}
+# by category: {'MALICIOUS_CODE': 41, 'PERFORMANCE': 3, 'STYLE': 4, 'I18N': 2}
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/common/domain/CommunicationQuery.java:13       May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/common/domain/Page.java:6                      May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/common/domain/TenantSummary.java:6             May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/feed/domain/FeedItem.java:17                   May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/health/domain/ActuatorComponent.java:24        May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/health/domain/ActuatorComponent.java:11        May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/health/domain/ActuatorComponent.java:11        May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/health/domain/HealthReportCommand.java:22      May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/health/domain/HealthReportCommand.java:22      May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/health/domain/HealthRollup.java:24             May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/health/domain/HealthRollup.java:24             May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/publishing/domain/CreateCommunicationCommand.java:24 May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP                    com/atlas/communication/publishing/domain/UpdateCommunicationCommand.java:21 May expose internal representation by returning reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/admin/application/AdminUseCase.java:30         May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:66 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapter.java:41 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/common/adapters/outbound/MongoEventSequence.java:16 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/common/domain/CommunicationQuery.java:13       May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/common/domain/Page.java:6                      May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/common/domain/TenantSummary.java:6             May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/config/ClientIdWebFilter.java:57               May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/feed/application/FeedUseCase.java:43           May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/feed/domain/FeedItem.java:17                   May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/adapters/inbound/RestControllerHealthAdapter.java:31 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapter.java:14 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/adapters/outbound/WebClientHealthProbeAdapter.java:42 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/application/HealthMonitorUseCase.java:38 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/application/HealthMonitorUseCase.java:38 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/application/HealthMonitorUseCase.java:38 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/application/HealthObservationUseCase.java:40 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/application/HealthSweepUseCase.java:55  May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/application/HealthSweepUseCase.java:54  May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/application/HealthSweepUseCase.java:56  May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/domain/HealthReportCommand.java:22      May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/domain/HealthReportCommand.java:22      May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/domain/HealthRollup.java:24             May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/health/domain/HealthRollup.java:24             May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/publishing/application/PublishingUseCase.java:37 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/publishing/application/StatusSweepUseCase.java:28 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/publishing/domain/CreateCommunicationCommand.java:24 May expose internal representation by incorporating reference to mutable object
+P2 MALICIOUS_CODE EI_EXPOSE_REP2                   com/atlas/communication/publishing/domain/UpdateCommunicationCommand.java:21 May expose internal representation by incorporating reference to mutable object
+P2 PERFORMANCE    URF_UNREAD_FIELD                 com/atlas/communication/health/adapters/outbound/HealthInstanceDocument.java:49 Unread field
+P3 I18N           DM_CONVERT_CASE                  com/atlas/communication/config/GlobalExceptionHandler.java:117         Consider using Locale parameterized version of invoked method
+P3 I18N           DM_CONVERT_CASE                  com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapter.java:89 Consider using Locale parameterized version of invoked method
+P3 STYLE          REC_CATCH_EXCEPTION              com/atlas/communication/health/adapters/outbound/WebClientHealthProbeAdapter.java:77 Exception is caught when Exception is not thrown
+P3 PERFORMANCE    URF_UNREAD_FIELD                 com/atlas/communication/common/adapters/outbound/CommunicationDocument.java:67 Unread field
+P3 PERFORMANCE    URF_UNREAD_FIELD                 com/atlas/communication/common/adapters/outbound/CommunicationEventDocument.java:34 Unread field
+P3 STYLE          UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR com/atlas/communication/common/adapters/outbound/CommunicationEventDocument.java:40 Field not initialized in constructor but dereferenced without null check
+P3 STYLE          UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:122 Field not initialized in constructor but dereferenced without null check
+P3 STYLE          UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:178 Field not initialized in constructor but dereferenced without null check

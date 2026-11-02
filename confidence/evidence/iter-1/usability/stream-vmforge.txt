@@ -1,0 +1,12 @@
+:connected
+
+id:1296
+event:created
+data:{"seq":1296,"type":"CREATED","at":"2026-11-02T02:03:47.111Z","communication":{"id":"24506b07-2392-4f24-a3e9-12a235cf3868","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T02:03:47.107Z","updatedAt":"2026-11-02T02:03:47.107Z","version":0,"history":[{"at":"2026-11-02T02:03:47.107Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}}
+
+:keepalive
+
+:keepalive
+
+:keepalive
+

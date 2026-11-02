@@ -1,0 +1,23 @@
+== notices left by 10-g12-lifecycle.txt, fetched afterwards (F-70 detail in the body, retire on recovery)
+{"id":"fb661ff8-c801-4c5b-a093-fc01ba05a261","type":"OUTAGE","status":"RETIRED","severity":"MAJOR","title":"sc1-app is down","startsAt":"2026-11-02T01:45:04.769Z","publisher":"health-sidecar"}
+  body: Automated health check reported **DOWN** at 2026-11-02T01:45:04.757831427Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: sc1-app-5d8c7b6f9-k2n4p) |  | Failing components: | - db: DOWN - database=PostgreSQL |  | This notice is managed automatically and is retired once the service reports healthy again.
+  other keys: ['affectedServices', 'audience', 'createdAt', 'externalRef', 'history', 'tenantId', 'updatedAt', 'version']
+{"id":"afda048a-12dc-40cf-848e-280364541bea","type":"OUTAGE","status":"RETIRED","severity":"MAJOR","title":"sc1-app is down","startsAt":"2026-11-02T01:45:27.870Z","publisher":"health-sidecar"}
+  body: Automated health check reported **DOWN** at 2026-11-02T01:45:27.862290203Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: sc1-app-5d8c7b6f9-k2n4p) |  | This notice is managed automatically and is retired once the service reports healthy again.
+  other keys: ['affectedServices', 'audience', 'createdAt', 'externalRef', 'history', 'tenantId', 'updatedAt', 'version']
+
+== image labels (version label looked empty in 10-g12):
+{"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar"}
+
+== Helm required values, one at a time (grep for the error line)
+Error: execution error at (payments-api/templates/deployment.yaml:24:3): csHealthSidecar.tenant is required
+Error: execution error at (payments-api/templates/deployment.yaml:24:3): csHealthSidecar.endpoint is required
+
+== govulncheck with a version that supports go1.24 (v1.1.4): tool runs, database reachable?
+rc=1
+go: downloading golang.org/x/telemetry v0.0.0-20240522233618-39ace7a40ae7
+go: downloading golang.org/x/mod v0.22.0
+go: downloading golang.org/x/tools v0.29.0
+go: downloading golang.org/x/sync v0.10.0
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1

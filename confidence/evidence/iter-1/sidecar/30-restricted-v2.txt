@@ -1,0 +1,81 @@
+== F-80/F-81: health-sidecar:sc1 under arbitrary UIDs, read-only rootfs, all caps dropped, no-new-privileges (docker emulation of restricted-v2; no real SCC here)
+image Config.User=1001
+--- --user '<image default>': running=true healthz=200 /status={"version":"1.0.0-sc1","service":"s","tenant":"t","instance":"f6271079c34f","target":"http://127.0.0.1:1/actuator/health","lastTarget":"http://127.0.0
+    Uid: 1001 1001 1001 1001 Gid: 0 0 0 0 VmRSS: 7276 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    rootfs mount: overlay overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snaps | writable mounts: /proc /dev /dev/pts /sys/fs/cgroup /dev/mqueue /dev/shm /proc/interrupts /proc/keys /proc/timer_list 
+    open fds: 6 ->  1 /dev/null; 1 anon_inode:[eventfd]; 1 anon_inode:[eventpoll]; 2 pipe:; 1 socket:;
+--- --user '4242:0': running=true healthz=200 /status={"version":"1.0.0-sc1","service":"s","tenant":"t","instance":"907ce5071190","target":"http://127.0.0.1:1/actuator/health","lastTarget":"http://127.0.0
+    Uid: 4242 4242 4242 4242 Gid: 0 0 0 0 VmRSS: 7524 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    rootfs mount: overlay overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snaps | writable mounts: /proc /dev /dev/pts /sys/fs/cgroup /dev/mqueue /dev/shm /proc/interrupts /proc/keys /proc/timer_list 
+    open fds: 6 ->  1 /dev/null; 1 anon_inode:[eventfd]; 1 anon_inode:[eventpoll]; 2 pipe:; 1 socket:;
+--- --user '65534:0': running=true healthz=200 /status={"version":"1.0.0-sc1","service":"s","tenant":"t","instance":"ecd1845cd3ff","target":"http://127.0.0.1:1/actuator/health","lastTarget":"http://127.0.0
+    Uid: 65534 65534 65534 65534 Gid: 0 0 0 0 VmRSS: 7560 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    rootfs mount: overlay overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snaps | writable mounts: /proc /dev /dev/pts /sys/fs/cgroup /dev/mqueue /dev/shm /proc/interrupts /proc/keys /proc/timer_list 
+    open fds: 6 ->  1 /dev/null; 1 anon_inode:[eventfd]; 1 anon_inode:[eventpoll]; 2 pipe:; 1 socket:;
+--- --user '1000660000:0': running=true healthz=200 /status={"version":"1.0.0-sc1","service":"s","tenant":"t","instance":"a36397ee9beb","target":"http://127.0.0.1:1/actuator/health","lastTarget":"http://127.0.0
+    Uid: 1000660000 1000660000 1000660000 1000660000 Gid: 0 0 0 0 VmRSS: 7496 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    rootfs mount: overlay overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snaps | writable mounts: /proc /dev /dev/pts /sys/fs/cgroup /dev/mqueue /dev/shm /proc/interrupts /proc/keys /proc/timer_list 
+    open fds: 6 ->  1 /dev/null; 1 anon_inode:[eventfd]; 1 anon_inode:[eventpoll]; 2 pipe:; 1 socket:;
+--- --user '1000700123': running=true healthz=200 /status={"version":"1.0.0-sc1","service":"s","tenant":"t","instance":"ea62b4e565a5","target":"http://127.0.0.1:1/actuator/health","lastTarget":"http://127.0.0
+    Uid: 1000700123 1000700123 1000700123 1000700123 Gid: 0 0 0 0 VmRSS: 7648 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    rootfs mount: overlay overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snaps | writable mounts: /proc /dev /dev/pts /sys/fs/cgroup /dev/mqueue /dev/shm /proc/interrupts /proc/keys /proc/timer_list 
+    open fds: 6 ->  1 /dev/null; 1 anon_inode:[eventfd]; 1 anon_inode:[eventpoll]; 2 pipe:; 1 socket:;
+--- --user '1000660000:1000660000': running=true healthz=200 /status={"version":"1.0.0-sc1","service":"s","tenant":"t","instance":"e2a16912a1be","target":"http://127.0.0.1:1/actuator/health","lastTarget":"http://127.0.0
+    Uid: 1000660000 1000660000 1000660000 1000660000 Gid: 1000660000 1000660000 1000660000 1000660000 VmRSS: 7444 kB Threads: 8 CapInh: 0000000000000000 CapPrm: 0000000000000000 CapEff: 0000000000000000 CapBnd: 0000000000000000 CapAmb: 0000000000000000 NoNewPrivs: 1 Seccomp: 2 
+    rootfs mount: overlay overlay ro,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snaps | writable mounts: /proc /dev /dev/pts /sys/fs/cgroup /dev/mqueue /dev/shm /proc/interrupts /proc/keys /proc/timer_list 
+    open fds: 6 ->  1 /dev/null; 1 anon_inode:[eventfd]; 1 anon_inode:[eventpoll]; 2 pipe:; 1 socket:;
+
+--- 10 s later: still running, RSS, send errors (endpoint is a closed port on purpose)
+  sc1-uid-1 running=true VmRSS: 7624 kB | reportsSent=0 sendError='post http://127.0.0.1:1/v1/health/reports: Post "http://127.0.0.1:1/v1/health/reports": di'
+  sc1-uid-2 running=true VmRSS: 7724 kB | reportsSent=0 sendError='post http://127.0.0.1:1/v1/health/reports: Post "http://127.0.0.1:1/v1/health/reports": di'
+  sc1-uid-3 running=true VmRSS: 7744 kB | reportsSent=0 sendError='post http://127.0.0.1:1/v1/health/reports: Post "http://127.0.0.1:1/v1/health/reports": di'
+  sc1-uid-4 running=true VmRSS: 7652 kB | reportsSent=0 sendError='post http://127.0.0.1:1/v1/health/reports: Post "http://127.0.0.1:1/v1/health/reports": di'
+  sc1-uid-5 running=true VmRSS: 7708 kB | reportsSent=0 sendError='post http://127.0.0.1:1/v1/health/reports: Post "http://127.0.0.1:1/v1/health/reports": di'
+  sc1-uid-6 running=true VmRSS: 7556 kB | reportsSent=0 sendError='post http://127.0.0.1:1/v1/health/reports: Post "http://127.0.0.1:1/v1/health/reports": di'
+
+--- image filesystem (docker export, no shell in the image): every regular file with owner/mode
+-rwxr-xr-x 0/0 0 .dockerenv
+-rwxr-xr-x 0/0 0 dev/console
+-rw-r--r-- 0/0 6 etc/debian_version
+-rw-r--r-- 0/0 83 etc/dpkg/origins/debian
+-rw-r--r-- 0/0 1853 etc/ethertypes
+-rw-r--r-- 0/0 64 etc/group
+-rw-r--r-- 0/0 9 etc/host.conf
+-rwxr-xr-x 0/0 0 etc/hostname
+-rwxr-xr-x 0/0 0 etc/hosts
+-rw-r--r-- 0/0 27 etc/issue
+-rw-r--r-- 0/0 20 etc/issue.net
+-rw-r--r-- 0/0 73816 etc/mime.types
+lrwxrwxrwx 0/0 0 etc/mtab
+-rw-r--r-- 0/0 497 etc/nsswitch.conf
+lrwxrwxrwx 0/0 0 etc/os-release
+-rw-r--r-- 0/0 149 etc/passwd
+-rw-r--r-- 0/0 224449 etc/pki/tls/certs/ca-bundle.crt
+-rw-r--r-- 0/0 3144 etc/protocols
+-rwxr-xr-x 0/0 0 etc/resolv.conf
+-rw-r--r-- 0/0 911 etc/rpc
+-rw-r--r-- 0/0 12813 etc/services
+-r-xr-xr-x 0/0 224449 etc/ssl/certs/ca-certificates.crt
+-rwxr-xr-x 0/0 23 etc/update-motd.d/10-uname
+-r-xr-xr-x 0/0 346 usr/lib/os-release
+-rwxr-xr-x 0/0 6742200 usr/local/bin/health-sidecar
+-rw-r--r-- 0/0 571 usr/share/base-files/dot.bashrc
+-rw-r--r-- 0/0 161 usr/share/base-files/dot.profile
+-rw-r--r-- 0/0 72 usr/share/base-files/dot.profile.md5sums
+-rw-r--r-- 0/0 781 usr/share/base-files/info.dir
+-rw-r--r-- 0/0 286 usr/share/base-files/motd
+-rw-r--r-- 0/0 769 usr/share/base-files/profile
+-rw-r--r-- 0/0 651 usr/share/base-files/profile.md5sums
+-rw-r--r-- 0/0 772 usr/share/base-files/staff-group-for-usr-local
+-rw-r--r-- 0/0 548 usr/share/bug/media-types/presubj
+-rw-r--r-- 0/0 11358 usr/share/common-licenses/Apache-2.0
+-rw-r--r-- 0/0 6111 usr/share/common-licenses/Artistic
+-rw-r--r-- 0/0 1499 usr/share/common-licenses/BSD
+-rw-r--r-- 0/0 7048 usr/share/common-licenses/CC0-1.0
+lrwxrwxrwx 0/0 0 usr/share/common-licenses/GFDL
+-rw-r--r-- 0/0 20432 usr/share/common-licenses/GFDL-1.2
+    setuid/setgid files: 0
+
+--- --network none (no egress at all): still starts and serves /healthz via loopback?
+  running=true log: {"time":"2026-11-02T01:46:26.966234252Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-sc1","service":"s","tenant":"t","instance":"349df6e6e0ec","endpoint":"http://127.0.0.1:1","prob {"time":"2026-11-02T01:46:28.969150142Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 12 
+cleanup done

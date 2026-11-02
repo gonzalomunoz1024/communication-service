@@ -1,0 +1,18 @@
+# G-1-8: readiness while Mongo is down (private :18911 on its own Mongo container be1-mongo2 :27019); curl --max-time 45
+## Mongo up
+{"status":"UP"} -> 200
+## Mongo stopped at 01:40:03
+{"status":"DOWN"} -> 503 after 30021 ms (01:40:33)
+{"status":"UP"} -> 200 liveness
+{"status":"DOWN"} -> 503 after 30018 ms (01:41:03)
+{"status":"UP"} -> 200 liveness
+## Mongo started again at 01:41:03
+{"status":"UP"} -> 200 after 17 ms (01:41:06)
+{"status":"UP"} -> 200 after 16 ms (01:41:09)
+{"status":"UP"} -> 200 after 31 ms (01:41:12)
+## backend log: Mongo errors/warnings while down
+	at com.mongodb.internal.connection.InternalStreamConnectionInitializer.startHandshake(InternalStreamConnectionInitializer.java:79) ~[mongodb-driver-core-5.5.2.jar!/:na]
+	at com.mongodb.internal.connection.InternalStreamConnection.open(InternalStreamConnection.java:235) ~[mongodb-driver-core-5.5.2.jar!/:na]
+	at com.mongodb.internal.connection.DefaultServerMonitor$ServerMonitor.lookupServerDescription(DefaultServerMonitor.java:219) ~[mongodb-driver-core-5.5.2.jar!/:na]
+	at com.mongodb.internal.connection.DefaultServerMonitor$ServerMonitor.run(DefaultServerMonitor.java:176) ~[mongodb-driver-core-5.5.2.jar!/:na]
+Caused by: io.netty.channel.StacklessClosedChannelException

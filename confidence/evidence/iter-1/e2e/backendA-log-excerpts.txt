@@ -1,0 +1,71 @@
+# backend A log excerpts (iteration 1 private stack). Original A = pid 27922 (log: scratchpad e2e1/backendA.log), restarted A instances append to e2e1/logs/backendA.log.
+
+## startup
+2026-11-02T01:30:49.935Z  INFO 27922 --- [communication-service] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 19501 (http)
+2026-11-02T01:30:50.147Z  INFO 27922 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 20.877 seconds (process running
+2026-11-02T01:51:14.056Z  INFO 13404 --- [communication-service] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 19501 (http)
+2026-11-02T01:51:14.074Z  INFO 13404 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 6.33 seconds (process running f
+2026-11-02T01:53:53.634Z  INFO 18897 --- [communication-service] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 19501 (http)
+2026-11-02T01:53:53.658Z  INFO 18897 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 4.452 seconds (process running 
+2026-11-02T01:59:48.415Z  INFO 25189 --- [communication-service] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 19501 (http)
+2026-11-02T01:59:48.435Z  INFO 25189 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 4.39 seconds (process running f
+
+## graceful shutdown with open SSE streams (G-1-23): 'Commencing' -> 'complete' in ms; iteration 0 took 30 s and logged 'still running after timeout'
+2026-11-02T01:50:39.995Z  INFO 27922 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T01:50:39.998Z  INFO 27922 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+2026-11-02T01:51:42.897Z  INFO 13404 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T01:51:42.919Z  INFO 13404 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+2026-11-02T01:59:31.894Z  INFO 18897 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T01:59:31.902Z  INFO 18897 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+
+## staleness valve warnings ('silent at once'): count
+0
+0
+
+## auto notices opened / retired / closed externally (G-1-5)
+2026-11-02T01:45:27.562Z monitor 66df9823-f0d5-47f4-b7e6-b11ae1660947 opened OUTAGE 49b49442-fd09-4b68-b415-47ea345ef322 for e2e1-pod/e2e1-app
+2026-11-02T01:45:43.611Z retired notice 49b49442-fd09-4b68-b415-47ea345ef322: reclassified as DEGRADED: DEGRADED (0 of 1 pod UP (DEGRADED: e2e1-app-6d4f8b7c9-ab12c)): db DOWN
+2026-11-02T01:45:43.617Z monitor 66df9823-f0d5-47f4-b7e6-b11ae1660947 opened HEALTH 295af9b7-8f7a-48e2-ae21-d1c658a1d320 for e2e1-pod/e2e1-app
+2026-11-02T01:45:56.438Z retired notice 7ed35738-e4fa-47f1-bf7a-9b53b963faff: monitor deleted
+2026-11-02T01:45:59.450Z retired notice 295af9b7-8f7a-48e2-ae21-d1c658a1d320: recovered: UP (1 of 1 pod UP)
+2026-11-02T01:46:18.119Z monitor 80c2c542-92cc-4201-bb4f-6f80a01bd32d opened OUTAGE 34f9fdb7-a210-4657-b037-15cc7826e579 for e2e1-reopen-301bb0/flaky
+2026-11-02T01:46:18.137Z notice 34f9fdb7-a210-4657-b037-15cc7826e579 for monitor 80c2c542-92cc-4201-bb4f-6f80a01bd32d was closed externally; counting again
+2026-11-02T01:46:18.356Z monitor 80c2c542-92cc-4201-bb4f-6f80a01bd32d opened OUTAGE 80bb78e7-bb16-44cd-9b1b-00103a3e442a for e2e1-reopen-301bb0/flaky
+2026-11-02T01:46:18.378Z retired notice 80bb78e7-bb16-44cd-9b1b-00103a3e442a: recovered: UP
+2026-11-02T01:48:48.638Z monitor 66df9823-f0d5-47f4-b7e6-b11ae1660947 opened OUTAGE 5b8f0517-feb6-49a4-b0ad-a64997b76152 for e2e1-pod/e2e1-app
+2026-11-02T01:49:04.915Z retired notice 5b8f0517-feb6-49a4-b0ad-a64997b76152: recovered: UP (1 of 1 pod UP)
+2026-11-02T01:50:21.012Z monitor 66df9823-f0d5-47f4-b7e6-b11ae1660947 opened OUTAGE 59e9cfb5-776c-4bf2-8194-d3e9051a42c6 for e2e1-pod/e2e1-app
+2026-11-02T01:50:36.978Z retired notice 59e9cfb5-776c-4bf2-8194-d3e9051a42c6: recovered: UP (1 of 1 pod UP)
+2026-11-02T01:54:28.208Z retired notice efc135d7-0d8e-4b82-a295-e2b58e51bd31: recovered: UP (1 of 1 pod UP)
+2026-11-02T01:56:36.700Z retired notice e1c69c06-8e6f-49ad-b839-e3d802e451da: recovered: UP (1 of 1 pod UP)
+2026-11-02T01:56:56.918Z monitor e3228b2a-edc1-4727-848d-0f2ac628e1c5 opened OUTAGE 8c48897e-37cb-4e24-80eb-e1b8088111d8 for e2e1-pod2/app2
+2026-11-02T01:57:05.959Z retired notice 8c48897e-37cb-4e24-80eb-e1b8088111d8: recovered: UP (1 of 1 pod UP)
+2026-11-02T01:57:22.323Z monitor a74f6f94-e2ab-4120-8465-c88a2ee67d76 opened OUTAGE 2b18ce4f-b1a4-4bc8-8989-9fe22d55d60f for e2e1-slow/slow-svc
+2026-11-02T01:57:22.348Z retired notice 2b18ce4f-b1a4-4bc8-8989-9fe22d55d60f: monitor deleted
+2026-11-02T02:00:22.240Z monitor 89b4084d-0359-4a21-b7b4-a33c0ae6a8a9 opened OUTAGE a89242fc-82f8-404a-bae5-18b4beefb53e for e2e1-pod2/app2
+2026-11-02T02:00:31.114Z retired notice a89242fc-82f8-404a-bae5-18b4beefb53e: recovered: UP (1 of 1 pod UP)
+
+## 'second seq expression' (iteration-0 resume bug) occurrences
+0
+0
+
+## access log sample (G-1-22)
+2026-11-02T02:00:51.440Z client=e2e1-app-repo POST /v1/health/reports -> 202 (15 ms)
+2026-11-02T02:01:04.305Z client=e2e1-app-repo POST /v1/health/reports -> 202 (18 ms)
+2026-11-02T02:01:17.208Z client=e2e1-app-repo POST /v1/health/reports -> 202 (16 ms)
+2026-11-02T02:01:29.693Z client=e2e1-app-repo POST /v1/health/reports -> 202 (16 ms)
+2026-11-02T02:01:39.888Z client=e2e1-app-repo POST /v1/health/reports -> 202 (14 ms)
+2026-11-02T01:48:38.124Z rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)
+2026-11-02T01:50:01.750Z rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)
+
+## WARN/ERROR lines (all)
+2026-11-02T01:30:50.176Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=fals
+2026-11-02T01:30:50.178Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enable
+2026-11-02T01:51:14.077Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=fals
+2026-11-02T01:51:14.078Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enable
+2026-11-02T01:53:53.667Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=fals
+2026-11-02T01:53:53.668Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enable
+2026-11-02T01:53:54.730Z  [ntLoopGroup-3-4] c.a.c.h.application.HealthSweepUseCase   : skipping monitor 66df9823-f0d5-47f4-b7e6-b11ae1660947 (e2e1-pod/e2e1-app): 409 CONFLICT "monitor 66df9823-f0d5-47f4-b7e6-b11ae1660947
+2026-11-02T01:57:22.687Z  [ntLoopGroup-3-3] c.a.c.h.application.HealthSweepUseCase   : skipping monitor a74f6f94-e2ab-4120-8465-c88a2ee67d76 (e2e1-slow/slow-svc): 409 CONFLICT "monitor a74f6f94-e2ab-4120-8465-c88a2ee67d7
+2026-11-02T01:59:48.438Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=fals
+2026-11-02T01:59:48.439Z  [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enable

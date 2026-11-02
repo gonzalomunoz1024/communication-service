@@ -1,0 +1,56 @@
+01:51:42.773 before kill: UI indicator = Live probe events = [{"t":"01:51:41.281","k":"open","rs":1},{"t":"01:51:41.295","k":"snapshot","rs":1,"id":"102"}]
+01:51:42.884 SIGTERM backend A pid 13404 
+01:51:48.616 backend A refuses connections since 01:51:43.170 | java process exited after 5732 ms -> PASS graceful shutdown with open streams < 10 s (G-1-23)
+01:51:48.617 stream URLs so far: ["01:51:40.690 req=23.50 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend","01:51:40.698 req=23.50 <- HTTP 200 text/event-stream;charset=UTF-8","01:51:41.272 req=23.51 /v1/feed/stream?tenantId=e2e1-reconnect&clientId=probe","01:51:41.282 req=23.51 <- HTTP 200 text/event-stream;charset=UTF-8","01:51:45.899 req=23.52 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend","01:51:45.904 req=23.52 <- HTTP 502 text/plain","01:51:45.926 req=23.53 /v1/feed/stream?tenantId=e2e1-reconnect&clientId=probe","01:51:45.926 req=23.53 <- HTTP 502 text/plain","01:51:46.904 req=23.54 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend&lastEventId=102","01:51:46.918 req=23.54 <- HTTP 502 text/plain"]
+01:51:53.617 +5s after down: UI indicator = null | probe readyState = 2 | probe events = [{"t":"01:51:41.295","k":"snapshot","rs":1,"id":"102"},{"t":"01:51:42.914","k":"error","rs":0},{"t":"01:51:45.925","k":"error","rs":2}]
+01:52:33.630 +15s after down: UI indicator = null | probe readyState = 2 | probe events = [{"t":"01:51:41.295","k":"snapshot","rs":1,"id":"102"},{"t":"01:51:42.914","k":"error","rs":0},{"t":"01:51:45.925","k":"error","rs":2}]
+01:53:18.637 +30s after down: UI indicator = null | probe readyState = 2 | probe events = [{"t":"01:51:41.295","k":"snapshot","rs":1,"id":"102"},{"t":"01:51:42.914","k":"error","rs":0},{"t":"01:51:45.925","k":"error","rs":2}]
+01:53:48.641 curl via proxy: vices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T01:51:39.601Z","createdAt":"2026-11-02T01:51:39.601Z","updatedAt":"2026-11-02T01:51:39.601Z","version":0,"history":[{"at":"2026-11-02T01:51:39.601Z","actor":"curl","action":"created (ACTIVE)"}]}}  EXIT=0 at 01:51:42.928097054 
+ 01:53:48.650 curl direct: :"2026-11-02T01:51:39.601Z","updatedAt":"2026-11-02T01:51:39.601Z","version":0,"history":[{"at":"2026-11-02T01:51:39.601Z","actor":"curl","action":"created (ACTIVE)"}]}}  EXIT=0 at 01:51:42.917578270
+01:53:53.907 backend A back at 01:53:53.907
+01:53:59.217 +5s after restart: UI indicator = Live | sees new item = true | probe readyState = 2 | probe events = [{"t":"01:51:41.281","k":"open","rs":1},{"t":"01:51:41.295","k":"snapshot","rs":1,"id":"102"},{"t":"01:51:42.914","k":"error","rs":0},{"t":"01:51:45.925","k":"error","rs":2}]
+01:54:32.128 +20s after restart: UI indicator = Live | sees new item = true | probe readyState = 2 | probe events = [{"t":"01:51:41.281","k":"open","rs":1},{"t":"01:51:41.295","k":"snapshot","rs":1,"id":"102"},{"t":"01:51:42.914","k":"error","rs":0},{"t":"01:51:45.925","k":"error","rs":2}]
+01:54:52.144 +40s after restart: UI indicator = Live | sees new item = true | probe readyState = 2 | probe events = [{"t":"01:51:41.281","k":"open","rs":1},{"t":"01:51:41.295","k":"snapshot","rs":1,"id":"102"},{"t":"01:51:42.914","k":"error","rs":0},{"t":"01:51:45.925","k":"error","rs":2}]
+01:54:52.156 curl via proxy: vices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T01:51:39.601Z","createdAt":"2026-11-02T01:51:39.601Z","updatedAt":"2026-11-02T01:51:39.601Z","version":0,"history":[{"at":"2026-11-02T01:51:39.601Z","actor":"curl","action":"created (ACTIVE)"}]}}  EXIT=0 at 01:51:42.928097054 
+ 01:54:52.164 curl direct: vices":[],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T01:51:39.601Z","createdAt":"2026-11-02T01:51:39.601Z","updatedAt":"2026-11-02T01:51:39.601Z","version":0,"history":[{"at":"2026-11-02T01:51:39.601Z","actor":"curl","action":"created (ACTIVE)"}]}}  EXIT=0 at 01:51:42.917578270
+01:54:52.172 "second seq expression" errors in backend A log (iteration-0 bug): ERR 
+01:54:52.181 stream requests the page sent (CDP):
+    01:51:40.690 req=23.50 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:51:40.698 req=23.50 <- HTTP 200 text/event-stream;charset=UTF-8
+    01:51:41.272 req=23.51 /v1/feed/stream?tenantId=e2e1-reconnect&clientId=probe
+    01:51:41.282 req=23.51 <- HTTP 200 text/event-stream;charset=UTF-8
+    01:51:45.899 req=23.52 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:51:45.904 req=23.52 <- HTTP 502 text/plain
+    01:51:45.926 req=23.53 /v1/feed/stream?tenantId=e2e1-reconnect&clientId=probe
+    01:51:45.926 req=23.53 <- HTTP 502 text/plain
+    01:51:46.904 req=23.54 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend&lastEventId=102
+    01:51:46.918 req=23.54 <- HTTP 502 text/plain
+    01:51:48.910 req=23.55 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:51:48.918 req=23.55 <- HTTP 502 text/plain
+    01:51:52.916 req=23.56 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:51:52.920 req=23.56 <- HTTP 502 text/plain
+    01:52:00.920 req=23.57 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:52:00.925 req=23.57 <- HTTP 502 text/plain
+    01:52:16.926 req=23.58 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:52:16.931 req=23.58 <- HTTP 502 text/plain
+    01:52:46.932 req=23.59 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:52:46.941 req=23.59 <- HTTP 502 text/plain
+    01:53:16.946 req=23.60 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:53:16.948 req=23.60 <- HTTP 502 text/plain
+    01:53:46.948 req=23.61 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:53:46.952 req=23.61 <- HTTP 502 text/plain
+    01:54:16.953 req=23.62 /v1/feed/stream?tenantId=e2e1-reconnect&type=OUTAGE&clientId=communication-frontend
+    01:54:16.986 req=23.62 <- HTTP 200 text/event-stream;charset=UTF-8
+01:54:52.182 SSE frames the page received (CDP, last 25):
+    01:51:40.698 req=23.50 snapshot#102 {"seq":102,"type":"SNAPSHOT","at":"2026-11-02T01:51:40.668892216Z","co
+    01:51:41.295 req=23.51 snapshot#102 {"seq":102,"type":"SNAPSHOT","at":"2026-11-02T01:51:41.280492204Z","co
+    01:54:17.011 req=23.62 snapshot#104 {"seq":104,"type":"SNAPSHOT","at":"2026-11-02T01:54:16.974554120Z","co
+    01:54:17.017 req=23.62 snapshot#104 {"seq":104,"type":"SNAPSHOT","at":"2026-11-02T01:54:16.974554120Z","co
+01:54:52.182 backend A access log, stream requests after the restart:
+2026-11-02T01:51:18.781Z  INFO 13404 --- [communication-service] [or-http-epoll-3] c.a.c.config.ClientIdWebFilter           : client=e2e1-verifier GET /v1/feed/stream -> 200 (2502 ms)
+2026-11-02T01:51:33.764Z  INFO 13404 --- [communication-service] [or-http-epoll-4] c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed/stream -> 200 (17902 ms)
+2026-11-02T01:51:42.894Z  INFO 13404 --- [communication-service] [or-http-epoll-4] c.a.c.config.ClientIdWebFilter           : client=e2e1-verifier GET /v1/feed/stream -> 200 (3149 ms)
+2026-11-02T01:51:42.895Z  INFO 13404 --- [communication-service] [or-http-epoll-4] c.a.c.config.ClientIdWebFilter           : client=communication-frontend GET /v1/feed/stream -> 200 (2229 ms)
+2026-11-02T01:51:42.909Z  INFO 13404 --- [communication-service] [or-http-epoll-1] c.a.c.config.ClientIdWebFilter           : client=e2e1-verifier GET /v1/feed/stream -> 200 (3144 ms)
+2026-11-02T01:51:42.918Z  INFO 13404 --- [communication-service] [or-http-epoll-1] c.a.c.config.ClientIdWebFilter           : client=probe GET /v1/feed/stream -> 200 (1643 ms)
+EXIT=0

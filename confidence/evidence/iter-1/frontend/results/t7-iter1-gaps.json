@@ -1,0 +1,68 @@
+[
+  {
+    "feature": "F-55",
+    "name": "G-1-12: submitting an empty form from the bottom of the page focuses the first invalid field (Title) and scrolls it into view; the summary says '3 fields need attention:' with one button per field",
+    "ok": true,
+    "evidence": "{\"scrolledBeforeSubmit\":729,\"focused\":{\"tag\":\"input\",\"id\":\"_r_0_-title\",\"role\":null,\"checked\":null,\"text\":\"\",\"inViewport\":true,\"top\":261,\"innerHeight\":560,\"scrollY\":129},\"summary\":\"3 fields need attention: Title (Title is required), Tenant (Tenant is required), Publisher (Publisher is required).\",\"buttons\":[\"Title\",\"Tenant\",\"Publisher\"]}"
+  },
+  {
+    "feature": "F-55",
+    "name": "G-1-12: a summary button moves focus to its field (Publisher) and brings it into view",
+    "ok": true,
+    "evidence": "{\"tag\":\"input\",\"id\":\"_r_0_-publisher\",\"role\":null,\"checked\":null,\"text\":\"\",\"inViewport\":true,\"top\":261,\"innerHeight\":560,\"scrollY\":681}"
+  },
+  {
+    "feature": "F-55",
+    "name": "G-1-12: when the severity is the only problem, focus lands on the selected segment of the Severity radiogroup; the summary says 'One field needs attention: Severity'",
+    "ok": true,
+    "evidence": "{\"focused\":{\"tag\":\"button\",\"id\":null,\"role\":\"radio\",\"checked\":\"true\",\"text\":\"Info\",\"inViewport\":true,\"top\":256,\"innerHeight\":560,\"scrollY\":62},\"summary\":\"One field needs attention: Severity (Outages need MINOR or higher).\"}"
+  },
+  {
+    "feature": "F-55",
+    "name": "G-1-12: MAINTENANCE without an end → the Timing panel opens and focus lands on the Ends input, scrolled into view",
+    "ok": true,
+    "evidence": "{\"tag\":\"input\",\"id\":\"_r_0_-ends\",\"role\":null,\"checked\":null,\"text\":\"\",\"inViewport\":true,\"top\":337,\"innerHeight\":560,\"scrollY\":889}"
+  },
+  {
+    "feature": "F-55",
+    "name": "G-1-12: a bad incident number on an otherwise valid CHANGE → focus on the ServiceNow incident input",
+    "ok": true,
+    "evidence": "{\"tag\":\"input\",\"id\":\"_r_0_-ticket\",\"role\":null,\"checked\":null,\"text\":\"\",\"inViewport\":true,\"top\":261,\"innerHeight\":560,\"scrollY\":511}"
+  },
+  {
+    "feature": "F-55",
+    "name": "G-1-12: nothing was sent while invalid",
+    "ok": true,
+    "evidence": "POSTs=0"
+  },
+  {
+    "feature": "F-56",
+    "name": "G-1-13: 'View in feed' for an INCIDENT published to another tenant lands on that tenant's feed filtered to Incident, with the notice listed",
+    "ok": true,
+    "evidence": "{\"headerTenant\":\"fe1-other-mvylsnmx\",\"typeValue\":\"INCIDENT\",\"listed\":1,\"lastFeedQuery\":\"?tenantId=fe1-other-mvylsnmx&type=INCIDENT&page=0&size=100\"}"
+  },
+  {
+    "feature": "F-56",
+    "name": "G-1-13: 'View in feed' for a scheduled MAINTENANCE filters to Maintenance and shows it under Upcoming",
+    "ok": true,
+    "evidence": "{\"typeM\":\"MAINTENANCE\",\"underUpcoming\":1}"
+  },
+  {
+    "feature": "F-56",
+    "name": "G-1-13: 'View in feed' for a CHANGE filters to Change; the filter can still be changed by hand afterwards",
+    "ok": true,
+    "evidence": "{\"typeC\":\"CHANGE\",\"afterManualChange\":\"?tenantId=fe1-other-mvylsnmx&type=OUTAGE&page=0&size=100\"}"
+  },
+  {
+    "feature": "F-53",
+    "name": "reference screenshots taken (light); no console/page errors while rendering both tabs",
+    "ok": true,
+    "evidence": "{\"errors\":[],\"console\":[]}"
+  },
+  {
+    "feature": "F-53",
+    "name": "reference screenshots taken (dark); no console/page errors while rendering both tabs",
+    "ok": true,
+    "evidence": "{\"errors\":[],\"console\":[]}"
+  }
+]

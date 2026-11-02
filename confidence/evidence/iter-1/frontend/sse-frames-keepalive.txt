@@ -1,0 +1,13 @@
+# curl -N --max-time 17 http://127.0.0.1:8080/v1/feed/stream?tenantId=fe1-keepalive-1793584665 (shared iteration-1 backend); frame names, ids and the keepalive comment
+:connected
+
+id:1265
+event:snapshot
+data:{"seq":1265,"type":"SNAPSHOT","at":"2026-11-02T01:57:45.815883950Z","communication":{"id":"ff3e8845-c2f0-4e89-a15a-7ca90b058843","tenantId":"fe1-keepalive-1793584665","publisher":"fe-seed","type"
+
+id:1266
+event:created
+data:{"seq":1266,"type":"CREATED","at":"2026-11-02T01:57:45.803Z","communication":{"id":"ff3e8845-c2f0-4e89-a15a-7ca90b058843","tenantId":"fe1-keepalive-1793584665","publisher":"fe-seed","type":"OUTAG
+
+:keepalive
+

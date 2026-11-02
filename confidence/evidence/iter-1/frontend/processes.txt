@@ -1,0 +1,11 @@
+# private processes used by the Frontend Verifier (iteration 1), listed before shutdown
+ 4817       21:26 npm run dev --port 3150 --host 127.0.0.1 --strictPort
+ 4818       21:26 npm run dev --port 3110 --host 127.0.0.1 --strictPort
+ 4887       21:25 sh -c vite --port 3110 --host 127.0.0.1 --strictPort
+ 4890       21:25 node /home/claude/communication-service/frontend/node_modules/.bin/vite --port 3110 --host 127.0.0.1 --strictPort
+ 4896       21:25 sh -c vite --port 3150 --host 127.0.0.1 --strictPort
+ 4897       21:25 node /home/claude/communication-service/frontend/node_modules/.bin/vite --port 3150 --host 127.0.0.1 --strictPort
+12648       09:18 python3 -I -m http.server 3127 --bind 127.0.0.1 -d /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend-iter1/dist-xorigin
+12650       09:18 node rp.js 3128 1 /home/claude/communication-service/frontend/dist
+19615       03:49 node rp.js 3129 19150 /home/claude/communication-service/frontend/dist
+20225       03:05 java -jar /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter1.jar --server.port=19150 --spring.data.mongodb.u

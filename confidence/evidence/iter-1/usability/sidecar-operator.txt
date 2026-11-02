@@ -1,0 +1,223 @@
+# Sidecar operator walk, iteration 1 (platform engineer with sidecar/README.md). 2026-11-02T01:57:38Z, code 0e14838
+
+## S1 Kustomize path as shipped: kustomize build deploy/kustomize/example (copied to scratch, untouched)
+--- example/kustomization.yaml
+# Example overlay: an existing app plus the sidecar component and the ConfigMap it reads.
+# For the native sidecar form (OpenShift 4.16+) point components at ../component-native instead.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+
+components:
+  - ../component
+
+configMapGenerator:
+  - name: cs-health-sidecar
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - CS_ENDPOINT=https://communication.apps.example.com
+      - CS_TENANT=retail
+      - CS_CLUSTER=ocp-east
+rc=0 lines=87
+  3:  CS_CLUSTER: ocp-east
+  4:  CS_ENDPOINT: https://communication.apps.example.com
+  5:  CS_TENANT: retail
+  27:      containers:
+  28:      - image: registry.example.com/retail/payments-api:1.4.2
+  49:        - name: CS_SERVICE
+  53:        - name: CS_VERSION
+  58:        - configMapRef:
+  60:        image: registry.example.com/platform/health-sidecar:1.0.0
+  80:          allowPrivilegeEscalation: false
+  85:          runAsNonRoot: true
+  86:          seccompProfile:
+
+## S2 Native sidecar form (README: deploy/kustomize/component-native) on the same example
+1:# Example overlay: an existing app plus the sidecar component and the ConfigMap it reads.
+2:# For the native sidecar form (OpenShift 4.16+) point components at ../component-native instead.
+9:components:
+10:  - ../component-native
+rc=0 lines=89
+  27:      containers:
+  28:      - image: registry.example.com/retail/payments-api:1.4.2
+  36:      initContainers:
+  61:        image: registry.example.com/platform/health-sidecar:1.0.0
+  80:        restartPolicy: Always
+
+## S3 README 'Image' section: the images: override snippet appended literally to the example kustomization
+  28:      - image: registry.example.com/retail/payments-api:1.4.2
+  60:        image: registry.apps.example.com/platform/health-sidecar:1.0.0
+
+## S4 helm template on the library chart alone (README says it fails by design)
+  Error: library charts are not installable
+
+## S5 Consuming chart exactly as the README describes: dependency + include + csHealthSidecar.{endpoint,tenant,image.repository,image.tag}
+--- library chart values.yaml
+  # Reference values. A library chart's values are not merged into the consuming chart, so copy
+  # the keys you want to change under csHealthSidecar: in your own values.yaml; every key has
+  # the same default in the template.
+  csHealthSidecar:
+    image:
+      repository: registry.example.com/platform/health-sidecar
+      tag: 1.0.0
+      pullPolicy: IfNotPresent
+    # Required: where reports go and which tenant they belong to.
+    endpoint: https://communication.apps.example.com
+    tenant: retail
+    cluster: ""
+    # Optional: defaults to the app.kubernetes.io/name label, then the workload name.
+    service: ""
+    clientId: ""
+    # Optional probe pinning (leave empty for discovery): auto|actuator|http|tcp, port, path, scheme.
+    probe: auto
+    port: ""
+    path: ""
+    scheme: ""
+    interval: 15s
+    heartbeat: 30s
+    # Extra environment variables, e.g. CS_CA_FILE with a mounted internal CA.
+    extraEnv: []
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 50m
+        memory: 32Mi
+library chart: cs-health-sidecar 1.0.0
+  Saving 1 charts
+  Deleting outdated charts
+helm template rc=0 
+  19:        - name: app
+  20:          image: registry.apps.example.com/team/my-app:1.2.3
+  23:        - name: health-sidecar
+  24:          image: registry.apps.example.com/platform/health-sidecar:1.0.0
+  27:            - name: CS_ENDPOINT
+  28:              value: "https://communication.apps.example.com"
+  29:            - name: CS_TENANT
+  30:              value: "ux1"
+  32:              value: "15s"
+  34:              value: "30s"
+  74:            runAsNonRoot: true
+  
+  1 chart(s) linted, 0 chart(s) failed
+--- native form: include "cs-health-sidecar.initContainer"
+helm template rc=0 
+  18:      initContainers:
+  19:        - restartPolicy: Always
+  21:          image: registry.apps.example.com/platform/health-sidecar:1.0.0
+  76:      containers:
+  77:        - name: app
+  78:          image: registry.apps.example.com/team/my-app:1.2.3
+
+## S6 Running the image with missing or wrong configuration (README: CS_ENDPOINT and CS_TENANT required)
+fakeapp:ci cmd=[] ports=map[8080/tcp:{}]
+--- docker run --rm  health-sidecar:ci
+  {"time":"2026-11-02T01:57:39.383390488Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+  rc=2
+--- docker run --rm -e CS_TENANT=ux1 health-sidecar:ci
+  {"time":"2026-11-02T01:57:39.752464356Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)"}
+  rc=2
+--- docker run --rm -e CS_ENDPOINT=http://127.0.0.1:9 health-sidecar:ci
+  {"time":"2026-11-02T01:57:40.098302387Z","level":"ERROR","msg":"invalid configuration","error":"CS_TENANT is required"}
+  rc=2
+--- docker run --rm -e CS_ENDPOINT=communication.apps.example.com -e CS_TENANT=ux1 health-sidecar:ci
+  {"time":"2026-11-02T01:57:40.478231332Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+  rc=2
+--- docker run --rm -e CS_ENDPOINT=http://127.0.0.1:9 -e CS_TENANT=ux1 -e CS_PROBE=tcp health-sidecar:ci
+  {"time":"2026-11-02T01:57:40.860007357Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT is required when CS_PROBE=tcp"}
+  rc=2
+
+## S7 Wrong endpoint (connection refused) next to a fake app, CS_STARTUP_GRACE=10s: logs and /status after 25 s
+--- oc logs <pod> -c health-sidecar  (docker logs here)
+  {"time":"2026-11-02T01:57:41.54324635Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter1","service":"demo","tenant":"ux1","instance":"7b3696a91c2a","endpoint":"http://127.0.0.1:9","probe":"auto"}
+  {"time":"2026-11-02T01:57:41.546337975Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+  {"time":"2026-11-02T01:57:41.546723409Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9/v1/health/reports: Post \"http://127.0.0.1:9/v1/health/reports\": dial tcp 127.0.0.1:9: connect: connection refused","in":"1s"}
+  {"time":"2026-11-02T01:57:58.903035744Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9/v1/health/reports: Post \"http://127.0.0.1:9/v1/health/reports\": dial tcp 127.0.0.1:9: connect: connection refused","in":"2s"}
+--- curl -s localhost:9465/status  (port-forwarded to 19475 here)
+  {
+   "version": "ci-iter1",
+   "service": "demo",
+   "tenant": "ux1",
+   "instance": "7b3696a91c2a",
+   "target": "http://127.0.0.1:8080/actuator/health",
+   "lastTarget": "http://127.0.0.1:8080/actuator/health",
+   "upSeen": true,
+   "lastReport": {
+    "tenantId": "ux1",
+    "service": "demo",
+    "status": "UP",
+    "components": {
+     "db": {
+      "details": {
+       "database": "PostgreSQL"
+      },
+      "status": "UP"
+     },
+     "ping": {
+      "status": "UP"
+     }
+    },
+    "observedAt": "2026-11-02T01:57:58.901Z",
+    "publisher": "health-sidecar",
+    "instance": {
+     "id": "7b3696a91c2a",
+     "sidecar": "ci-iter1"
+    }
+   },
+   "sendError": "post http://127.0.0.1:9/v1/health/reports: Post \"http://127.0.0.1:9/v1/health/reports\": dial tcp 127.0.0.1:9: connect: connection refused",
+   "reportsSent": 0
+  }
+
+## S8 Endpoint whose host does not resolve
+  {"time":"2026-11-02T01:58:06.879411976Z","level":"WARN","msg":"report failed; will retry","error":"post https://communication.apps.example.invalid/v1/health/reports: Post \"https://communication.apps.example.invalid/v1/health/reports\": dial tcp: lookup communication.apps.example.invalid on 8.8.8.8:53: no such host","in":"1s"}
+  {"target":"http://127.0.0.1:8080/actuator/health","upSeen":true,"sendError":"post https://communication.apps.example.invalid/v1/health/reports: Post \"https://communication.apps.example.invalid/v1/health/reports\": dial tcp: lookup communication.apps.example.invalid on 8.8.8.8:53: no such host","reportsSent":0}
+
+## S9 Right endpoint (the shared service on the host) but a tenant nobody reads: does the engineer see anything?
+docker: Error response from daemon: conflicting options: custom host-to-IP mapping and the network mode
+
+Run 'docker run --help' for more information
+  Error response from daemon: No such container: ux1-sc
+<anonymous_script>:1
+
+
+SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at Socket.<anonymous> ([eval]:1:70)
+    at Socket.emit (node:events:531:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+
+Node.js v22.23.4
+--- README debugging, service side: curl -s -H X-Client-Id "$CS_ENDPOINT/v1/health/monitors?tenantId=<tenant>"
+  []
+
+--- …/v1/health/monitors/<monitorId>/instances with monitorId=
+  {"error":"no such endpoint: GET /v1/health/monitors//instances (the API is documented at /swagger-ui.html)"}
+
+cleaned up containers
+
+## S9 (redo) Right endpoint (the shared service on the host via the bridge gateway) but a tenant nobody reads: what does the engineer see?
+gateway=172.17.0.1
+  {"time":"2026-11-02T01:59:07.027037932Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter1","service":"demo","tenant":"ux1-sidecar","instance":"2115129dc757","endpoint":"http://172.17.0.1:8080","probe":"auto"}
+  {"time":"2026-11-02T01:59:07.02967291Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+  {"time":"2026-11-02T01:59:07.042820803Z","level":"INFO","msg":"reported","status":"UP","message":""}
+  {"target":"http://127.0.0.1:8080/actuator/health","upSeen":true,"reportsSent":1,"lastSendAt":"2026-11-02T01:59:07.027141667Z","lastReportStatus":"UP"}
+--- README debugging, service side: curl -s -H X-Client-Id "$CS_ENDPOINT/v1/health/monitors?tenantId=<tenant>"
+  [{"id":"272f6e39-67ee-4444-9023-d6682ac60401","tenantId":"ux1-sidecar","service":"demo","policy":{"publisher":"health-sidecar","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":90,"minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02T01:59:07.034Z","lastSummary":"UP (1 of 1 pod UP)","unhealthyStreak":0,"healthyStreak":1,"incidents":0},"createdAt":"2026-11-02T01:59:07.036Z","updatedAt":"2026-11-02T01:59:07.034Z","version":1}]
+
+--- …/v1/health/monitors/<monitorId>/instances with monitorId=272f6e39-67ee-4444-9023-d6682ac60401
+  [{"monitorId":"272f6e39-67ee-4444-9023-d6682ac60401","instanceId":"2115129dc757","status":"UP","components":[],"sidecar":"ci-iter1","left":false,"lastSeenAt":"2026-11-02T01:59:07.034Z"}]
+
+--- the same with the placeholder left unexplained: a wrong id
+  {"error":"monitor not-an-id not found"}
+
+--- SIGTERM: leaving report
+  {"time":"2026-11-02T01:59:27.260637062Z","level":"INFO","msg":"leaving report sent"}
+  {"time":"2026-11-02T01:59:27.260849964Z","level":"INFO","msg":"health sidecar stopped"}
+  [{"monitorId":"272f6e39-67ee-4444-9023-d6682ac60401","instanceId":"2115129dc757","status":"UP","components":[],"message":"instance shutting down","sidecar":"ci-iter1","left":true,"lastSeenAt":"2026-11-02T01:59:27.253Z"}]
+
+cleaned up containers

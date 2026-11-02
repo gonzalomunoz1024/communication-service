@@ -1,0 +1,8 @@
+# OpenAPI contract (G-1-22 / F-29)
+securitySchemes: {"X-Client-Id": {"type": "apiKey", "description": "Click Authorize and paste the repository name of the system you are calling from (e.g. vmforge-tools). Required on every /v1 request; identification only, nothing is verified. EventSource clients send ?clientId= instead.", "name": "X-Client-Id", "in": "header"}}
+global security: [{'X-Client-Id': []}]
+paths 16 operations 20
+operations without 401 documented: []
+['/v1/admin/communications', '/v1/admin/communications/{id}', '/v1/admin/communications/{id}/retire', '/v1/admin/tenants', '/v1/communications', '/v1/communications/{id}', '/v1/communications/{id}/publish', '/v1/communications/{id}/retire', '/v1/feed', '/v1/feed/stream', '/v1/feed/{id}', '/v1/health/monitors', '/v1/health/monitors/{id}', '/v1/health/monitors/{id}/instances', '/v1/health/monitors/{id}/probe', '/v1/health/reports']
+swagger-ui 302
+swagger-ui index 200

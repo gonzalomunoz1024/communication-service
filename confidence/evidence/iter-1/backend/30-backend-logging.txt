@@ -1,0 +1,28 @@
+# Access log (G-1-22): INFO lines per request in the shared backend log (iteration-1 jar)
+643
+2026-11-02T01:05:32.328Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-3] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (202 ms)
+2026-11-02T01:05:49.512Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-3] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (46 ms)
+2026-11-02T01:06:22.892Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (23 ms)
+2026-11-02T01:06:55.826Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-8] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (32 ms)
+2026-11-02T01:07:29.645Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (17 ms)
+2026-11-02T01:08:04.019Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-4] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (21 ms)
+2026-11-02T01:08:35.288Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-2] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (17 ms)
+2026-11-02T01:09:08.731Z  INFO 21053 --- [communication-service] [ntLoopGroup-3-2] c.a.c.config.ClientIdWebFilter           : client=fakeapp-repo POST /v1/health/reports -> 202 (15 ms)
+
+# levels
+    681  INFO 
+      3  WARN 
+
+# WARN/ERROR lines (first 15)
+2026-11-02T01:05:17.966Z  WARN 21053 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false
+2026-11-02T01:05:17.971Z  WARN 21053 --- [communication-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled
+2026-11-02T01:10:19.576Z  WARN 21053 --- [communication-service] [ntLoopGroup-3-3] c.a.c.h.application.HealthSweepUseCase   : 19 of 20 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+
+## Log levels in the shared :8080 log (corrected section, 2026-11-02T01:47:00Z: the earlier 'levels' grep matched nothing; this counts column 2 of the Spring Boot line format)
+    733 INFO
+      3 WARN
+## WARN/ERROR messages (deduplicated, top 10)
+      1 WARN o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+      1 WARN o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+      1 WARN c.a.c.h.application.HealthSweepUseCase   : 19 of 20 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+## lines in log: 747

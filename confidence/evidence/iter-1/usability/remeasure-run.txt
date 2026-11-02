@@ -1,0 +1,8 @@
+FATAL locator.fill: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByLabel(/^Starts/)[22m
+
+    at /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/usability/iter1/remeasure.js:45:36 {
+  log: [ '  - waiting for getByLabel(/^Starts/)' ],
+  name: 'TimeoutError'
+}

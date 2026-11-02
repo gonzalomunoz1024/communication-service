@@ -37,3 +37,11 @@ The shared stack now runs the fixed code: backend jar built from the merged bran
 probes at `/actuator/health/{liveness,readiness}`), frontend dev server restarted on the fixed `frontend/` (new
 `vite.config.ts` proxy drop handler), sidecar image `health-sidecar:ci` rebuilt (`version=ci-iter1`) and the pod
 `app`+`sidecar` recreated. Same ports and container names as before. Jar copy: `/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter1.jar`.
+
+## E2E verifier private stack (iteration 1, 2026-11-02 01:30–02:02Z, torn down afterwards)
+Backend A `:19501` and B `:19502` from `scratchpad/communication-service-iter1.jar` on Mongo db `e2e1` (sweep 2 s,
+health sweep 1 s, stale grace 0), Vite `:3501` → A, emulated pod `e2e1-netns` (host 19601→8080, 19602→9465) +
+`e2e1-app` (`fakeapp:ci`) + `e2e1-sidecar` (`health-sidecar:ci` = `ci-iter1`, UID 1000660000, read-only, cap-drop ALL,
+`CS_INTERVAL=3s CS_HEARTBEAT=10s CS_RETRY_DELAY=1s CS_STARTUP_GRACE=30s`, `POD_NAME=e2e1-app-6d4f8b7c9-ab12c`).
+Temporary: `e2e1-pod2/app2/sidecar2` (19611–19613), `e2e1-sidecar3` (capture) and a stub on `:19620`. Scripts and
+outputs: `confidence/evidence/iter-1/e2e/`.

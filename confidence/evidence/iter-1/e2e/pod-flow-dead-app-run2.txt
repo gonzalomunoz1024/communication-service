@@ -1,0 +1,15 @@
+01:50:02.546 === F-88 / G-1-2 on the main pod: the app process dies while the sidecar keeps running (e2e1-netns)
+01:50:04.283 docker stop -t 1 e2e1-app -> e2e1-app
+01:50:08.324 F-88 PASS sidecar reports DOWN (not UNKNOWN) as soon as the app process is gone (G-1-2) :: after 4.1s lastReport.status=DOWN message="GET http://127.0.0.1:8080/actuator/health: connection refused" target="" lastTarget=http://127.0.0.1:8080/actuator/health
+01:50:12.847 F-88 PASS with the target gone it keeps reporting DOWN "app is not listening (last target …)" and /status shows target empty + lastTarget :: after 8.7s message="app is not listening (last target http://127.0.0.1:8080/actuator/health)" target="" lastTarget=http://127.0.0.1:8080/actuator/health upSeen=true
+01:50:21.920 F-88 PASS backend opens an OUTAGE for the dead app (failureThreshold 2: change report + next heartbeat) naming the pod :: after 17.7s title="e2e1-app is down" severity=MAJOR body="Automated health check reported **DOWN** at 2026-11-02T01:50:21.000231799Z (rolled up from the service's pods). |  | 0 of 1 pod UP (DOWN: e2e1-app-6d4f8b7c9-ab12c) |  | This notice is managed automatically and is retired once the service reports healthy again."
+01:50:21.927 F-91 PASS the OUTAGE for the dead app appears live in the UI feed :: 
+01:50:22.012 F-88 PASS monitor DOWN with the open notice; the pod record says DOWN :: "DOWN (0 of 1 pod UP (DOWN: e2e1-app-6d4f8b7c9-ab12c))" pod={"monitorId":"66df9823-f0d5-47f4-b7e6-b11ae1660947","instanceId":"e2e1-app-6d4f8b7c9-ab12c","status":"DOWN","components":[],"message":"app is not listening (las
+01:50:22.187 docker start e2e1-app -> e2e1-app
+01:50:37.292 F-88 PASS app back -> rediscovered on the same target, UP, notice retired "recovered" :: after 15.3s last="ACTIVE -> RETIRED: recovered: UP (1 of 1 pod UP)" target=http://127.0.0.1:8080/actuator/health lastReport=UP
+01:50:37.298 F-91 PASS UI feed returns to All clear :: 
+01:50:37.328 F-89 PASS sidecar log: "health target gone", reported DOWN, "health target found" again :: 01:50:07 health target gone; will rediscover | 01:50:07 reported DOWN | 01:50:24 health target found UP | 01:50:24 reported UP
+01:50:37.328 F-91 PASS no browser console errors during the dead-app flow :: 
+
+SUMMARY: 9 checks, 9 pass, 0 fail
+EXIT=0

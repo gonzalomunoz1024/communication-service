@@ -1,0 +1,39 @@
+== docker build from sidecar/Dockerfile (UBI registry blocked here: documented build args substitute the bases)
+#1 DONE 0.0s
+#2 [internal] load metadata for docker.io/local/go-toolset:1.24
+#2 DONE 0.2s
+#3 [internal] load metadata for gcr.io/distroless/static-debian12:latest
+#3 DONE 0.2s
+#4 [internal] load .dockerignore
+#4 DONE 0.0s
+#5 [stage-1 1/3] FROM gcr.io/distroless/static-debian12:latest@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2
+#5 DONE 0.0s
+#6 [build 1/6] FROM docker.io/local/go-toolset:1.24@sha256:e220aa94f14dfd5edf982c7ab9694874bcb4b3998fd3c56e0e1ed6895ad58236
+#6 DONE 0.0s
+#7 [internal] load build context
+#7 DONE 0.0s
+#8 [build 3/6] COPY --chown=1001:0 go.mod ./
+#9 [build 4/6] COPY --chown=1001:0 cmd ./cmd
+#10 [build 2/6] WORKDIR /opt/app-root/src
+#11 [build 5/6] COPY --chown=1001:0 internal ./internal
+#12 [build 6/6] RUN go build -ldflags="-s -w -X main.version=1.0.0-sc1" -o /tmp/health-sidecar ./cmd/health-sidecar
+#12 DONE 32.9s
+#13 [stage-1 2/3] COPY --from=build /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt
+#14 [stage-1 3/3] COPY --from=build /tmp/health-sidecar /usr/local/bin/health-sidecar
+#14 DONE 0.1s
+#15 naming to docker.io/library/health-sidecar:sc1
+#15 naming to docker.io/library/health-sidecar:sc1 done
+#15 DONE 0.7s
+build rc=0
+== inspect
+User=1001 Entrypoint=[/usr/local/bin/health-sidecar] Exposed=map[9465/tcp:{}] Labels=map[org.opencontainers.image.description:Probes the app in its pod and reports health to the communication service org.opencontainers.image.source:https://github.com/gonzalomunoz1024/communication-service org.opencontainers.image.title:health-sidecar]
+size=16.2MB
+== binary flags
+	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+	build	-trimpath=true
+	build	CGO_ENABLED=0
+binary bytes=6742200
+== ca bundle present in image
+{"time":"2026-11-02T01:31:57.542458986Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+150

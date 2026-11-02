@@ -1,0 +1,38 @@
+[
+  {
+    "feature": "F-61",
+    "name": "(a) after the stream is cut the badge shows 'Reconnecting', the browser's own retry (≈3 s) carries Last-Event-ID=<last id seen> (seen on the wire by CDP and by the proxy), and the badge returns to Live",
+    "ok": true,
+    "evidence": "{\"lastIdBefore\":15,\"wireHeaders\":[{\"at\":1793584763161,\"url\":\"/v1/feed/stream?tenantId=fe1-replay-mvym21s3&clientId=communication-frontend\",\"lastEventId\":\"15\"}],\"requests\":[{\"at\":1793584763161,\"q\":null,\"status\":200}],\"badges\":[\"Reconnecting\",\"Live\"]}"
+  },
+  {
+    "feature": "F-20",
+    "name": "(a) the service replays the frame missed during the drop ('created', id > last id) with no snapshot frames, and the card appears",
+    "ok": true,
+    "evidence": "{\"lastIdBefore\":15,\"frames\":[\"created#16 missed during drop 1\"]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "(b) a 502 to the browser's retry closes the EventSource; the client reopens with ?lastEventId=<last id> after ~1 s (badge 'Reconnecting (1)'), then Live",
+    "ok": true,
+    "evidence": "{\"lastIdBefore\":16,\"requests\":[{\"at\":1793584767293,\"q\":null,\"status\":502},{\"at\":1793584768296,\"q\":\"16\",\"status\":200}],\"wireHeaders\":[{\"at\":1793584767293,\"url\":\"/v1/feed/stream?tenantId=fe1-replay-mvym21s3&clientId=communication-frontend\",\"lastEventId\":\"16\"},{\"at\":1793584768296,\"url\":\"/v1/feed/stream?tenantId=fe1-replay-mvym21s3&clientId=communication-frontend&lastEventId=16\",\"lastEventId\":null}],\"badges\":[\"Reconnecting\",\"Reconnecting (1)\",\"Live\"]}"
+  },
+  {
+    "feature": "F-20",
+    "name": "(b) ?lastEventId= replays the missed frame (created, id > last id) with no snapshot frames",
+    "ok": true,
+    "evidence": "{\"lastIdBefore\":16,\"frames\":[\"created#17 missed during drop 2\"]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "after each recovery the list is reloaded exactly once (useOutageFeed reloads when the stream comes back) and then stays quiet (no reload loop in the 4 s idle window)",
+    "ok": true,
+    "evidence": "{\"listLoadsTotal\":5,\"afterRecoveryA\":1,\"afterRecoveryB\":1,\"inIdleWindow\":0}"
+  },
+  {
+    "feature": "F-61",
+    "name": "no page errors",
+    "ok": true,
+    "evidence": "{\"pageErrors\":[]}"
+  }
+]

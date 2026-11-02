@@ -1,0 +1,49 @@
+== /status key set and F-82 fallback (host binary, CS_SERVICE explicitly empty like a Downward API fieldRef to a missing label)
+  keys: ['instance', 'lastReport', 'lastTarget', 'reportsSent', 'sendError', 'service', 'target', 'tenant', 'upSeen', 'version']
+  service='payments-api' instance='payments-api-7f9c6d5b4-x2k4q' lastSendAt=None reportsSent=0
+  lastReport keys: ['instance', 'message', 'observedAt', 'publisher', 'service', 'status', 'tenantId']
+{"time":"2026-11-02T01:58:05.452929138Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-sc1","service":"payments-api","tenant":"t","instance":"payments-api-7f9c6d5b4-x2k4q","endpoint":"http://127.0.0.1:1","probe":"auto"}
+  README /status table fields:  target lastTarget upSeen lastReport lastSendAt, reportsSent sendError 
+
+== go test -cover (per package)
+  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar		coverage: 0.0% of statements
+  ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	2.154s	coverage: [no statements]
+  ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.039s	coverage: 89.4% of statements
+  ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.003s	coverage: 88.4% of statements
+  ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.007s	coverage: 92.3% of statements
+  ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.424s	coverage: 88.7% of statements
+  ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.020s	coverage: 80.0% of statements
+== F-73: is there an agent test with a NON-zero RetryDelay?
+343:	cfg.RetryDelay = 2 * time.Second
+382:		if d != cfg.RetryDelay {
+383:			t.Errorf("slept %v, want the retry delay %v", d, cfg.RetryDelay)
+403:	cfg.RetryDelay = 2 * time.Second
+== t.Skip sites in the sidecar tests:
+./deploy/deploy_test.go:20:		t.Skip("kustomize not on PATH")
+
+== sidecar changes since the iteration-0 base (191a0c5): commits and files
+5a38919 Fix G-1-19: document CS_PUBLISHER, tenants, the image and debugging; align the manual snippet
+ccecee8 Fix G-1-18: keep existing init containers in the native sidecar form
+0fd51b6 Fix G-1-2: report a vanished app as DOWN, not UNKNOWN
+ sidecar/README.md                                  |  98 ++++++-
+ sidecar/deploy/deploy_test.go                      | 281 +++++++++++++++++++++
+ .../component-native/add-native-sidecar.yaml       |  66 +++++
+ .../kustomize/component-native/kustomization.yaml  |  15 ++
+ .../kustomize/component/add-native-sidecar.yaml    |  61 -----
+ .../deploy/kustomize/component/add-sidecar.yaml    |   2 +-
+ .../deploy/kustomize/example/kustomization.yaml    |   1 +
+ sidecar/deploy/manual/deployment.yaml              |   2 +
+ .../testdata/native-with-init/kustomization.yaml   |  18 ++
+ .../testdata/native-with-init/workloads.yaml       |  53 ++++
+ sidecar/internal/agent/agent.go                    |  97 +++++--
+ sidecar/internal/agent/agent_test.go               | 102 ++++++++
+ sidecar/internal/config/docs_test.go               |  72 ++++++
+ 13 files changed, 769 insertions(+), 99 deletions(-)
+  test lines removed (diff '-' lines in *_test.go, excluding headers): 0
+
+== working tree: only my report/evidence files should be new (git status, sidecar + confidence):
+?? confidence/evidence/iter-1/sidecar/
+
+== /status of a sidecar that has sent reports (soak1, 02:09): lastSendAt present once reportsSent > 0
+  keys: ['instance', 'lastReport', 'lastSendAt', 'lastTarget', 'reportsSent', 'service', 'target', 'tenant', 'upSeen', 'version']
+  lastSendAt='2026-11-02T02:10:26.097621984Z' reportsSent=333
