@@ -79,7 +79,7 @@ run in progress and the workflow token is read-only.
 |---|---|---|
 | `backend` | Temurin 21, `./gradlew check` ([Build gates](#build-gates)); `build/reports/**` is kept as the `backend-reports` artifact; the CycloneDX SBOM is scanned with `anchore/scan-action` | a gate fails, or a runtime dependency has a known vulnerability rated high or critical |
 | `frontend` | Node 22, in `frontend/`: `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm audit --omit=dev --audit-level=high` | lint, types, tests or the production build fail, or a shipped dependency has a high advisory |
-| `sidecar` | Go from `sidecar/go.mod` plus kustomize, helm and kubeconform, in `sidecar/`: `go vet ./...`, `CI=true go test ./...` (the manifest tests fail instead of skipping when a tool is missing), `govulncheck ./...`, `docker build` of the image | vet, a test, a known Go vulnerability or the image build fails |
+| `sidecar` | Go from `sidecar/go.mod` plus kustomize, helm and kubeconform, in `sidecar/`: `gofmt -l .`, `go vet ./...`, `CI=true go test -race ./...` (the manifest tests fail instead of skipping when a tool is missing), `govulncheck ./...` (pinned, v1.9.0), `docker build` of the image | a file is not gofmt-formatted, vet, a test or the race detector fails, a known Go vulnerability, or the image build fails |
 
 Every step is a plain command a developer can run locally; CI configures nothing a laptop
 would not.

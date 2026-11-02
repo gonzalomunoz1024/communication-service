@@ -95,10 +95,21 @@ jobs:
           curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
             | sudo tar -xz -C /usr/local/bin kubeconform
           kubeconform -v
+      # gofmt -l lists every file whose formatting differs from gofmt's; any listed file fails the job
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt -l lists files that are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
       - run: go vet ./...
-      # CI=true makes the deploy tests fail instead of skip when kustomize, helm or kubeconform is missing
-      - run: CI=true go test ./...
+      # CI=true makes the deploy tests fail instead of skip when kustomize, helm or kubeconform is
+      # missing; -race runs every test under the race detector
+      - run: CI=true go test -race ./...
+      # pinned like the other tools (v1.9.0 needs Go 1.26 or later; go.mod asks for 1.27.3)
       - name: govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: Build the image
         run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
