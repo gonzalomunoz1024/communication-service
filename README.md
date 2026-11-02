@@ -199,7 +199,7 @@ switches the check off for local experiments.
 | POST | `/v1/health/monitors` | register; 201 + `Location: /v1/health/monitors/<monitorId>` (the `id` in the body); with `url` the service is probed (pull), without it is push-only; 409 if (tenantId, service) exists |
 | GET | `/v1/health/monitors?tenantId=…` | monitors with live state (streaks, open notice) |
 | GET | `/v1/health/monitors/{id}` | one monitor; 404 |
-| POST | `/v1/health/monitors/{id}/probe` | probe now instead of waiting for the interval; 409 for push-only |
+| POST | `/v1/health/monitors/{id}/probe` | probe now instead of waiting for the interval; 409 for push-only; a collision with the scheduler's own probe of the monitor is applied again (up to 3 attempts) before a 409 `modified concurrently` is returned |
 | DELETE | `/v1/health/monitors/{id}` | 204; retires any notice the monitor has open |
 | POST | `/v1/health/reports` | push a health report; first contact auto-registers a push-only monitor; 202 |
 | GET | `/v1/health/monitors/{id}/instances` | the pods that report for a monitor (last status, last seen, left cleanly or not); 404 |

@@ -203,6 +203,52 @@ class HealthMonitorUseCaseTest {
         StepVerifier.create(useCase.probeNow("m3")).expectNext(probed).verifyComplete();
     }
 
+    private static HealthMonitor probedMonitor(long version) {
+        HealthMonitor created = HealthMonitor.create("m3", "vmforge", "vm-api",
+                "http://vm-api/actuator/health", PROPERTIES.defaults().asPolicy(), NOW);
+        return new HealthMonitor(created.id(), created.tenantId(), created.service(), created.url(),
+                created.policy(), created.state(), created.createdAt(), created.updatedAt(), version);
+    }
+
+    private static ResponseStatusException modifiedConcurrently() {
+        return new ResponseStatusException(HttpStatus.CONFLICT,
+                "monitor m3 was modified concurrently; reload and retry");
+    }
+
+    @Test
+    void anOnDemandProbeThatLosesTheRaceWithTheSchedulerIsAppliedAgainToTheFreshMonitor() {
+        HealthMonitor stale = probedMonitor(0);
+        HealthMonitor fresh = probedMonitor(1); // what the scheduler saved in the meantime
+        HealthMonitor recorded = probedMonitor(2);
+        when(monitors.findById("m3")).thenReturn(Mono.just(stale), Mono.just(fresh));
+        when(observation.probe(stale, NOW)).thenReturn(Mono.error(modifiedConcurrently()));
+        when(observation.probe(fresh, NOW)).thenReturn(Mono.just(recorded));
+
+        StepVerifier.withVirtualTime(() -> useCase.probeNow("m3"))
+                .expectSubscription()
+                .thenAwait(Duration.ofMinutes(1))
+                .expectNext(recorded)
+                .verifyComplete();
+        // the monitor was read again and the fresh copy probed once: one observation recorded, not two
+        verify(monitors, times(2)).findById("m3");
+        verify(observation, times(1)).probe(fresh, NOW);
+    }
+
+    @Test
+    void anOnDemandProbeThatKeepsLosingTheRaceIs409OnceTheRetriesAreUsedUp() {
+        HealthMonitor stale = probedMonitor(0);
+        when(monitors.findById("m3")).thenReturn(Mono.just(stale));
+        when(observation.probe(stale, NOW)).thenReturn(Mono.error(modifiedConcurrently()));
+
+        StepVerifier.withVirtualTime(() -> useCase.probeNow("m3"))
+                .expectSubscription()
+                .thenAwait(Duration.ofMinutes(1))
+                .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(HttpStatus.CONFLICT))
+                .verify();
+        verify(observation, times(HealthMonitorUseCase.PROBE_ATTEMPTS)).probe(stale, NOW);
+    }
+
     @Test
     void listPassesTheTenantFilterThrough() {
         when(monitors.findAll("vmforge")).thenReturn(Flux.just(existing()));
