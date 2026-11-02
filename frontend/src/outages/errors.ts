@@ -4,11 +4,12 @@ import { ApiError } from './api'
 export const UNREACHABLE_MESSAGE = 'The service is unreachable right now. Check that communication-service is running, then try again.'
 
 /**
- * True when the failure is the service not being there (the connection failed, or a proxy in
- * front of it answered 502/503/504), as opposed to the service rejecting the request.
+ * True when the failure is the service not being there: the connection failed, or something in
+ * front of it (a proxy, the dev server) answered 502/503/504 without the service's {"error"} body.
+ * A 5xx that carries that body came from the running service, which said why it failed.
  */
 export function isUnreachable(e: unknown): boolean {
-  if (e instanceof ApiError) return e.status === 0 || e.status === 502 || e.status === 503 || e.status === 504
+  if (e instanceof ApiError) return e.status === 0 || (!e.fromService && (e.status === 502 || e.status === 503 || e.status === 504))
   return e instanceof TypeError // what fetch rejects with when the connection fails
 }
 
@@ -16,6 +17,9 @@ export function isUnreachable(e: unknown): boolean {
 export function isRejection(e: unknown): boolean {
   return e instanceof ApiError && e.status >= 400 && e.status < 500
 }
+
+/** The reason the service gives for its 503 while it cannot reach its database ({"error":"database unavailable"}). */
+const DATABASE_REASON = /\bdatabase\b/i
 
 /**
  * The text to show a person for a failed call: the service's own words for a rejection, a
@@ -25,8 +29,12 @@ export function explainError(e: unknown): string {
   if (isUnreachable(e)) return UNREACHABLE_MESSAGE
   if (e instanceof ApiError && e.status >= 500) {
     // a fault in the service, not in the input: the status line alone would read like a verdict
-    const reason = e.fromService ? `: ${e.message.trim().replace(/\.$/, '')}` : ''
-    return `The service failed (HTTP ${e.status})${reason}. Try again; if it keeps happening, tell the service owners.`
+    const reason = e.fromService ? e.message.trim().replace(/\.$/, '') : ''
+    if (e.status === 503 && DATABASE_REASON.test(reason)) {
+      // the service is up and says its database is not; it reconnects by itself, nobody needs to restart it
+      return `The service cannot reach its database right now (HTTP 503): ${reason}. It recovers on its own; try again in a moment.`
+    }
+    return `The service failed (HTTP ${e.status})${reason ? `: ${reason}` : ''}. Try again; if it keeps happening, tell the service owners.`
   }
   if (e instanceof Error) return e.message
   return String(e)

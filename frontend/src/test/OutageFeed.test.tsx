@@ -111,4 +111,18 @@ describe('OutageFeed', () => {
     expect(screen.queryByText(/503/)).toBeNull()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
+
+  it("says the service cannot reach its database for its own 503, while the badge keeps reporting the stream", async () => {
+    const f = fakeClient()
+    vi.mocked(f.client.feed).mockRejectedValue(new ApiError(503, 'database unavailable', true))
+    render(<OutageFeed client={f.client} tenantId="acme" />)
+    expect(await screen.findByText("Couldn't load the feed")).toBeInTheDocument()
+    expect(screen.getByText('The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.')).toBeInTheDocument()
+    expect(screen.queryByText(UNREACHABLE_MESSAGE)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+    // a failed GET does not tear the stream down: the badge says what the stream is doing, not what the GET got
+    expect(screen.getByText('Connecting')).toBeInTheDocument()
+    act(() => f.last().onConnection?.(true))
+    expect(screen.getByText('Live')).toBeInTheDocument()
+  })
 })

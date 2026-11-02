@@ -72,10 +72,14 @@ both retire it.
 The form enforces the same invariants as `Communication#validateInvariants` before sending
 (severity floor for OUTAGE/INCIDENT, `endsAt` for MAINTENANCE, time ordering, length caps), and
 shows the service's `{"error": …}` text when it rejects a request anyway. A 5xx is reported as a
-failure of the service (with its reason when it gave one), not as a rejection. When the service
-cannot be reached at all (connection refused, or a 502/503/504 from a proxy in front of it) both
-tabs say that it is unreachable instead of quoting the status line, and the feed's **Try again**
-reopens the live stream as well as reloading the list.
+failure of the service (with its reason when it gave one), not as a rejection. While the service
+cannot reach its database it answers `503 {"error":"database unavailable"}`, and both tabs say
+exactly that (the service is running and recovers by itself, so try again in a moment); the
+connection badge keeps showing what the stream is doing, which stays open on keepalives meanwhile.
+When the service cannot be reached at all (connection refused, or a 502/503/504 that a proxy in
+front of it answers without the service's `{"error"}` body) both tabs say that it is unreachable
+instead of quoting the status line, and the feed's **Try again** reopens the live stream as well
+as reloading the list.
 
 An optional **ServiceNow incident** field ties a notice to the ticket behind it (`ticket.number`,
 `INC0012345`). The service upper-cases the number and, when it knows the instance, adds a link;

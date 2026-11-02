@@ -106,6 +106,17 @@ describe('PublishOutageForm server errors', () => {
     expect(alert).not.toHaveTextContent('rejected')
   })
 
+  it("says the service cannot reach its database for its own 503 and keeps the draft editable", async () => {
+    const c = client()
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(503, 'database unavailable', true))
+    const alert = await publish(c)
+    expect(alert).toHaveTextContent('The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.')
+    expect(alert).not.toHaveTextContent('rejected')
+    expect(alert).not.toHaveTextContent(UNREACHABLE_MESSAGE)
+    expect(screen.getByLabelText(/^Title/)).toHaveValue('Payments API returning 503s')
+    expect(screen.getByRole('button', { name: 'Publish outage' })).toBeEnabled()
+  })
+
   it('moves focus to the banner and scrolls it into view, since it lands below the buttons', async () => {
     // jsdom has no layout and no scrollIntoView; the component must tolerate that and call it when present
     const scrollIntoView = vi.fn()

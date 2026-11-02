@@ -40,6 +40,22 @@ describe('explainError', () => {
     expect(isRejection(new ApiError(0, 'Failed to fetch'))).toBe(false)
     expect(isRejection(new ApiError(503, '503 Service Unavailable'))).toBe(false)
   })
+
+  it("treats the service's own 503 as a failure it explained, not as the service being unreachable", () => {
+    // while its database cannot be reached the service answers 503 {"error":"database unavailable"}: it is running
+    const e = new ApiError(503, 'database unavailable', true)
+    expect(isUnreachable(e)).toBe(false)
+    expect(isRejection(e)).toBe(false)
+    expect(explainError(e)).toBe('The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.')
+    // the same status with no body is a proxy answering for a service that is not there
+    expect(isUnreachable(new ApiError(503, '503 Service Unavailable'))).toBe(true)
+    expect(explainError(new ApiError(503, '503 Service Unavailable'))).toBe(UNREACHABLE_MESSAGE)
+    // another reason the service may give for a 503 is quoted as any failure of the service, without claiming it recovers
+    expect(explainError(new ApiError(503, 'event log unavailable.', true))).toBe('The service failed (HTTP 503): event log unavailable. Try again; if it keeps happening, tell the service owners.')
+    // a 502/504 that carries a reason came from something that answered: the reason is shown, as for any 5xx
+    expect(isUnreachable(new ApiError(502, 'upstream reset', true))).toBe(false)
+    expect(explainError(new ApiError(502, 'upstream reset', true))).toBe('The service failed (HTTP 502): upstream reset. Try again; if it keeps happening, tell the service owners.')
+  })
 })
 
 describe('explainPublishError', () => {
@@ -59,6 +75,9 @@ describe('explainPublishError', () => {
   it('leaves every other error to explainError', () => {
     expect(explainPublishError(new ApiError(409, 'communication c1 was modified concurrently; reload and retry'))).toBe('communication c1 was modified concurrently; reload and retry')
     expect(explainPublishError(new ApiError(503, '503 Service Unavailable'))).toBe(UNREACHABLE_MESSAGE)
+    expect(explainPublishError(new ApiError(503, 'database unavailable', true))).toBe(
+      'The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.',
+    )
   })
 })
 
@@ -84,5 +103,22 @@ describe('client with the service down', () => {
       .catch((e: unknown) => e)
     expect(isApiError(explained) && explained.fromService && explained.message === 'event log unavailable').toBe(true)
     expect(explainError(explained)).toBe('The service failed (HTTP 500): event log unavailable. Try again; if it keeps happening, tell the service owners.')
+  })
+
+  it("keeps the reason of a 503 that carries the service's {\"error\"} body apart from a proxy's bare 503", async () => {
+    const answer = (res: Response) => createCommunicationClient('http://svc', { fetchImpl: () => Promise.resolve(res) })
+    const fromService: unknown = await answer(new Response(JSON.stringify({ error: 'database unavailable' }), { status: 503, statusText: 'Service Unavailable' }))
+      .feed({ tenantId: 'acme' })
+      .catch((e: unknown) => e)
+    expect(isApiError(fromService) && fromService.status === 503 && fromService.fromService && fromService.message === 'database unavailable').toBe(true)
+    expect(isUnreachable(fromService)).toBe(false)
+    expect(explainError(fromService)).toBe('The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.')
+
+    const fromProxy: unknown = await answer(new Response('<html>503 Service Unavailable</html>', { status: 503, statusText: 'Service Unavailable' }))
+      .feed({ tenantId: 'acme' })
+      .catch((e: unknown) => e)
+    expect(isApiError(fromProxy) && fromProxy.status === 503 && !fromProxy.fromService).toBe(true)
+    expect(isUnreachable(fromProxy)).toBe(true)
+    expect(explainError(fromProxy)).toBe(UNREACHABLE_MESSAGE)
   })
 })
