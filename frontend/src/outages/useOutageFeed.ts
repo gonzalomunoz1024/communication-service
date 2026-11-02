@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CommunicationClient } from './api'
+import { explainError } from './errors'
 import { applyEvent, reconcile, removeItem, sortFeed } from './feed-state'
 import type { FeedFilter, FeedItem } from './types'
 
@@ -66,7 +67,7 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
       })
       .catch((e: unknown) => {
         if (cancelled) return
-        setLoaded((prev) => ({ requestId, items: prev.items, error: e instanceof Error ? e.message : String(e) }))
+        setLoaded((prev) => ({ requestId, items: prev.items, error: explainError(e) }))
       })
     return () => {
       cancelled = true

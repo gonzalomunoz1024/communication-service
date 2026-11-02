@@ -2,7 +2,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { CommunicationClient } from '../outages/api'
+import { ApiError, type CommunicationClient } from '../outages/api'
+import { UNREACHABLE_MESSAGE } from '../outages/errors'
 import { PublishOutageForm } from '../outages/PublishOutageForm'
 
 const client = (): CommunicationClient => ({ publish: vi.fn(), feed: vi.fn(), retire: vi.fn(), stream: vi.fn(() => () => {}) })
@@ -54,5 +55,30 @@ describe('PublishOutageForm validation', () => {
     const group = screen.getByRole('radiogroup', { name: 'Severity' })
     expect(group).toHaveAttribute('aria-invalid', 'true')
     expect(group).toHaveAccessibleDescription('Outages need MINOR or higher')
+  })
+})
+
+describe('PublishOutageForm server errors', () => {
+  const publish = async (c: CommunicationClient) => {
+    const user = userEvent.setup()
+    render(<PublishOutageForm client={c} tenantId="acme" publisher="oncall" />)
+    await user.type(screen.getByLabelText(/^Title/), 'Payments API returning 503s')
+    await user.click(screen.getByRole('button', { name: 'Publish outage' }))
+    return screen.findByRole('alert')
+  }
+
+  it('says the service is unreachable instead of quoting a proxy status', async () => {
+    const c = client()
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(502, '502 Bad Gateway'))
+    const alert = await publish(c)
+    expect(alert).toHaveTextContent(UNREACHABLE_MESSAGE)
+    expect(alert).not.toHaveTextContent('rejected')
+    expect(alert).not.toHaveTextContent('502')
+  })
+
+  it("quotes the service's reason for a rejection", async () => {
+    const c = client()
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(400, 'title must not be blank'))
+    expect(await publish(c)).toHaveTextContent('The service rejected this. title must not be blank')
   })
 })

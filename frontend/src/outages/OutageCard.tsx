@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button, Icon, Input, StateTag, Tag, cx, longDate, relativeTime } from '../ui'
 import { SEVERITY_TONE, titleCase } from './display'
+import { explainError } from './errors'
 import { TicketTag } from './TicketTag'
 import type { FeedItem } from './types'
 
@@ -32,7 +33,7 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
     try {
       await onRetire(item, note)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(explainError(e))
       setBusy(false)
     }
   }

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CommunicationClient, StreamHandlers } from '../outages/api'
+import { ApiError, type CommunicationClient, type StreamHandlers } from '../outages/api'
+import { UNREACHABLE_MESSAGE } from '../outages/errors'
 import { OutageFeed } from '../outages/OutageFeed'
 import type { FeedItem, Page } from '../outages/types'
 
@@ -51,5 +52,15 @@ describe('OutageFeed', () => {
     expect(screen.getByText('Reconnecting')).toBeInTheDocument()
     act(() => f.last().onRetry?.(3, 4_000))
     expect(screen.getByText('Reconnecting (3)')).toBeInTheDocument()
+  })
+
+  it('explains an unreachable service instead of showing the status line', async () => {
+    const f = fakeClient()
+    vi.mocked(f.client.feed).mockRejectedValue(new ApiError(503, '503 Service Unavailable'))
+    render(<OutageFeed client={f.client} tenantId="acme" />)
+    expect(await screen.findByText("Couldn't load the feed")).toBeInTheDocument()
+    expect(screen.getByText(UNREACHABLE_MESSAGE)).toBeInTheDocument()
+    expect(screen.queryByText(/503/)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 })

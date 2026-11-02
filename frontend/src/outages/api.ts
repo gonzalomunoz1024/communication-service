@@ -8,7 +8,10 @@ import type {
   Page,
 } from './types'
 
-/** A non-2xx answer; `message` is the service's {"error": "..."} text when it sent one. */
+/**
+ * A failed call: a non-2xx answer (`message` is the service's {"error": "..."} text when it sent
+ * one), or `status` 0 when the connection itself failed and there was no answer at all.
+ */
 export class ApiError extends Error {
   readonly status: number
   constructor(status: number, message: string) {
@@ -92,15 +95,21 @@ export function createCommunicationClient(
   const root = baseUrl.replace(/\/$/, '')
 
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetchImpl(`${root}${path}`, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        'X-Client-Id': clientId,
-        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-        ...init?.headers,
-      },
-    })
+    let res: Response
+    try {
+      res = await fetchImpl(`${root}${path}`, {
+        ...init,
+        headers: {
+          Accept: 'application/json',
+          'X-Client-Id': clientId,
+          ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+          ...init?.headers,
+        },
+      })
+    } catch (e) {
+      // the connection failed (service down, DNS, CORS): there is no status to show
+      throw new ApiError(0, e instanceof Error ? e.message : String(e))
+    }
     if (!res.ok) throw new ApiError(res.status, await errorMessage(res))
     return (await res.json()) as T
   }

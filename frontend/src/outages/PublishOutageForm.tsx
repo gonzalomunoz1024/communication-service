@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
 import type { CommunicationClient } from './api'
 import { SEVERITY_TONE, TYPE_HINT, titleCase } from './display'
+import { explainError, isUnreachable } from './errors'
 import { TicketTag } from './TicketTag'
 import { AUDIENCES, COMMUNICATION_TYPES, SEVERITIES, type Communication, type CommunicationType, type Severity, type Audience } from './types'
 import { TITLE_MAX, emptyDraft, parseServices, toRequest, validate, type DraftErrors, type OutageDraft } from './validation'
@@ -45,7 +46,8 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
   const [draft, setDraft] = useState<OutageDraft>(() => emptyDraft(tenantId, publisher))
   const [errors, setErrors] = useState<DraftErrors>({})
   const [submitting, setSubmitting] = useState(false)
-  const [serverError, setServerError] = useState<string | null>(null)
+  /** why the last publish failed: the service's words for a rejection, or that it could not be reached */
+  const [serverError, setServerError] = useState<{ text: string; rejected: boolean } | null>(null)
   const [published, setPublished] = useState<Communication | null>(null)
   const [showTiming, setShowTiming] = useState(false)
 
@@ -91,7 +93,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
       setPublished(saved)
       onPublished?.(saved)
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : String(err))
+      setServerError({ text: explainError(err), rejected: !isUnreachable(err) })
     } finally {
       setSubmitting(false)
     }
@@ -277,7 +279,8 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
         <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-critical-fg">
           <Icon name="alert-triangle" size={16} className="mt-0.5 shrink-0" />
           <span>
-            <span className="font-medium">The service rejected this.</span> {serverError}
+            {serverError.rejected && <span className="font-medium">The service rejected this. </span>}
+            {serverError.text}
           </span>
         </div>
       )}

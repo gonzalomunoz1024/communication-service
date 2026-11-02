@@ -51,7 +51,10 @@ list never shows something a reload would not.
 
 The form enforces the same invariants as `Communication#validateInvariants` before sending
 (severity floor for OUTAGE/INCIDENT, `endsAt` for MAINTENANCE, time ordering, length caps), and
-shows the service's `{"error": …}` text when it rejects a request anyway.
+shows the service's `{"error": …}` text when it rejects a request anyway. When the service cannot
+be reached at all (connection refused, or a 502/503/504 from a proxy in front of it) both tabs say
+that it is unreachable instead of quoting the status line, and the feed's **Try again** reopens
+the live stream as well as reloading the list.
 
 An optional **ServiceNow incident** field ties a notice to the ticket behind it (`ticket.number`,
 `INC0012345`). The service upper-cases the number and, when it knows the instance, adds a link;
