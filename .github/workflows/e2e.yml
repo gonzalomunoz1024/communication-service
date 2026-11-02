@@ -45,7 +45,8 @@ jobs:
           npm run build
 
       - name: Build the stack's images
-        run: docker compose -f e2e/docker-compose.yml build
+        working-directory: e2e
+        run: ./stack.sh build
 
       - name: Install the suite and its browser
         working-directory: e2e

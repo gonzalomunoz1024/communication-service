@@ -32,10 +32,27 @@ npx playwright test                          # about a minute
 ```
 
 `npx playwright show-report` opens the HTML report; a failed test keeps its trace under `test-results/`
-(`npx playwright show-trace <file>.zip`). `./stack.sh logs` prints every container's log. Where
-Red Hat's registry is unreachable, build the sidecar from substitutes:
-`GO_IMAGE=local/go-toolset:1.24 BASE_IMAGE=gcr.io/distroless/static-debian12:latest ./stack.sh up`
-(the variables reach the sidecar's `Dockerfile` build args; unset, its own defaults apply).
+(`npx playwright show-trace <file>.zip`). `./stack.sh logs` prints every container's log.
+
+The sidecar image names the commit under test: `stack.sh` passes `VERSION` (`git describe --tags
+--always`) and `REVISION` (`git rev-parse HEAD`) to the sidecar's `Dockerfile`, which writes them into
+the `org.opencontainers.image.version` and `.revision` labels and into the binary's version (set either
+variable to override it). Where Red Hat's registry is unreachable, build the sidecar from substitutes: a
+stand-in for `ubi9/go-toolset` at the Go release of `sidecar/go.mod` (1.25) that has the CA bundle at
+the UBI path the `Dockerfile` copies from, and distroless instead of UBI micro. The variables reach the
+`Dockerfile`'s build args; unset, its own defaults apply.
+
+```sh
+docker build -t go-toolset:e2e - <<'EOF'
+FROM golang:1.25
+RUN mkdir -p /etc/pki/ca-trust/extracted/pem \
+ && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+EOF
+GO_IMAGE=go-toolset:e2e BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot ./stack.sh up
+```
+
+`golang:1.25` by itself compiles the sidecar but fails the image build at that `COPY`;
+`mirror.gcr.io/library/golang:1.25` is the same image when Docker Hub rate-limits.
 
 ## What each test proves
 
@@ -70,7 +87,8 @@ reverse proxy would end it, which is what F-92 depends on.
 
 | Command | Does |
 | --- | --- |
-| `up` | checks the jar and `frontend/dist` exist, `docker compose build`, starts the backend (and Mongo) first and waits for its readiness probe, then the pod, then waits until the fake app answers UP, the sidecar has sent a report and the backend lists monitor `e2e/fakeapp` as UP. Starting the backend first keeps the sidecar's first report from entering its send backoff |
+| `build` | checks the jar exists, then `docker compose build` with `VERSION` and `REVISION` set as above |
+| `up` | checks `frontend/dist` exists, `build`, starts the backend (and Mongo) first and waits for its readiness probe, then the pod, then waits until the fake app answers UP, the sidecar has sent a report and the backend lists monitor `e2e/fakeapp` as UP. Starting the backend first keeps the sidecar's first report from entering its send backoff |
 | `down` | `docker compose down -v --remove-orphans` |
 | `restart-backend` | `docker compose restart backend`, then waits for readiness again; the tests run it in the background so they can watch the page meanwhile |
 | `app-set <status> <db>` | `POST /__set` on the fake app |
@@ -106,7 +124,7 @@ Every wait gives up after `E2E_WAIT_SECONDS` (default 150) and prints `docker co
 
 `.github/workflows/e2e.yml` runs on pushes to `main` and on pull requests (`permissions: contents:
 read`, 30 minute timeout): Java 21 and Node 22, `./gradlew bootJar`, `npm ci && npm run build` in
-`frontend/`, `docker compose -f e2e/docker-compose.yml build`, then in `e2e/` `npm ci`, the
-type-check, `npx playwright install --with-deps chromium`, `./stack.sh up`, `npx playwright test`,
+`frontend/`, then in `e2e/` `./stack.sh build` (the sidecar's image labelled with the commit), `npm ci`,
+the type-check, `npx playwright install --with-deps chromium`, `./stack.sh up`, `npx playwright test`,
 and `./stack.sh down` whatever happened. On failure it prints the stack's logs and uploads
 `playwright-report/` and `test-results/` (traces, screenshots) as the artifact `e2e-report`.

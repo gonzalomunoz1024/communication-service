@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # The e2e stack (docker-compose.yml) with the waits the suite relies on.
 #
+#   ./stack.sh build                   build the images; the sidecar's is labelled with this checkout's commit
 #   ./stack.sh up                      build the images, start everything, wait until the pod reports UP
 #   ./stack.sh down                    remove the containers, the network and the volumes
 #   ./stack.sh restart-backend         restart the backend container and wait for its readiness probe
 #   ./stack.sh app-set <status> <db>   flip the fake app's health: app-set DOWN DOWN, app-set UP UP
 #   ./stack.sh logs                    every container's log (what CI prints when the suite fails)
 #
-# Needs docker compose v2, curl and node. GO_IMAGE / BASE_IMAGE in the environment override the images
-# the sidecar is built from (docker-compose.yml); E2E_WAIT_SECONDS (default 150) bounds every wait.
+# Needs docker compose v2, curl, git and node. GO_IMAGE / BASE_IMAGE in the environment override the images
+# the sidecar is built from (docker-compose.yml); VERSION / REVISION label it (default: git describe --tags
+# --always and git rev-parse HEAD); E2E_WAIT_SECONDS (default 150) bounds every wait.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -20,7 +22,7 @@ TIMEOUT=${E2E_WAIT_SECONDS:-150}
 compose() { docker compose -f docker-compose.yml "$@"; }
 log() { printf '%s stack: %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 fail() { log "$*" >&2; exit 1; }
-usage() { sed -n '2,9p' "$0" >&2; exit 2; }
+usage() { sed -n '2,10p' "$0" >&2; exit 2; }
 
 # wait_for <what> <command...>: polls once a second until the command succeeds, for at most TIMEOUT seconds
 wait_for() {
@@ -51,12 +53,20 @@ app_up() { json "$APP/actuator/health" 'body.status === "UP"'; }
 sidecar_reported() { json "$SIDECAR/status" 'body.reportsSent >= 1 && !body.sendError'; }
 pod_up() { json "$BACKEND/v1/health/monitors?tenantId=e2e" 'body.some((m) => m.service === "fakeapp" && m.state.lastStatus === "UP")'; }
 
-up() {
+build() {
   ls ../build/libs/communication-service-*.jar >/dev/null 2>&1 \
     || fail "no jar under build/libs: run ./gradlew bootJar at the repository root first"
+  # the sidecar's Dockerfile build args: its image labels and the version it logs and sends name the commit
+  export VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo dev)}
+  export REVISION=${REVISION:-$(git rev-parse HEAD 2>/dev/null || echo unknown)}
+  log "building the images (sidecar version $VERSION, revision $REVISION)"
+  compose build
+}
+
+up() {
   [ -f ../frontend/dist/index.html ] \
     || fail "no frontend/dist: run npm ci && npm run build in frontend/ first (the suite serves that bundle)"
-  compose build
+  build
   # the backend first, so the sidecar's first report is accepted instead of entering its send backoff
   compose up -d --no-build backend
   wait_for "the backend is ready" backend_ready
@@ -78,6 +88,7 @@ app_set() {
 }
 
 case "${1:-}" in
+  build) build ;;
   up) up ;;
   down) compose down -v --remove-orphans ;;
   restart-backend) restart_backend ;;
