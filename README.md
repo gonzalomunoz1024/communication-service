@@ -122,6 +122,10 @@ given on the URI.
   millisecond regardless of the background sweeper. The sweeper (every 30s, configurable via
   `communication.sweep.interval-ms`) converges stored status and pushes `activated`/`expired`
   SSE events; concurrent-save conflicts are skipped, making it safe to run multi-instance.
+  The publisher and admin answers (`GET /v1/communications/{id}`, both lists, and what publish,
+  update and retire return) carry the same effective status, computed when answering: nothing
+  is written by a read. The lists' `status` filter matches the stored status, which can trail
+  the effective one by up to one sweep interval.
 - **Idempotency**: `externalRef` (e.g. an INC/CHG ticket id) is a permanent idempotency key:
   usable once per tenant for the life of the store (unique index on `(tenantId, externalRef)`,
   retired and expired notices included). Repeating it is how a client retries the same publish
@@ -180,7 +184,7 @@ switches the check off for local experiments.
 | Method | Path | Notes |
 |---|---|---|
 | POST | `/v1/communications` | 201 + Location; 400 validation (incl. a malformed `ticket.number`); 409 when the tenant has already used `externalRef`: it is a permanent idempotency key, the body names the notice holding it; repeat the value only to retry the same publish, give a follow-up notice a new one |
-| GET | `/v1/communications/{id}` | any status, includes audit history; 404 |
+| GET | `/v1/communications/{id}` | any status (the effective one, as in the feed: `EXPIRED` once past `expiresAt`), includes audit history; 404 |
 | GET | `/v1/communications?tenantId=…&status=&type=&page=&size=` | publisher's own list |
 | PUT | `/v1/communications/{id}` | partial update; `expectedVersion` is required and is the `version` you last read (every answer and `GET /v1/communications/{id}` carry it); 409 `expectedVersion N does not match current version M` means someone saved in between: re-read, re-apply, send the new version; 409 also once the item is EXPIRED/RETIRED |
 | POST | `/v1/communications/{id}/publish` | DRAFT → SCHEDULED/ACTIVE; 409 if not DRAFT |

@@ -148,6 +148,22 @@ public record Communication(
         return CommunicationStatus.ACTIVE;
     }
 
+    /**
+     * This communication as a reader sees it at {@code now}: every stored field as it is, with
+     * {@link #effectiveStatus(Instant)} as its status. For answers only, never saved: nothing is
+     * added to the history, and the stored status is left to the sweeper, which announces the
+     * change.
+     */
+    public Communication asSeenAt(Instant now) {
+        CommunicationStatus effective = effectiveStatus(now);
+        if (effective == status) {
+            return this;
+        }
+        return new Communication(id, tenantId, publisher, type, severity, title, body, affectedServices,
+                audience, effective, startsAt, endsAt, expiresAt, externalRef, ticket, createdAt, updatedAt,
+                version, history);
+    }
+
     /** Whether the communication is visible as ACTIVE at instant {@code t}. */
     public boolean activeAt(Instant t) {
         return effectiveStatus(t) == CommunicationStatus.ACTIVE;

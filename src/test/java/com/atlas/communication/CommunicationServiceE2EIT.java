@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
@@ -307,6 +308,42 @@ class CommunicationServiceE2EIT {
         client.get().uri("/v1/feed?tenantId=vmforge&type=NOPE")
                 .exchange()
                 .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void publisherAndAdminReadsReportTheEffectiveStatusBeforeTheSweeperRuns() {
+        // published when its window had already closed: ACTIVE in the store until the status sweep
+        // (every 60 s in tests) converges it, EXPIRED for every reader from the start
+        String tenant = "vmforge-lapsed-" + System.nanoTime();
+        Instant now = Instant.now();
+        Communication lapsed = client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", tenant, "publisher", "vmforge-sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "over before it was published",
+                        "startsAt", now.minusSeconds(7200).toString(),
+                        "expiresAt", now.minusSeconds(3600).toString()))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Communication.class)
+                .returnResult().getResponseBody();
+        String item = "$.items[?(@.id=='%s')]".formatted(lapsed.id());
+
+        client.get().uri("/v1/feed/{id}", lapsed.id()).exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.status").isEqualTo("EXPIRED");
+        client.get().uri("/v1/communications/{id}", lapsed.id()).exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo("EXPIRED")
+                .jsonPath("$.version").isEqualTo(0)
+                .jsonPath("$.history.length()").isEqualTo(1);
+        client.get().uri("/v1/communications?tenantId={tenant}", tenant).exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath(item + ".status").isEqualTo("EXPIRED");
+        client.get().uri("/v1/admin/communications?tenantId={tenant}", tenant).exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath(item + ".status").isEqualTo("EXPIRED");
+        assertThat(lapsed.status()).as("the publish answer").isEqualTo(CommunicationStatus.EXPIRED);
     }
 
     @Test

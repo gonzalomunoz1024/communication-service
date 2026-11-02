@@ -16,6 +16,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -364,6 +365,79 @@ class PublishingUseCaseTest {
                 })
                 .verify();
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void getAfterExpiresAtButBeforeTheSweepReportsExpiredAndWritesNothing() {
+        // stored ACTIVE until the sweeper converges it, but the feed, the permalink and the 409
+        // guards already call it EXPIRED: the publisher's own GET must say the same
+        Communication lapsed = savedExpiring(NOW.minusSeconds(7200), NOW.minusSeconds(3600));
+        assertThat(lapsed.status()).isEqualTo(CommunicationStatus.ACTIVE);
+        when(repository.findById("c1")).thenReturn(Mono.just(lapsed));
+
+        StepVerifier.create(useCase.get("c1"))
+                .assertNext(c -> {
+                    assertThat(c.status()).isEqualTo(CommunicationStatus.EXPIRED);
+                    assertThat(c.version()).isEqualTo(lapsed.version());
+                    assertThat(c.updatedAt()).isEqualTo(lapsed.updatedAt());
+                    assertThat(c.history()).isEqualTo(lapsed.history());
+                })
+                .verifyComplete();
+        verify(repository, never()).save(any());
+        verify(events, never()).emit(any(), any());
+    }
+
+    @Test
+    void theListReportsEachItemsEffectiveStatus() {
+        Communication lapsed = savedExpiring(NOW.minusSeconds(7200), NOW.minusSeconds(3600));
+        // published an hour ago to start ten minutes ago: still SCHEDULED in the store
+        Communication due = Communication.create("c2", "vmforge", "vmforge-sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "starting", null, List.of("vm-api"), null, false, NOW.minusSeconds(600),
+                null, null, "INC2", NOW.minusSeconds(3600));
+        assertThat(due.status()).isEqualTo(CommunicationStatus.SCHEDULED);
+        when(repository.query(any())).thenReturn(Flux.just(lapsed, due));
+        when(repository.count(any())).thenReturn(Mono.just(2L));
+
+        StepVerifier.create(useCase.list("vmforge", null, null, 0, 20))
+                .assertNext(page -> assertThat(page.items()).extracting(Communication::status)
+                        .containsExactly(CommunicationStatus.EXPIRED, CommunicationStatus.ACTIVE))
+                .verifyComplete();
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void aNoticePublishedAfterItsWindowClosedIsAnsweredAsExpired() {
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        CreateCommunicationCommand late = new CreateCommunicationCommand("vmforge", "vmforge-sre",
+                CommunicationType.OUTAGE, Severity.MAJOR, "already over", null, List.of("vm-api"), null,
+                false, NOW.minusSeconds(7200), null, NOW.minusSeconds(3600), "INC3", null);
+
+        StepVerifier.create(useCase.create(late))
+                .assertNext(c -> assertThat(c.status()).isEqualTo(CommunicationStatus.EXPIRED))
+                .verifyComplete();
+    }
+
+    @Test
+    void anUpdateAnswersWithTheEffectiveStatusButSavesTheStoredOne() {
+        // the sweeper owns ACTIVATED: the update must not write ACTIVE over the stored SCHEDULED
+        Communication due = Communication.create("c1", "vmforge", "vmforge-sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "starting", null, List.of("vm-api"), null, false, NOW.minusSeconds(600),
+                null, null, "INC2", NOW.minusSeconds(3600));
+        Communication stored = new Communication(due.id(), due.tenantId(), due.publisher(), due.type(),
+                due.severity(), due.title(), due.body(), due.affectedServices(), due.audience(), due.status(),
+                due.startsAt(), due.endsAt(), due.expiresAt(), due.externalRef(), due.ticket(), due.createdAt(),
+                due.updatedAt(), 0L, due.history());
+        when(repository.findById("c1")).thenReturn(Mono.just(stored));
+        when(repository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        UpdateCommunicationCommand cmd = new UpdateCommunicationCommand(null, "started", null, null,
+                null, null, null, null, null, "sre", 0L);
+        StepVerifier.create(useCase.update("c1", cmd))
+                .assertNext(c -> assertThat(c.status()).isEqualTo(CommunicationStatus.ACTIVE))
+                .verifyComplete();
+        ArgumentCaptor<Communication> saved = ArgumentCaptor.forClass(Communication.class);
+        verify(repository).save(saved.capture());
+        assertThat(saved.getValue().status()).isEqualTo(CommunicationStatus.SCHEDULED);
     }
 
     @Test
