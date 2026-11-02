@@ -259,9 +259,19 @@ A `reported` line is logged at INFO when the status, the failing components or t
 change (UP → DOWN, DOWN → UP, a new cause), so at the default level a dead app shows as one DOWN
 line and then its recovery. The sends in between (heartbeats, and the sends repeated after every
 probe while the report is DOWN or degraded) are logged at DEBUG: set `CS_LOG_LEVEL=debug` to see
-every send. With Kustomize or the plain YAML add it to the `cs-health-sidecar` ConfigMap, with
-Helm to `csHealthSidecar.extraEnv`; the container reads it when it starts, so restart the pods
-(`oc rollout restart deployment/<name>`).
+every send. With Kustomize or the plain YAML add it to the `cs-health-sidecar` ConfigMap. With
+Helm add it to `csHealthSidecar.extraEnv`, a list of entries shaped like a container's `env` (a map
+such as `CS_LOG_LEVEL: debug` there fails `helm template`):
+
+```yaml
+# values.yaml of the consuming chart, next to endpoint and tenant
+csHealthSidecar:
+  extraEnv:
+    - name: CS_LOG_LEVEL
+      value: debug
+```
+
+The container reads it when it starts, so restart the pods (`oc rollout restart deployment/<name>`).
 
 When sends fail (`report failed; will retry` at WARN, the next step in `in`) or are rejected
 (`report rejected` at ERROR), the first report the service accepts again is logged at INFO as

@@ -76,11 +76,53 @@ func TestHelmIncludeLinesFromTheReadmeRenderAValidDeployment(t *testing.T) {
 	}
 }
 
+// G-4-26 (UX-62): the README prints the shape of csHealthSidecar.extraEnv, a list of entries like
+// a container's env (the map an engineer may guess instead fails helm template). Its snippet,
+// given to a consuming chart as a values file, puts the variable into the sidecar's env and
+// renders a Deployment that kubeconform accepts.
+func TestHelmExtraEnvFromTheReadmeReachesTheSidecar(t *testing.T) {
+	helm, ok := requireTool(t, "helm")
+	if !ok {
+		t.Skip("helm not on PATH")
+	}
+	readme := readFile(t, filepath.Join("..", "README.md"))
+	snippet := codeBlock(readme, "extraEnv:")
+	if snippet == "" {
+		t.Fatal("the README prints no csHealthSidecar.extraEnv snippet")
+	}
+	lines := includeLines(readme)["container"]
+	if len(lines) == 0 {
+		t.Fatal("the README prints no include line for cs-health-sidecar.container")
+	}
+	rendered := renderConsumingChart(t, helm, "containers", lines[0], snippet)
+	sidecar := find(listItems(workload(t, rendered, "Deployment", "payments-api"), "containers"), "health-sidecar")
+	if sidecar == nil {
+		t.Fatal("health-sidecar missing from the rendered Deployment")
+	}
+	env := listItems(sidecar.body, "env")
+	if v := find(env, "CS_LOG_LEVEL"); v == nil || fieldValue(v.body, "value") != "debug" {
+		t.Errorf("the README's extraEnv snippet should put CS_LOG_LEVEL=debug into the sidecar's env, got %v", names(env))
+	}
+	kubeconform(t, rendered, "1.29.0")
+}
+
+// codeBlock returns the body of the first fenced code block in text that contains marker.
+func codeBlock(text, marker string) string {
+	parts := strings.Split(text, "```")
+	for i := 1; i < len(parts); i += 2 {
+		if strings.Contains(parts[i], marker) {
+			_, body, _ := strings.Cut(parts[i], "\n") // the fence's language tag
+			return body
+		}
+	}
+	return ""
+}
+
 // renderConsumingChart writes a team's chart that depends on the library chart (file://), pastes
-// line under spec.template.spec.<list> of its Deployment, sets the two required values, and
-// returns `helm template` of it. Helm's cache, configuration and data stay in the test's
-// temporary directory.
-func renderConsumingChart(t *testing.T, helm, list, line string) string {
+// line under spec.template.spec.<list> of its Deployment, sets the two required values, passes
+// each of extraValues as one more values file (-f), and returns `helm template` of it. Helm's
+// cache, configuration and data stay in the test's temporary directory.
+func renderConsumingChart(t *testing.T, helm, list, line string, extraValues ...string) string {
 	t.Helper()
 	library, err := filepath.Abs(filepath.Join("helm", "cs-health-sidecar"))
 	if err != nil {
@@ -113,8 +155,16 @@ func renderConsumingChart(t *testing.T, helm, list, line string) string {
 		}
 		return out.String()
 	}
+	args := []string{"template", "payments-api", chart}
+	for i, values := range extraValues {
+		path := filepath.Join(dir, fmt.Sprintf("values-%d.yaml", i))
+		if err := os.WriteFile(path, []byte(values), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		args = append(args, "-f", path)
+	}
 	run("dependency", "build", chart)
-	return run("template", "payments-api", chart)
+	return run(args...)
 }
 
 const consumingChart = `apiVersion: v2

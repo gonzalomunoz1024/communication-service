@@ -20,7 +20,8 @@ csHealthSidecar:
   scheme: ""
   interval: 15s
   heartbeat: 30s
-  # Extra environment variables, e.g. CS_CA_FILE with a mounted internal CA.
+  # Extra environment variables, a list shaped like a container's env (- name: CS_LOG_LEVEL /
+  #   value: debug), e.g. CS_LOG_LEVEL or CS_CA_FILE with a mounted internal CA.
   extraEnv: []
   resources:
     requests:
