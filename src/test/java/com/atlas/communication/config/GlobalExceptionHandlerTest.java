@@ -104,6 +104,16 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void the503IsJsonEvenForARequestThatAcceptsOnlyAnEventStream() {
+        // a stream that cannot open answers before its first byte, with the body every other
+        // endpoint gives; written as an event-stream frame, an EventSource client could not read it
+        client.get().uri("/v1/translated").accept(MediaType.TEXT_EVENT_STREAM).exchange()
+                .expectStatus().isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(String.class).isEqualTo("{\"error\":\"database unavailable\"}");
+    }
+
+    @Test
     void otherFailuresKeepTheir500AndTheirMessage() {
         client.get().uri("/v1/bug").exchange()
                 .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)

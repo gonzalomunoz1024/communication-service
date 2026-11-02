@@ -25,4 +25,11 @@ public interface FeedInboundPort {
      * still holds it. {@code null} means a fresh subscription.
      */
     Flux<CommunicationEvent> stream(FeedQuery query, Long lastEventId);
+
+    /**
+     * The newest event id in the log, and the cheapest read that needs the database: the stream
+     * asks it before it answers, so a database it cannot reach is a 503 rather than a stream that
+     * opens and ends a moment later.
+     */
+    Mono<Long> head();
 }

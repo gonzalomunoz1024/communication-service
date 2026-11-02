@@ -3,6 +3,7 @@ package com.atlas.communication.feed.adapters.inbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,8 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -33,11 +36,13 @@ import com.atlas.communication.config.ClientIdWebFilter;
 import com.atlas.communication.feed.application.FeedUseCase;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 /**
- * HTTP shape of the SSE stream around its lifetime: it ends when the event source ends, and it
- * resumes after the later of the two ids a reconnect can carry.
+ * HTTP shape of the SSE stream around its lifetime: it does not open while the database cannot
+ * be reached, it ends when the event source ends, and it resumes after the later of the two ids a
+ * reconnect can carry.
  */
 @WebFluxTest(RestControllerFeedAdapter.class)
 class RestControllerFeedAdapterTest {
@@ -54,6 +59,27 @@ class RestControllerFeedAdapterTest {
         client = client.mutate()
                 .defaultHeader(ClientIdWebFilter.HEADER, "communication-service-tests")
                 .build();
+    }
+
+    @BeforeEach
+    void theEventLogAnswers() {
+        // the stream reads the log's head before it answers
+        when(useCase.head()).thenReturn(Mono.just(6L));
+    }
+
+    @Test
+    void aStreamIs503BeforeItsFirstByteWhileTheDatabaseCannotBeReached() {
+        when(useCase.head()).thenReturn(Mono.error(new DataAccessResourceFailureException(
+                "Timed out while waiting for a server that matches ReadPreferenceServerSelector")));
+
+        client.get()
+                .uri("/v1/feed/stream?tenantId=vmforge")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(String.class).isEqualTo("{\"error\":\"database unavailable\"}");
+        verify(useCase, never()).stream(any(), any());
     }
 
     private static CommunicationEvent created(long seq, String id) {

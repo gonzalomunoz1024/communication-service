@@ -131,22 +131,26 @@ class OperationsEndpointsIT {
                 .as("socket read timeout").isEqualTo(15000);
     }
 
-    @Test
-    void aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError() {
-        // The answer is committed with ": connected" before the snapshot (or the resume check)
-        // asks the event log; when that query gives up, a 503 can no longer be sent. The three
-        // forms the 503 mapping knows: Spring's translation and the driver's own two.
+    /** The three forms the 503 mapping knows: Spring's translation and the driver's own two. */
+    private static Map<String, RuntimeException> databaseUnavailable() {
         String driver = "Timed out while waiting for a server that matches ReadPreferenceServerSelector"
                 + "{readPreference=primary}. Client view of cluster state is {type=UNKNOWN, servers=["
                 + "{address=localhost:27099, type=UNKNOWN, state=CONNECTING}]";
-        Map<String, RuntimeException> failures = Map.of(
+        return Map.of(
                 "translated", new DataAccessResourceFailureException(driver, new MongoTimeoutException(driver)),
                 "timeout", new MongoTimeoutException(driver),
                 "socket", new MongoSocketOpenException("Exception opening socket",
                         new ServerAddress("localhost", 27099), new ConnectException("Connection refused")));
+    }
+
+    @Test
+    void aStreamOpenedWhileTheDatabaseIsUnreachableIs503BeforeAnyByteWithOneWarning() {
+        // The stream reads the event log's head before it answers: when that query gives up, the
+        // answer is not committed yet, so the client gets the 503 every other endpoint gives and
+        // its own reconnect backoff applies, instead of a 200 that ends a moment later.
         WebClient raw = WebClient.create("http://localhost:" + port);
 
-        failures.forEach((form, failure) -> {
+        databaseUnavailable().forEach((form, failure) -> {
             // a query that waits a moment and then fails, like server selection timing out
             doReturn(Mono.delay(Duration.ofMillis(300)).then(Mono.error(failure))).when(events).head();
             doReturn(Mono.delay(Duration.ofMillis(300)).then(Mono.error(failure)))
@@ -155,6 +159,51 @@ class OperationsEndpointsIT {
             for (String uri : List.of("/v1/feed/stream?tenantId=ops-outage",
                     "/v1/feed/stream?tenantId=ops-outage&lastEventId=1")) {
                 String what = form + " " + uri;
+                try (LogCapture feed = LogCapture.of(RestControllerFeedAdapter.class);
+                        LogCapture handler = LogCapture.of(GlobalExceptionHandler.class);
+                        LogCapture web = LogCapture.of(HttpWebHandlerAdapter.class);
+                        LogCapture server = LogCapture.of("reactor.netty.http.server.HttpServerOperations")) {
+                    String answer = raw.get().uri(uri)
+                            .header(ClientIdWebFilter.HEADER, "communication-service-tests")
+                            .accept(MediaType.TEXT_EVENT_STREAM)
+                            .exchangeToMono(response -> response.bodyToMono(String.class)
+                                    .defaultIfEmpty("")
+                                    .map(body -> response.statusCode().value() + " "
+                                            + response.headers().contentType().map(MediaType::toString).orElse("-")
+                                            + " " + body))
+                            .block(Duration.ofSeconds(10));
+
+                    assertThat(answer).as(what).isEqualTo("503 application/json {\"error\":\"database unavailable\"}");
+                    List<String> logged = Stream.of(feed, handler, web, server)
+                            .flatMap(capture -> capture.atLeast(Level.WARN).stream())
+                            .map(OperationsEndpointsIT::describe)
+                            .toList();
+                    assertThat(logged).as("%s: WARN and above", what)
+                            .noneMatch(line -> line.startsWith("ERROR"))
+                            .containsExactly("WARN " + GlobalExceptionHandler.class.getName()
+                                    + ": GET /v1/feed/stream -> 503, database unavailable: " + failure.getMessage());
+                    assertThat(handler.atLeast(Level.WARN).get(0).getThrowableProxy())
+                            .as("%s: no stack trace above DEBUG", what).isNull();
+                }
+            }
+        });
+    }
+
+    @Test
+    void aStreamWhoseDatabaseGoesAwayAfterItOpenedEndsWithOneWarningAndNoError() {
+        // The head was read and the answer committed with ": connected"; then the snapshot (or the
+        // resume check) asks the event log and that query gives up. A 503 can no longer be sent:
+        // the stream ends, and the client reconnects with its backoff.
+        WebClient raw = WebClient.create("http://localhost:" + port);
+
+        databaseUnavailable().forEach((form, failure) -> {
+            Mono<Long> givesUp = Mono.delay(Duration.ofMillis(300)).then(Mono.error(failure));
+            for (String uri : List.of("/v1/feed/stream?tenantId=ops-outage",
+                    "/v1/feed/stream?tenantId=ops-outage&lastEventId=1")) {
+                String what = form + " " + uri;
+                // the first read answers, every later one gives up
+                doReturn(Mono.just(0L), givesUp).when(events).head();
+                doReturn(givesUp).when(events).canResumeAfter(anyLong());
                 try (LogCapture feed = LogCapture.of(RestControllerFeedAdapter.class);
                         LogCapture handler = LogCapture.of(GlobalExceptionHandler.class);
                         LogCapture web = LogCapture.of(HttpWebHandlerAdapter.class);

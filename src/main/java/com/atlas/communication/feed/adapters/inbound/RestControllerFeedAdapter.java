@@ -83,15 +83,18 @@ public class RestControllerFeedAdapter {
         FeedQuery query = new FeedQuery(tenantId, service, type, severity, audience,
                 null, true, 0, Page.MAX_SIZE);
         Long resumeAfter = later(lastEventId, parseEventId(lastEventIdHeader));
-        return Flux.defer(() -> {
+        // The answer is committed with the opening comment. Asking the database once before that
+        // keeps an unreachable one a 503, as on every other endpoint, so the client's own backoff
+        // applies instead of a 200 that ends a moment later.
+        return useCase.head().thenMany(Flux.defer(() -> {
             // The keepalive must stop with the data: when the event source completes (this
             // instance is shutting down) the response has to end too, or it would live on
             // through comments alone until the graceful-shutdown timeout cuts it.
             Sinks.Empty<Void> ended = Sinks.empty();
             Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query, resumeAfter)
-                    // The answer is committed with the opening comment, before the snapshot or
-                    // the resume check reaches the database, so a lost database can no longer be
-                    // a 503: end the stream and let the client reconnect with its backoff.
+                    // The database went away after the answer was committed (the snapshot or the
+                    // resume check gave up): a 503 can no longer be sent, so end the stream and
+                    // let the client reconnect with its backoff.
                     .onErrorResume(GlobalExceptionHandler::isDatabaseUnavailable, ex -> {
                         log.warn("feed stream closed: {}: {}", GlobalExceptionHandler.DATABASE_UNAVAILABLE,
                                 ex.getMessage());
@@ -112,7 +115,7 @@ public class RestControllerFeedAdapter {
             // would otherwise get status and headers with the first keepalive, 15 s in, and a
             // browser would sit in "connecting" for that long: open with a comment frame instead.
             return Flux.merge(data, keepalive).startWith(CONNECTED);
-        });
+        }));
     }
 
     /**

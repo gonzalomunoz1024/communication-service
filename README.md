@@ -132,10 +132,12 @@ each scheduler logs one WARN line per skipped run (`health sweep skipped: databa
 between at DEBUG. However often it is probed, readiness logs two
 lines per outage: `WARN readiness DOWN: MongoDB did not answer a ping: …` when it starts and
 `INFO readiness UP: MongoDB answers again` when it ends (the stack trace at DEBUG).
-A stream opened during the outage has already answered `200` with its `: connected` comment when
-its snapshot (or resume) query gives up, so it cannot become a 503: it ends after that timeout with
-one WARN line (`feed stream closed: database unavailable: …`) and the client reconnects with its
-backoff. The driver's detail, which names the cluster's addresses, appears in the log only (one WARN
+A stream opened during the outage reads the event log's head before it answers, so it gets the
+same `503 {"error":"database unavailable"}` (JSON, before any byte of the stream) after that
+timeout, and the client's own backoff applies. One whose snapshot (or resume) query gives up after
+the answer was committed with its `: connected` comment (the database went away in between) ends
+with one WARN line (`feed stream closed: database unavailable: …`) and the client reconnects with
+its backoff. The driver's detail, which names the cluster's addresses, appears in the log only (one WARN
 line per answered call, the stack trace at DEBUG); the driver's own cluster monitor logs at WARN and
 above only (`logging.level.org.mongodb.driver.cluster`), so connectivity changes print no INFO stack
 traces. Calls succeed again within one server selection of Mongo coming back. The waits are

@@ -72,6 +72,8 @@ public class GlobalExceptionHandler {
      * refused or timed out): 503 with a plain sentence. Spring Data hands these over translated as
      * {@link DataAccessResourceFailureException}; the driver's own forms are mapped too. The
      * driver's message names the cluster's addresses, so it goes to the log, not to the caller.
+     * The body is JSON whatever the request accepts: a stream that cannot open answers this before
+     * its first byte, and an event-stream frame would hide the status from an EventSource client.
      */
     @ExceptionHandler({DataAccessResourceFailureException.class, MongoTimeoutException.class,
             MongoSocketException.class})
@@ -82,6 +84,7 @@ public class GlobalExceptionHandler {
                 DATABASE_UNAVAILABLE, ex.getMessage());
         log.debug(DATABASE_UNAVAILABLE, ex);
         return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("error", DATABASE_UNAVAILABLE)));
     }
 

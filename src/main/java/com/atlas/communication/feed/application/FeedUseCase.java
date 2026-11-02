@@ -84,6 +84,11 @@ public class FeedUseCase implements FeedInboundPort {
                         : snapshotThenLive(query));
     }
 
+    @Override
+    public Mono<Long> head() {
+        return events.head();
+    }
+
     /**
      * The live bus is subscribed first, so nothing emitted during the snapshot query is lost;
      * clients upsert by communication id, so a snapshot/live overlap is harmless. Snapshot frames
