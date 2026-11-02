@@ -109,6 +109,7 @@ communication:
       degraded-severity: MINOR
       audience: CUSTOMERS
       # for services that report per pod (the health sidecar): share of live pods that must be
-      # UP for the service to count as UP, and the staleness window their monitors get
+      # UP for the service to count as UP, and the staleness window their monitors get; keep the
+      # window well above the sidecar's CS_HEARTBEAT plus its 30 s retry cap (60 s at the defaults)
       min-healthy-percent: 50
       instance-stale-after-seconds: 90

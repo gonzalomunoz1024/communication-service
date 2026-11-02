@@ -264,7 +264,10 @@ A report that names its `instance` (`{"id": "<pod>", "node", "cluster", "namespa
 before the debounce sees it, so pods of one service never reset each other's streaks:
 
 - a pod is live while heard from within `staleAfterSeconds` (auto-registered: 90 s) and has
-  not sent `leaving: true`; pods still reporting `UNKNOWN` (starting) are live but not counted;
+  not sent `leaving: true`; pods still reporting `UNKNOWN` (starting) are live but not counted.
+  The window must stay well above the sidecar's heartbeat plus its retry cap (30 s + 30 s with the
+  sidecar's defaults), so a short outage of the service itself never makes a healthy pod look
+  silent; lower `instance-stale-after-seconds` only together with `CS_HEARTBEAT`;
 - all counted pods UP → UP; none UP → DOWN (DEGRADED if one still serves in part); some UP →
   DEGRADED when any pod reports a failing dependency or fewer than `minHealthyPercent` are UP,
   otherwise UP ("4 of 5 pods UP": readiness already keeps callers away from the bad pod);
