@@ -1,4 +1,4 @@
-# Iteration 4 — fixes (code at `1cd3f13`, 37 commits over the iteration-3 head `6c15715`)
+# Iteration 4 — fixes (code at `1cd3f13`: 35 fix commits, 39 commits in all, over the iteration-3 head `6c15715`)
 
 Five fixers worked in git worktrees from `6c15715` (BE-U backend upgrade and API documentation, BE-H backend behaviour, FE-4
 frontend, SC-4 sidecar, E2E-4 the e2e suite and CI). The orchestrator cherry-picked SC-4's, E2E-4's, FE-4's and BE-H's commits

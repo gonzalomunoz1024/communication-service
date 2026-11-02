@@ -69,7 +69,7 @@ and `BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot`; the suite's jar is `
 there if `build/libs/` is empty) and its bundle `frontend/dist` (`npm run build`).
 
 ## Iteration 4 stack (from 2026-11-02 10:05Z)
-Code at `1cd3f13` (37 iteration-4 commits; `ec4cfcb` adds only `iter-4/fixes.md` and the gate evidence). Backend jar built from
+Code at `1cd3f13` (35 iteration-4 fix commits; `ec4cfcb` adds only `iter-4/fixes.md` and the gate evidence). Backend jar built from
 that code with Spring Boot 4.0.9 (copy `/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter4.jar`,
 sha256 `64e07ece…`, the same bytes as `build/libs/communication-service-0.0.1-SNAPSHOT.jar`; log `.../scratchpad/logs/backend-iter4.log`)
 started on :8080 against `mongo7` (database `communication`; `--spring.data.mongodb.uri=` still works, and Boot 4's own key is
