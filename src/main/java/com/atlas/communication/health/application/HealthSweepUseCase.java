@@ -7,8 +7,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.atlas.communication.health.domain.HealthInstance;
 import com.atlas.communication.health.domain.HealthMonitor;
@@ -25,8 +27,14 @@ import reactor.core.publisher.Mono;
 /**
  * The health scheduler: every tick, probes monitors whose interval has elapsed and declares
  * silent push-only monitors DOWN once past their staleness window. Each monitor is handled
- * independently; a failure (including a lost claim race on another node) is logged and skipped,
- * and the next tick tries again. Due-ness is decided in memory: monitor counts are small.
+ * independently; a failure is logged and skipped, and the next tick tries again. Due-ness is
+ * decided in memory: monitor counts are small.
+ *
+ * <p>Every instance of the service runs this sweep over the same monitors. A due monitor's probe
+ * slot is claimed before it is probed (the monitor is saved with the probe time under the
+ * optimistic version check), so only one instance probes it per interval; an instance that loses
+ * that race, or any later save of the monitor, to another instance leaves the monitor to it and
+ * says so at DEBUG.
  *
  * <p>Staleness has two guards against our own trouble looking like everyone's outage: it is
  * not evaluated for a grace period after this service starts, nor while an implausible share
@@ -158,17 +166,38 @@ public class HealthSweepUseCase {
     private Mono<HealthMonitor> evaluate(HealthMonitor monitor, Instant now, Silence silence) {
         Mono<HealthMonitor> work;
         if (monitor.probeDue(now)) {
-            work = observation.probe(monitor, now);
+            work = claimAndProbe(monitor, now);
         } else if (silence.allowed() && monitor.stale(now) && !forgotten(monitor, now)) {
             work = observeStale(monitor, silence.instancesOf(monitor), now);
         } else {
             return Mono.empty();
         }
         return work.onErrorResume(ex -> {
-            log.warn("skipping monitor {} ({}/{}): {}", monitor.id(), monitor.tenantId(),
-                    monitor.service(), ex.getMessage());
+            if (lostToAnotherInstance(ex)) {
+                log.debug("monitor {} ({}/{}) is being handled by another instance: {}", monitor.id(),
+                        monitor.tenantId(), monitor.service(), ex.getMessage());
+            } else {
+                log.warn("skipping monitor {} ({}/{}): {}", monitor.id(), monitor.tenantId(),
+                        monitor.service(), ex.getMessage());
+            }
             return Mono.empty();
         });
+    }
+
+    /**
+     * Claims the probe slot, then probes. Several instances can find the same monitor due in one
+     * tick; the claim is a save under the version check, so only the first of them probes and the
+     * others leave the monitor alone until its next interval. The probe works on the claimed
+     * monitor, so the save of its result checks the claim's version.
+     */
+    private Mono<HealthMonitor> claimAndProbe(HealthMonitor monitor, Instant now) {
+        return monitors.save(monitor.withProbeClaimed(now))
+                .flatMap(claimed -> observation.probe(claimed, now));
+    }
+
+    /** A save of the monitor lost the optimistic version check (the port reports it as 409). */
+    private static boolean lostToAnotherInstance(Throwable ex) {
+        return ex instanceof ResponseStatusException rse && rse.getStatusCode() == HttpStatus.CONFLICT;
     }
 
     /**

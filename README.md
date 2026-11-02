@@ -306,8 +306,11 @@ with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attac
   (threshold 3: reopened on the third one).
 - Notices are published through the same rules as human ones (`PublishingUseCase`), so feed,
   SSE, permalinks and audit history work unchanged. The scheduler (`communication.health.sweep-interval-ms`,
-  default 5s) probes monitors whose interval elapsed; opening a notice claims the monitor first
-  (optimistic version), so several instances never double-publish.
+  default 5s) probes monitors whose interval elapsed. Every instance runs it, so each probe claims
+  its slot first (the monitor is saved with the probe time under the optimistic version check):
+  one instance probes a due monitor per interval and the others leave it alone, saying so at
+  DEBUG. Opening a notice claims the monitor the same way, so several instances never
+  double-publish.
 
 **Spring Boot app integration, two options**
 

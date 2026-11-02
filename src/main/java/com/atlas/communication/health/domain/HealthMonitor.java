@@ -118,6 +118,19 @@ public record HealthMonitor(
     }
 
     /**
+     * Claims the probe slot: the probe about to run is recorded as of {@code now}, so the monitor
+     * is not due again until its interval has elapsed. Saved under the version check before the
+     * probe runs, this keeps several instances of the service from probing one monitor at once:
+     * only the instance whose save wins goes on to probe.
+     */
+    public HealthMonitor withProbeClaimed(Instant now) {
+        State s = state;
+        return withState(new State(s.lastStatus(), s.lastReportAt(), now, s.lastSummary(),
+                s.unhealthyStreak(), s.healthyStreak(), s.openCommunicationId(), s.openStatus(),
+                s.openSignature(), s.incidents()), now);
+    }
+
+    /**
      * A push-only monitor with a staleness window is stale once that window has elapsed since
      * the last real report (or since registration, if it never reported).
      */

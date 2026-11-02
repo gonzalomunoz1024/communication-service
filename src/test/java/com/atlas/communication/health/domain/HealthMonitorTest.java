@@ -211,6 +211,26 @@ class HealthMonitorTest {
     }
 
     @Test
+    void claimingTheProbeSlotRecordsTheProbeTimeAndNothingElse() {
+        // a monitor with history: a notice open after two failing probes a minute ago
+        HealthMonitor open = probed();
+        for (int i = 0; i < 2; i++) {
+            open = open.evaluate(down(NOW.minusSeconds(60)), NOW.minusSeconds(60)).monitor();
+        }
+        open = open.withOpen("c1", HealthStatus.DOWN, "DOWN[]");
+
+        HealthMonitor claimed = open.withProbeClaimed(NOW);
+        assertThat(claimed.state().lastProbeAt()).isEqualTo(NOW);
+        assertThat(claimed.probeDue(NOW)).as("claimed: not due again in this tick").isFalse();
+        assertThat(claimed.probeDue(NOW.plusSeconds(29))).isFalse();
+        assertThat(claimed.probeDue(NOW.plusSeconds(30))).isTrue();
+        // streaks, status and the open notice are the probe result's business, not the claim's
+        assertThat(claimed.state()).usingRecursiveComparison().ignoringFields("lastProbeAt").isEqualTo(open.state());
+        assertThat(claimed.version()).isEqualTo(open.version());
+        assertThat(claimed.updatedAt()).isEqualTo(NOW);
+    }
+
+    @Test
     void pushOnlyMonitorsGoStaleFromRegistrationOrLastReport() {
         assertThat(pushOnly(null).stale(NOW.plusSeconds(999_999))).isFalse();
         HealthMonitor silent = pushOnly(60);

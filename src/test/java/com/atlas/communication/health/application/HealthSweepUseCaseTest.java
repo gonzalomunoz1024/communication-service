@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +27,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.atlas.communication.LogCapture;
 import com.atlas.communication.common.domain.Audience;
@@ -87,6 +90,11 @@ class HealthSweepUseCaseTest {
                 Severity.MINOR, Audience.CUSTOMERS, staleAfterSeconds, null);
     }
 
+    /** Matches a monitor by id, whatever its state (the sweep probes the monitor as claimed). */
+    private static HealthMonitor withId(String id) {
+        return argThat(m -> m != null && id.equals(m.id()));
+    }
+
     private static HealthMonitor probed(String id, Instant lastProbeAt) {
         HealthMonitor m = HealthMonitor.create(id, "vmforge", id, "http://" + id + "/health",
                 policy(null), NOW.minusSeconds(600));
@@ -101,13 +109,16 @@ class HealthSweepUseCaseTest {
         HealthMonitor recent = probed("recent", NOW.minusSeconds(10));
         HealthMonitor pushOnly = HealthMonitor.create("push", "vmforge", "push", null, policy(null), NOW);
         when(monitors.findAll(null)).thenReturn(Flux.just(due, alsoDue, recent, pushOnly));
+        when(monitors.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0))); // every claim wins
         when(observation.probe(any(), eq(NOW))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
         StepVerifier.create(useCase.sweep(NOW)).expectNext(2L).verifyComplete();
-        verify(observation).probe(due, NOW);
-        verify(observation).probe(alsoDue, NOW);
-        verify(observation, never()).probe(eq(recent), any());
-        verify(observation, never()).probe(eq(pushOnly), any());
+        // each due monitor is claimed first, then probed as claimed
+        verify(observation).probe(due.withProbeClaimed(NOW), NOW);
+        verify(observation).probe(alsoDue.withProbeClaimed(NOW), NOW);
+        verify(observation, never()).probe(withId("recent"), any());
+        verify(observation, never()).probe(withId("push"), any());
+        verify(monitors, times(2)).save(any());
         verify(observation, never()).observe(any(), any(), any());
     }
 
@@ -135,10 +146,55 @@ class HealthSweepUseCaseTest {
         HealthMonitor broken = probed("broken", null);
         HealthMonitor fine = probed("fine", null);
         when(monitors.findAll(null)).thenReturn(Flux.just(broken, fine));
-        when(observation.probe(broken, NOW)).thenReturn(Mono.error(new IllegalStateException("conflict")));
-        when(observation.probe(fine, NOW)).thenReturn(Mono.just(fine));
+        when(monitors.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        when(observation.probe(broken.withProbeClaimed(NOW), NOW)).thenReturn(Mono.error(new IllegalStateException("conflict")));
+        when(observation.probe(fine.withProbeClaimed(NOW), NOW)).thenReturn(Mono.just(fine));
 
-        StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+        try (LogCapture log = LogCapture.of(HealthSweepUseCase.class)) {
+            StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+            // anything but a lost version check is worth a warning
+            List<ILoggingEvent> warnings = log.atLeast(Level.WARN);
+            assertThat(warnings).hasSize(1);
+            assertThat(warnings.get(0).getFormattedMessage()).startsWith("skipping monitor broken");
+        }
+    }
+
+    // --- every instance of this service runs the sweep ---
+
+    /** What the Mongo adapter turns a save with a stale version into (optimistic lock). */
+    private static ResponseStatusException versionConflict(String id) {
+        return new ResponseStatusException(HttpStatus.CONFLICT,
+                "monitor " + id + " was modified concurrently; reload and retry");
+    }
+
+    @Test
+    void twoInstancesSweepingTheSameDueMonitorProbeItOnceAndTheLoserStaysQuiet() {
+        // both instances read the monitor in the same tick, before either wrote anything: the
+        // first save of it wins, the second fails the version check like Mongo's optimistic lock
+        HealthMonitor due = probed("slow-app", NOW.minusSeconds(30));
+        when(monitors.findAll(null)).thenReturn(Flux.just(due));
+        when(monitors.save(any()))
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)))
+                .thenReturn(Mono.error(versionConflict("slow-app")));
+        when(observation.probe(any(), eq(NOW))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        HealthSweepUseCase otherInstance = new HealthSweepUseCase(monitors, instances, observation,
+                PROPERTIES, Clock.fixed(NOW, ZoneOffset.UTC));
+
+        try (LogCapture log = LogCapture.of(HealthSweepUseCase.class)) {
+            Long first = useCase.sweep(NOW).block();
+            Long second = otherInstance.sweep(NOW).block();
+
+            verify(observation, times(1)).probe(any(), any());
+            // the winner probes the monitor it claimed: its own save then checks the claim's version
+            verify(observation).probe(argThat(m -> m != null && NOW.equals(m.state().lastProbeAt())), eq(NOW));
+            assertThat(first).isEqualTo(1L);
+            assertThat(second).as("the instance that lost the claim evaluated nothing").isZero();
+            assertThat(log.atLeast(Level.WARN)).as("losing the race to another instance is not worth a warning")
+                    .isEmpty();
+            assertThat(log.events()).filteredOn(e -> e.getLevel() == Level.DEBUG)
+                    .extracting(ILoggingEvent::getFormattedMessage)
+                    .anySatisfy(message -> assertThat(message).contains("slow-app").contains("another instance"));
+        }
     }
 
     @Test
@@ -185,7 +241,8 @@ class HealthSweepUseCaseTest {
                 Clock.fixed(NOW, ZoneOffset.UTC));
         HealthMonitor due = probed("due", null);
         when(monitors.findAll(null)).thenReturn(Flux.just(silent("silent"), due));
-        when(observation.probe(eq(due), any())).thenReturn(Mono.just(due)); // probes are not affected
+        when(monitors.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        when(observation.probe(withId("due"), any())).thenReturn(Mono.just(due)); // probes are not affected
 
         StepVerifier.create(justStarted.sweep(NOW)).expectNext(1L).verifyComplete();
         verify(observation, never()).observe(any(), any(), any());
