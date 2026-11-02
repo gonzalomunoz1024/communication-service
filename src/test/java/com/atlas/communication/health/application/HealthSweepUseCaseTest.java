@@ -5,14 +5,18 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +55,8 @@ class HealthSweepUseCaseTest {
     private static final HealthProperties.Defaults DEFAULTS = new HealthProperties.Defaults(
             "health-monitor", 30, 5000, 2, 2, Severity.MAJOR, Severity.MINOR, Audience.CUSTOMERS, 50, 90);
     /** No startup grace, so the existing staleness tests see the sweep at work right away. */
-    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 0, 0.3, 2, DEFAULTS);
+    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 0, 0.3, 2,
+            Duration.ofHours(24), DEFAULTS);
 
     @Mock
     private HealthMonitorRepositoryPort monitors;
@@ -176,7 +181,8 @@ class HealthSweepUseCaseTest {
     @Test
     void silenceIsNotTrustedDuringTheStartupGrace() {
         HealthSweepUseCase justStarted = new HealthSweepUseCase(monitors, instances, observation,
-                new HealthProperties(5000, 300_000, 0.3, 2, DEFAULTS), Clock.fixed(NOW, ZoneOffset.UTC));
+                new HealthProperties(5000, 300_000, 0.3, 2, Duration.ofHours(24), DEFAULTS),
+                Clock.fixed(NOW, ZoneOffset.UTC));
         HealthMonitor due = probed("due", null);
         when(monitors.findAll(null)).thenReturn(Flux.just(silent("silent"), due));
         when(observation.probe(eq(due), any())).thenReturn(Mono.just(due)); // probes are not affected
@@ -256,6 +262,71 @@ class HealthSweepUseCaseTest {
         ArgumentCaptor<HealthReport> report = ArgumentCaptor.forClass(HealthReport.class);
         verify(observation).observe(eq(silent), report.capture(), eq(NOW));
         assertThat(report.getValue().status()).isEqualTo(HealthStatus.DOWN);
+    }
+
+    // --- the valve forgets monitors that have been silent for longer than stale-forget-after ---
+
+    /** A push-only monitor (staleness window 60 s) whose last report came {@code silentFor} ago. */
+    private static HealthMonitor silentSince(String id, Duration silentFor) {
+        Instant reportedAt = NOW.minus(silentFor);
+        HealthMonitor m = HealthMonitor.create(id, "vmforge", id, null, policy(60), reportedAt.minusSeconds(3600));
+        return m.evaluate(HealthReport.of(HealthStatus.UP, null, HealthSource.PUSH, reportedAt), reportedAt).monitor();
+    }
+
+    private static HealthMonitor reporting(String id) {
+        return HealthMonitor.create(id, "vmforge", id, null, policy(60), NOW);
+    }
+
+    @Test
+    void monitorsSilentForDaysDoNotKeepTheValvePausedForEveryoneElse() {
+        // 14 abandoned monitors (decommissioned services, test monitors nobody deleted: silent for
+        // two days) and one service that went quiet two minutes ago. Counted, they make 15 of 15
+        // silent and nothing would ever be declared DOWN again in this database.
+        List<HealthMonitor> all = new ArrayList<>();
+        for (int i = 1; i <= 14; i++) {
+            all.add(silentSince("old" + i, Duration.ofDays(2)));
+        }
+        HealthMonitor fresh = silentSince("fresh", Duration.ofMinutes(2));
+        all.add(fresh);
+        when(monitors.findAll(null)).thenReturn(Flux.fromIterable(all));
+        when(instances.findByMonitor(anyString())).thenReturn(Flux.empty());
+        when(observation.observe(eq(fresh), any(), eq(NOW))).thenReturn(Mono.just(fresh));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+
+        ArgumentCaptor<HealthReport> report = ArgumentCaptor.forClass(HealthReport.class);
+        verify(observation).observe(eq(fresh), report.capture(), eq(NOW));
+        assertThat(report.getValue().status()).isEqualTo(HealthStatus.DOWN);
+        verify(observation, never()).observe(argThat(m -> m.id().startsWith("old")), any(), any());
+    }
+
+    @Test
+    void aForgottenMonitorIsLeftAloneEvenWhenSilenceIsTrusted() {
+        // one monitor silent for three days among three healthy ones: 1 of 4 would be declared
+        // DOWN every sweep (a notice for a service that no longer exists); forgotten, it is not
+        // observed, not saved and not deleted
+        HealthMonitor old = silentSince("old", Duration.ofDays(3));
+        when(monitors.findAll(null)).thenReturn(Flux.just(old, reporting("f1"), reporting("f2"), reporting("f3")));
+        // nothing asks about it once it is forgotten (lenient: these stubs document what must not happen)
+        lenient().when(instances.findByMonitor("old")).thenReturn(Flux.empty());
+        lenient().when(observation.observe(eq(old), any(), any())).thenReturn(Mono.just(old));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
+        verify(observation, never()).observe(any(), any(), any());
+        verify(monitors, never()).save(any());
+        verify(monitors, never()).deleteById(any());
+    }
+
+    @Test
+    void monitorsSilentForMinutesOrHoursStillCountTowardsTheValve() {
+        // 3 of 5 went quiet inside the window (minutes to 23 hours): still an implausible share
+        when(monitors.findAll(null)).thenReturn(Flux.just(
+                silentSince("a", Duration.ofMinutes(5)), silentSince("b", Duration.ofMinutes(10)),
+                silentSince("c", Duration.ofHours(23)), reporting("d"), reporting("e")));
+        when(instances.findByMonitor(anyString())).thenReturn(Flux.empty());
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
+        verify(observation, never()).observe(any(), any(), any());
     }
 
     @Test

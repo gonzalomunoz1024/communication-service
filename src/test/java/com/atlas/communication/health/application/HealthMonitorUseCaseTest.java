@@ -49,7 +49,7 @@ class HealthMonitorUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-11-01T12:00:00Z");
     private static final HealthProperties PROPERTIES = new HealthProperties(5000, 300000, 0.3, 2,
-            new HealthProperties.Defaults("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
+            Duration.ofHours(24), new HealthProperties.Defaults("health-monitor", 30, 5000, 2, 2, Severity.MAJOR,
                     Severity.MINOR, Audience.CUSTOMERS, 50, 90));
 
     @Mock

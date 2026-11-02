@@ -81,6 +81,11 @@ communication:
     # ...provided at least this many are silent: one silent service out of three is 33%, not
     # "everyone", and is declared DOWN
     stale-pause-min-silent: 2
+    # a monitor silent for longer than this belongs to a decommissioned service or a forgotten
+    # test: the sweep leaves it alone (state and open notice untouched, nothing deleted) and it
+    # counts on neither side of that share, so abandoned monitors cannot keep the valve paused
+    # for good; delete them to clean up
+    stale-forget-after: PT24H
     # policy a monitor inherits for anything not set at registration
     defaults:
       publisher: health-monitor

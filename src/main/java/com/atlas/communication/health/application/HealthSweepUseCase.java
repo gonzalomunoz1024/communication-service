@@ -31,7 +31,8 @@ import reactor.core.publisher.Mono;
  * <p>Staleness has two guards against our own trouble looking like everyone's outage: it is
  * not evaluated for a grace period after this service starts, nor while an implausible share
  * (and number) of monitors is silent at the same time. A service whose pods all said goodbye
- * (scaled to zero) is never stale, and does not count towards that share either.
+ * (scaled to zero) is never stale, and does not count towards that share either; nor does a
+ * monitor silent for longer than {@code stale-forget-after}, which the sweep leaves alone.
  */
 @Service
 @Slf4j
@@ -105,16 +106,28 @@ public class HealthSweepUseCase {
     }
 
     /**
+     * A push-only monitor silent for longer than {@code stale-forget-after} was decommissioned
+     * or abandoned, not lost this minute: the sweep leaves it alone (its state and any notice it
+     * has open stay as they are; deleting the monitor is the operator's job) and it counts on
+     * neither side of the valve, so a database full of such monitors cannot keep the valve
+     * paused for good. A service that reports again is counted again.
+     */
+    boolean forgotten(HealthMonitor monitor, Instant now) {
+        return monitor.stale(now)
+                && !monitor.staleBaseline().plus(properties.staleForgetAfter()).isAfter(now);
+    }
+
+    /**
      * The safety valve: silence is not trusted during the startup grace, nor while an
      * implausible share of the monitors that can go stale are silent together. Services scaled
-     * to zero are silent by design and count on neither side, and fewer than
-     * {@code stalePauseMinSilent} silent services never pause anything.
+     * to zero are silent by design and count on neither side, forgotten monitors neither, and
+     * fewer than {@code stalePauseMinSilent} silent services never pause anything.
      */
     Mono<Silence> silence(List<HealthMonitor> all, Instant now) {
         if (now.isBefore(startedAt.plusMillis(properties.staleGraceAfterStartMs()))) {
             return Mono.just(new Silence(Map.of(), false));
         }
-        List<HealthMonitor> stale = all.stream().filter(m -> m.stale(now)).toList();
+        List<HealthMonitor> stale = all.stream().filter(m -> m.stale(now) && !forgotten(m, now)).toList();
         return Flux.fromIterable(stale)
                 .flatMap(m -> instances.findByMonitor(m.id()).collectList()
                         .map(known -> Map.entry(m.id(), known)), CONCURRENCY)
@@ -124,6 +137,7 @@ public class HealthSweepUseCase {
                     long silent = stale.size() - scaled;
                     long capable = all.stream()
                             .filter(m -> m.pushOnly() && m.policy().staleAfterSeconds() != null)
+                            .filter(m -> !forgotten(m, now))
                             .count() - scaled;
                     boolean pause = capable >= PAUSE_MIN_MONITORS
                             && silent >= properties.stalePauseMinSilent()
@@ -145,7 +159,7 @@ public class HealthSweepUseCase {
         Mono<HealthMonitor> work;
         if (monitor.probeDue(now)) {
             work = observation.probe(monitor, now);
-        } else if (silence.allowed() && monitor.stale(now)) {
+        } else if (silence.allowed() && monitor.stale(now) && !forgotten(monitor, now)) {
             work = observeStale(monitor, silence.instancesOf(monitor), now);
         } else {
             return Mono.empty();

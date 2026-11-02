@@ -227,12 +227,25 @@ before the debounce sees it, so pods of one service never reset each other's str
 
 Two pods reporting in the same instant collide on the monitor's version check; the service
 re-applies the report after short, growing, randomised pauses (up to eight attempts over a few
-seconds) before answering 409, so a whole fleet reporting at once is still accepted. The sweep also refuses to trust
-silence for 5 minutes after it starts and while more than 30% of silence-capable monitors, and
-at least two of them, are silent together (`communication.health.stale-grace-after-start-ms`,
-`stale-pause-fraction`, `stale-pause-min-silent`; services scaled to zero count on neither
-side), so our own restart or an egress problem never reads as everyone's outage while one
-silent service out of three is still declared DOWN.
+seconds) before answering 409, so a whole fleet reporting at once is still accepted.
+
+**Staleness safety valve.** The sweep refuses to trust silence for 5 minutes after it starts and
+while more than 30 % of silence-capable monitors, and at least two of them, are silent together,
+so our own restart or an egress problem never reads as everyone's outage while one silent service
+out of three is still declared DOWN. Services scaled to zero count on neither side, and neither
+does a monitor that has been silent for longer than `stale-forget-after` (a day): it belongs to a
+decommissioned service or a forgotten test, so the sweep leaves it alone (its state and any notice
+it has open stay as they are, nothing is deleted) instead of letting it keep the valve paused for
+good. Delete such monitors (`DELETE /v1/health/monitors/{id}`) to clean up; a service that reports
+again is counted again. The valve logs one WARN line when it pauses and one INFO line when it
+resumes.
+
+| `communication.health.…` | Default | Meaning |
+|---|---|---|
+| `stale-grace-after-start-ms` | `300000` | silence is not evaluated this long after the service starts |
+| `stale-pause-fraction` | `0.3` | share of silence-capable monitors silent at once above which silence is not trusted |
+| `stale-pause-min-silent` | `2` | the share rule needs at least this many silent monitors (and three capable ones) |
+| `stale-forget-after` | `PT24H` | a monitor silent for longer is left alone and counts on neither side of the share |
 
 [`sidecar/`](sidecar/README.md) holds the OpenShift sidecar that produces these reports
 with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attach it.
