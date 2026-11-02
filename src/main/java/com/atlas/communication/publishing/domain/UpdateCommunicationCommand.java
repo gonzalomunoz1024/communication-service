@@ -7,9 +7,12 @@ import com.atlas.communication.common.domain.Audience;
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.domain.Ticket;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -23,7 +26,7 @@ public record UpdateCommunicationCommand(
         Severity severity,
         @Size(max = Communication.TITLE_MAX) String title,
         @Size(max = Communication.BODY_MAX_BYTES) String body,
-        @Size(max = 20) List<String> affectedServices,
+        @Size(max = 20) @JsonSetter(contentNulls = Nulls.FAIL) List<@NotBlank String> affectedServices,
         Audience audience,
         Instant startsAt,
         Instant endsAt,

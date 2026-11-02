@@ -8,6 +8,8 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.domain.Ticket;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -21,7 +23,8 @@ import jakarta.validation.constraints.Size;
  * {@link com.atlas.communication.common.domain.Communication#create}. {@code ticket} optionally
  * ties the communication to the tracker ticket (ServiceNow incident) behind it; when given,
  * {@code externalRef} defaults to its number. {@code externalRef} is a permanent idempotency key:
- * usable once per tenant, for good.
+ * usable once per tenant, for good. Every {@code affectedServices} entry names a service: a JSON
+ * null is a binding error that names its position, a blank entry fails validation.
  */
 public record CreateCommunicationCommand(
         @NotBlank String tenantId,
@@ -30,7 +33,7 @@ public record CreateCommunicationCommand(
         @NotNull Severity severity,
         @NotBlank @Size(max = Communication.TITLE_MAX) String title,
         @Size(max = Communication.BODY_MAX_BYTES) String body,
-        @Size(max = 20) List<String> affectedServices,
+        @Size(max = 20) @JsonSetter(contentNulls = Nulls.FAIL) List<@NotBlank String> affectedServices,
         Audience audience,
         boolean draft,
         Instant startsAt,

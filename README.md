@@ -190,6 +190,11 @@ switches the check off for local experiments.
 | POST | `/v1/communications/{id}/publish` | DRAFT → SCHEDULED/ACTIVE; 409 if not DRAFT |
 | POST | `/v1/communications/{id}/retire` | optional `{actor, note}`; idempotent on RETIRED; 409 once past `expiresAt` (whether or not the sweeper has run) |
 
+**Input errors** answer `400 {"error": "…"}` naming the field, what was sent and the rule, every
+failing field at once (`publisher: must not be blank; title: must not be blank`).
+`affectedServices` takes up to 20 service names: a JSON `null` entry answers
+`affectedServices[1]: must not be null`, an empty or blank one `affectedServices[1]: must not be blank`.
+
 ### Consumer feed
 
 | Method | Path | Notes |

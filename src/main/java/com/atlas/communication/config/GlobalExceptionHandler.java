@@ -31,6 +31,7 @@ import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.InvalidNullException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.mongodb.MongoSocketException;
@@ -177,6 +178,10 @@ public class GlobalExceptionHandler {
                 return "unknown field '" + upe.getPropertyName() + "'"
                         + (known == null || known.isEmpty() ? "" : "; known fields: " + known.stream()
                                 .map(Object::toString).sorted().collect(Collectors.joining(", ")));
+            }
+            if (t instanceof InvalidNullException ine) {
+                // a JSON null where the type takes none, e.g. an entry of affectedServices
+                return field(ine.getPath(), ex.getMethodParameter()) + ": must not be null";
             }
             if (t instanceof MismatchedInputException mie) {
                 return field(mie.getPath(), ex.getMethodParameter()) + ": expected "

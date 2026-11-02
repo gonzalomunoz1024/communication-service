@@ -146,6 +146,58 @@ class RestControllerPublishingAdapterTest {
     }
 
     @Test
+    void aNullServiceEntryNamesItsPositionAndTheRule() {
+        when(useCase.create(any())).thenAnswer(inv -> Mono.just(outageFrom(inv.getArgument(0))));
+        when(useCase.update(any(), any())).thenAnswer(inv -> Mono.just(outageFrom(new CreateCommunicationCommand(
+                "vmforge", "sre", com.atlas.communication.common.domain.CommunicationType.OUTAGE,
+                com.atlas.communication.common.domain.Severity.MAJOR, "down", null, List.of(), null, false,
+                null, null, null, null, null))));
+
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"tenantId\":\"vmforge\",\"publisher\":\"sre\",\"type\":\"OUTAGE\","
+                        + "\"severity\":\"MAJOR\",\"title\":\"down\",\"affectedServices\":[\"vm-api\",null]}")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("affectedServices[1]: must not be null");
+        client.put().uri("/v1/communications/c1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"affectedServices\":[null],\"expectedVersion\":0}")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("affectedServices[0]: must not be null");
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    void anEmptyOrBlankServiceEntryIsRejected() {
+        when(useCase.create(any())).thenAnswer(inv -> Mono.just(outageFrom(inv.getArgument(0))));
+        when(useCase.update(any(), any())).thenAnswer(inv -> Mono.just(outageFrom(new CreateCommunicationCommand(
+                "vmforge", "sre", com.atlas.communication.common.domain.CommunicationType.OUTAGE,
+                com.atlas.communication.common.domain.Severity.MAJOR, "down", null, List.of(), null, false,
+                null, null, null, null, null))));
+
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "down", "affectedServices", List.of("vm-api", "")))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("affectedServices[1]: must not be blank");
+        client.put().uri("/v1/communications/c1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("affectedServices", List.of("  ", "vm-api"), "expectedVersion", 0))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("affectedServices[0]: must not be blank");
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
     void malformedJsonSaysWhere() {
         client.post().uri("/v1/communications")
                 .contentType(MediaType.APPLICATION_JSON)
