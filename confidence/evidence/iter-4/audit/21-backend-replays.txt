@@ -1,0 +1,95 @@
+# Backend replays: the verifier's check scripts (scratchpad backend4/scripts) re-pointed to the auditor's private instances, compared id by id with the verifier's evidence (confidence/evidence/iter-4/backend)
+# port map: 8080->19799 (default config, db au4_shared), 19100/19101->19700/19701 (pair, db au4_pair; 19701 at DEBUG), 19105->19705 (sweeper off, au4_eff), 19110/19111->19710/19711 (iter-4 / iter-3 jar on au4-mongo :19798), 19120->19720 (au4_gaps), 19121->19721 (iter-3 jar, au4_iter3ab), 19125->19725 (default config, au4_g44d), 19130/19131->19730/19731 (iter-4 / iter-3, au4_ab4/au4_ab3), 19141->19741 (sigterm), stub 19160->19760, vb4-mongo->au4-mongo, vb4_->au4_.
+# jars: iteration 4 = scratchpad communication-service-iter4.jar (sha256 64e07ece...), iteration 3 = communication-service-iter3.jar (b63ffd4e...)
+
+## incident (mine, corrected): the first chain ran with the wrong stub on :19760 (stub_actuator.py, the older stub that also sits in backend4/scripts, without /slow-race, /doc and /hits?path=) instead of the verifier's stub3.py. 22 (G3-30-e), 24 (G32-a/c) and 31 (every pull row) then failed with 'DOWN (HTTP 404)' from the stub. I swapped in stub3.py at 11:42 and re-ran the three (chain2); the first outputs are kept in scratchpad audit4/be/out/stub-actuator-runs/. Only the re-runs count.
+
+## chain1 (11:37-11:46Z)
+11:38:31 check_a_publishing_feed_admin.py -> 20-http-publishing-feed-admin.txt exit 0 (54s): A: publishing, feed, SSE, admin, client id, errors (auditor replay on :19799): 110/113 passed -> 20-http-publishing-feed-admin.txt
+11:38:46 check_b_health.py -> 21-http-health.txt exit 0 (15s): B: health monitoring (auditor replay on :19799 + stub :19760): 80/80 passed -> 21-http-health.txt
+11:38:59 check_g3_contracts.py -> 22-http-iter3-contracts.txt exit 0 (13s): G3: iteration-3 contracts (auditor replay on :19799): 50/51 passed -> 22-http-iter3-contracts.txt
+11:39:30 check_g32_probe_claim.py -> 24-g32-probe-claim.txt exit 0 (31s): G-3-2 probe claim across the pair (auditor replay): 1/3 passed -> 24-g32-probe-claim.txt
+11:40:22 check_g28_snapshot_head.py -> 27-g28-snapshot-head.txt exit 0 (52s): G-2-8 snapshot head (auditor replay): 4/4 passed -> 27-g28-snapshot-head.txt
+11:40:23 check_g26_reopen.py -> 28-g26-reopen-threshold.txt exit 0 (1s): G-2-6 reopen threshold (auditor replay): 10/10 passed -> 28-g26-reopen-threshold.txt
+11:41:20 check_d_gaps.py -> 29-http-gap-rechecks-iter1-2.txt exit 0 (57s): D: iteration-1/2 gap re-checks (auditor replay :19799 + :19720): 42/42 passed -> 29-http-gap-rechecks-iter1-2.txt
+11:41:23 g416_trim.py -> 31-g416-trim-and-notblank.txt exit 0 (3s): G-4-16 trim and @NotBlank A/B (auditor replay :19731 vs :19730): 15/28 passed -> 31-g416-trim-and-notblank.txt
+11:41:23 g4_api.py -> 32-g4-api-changes.txt exit 0 (0s): G-4 API changes (auditor replay on :19799): 26/26 passed -> 32-g4-api-changes.txt
+11:41:24 check_g29_externalref_openapi.py -> 39-externalref-openapi.txt exit 0 (1s): G-2-9 externalRef/OpenAPI (auditor replay on :19799): 17/17 passed -> 39-externalref-openapi.txt
+11:41:31 check_g33_effective.py -> 41-effective-status.txt exit 0 (7s): G-3-3 effective status (auditor replay on :19705): 11/11 passed -> 41-effective-status.txt
+11:42:12 check_g25_valve.py -> 42-valve-forget.txt exit 0 (41s): G-2-5 valve and forget (auditor replay on :19720): 5/5 passed -> 42-valve-forget.txt
+11:42:26 sigterm_test.py -> 43-sigterm.txt exit 0 (14s): started pid 22355 after 7s
+11:44:08 g44_probe_race.py -> 26-g44-forced-probe-race.txt exit 0 (102s): G-4-4 forced probe race (auditor replay): 10/11 passed -> 26-g44-forced-probe-race.txt
+11:45:57 check_g27_probe_race.py -> 26c-g27-original-scenario.txt exit 0 (109s): G-2-7 original scenario (auditor replay): 3/3 passed -> 26c-g27-original-scenario.txt
+ALLDONE
+
+## chain2 (stub3, 11:47Z)
+11:47:08 check_g3_contracts.py -> 22-http-iter3-contracts.txt exit 0 (12s): G3: iteration-3 contracts (auditor replay on :19799, stub3 on :19760): 51/51 passed -> 22-http-iter3-contracts.txt
+11:47:10 g416_trim.py -> 31-g416-trim-and-notblank.txt exit 0 (2s): G-4-16 trim and @NotBlank A/B (auditor replay :19731 vs :19730, stub3 on :19760): 27/28 passed -> 31-g416-trim-and-notblank.txt
+11:47:41 check_g32_probe_claim.py -> 24-g32-probe-claim.txt exit 0 (31s): G-3-2 probe claim across the pair (auditor replay, stub3 on :19760): 3/3 passed -> 24-g32-probe-claim.txt
+ALLDONE
+
+## id-by-id comparison (cmp_ids2.py: verdict per check id, auditor vs verifier)
+## auditor 20-http-publishing-feed-admin.txt (Checks: 110/113 passed) vs ev/20-http-publishing-feed-admin.txt (Checks: 110/113 passed)
+== 103 ids compared: 103 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 21-http-health.txt (Checks: 80/80 passed) vs ev/21-http-health.txt (Checks: 80/80 passed)
+== 62 ids compared: 62 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 22-http-iter3-contracts.txt (Checks: 51/51 passed) vs ev/22-http-iter3-contracts.txt (Checks: 51/51 passed)
+== 51 ids compared: 51 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 24-g32-probe-claim.txt (Checks: 3/3 passed) vs ev/24-g32-probe-claim.txt (Checks: 3/3 passed)
+== 3 ids compared: 3 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 26-g44-forced-probe-race.txt (Checks: 10/11 passed) vs ev/26-g44-forced-probe-race.txt (Checks: 10/11 passed)
+== 11 ids compared: 11 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 26c-g27-original-scenario.txt (Checks: 3/3 passed) vs ev/26c-g27-original-scenario.txt (Checks: 3/3 passed)
+== 3 ids compared: 3 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 27-g28-snapshot-head.txt (Checks: 4/4 passed) vs ev/27-g28-snapshot-head.txt (Checks: 4/4 passed)
+== 4 ids compared: 4 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 28-g26-reopen-threshold.txt (Checks: 10/10 passed) vs ev/28-g26-reopen-threshold.txt (Checks: 10/10 passed)
+== 10 ids compared: 10 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 29-http-gap-rechecks-iter1-2.txt (Checks: 42/42 passed) vs ev/29-http-gap-rechecks-iter1-2.txt (Checks: 42/42 passed)
+== 42 ids compared: 42 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 31-g416-trim-and-notblank.txt (Checks: 27/28 passed) vs ev/31-g416-trim-and-notblank.txt (Checks: 27/28 passed)
+== 1 ids compared: 1 same verdict, 0 different; only verifier: []; only auditor: ["G416-pull-'pass '", "G416-overall-'pass '", "G416-pull-' pass'", "G416-overall-' pass'", "G416-pull-'\\tpass\\n'", "G416-overall-'\\tpass\\n'", "G416-pull-'pass\\u0001'", "G416-overall-'pass\\u0001'", "G416-pull-'\\u0001pass'", "G416-overall-'\\u0001pass'", "G416-pull-'pass\\u00a0'", "G416-overall-'pass\\u00a0'", "G416-pull-'pass\\u2003'", "G416-overall-'pass\\u2003'", "G416-pull-lone '\\u00a0'", "G416-overall-lone '\\u00a0'", "G416-pull-lone '\\u2003'", "G416-pull-lone '\\u0001'", "G416-overall-lone '\\u0001'", "G416-pull-lone '\\t'", "G416-overall-lone '\\t'", "G416-pull-lone ' '", "G416-overall-lone ' '", "G416-pull-'DOWN\\u0000'", "G416-overall-'DOWN\\u0000'", "G416-pull-'down\\u001f '", "G416-overall-'down\\u001f '"]
+
+## auditor 32-g4-api-changes.txt (Checks: 26/26 passed) vs ev/32-g4-api-changes.txt (Checks: 26/26 passed)
+== 26 ids compared: 26 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 34-mongo-outage.txt (Checks: 21/22 passed) vs ev/34-mongo-outage.txt (Checks: 21/22 passed)
+== 22 ids compared: 22 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 35-frozen-db-ab.txt (Checks: 1/4 passed) vs ev/35-frozen-db-ab.txt (Checks: 1/4 passed)
+== 4 ids compared: 4 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 39-externalref-openapi.txt (Checks: 17/17 passed) vs ev/39-externalref-openapi.txt (Checks: 17/17 passed)
+== 17 ids compared: 17 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 41-effective-status.txt (Checks: 11/11 passed) vs ev/41-effective-status.txt (Checks: 11/11 passed)
+== 11 ids compared: 11 same verdict, 0 different; only verifier: []; only auditor: []
+
+## auditor 42-valve-forget.txt (Checks: 5/5 passed) vs ev/42-valve-forget.txt (Checks: 5/5 passed)
+== 5 ids compared: 5 same verdict, 0 different; only verifier: []; only auditor: []
+
+Note on 31: the verifier's evidence file keeps only the failing row in its table (the per-word results are in a code block); my file has all 28 ids. Both runs: 27/28, the same single FAIL (G416-overall-lone '\u2003': 400 'status: must not be blank'; iteration 3 202 UNKNOWN). The per-word iteration-3/iteration-4 readings agree with the verifier's code block row by row.
+
+## 43 sigterm_test.py (:19741, two open streams)
+auditor:
+  started pid 22355 after 7s
+  publish -> 201
+  SIGTERM sent at t0
+  stream 1: ended 0.015s after SIGTERM (eof, 2 event frames seen)
+  stream 2: ended 0.005s after SIGTERM (eof, 2 event frames seen)
+  process exit code 143 after 4.13s
+  log: 2026-11-02T11:42:22.804Z  INFO 22355 --- [communication-service] [ionShutdownHook] o.s.boot.reactor.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+  log: 2026-11-02T11:42:22.807Z  INFO 22355 --- [communication-service] [ netty-shutdown] o.s.boot.reactor.netty.GracefulShutdown  : Graceful shutdown complete
+  SIGTERM with open streams (auditor replay, :19741): 0/0 passed -> ../out/43-sigterm.txt
+  ERROR lines in the instance log: 0; WARN lines: 2
+verifier (ev/43): streams ended 0.014 s / 0.010 s after SIGTERM, exit 143 after 4.13 s, graceful-shutdown lines, ERROR 0, WARN 2 (springdoc)
+=> MATCH (exact)

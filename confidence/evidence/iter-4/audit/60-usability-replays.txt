@@ -1,0 +1,113 @@
+Usability reviewer: replays of the sampled claims (16 of 80). Generated 2026-11-02T12:24:51Z.
+Harness: the reviewer's scripts (confidence/evidence/iter-4/usability/scripts) copied to scratchpad audit4/ux/scripts and remapped
+(scratchpad/usability/iter4 -> audit4/ux/work; :3000 -> :3709; 8080 and 19600 -> 19799; 19601 -> 19750; 3600 -> 3709; 3601 -> 3751; 3602 -> 3755;
+196xx -> 197xx; 19699 -> 19798; ux4- -> au4-u-; ux4 -> au4u). :19799 is my private stand-in for the shared :8080 (iteration-4 jar, default
+configuration, database au4_shared on mongo7); :3709 a Vite dev server of frontend/ proxied to it; :3755 vite preview of frontend/dist.
+Axe: @axe-core/playwright 4.10.2 / axe-core 4.10.3 from scratchpad audit3/fe/node_modules (same versions as the reviewer's).
+NODE_PATH must append the global modules: the first attempt replaced it and could not require('playwright'); kept as out/summary-attempt1.txt.
+
+Run summary (mine):
+  11:59:32 ux4-ui exit=0 (127 s)
+  11:59:47 ux4-keyboard-only exit=0 (15 s)
+  11:59:52 ux4-none-free exit=0 (5 s)
+  12:00:31 swagger4 exit=0 (39 s)
+  12:01:00 ux4-console-sweep exit=0 (29 s)
+  12:01:00 ALLDONE
+  12:04:39 sidecar-pod4 exit=0 (187 s)
+  12:05:05 sidecar-manifests4 exit=0 (26 s)
+  12:05:05 ALLDONE
+
+== cmd-3 ux4-ui.js (SRE walk)
+  steps: reviewer 78, auditor 78; same step sequence: True; identical after normalising names/ports/times/ids: 73/78
+  axe scans: reviewer 10 violations [0]; auditor 10 violations [0]
+  differs [type-then-tab]
+    reviewer: {"firstFeedGetMs":380,"gets":1,"active":"button \"Switch to dark mode\" ring=solid 2px|false"}
+    auditor:  {"firstFeedGetMs":395,"gets":1,"active":"button \"Switch to dark mode\" ring=solid 2px|false"}
+  differs [duplicate-409-announcements]
+    reviewer: {"ann":[{"t":17015,"role":"status","live":null,"text":""},{"t":17183,"role":"alert","live":null,"text":"The service rejected this. INC4000001 is already the reference of a notice in tenant ux4-sre (the ServiceNow incident number doubles as the reference). References are permanent, even after a notic
+    auditor:  {"ann":[{"t":15814,"role":"status","live":null,"text":""},{"t":15829,"role":"alert","live":null,"text":"The service rejected this. INC4000001 is already the reference of a notice in tenant au4-u-sre (the ServiceNow incident number doubles as the reference). References are permanent, even after a not
+  differs [segmented-arrow]
+    reviewer: {"nowChecked":"Incident","active":"button[radio] \"Incident\" ring=solid 2px|true"}
+    auditor:  {"nowChecked":"Incident","active":"button[radio] \"Incident\" ring=solid 3px|true"}
+  differs [live]
+    reviewer: {"publishStatus":201,"createdMs":864,"retiredMs":833,"badge":"Live","announcements":[{"t":444,"role":"status","live":null,"text":""},{"t":444,"role":"status","live":"polite","text":""},{"t":652,"role":"status","live":"polite","text":"Live"},{"t":2022,"role":"status","live":"polite","text":"Connectin
+    auditor:  {"publishStatus":201,"createdMs":331,"retiredMs":814,"badge":"Live","announcements":[{"t":198,"role":"status","live":null,"text":""},{"t":198,"role":"status","live":"polite","text":""},{"t":286,"role":"status","live":"polite","text":"Live"},{"t":1727,"role":"status","live":"polite","text":"Connectin
+  differs [cap-notice]
+    reviewer: {"text":"Showing the first 100 of 103 notices. Narrow the filters to see the rest.","tabBadge":"Feed\n99+","cards":100}
+    auditor:  {"text":null,"tabBadge":"Feed","cards":0}
+   -> MATCH. The 5 differing steps differ in timings (first GET 380 vs 395 ms, publish-to-card times), a focus-ring width (2px vs 3px, both visible)
+      and the tenant name inside the 409 text (ux4-sre vs au4-u-sre). Escape steps (resolve-escape-from-note, -from-button, withdraw-escape,
+      phone-resolve-escape) identical; duplicate-409-lowercase-ticket identical except the tenant name.
+
+== cmd-4 ux4-keyboard-only.js
+  steps: reviewer 9, auditor 9; same step sequence: True; identical after normalising names/ports/times/ids: 8/9
+  differs [resolve-retry]
+    reviewer: {"focus":"div \"All clearNo outage is active for ux4-kbd\" ring=true","cards":0,"announced":"Resolved “Keyboard-only notice”. It has left every consumer's feed."}
+    auditor:  {"focus":"div \"All clearNo outage is active for au4-u-k\" ring=true","cards":0,"announced":"Resolved “Keyboard-only notice”. It has left every consumer's feed."}
+   -> MATCH (the one difference is the tenant name in the focused element's text).
+
+== cmd-6 ux4-none-free.js
+  steps: reviewer 4, auditor 4; same step sequence: True; identical after normalising names/ports/times/ids: 4/4
+   -> MATCH.
+
+== cmd-10 swagger4.js: 3 differing lines after normalising ids and names:
+   41c41
+   <   "tryAfterAuthorize": "Code Details 200 Response body Download [ { \"tenantId\": \"acme\", \"counts\": { \"RETIRED\": 4 }, \"total\": 4 }, { \"tenantId\": \"ux4-none-free\", \"counts\": { \"ACTIVE\": 51 }, \"total\": 
+   ---
+   >   "tryAfterAuthorize": "Code Details 200 Response body Download [ { \"tenantId\": \"au4-a-0cf5ac\", \"counts\": { \"SCHEDULED\": 1, \"ACTIVE\": 6, \"EXPIRED\": 1, \"RETIRED\": 6 }, \"total\": 14 }, { \"tenantId\": \"au
+   93d92
+   < exit 0
+   -> MATCH: 20 operations, all 20 locked before Authorize; the same response codes and texts; the only content difference is which tenants
+      the admin tenant list returns on each store, and the reviewer's file ends with an 'exit 0' line.
+
+== cmd-11 OpenAPI responses (my own reading of /v3/api-docs of the iteration-4 jar, scratchpad audit4/ux/scripts/au4-openapi.py)
+   operations: 20
+   components.responses: ['BadRequest', 'NotFound', 'ServiceUnavailable']
+   mentions suggestedExternalRef: True | expectedVersion described: True
+   DELETE /v1/admin/communications/{id} -> 204
+   POST /v1/admin/communications/{id}/retire -> 200
+   POST /v1/communications -> 201
+   PUT /v1/communications/{id} -> 200
+   POST /v1/communications/{id}/publish -> 200
+   POST /v1/communications/{id}/retire -> 200
+   POST /v1/health/monitors -> 201
+   DELETE /v1/health/monitors/{id} -> 204
+   POST /v1/health/monitors/{id}/probe -> 200
+   POST /v1/health/reports -> 202
+   -> MATCH: 201 publish and register, 202 report, 204 delete, 200 elsewhere; BadRequest/NotFound/ServiceUnavailable shared, each with Error and an example.
+
+== cmd-20 ux4-console-sweep.js (step names carry the ports)
+   identical: [dev] {"total":11,"errorsOrWarnings":1,"groups":{"desktop debug: [vite] connecting...":2,"desktop debug: [vite] connected.":2,"desktop info: %cDownload the Reac
+   identical: [prod-preview] {"total":1,"errorsOrWarnings":1,"groups":{"desktop error: Failed to load resource: the server responded with a status of N (Conflict)":1}}
+   -> MATCH.
+
+== F-65 accessibility: 10 axe scans in ux4-ui (both themes, desktop and phone), 0 violations in each, as the reviewer found; the feed's load error
+   is role=alert ([phone-feed-error] alert text: "alert":"Couldn't load the feed...). -> MATCH
+
+== sidecar-pod4.js (F-91 UI side, F-78, F-88): 13 differing lines after normalising times, ids and ports (the backend port in two log lines, a hash-like instance id)
+   reviewer: OUTAGE in the feed after 7.5 s | auditor: OUTAGE in the feed after 7.4 s
+   reviewer: notice gone from the feed after 10.7 s | auditor: notice gone from the feed after 13.6 s
+   reviewer: notice gone after ~12 s | auditor: notice gone after ~16 s
+   reviewer:   feed item: OUTAGE MAJOR 'payments-api is down' | body: 'payments-api is DOWN as of 2026-11-02 10:32:13 UTC.\ | auditor:   feed item: OUTAGE MAJOR 'payments-api is down' | body: 'payments-api is DOWN as of 2026-11-02 12:02:49 UTC.\
+   F-91: OUTAGE 7.4 s after the app stops (reviewer 7.5 s); the failing-component notice 8.3 s (reviewer 8.4 s); gone 13.6 s and ~16 s after
+   recovery (reviewer 10.7 s and ~12 s). My stand-in backend ran the default health sweep (5 s); the reviewer's A ran
+   --communication.health.sweep-interval-ms=1000 (usability/private-stack.txt:2). -> MATCH (nuance: retirement timing follows the sweep).
+   F-88: UNKNOWN 'starting: waiting for the app to listen' before the app listens: 3 lines in mine (reviewer 3); then found, no false outage. -> MATCH
+   F-78: README causes 1-3 (P11-P13) and the debug-level sends (P9) reproduce line for line. The third part, 'report delivered again' after an
+   outage, comes from the reviewer's ux4-dbdown.js (sidecar-b-container.txt), which I did not re-run; my sidecar replays log the same INFO line three times in
+   16-failure-paths (after each send outage), e.g. {"t":"12:15:57.626","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":4,"failingFor":"41.694s"}
+   and once in 17a after 240 s of 503s (failedAttempts 10, failingFor 3m34.107s). -> MATCH (equivalent for the third part).
+
+== sidecar-manifests4.sh (UX-64): 7 differing lines after normalising paths, ports and go test's (cached)
+   -> MATCH: the plain-YAML row names the ConfigMap and its keys; Debugging cause 4 (CreateContainerConfigError) present.
+
+== api-walk4.sh (F-09 ticket and the cookbook):
+   labelled calls (clean-up retires excluded): reviewer 82, auditor 82, in both 82, same status 81
+   differs C1-verbatim: reviewer ['409'] auditor ['201']
+   -> MATCH (nuance): C1-verbatim is 201 on my fresh store and 409 on the shared store the reviewer used (the script says it expects the
+      shared store to hold INC0012345 already). The lower-case ticket is normalised and a bad number named with the expected form, as claimed.
+
+== Re-checks UX-55, UX-57, UX-58, UX-64: covered above (escape steps; OpenAPI; Swagger examples 201/409/200/201/202; manifests). -> MATCH x4
+
+Tally: 16 sampled usability claims, 16 MATCH (3 with a nuance: F-91 retirement timing, F-78's third part shown by equivalent runs,
+F-09 on a fresh store).

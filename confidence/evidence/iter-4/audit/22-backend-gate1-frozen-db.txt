@@ -1,0 +1,116 @@
+Gate question 1: GAP-backend4-1 (frozen database). Auditor replays on private backends; nothing touched the shared stack.
+Generated 2026-11-02T12:18:17Z. Jars: iteration 4 = scratchpad/communication-service-iter4.jar (sha256 64e07ece32b4d9f6..., same bytes as build/libs),
+iteration 3 = scratchpad/communication-service-iter3.jar (sha256 b63ffd4ebfae68c9...). Private mongod: container au4-mongo on 127.0.0.1:19798 (SIGSTOP/SIGCONT with docker kill -s).
+Scripts: copies of the backend verifier's g4_frozen_ab.py and g4_outage.py, ports and names remapped, plus my au4_frozen_open_stream.py (scratchpad audit4/be/scripts).
+
+== 1. Replay of the verifier's 35 (A/B, three rounds of concurrent calls while mongod is frozen): iteration 4 on :19710, iteration 3 on :19711
+# Frozen database A/B (auditor replay of g4_frozen_ab.py)
+
+Checks: 1/4 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| FRZ-1 | F-28/G-3-31/G-4-10 iteration 4: every call while mongod is frozen is a 503 {"error":"database unavailable"} | FAIL | 15/108 were 503; others [(1, 2, 'stream', '500'), (1, 2, 'publish', '500'), (1, 2, 'stream', '500'), (1, 2, 'feed', '500'), (1, 2, 'list', '500'), (1, 2, 'feed', '500'), (1, 4, 'feed', '500'), (1, 4, 'stream', '500'), (1, 4, 'stream', '500'), (1, 4, 'feed', '500'), (1, 4, 'list', '500'), (1, 4, 'pub |
+| FRZ-2 | F-28 iteration 4: no answer carries driver detail (ServerId, cluster id, the database address) | FAIL | 93 of 108 bodies name the driver's pool/server: [('stream', '500', 'text/event-stream'), ('publish', '500', 'application/json'), ('stream', '500', 'text/event-stream'), ('feed', '500', 'application/json'), ('list', '500', 'application/json'), ('feed', '500', 'application/json'), ('feed', '500', 'app |
+| FRZ-3 | A/B iteration 3 jar in the same rounds (record only) | PASS | iteration 3: 12/108 were 503; 60 bodies name the driver's pool/server: [('feed', '500'), ('feed', '500'), ('publish', '500'), ('list', '500'), ('publish', '500'), ('feed', '500'), ('feed', '500'), ('feed', '500'), ('list', '500'), ('feed', '500'), ('list', '500'), ('feed', '500')] |
+| FRZ-4 | F-18/G-4-10 iteration 4: every stream opened while frozen is a JSON 503 before any byte | FAIL | [(1, 2, '500', 'text/event-stream', 16.52), (1, 2, '500', 'text/event-stream', 16.52), (1, 4, '500', 'text/event-stream', 14.52), (1, 4, '500', 'text/event-stream', 14.52), (1, 6, '500', 'text/event-stream', 12.52), (1, 6, '500', 'text/event-stream', 12.52), (1, 8, '500', 'text/event-stream', 10.55) |
+
+## Transcript (request -> status body, trimmed)
+...
+iter4: 108 calls; by (kind, status, content type): feed 500 application/json x30 (8.53-17.83s); feed 503 application/json x6 (20.03-20.06s); list 500 application/json x16 (8.53-19.79s); list 503 application/json x2 (20.04-20.06s); publish 500 application/json x17 (8.54-19.84s); publish 503 application/json x1 (15.3-15.3s); stream 500 text/event-stream x30 (8.53-17.83s); stream 503 application/json x6 (20.04-20.07s)
+iter4 log over the three rounds: 460 lines, ERROR 3, stack lines 237, lines naming '-> 500' 93
+iter3: 108 calls; by (kind, status, content type): feed 500 application/json x30 (7.57-17.85s); feed 503 application/json x6 (20.03-20.06s); list 500 application/json x15 (7.58-17.86s); list 503 application/json x3 (20.03-20.08s); publish 500 application/json x15 (7.57-17.85s); publish 503 application/json x3 (15.03-15.31s); stream 200 text/event-stream x36 (0.0-0.03s)
+iter3 log over the three rounds: 1890 lines, ERROR 62, stack lines 190, lines naming '-> 500' 60
+
+-- iteration 4, sample answers while frozen (my run):
+  iter4 round 1 +2s stream: 500 text/event-stream;charset=UTF-8 after 16.52s body '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c52a83005bbd8fc675\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}\r\n2\r\n\n\n\r\n0\r\n\r\n'
+  iter4 round 1 +2s publish: 500 application/json after 16.53s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c52a83005bbd8fc675\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+  iter4 round 1 +2s stream: 500 text/event-stream;charset=UTF-8 after 16.52s body '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c52a83005bbd8fc675\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}\r\n2\r\n\n\n\r\n0\r\n\r\n'
+  iter4 round 1 +2s feed: 500 application/json after 16.53s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c52a83005bbd8fc675\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+  iter4 round 1 +2s list: 500 application/json after 16.53s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c52a83005bbd8fc675\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+  iter4 round 1 +2s feed: 500 application/json after 16.53s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c52a83005bbd8fc675\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+-- iteration 3, sample answers while frozen (my run):
+  iter3 round 1 +2s feed: 500 application/json after 15.57s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c428c7dae86fc308ed\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+  iter3 round 1 +2s feed: 500 application/json after 15.57s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c428c7dae86fc308ed\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+  iter3 round 1 +4s stream: 200 text/event-stream;charset=UTF-8 after 0.01s body 'c\r\n:connected\n\n\r\n'
+  iter3 round 1 +4s stream: 200 text/event-stream;charset=UTF-8 after 0.01s body 'c\r\n:connected\n\n\r\n'
+  iter3 round 1 +2s stream: 200 text/event-stream;charset=UTF-8 after 0.01s body 'c\r\n:connected\n\n\r\nc\r\n:keepalive\n\n\r\n'
+  iter3 round 1 +2s publish: 500 application/json after 15.59s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c428c7dae86fc308ed\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+  iter3 round 1 +2s list: 500 application/json after 15.59s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c428c7dae86fc308ed\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+  iter3 round 1 +4s publish: 500 application/json after 13.57s body '{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'6ae874c428c7dae86fc308ed\', description=\'null\'}, address=127.0.0.1:19798} is paused because another operation failed"}'
+-- iteration 4 log lines:
+  iter4 log: 2026-11-02T11:32:51.873Z ERROR 17835 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+  iter4 log: 2026-11-02T11:33:13.528Z ERROR 17835 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+  iter4 log: 2026-11-02T11:33:34.049Z ERROR 17835 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+  iter4 log: 2026-11-02T11:32:51.883Z  INFO 17835 --- [communication-service] [a83005bbd8fc675] c.a.c.config.ClientIdWebFilter           : client=au4-verifier POST /v1/communications -> 500 (16500 ms)
+-- iteration 3 log lines:
+  iter3 log: 2026-11-02T11:32:50.939Z ERROR 17838 --- [communication-service] [or-http-epoll-3] o.s.w.s.adapter.HttpWebHandlerAdapter    : [a74f1edc-16] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=au4-frz-5c0f40&clientId=au4-ui", but ServerHttpResponse alre
+  iter3 log: 2026-11-02T11:32:50.939Z ERROR 17838 --- [communication-service] [or-http-epoll-2] o.s.w.s.adapter.HttpWebHandlerAdapter    : [8633b307-18] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=au4-frz-5c0f40", but ServerHttpResponse already committed (2
+  iter3 log: 2026-11-02T11:32:50.944Z ERROR 17838 --- [communication-service] [or-http-epoll-1] o.s.w.s.adapter.HttpWebHandlerAdapter    : [8d351f2f-24] Error [java.lang.UnsupportedOperationException] for HTTP GET "/v1/feed/stream?tenantId=au4-frz-5c0f40", but ServerHttpResponse already committed (2
+  iter3 log: 2026-11-02T11:32:50.932Z  INFO 17838 --- [communication-service] [8c7dae86fc308ed] c.a.c.config.ClientIdWebFilter           : client=au4-verifier GET /v1/feed -> 500 (15565 ms)
+  iter3 log: 2026-11-02T11:32:50.936Z  INFO 17838 --- [communication-service] [8c7dae86fc308ed] c.a.c.config.ClientIdWebFilter           : client=au4-verifier GET /v1/feed -> 500 (15562 ms)
+  iter3 log: 2026-11-02T11:32:50.938Z  INFO 17838 --- [communication-service] [8c7dae86fc308ed] c.a.c.config.ClientIdWebFilter           : client=au4-verifier GET /v1/communications -> 500 (15562 ms)
+
+-- scheduler ERROR (TaskUtils LoggingErrorHandler) count per private log over the whole session:
+   iteration 4 (:19710, rounds of 35 + the 35b check): 4 ERROR lines from the scheduler
+   iteration 3 (:19711, rounds of 35):                 2 ERROR lines from the scheduler; 30 lines 'ServerHttpResponse already committed'
+
+Verifier's numbers for the same check (evidence/iter-4/backend/35-frozen-db-ab.txt): iteration 4 1/4 passed, 93 of 108 bodies name the driver;
+iteration 3: 10/108 were 503, 62 bodies name the driver; streams 200 ':connected' x36; iteration-3 log ERROR 63 (scheduler + 'already committed').
+Mine: iteration 4 1/4 passed, 15/108 were 503, 93 of 108 bodies name the driver; iteration 3: 12/108 were 503, 60 bodies name the driver; streams 200 x36; log ERROR 62.
+=> MATCH. The counts differ only in where the 15-20 s timeouts fell inside each round.
+
+== 2. Open stream across a freeze (35b, iteration 4 on :19710)
+# Frozen database: an open stream, keepalives, readiness, recovery (iteration-4 jar :19710)
+
+Checks: 6/6 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| KEEP-0 | F-18 | PASS | publish before the freeze -> 201; stream lines so far: ['HTTP 200 text/event-stream;charset=UTF-8', ':connected', 'id:1', 'event:created', 'data:{"seq":1,"type":"CREATED","at":"2026-11-02T11:34:13.216Z","communication":{"id":"a6eab6ca-c9d0-46e7-9c2d-a816bd2207a4","tenantId":"au4-keep-d95f9e","publis |
+| KEEP-1 | F-92 SSE keepalive continues (open stream, frozen database under concurrent calls) | PASS | keepalive comments at [11.9, 26.9] s after the freeze; other lines [] |
+| KEEP-2 | F-92 recovery without restart: readiness 200, publish 201, the open stream gets the new frame, feed 200 | PASS | readiness 200 0.0s after CONT; publish -> 201; feed -> 200 (2); open stream after thaw: [(0.5, 'id:2'), (0.5, 'event:created'), (0.5, 'data:{"seq":2,"type":"CREATED","at":"2026-11-02T11:34:54.946Z","communication":{"id":"053a9945-a75a-4832-abe0-d24e31585c4f","tenantId":"au4-keep-d95f9e","publisher": |
+| KEEP-3 | README: readiness 503 within 1 s while the database hangs | PASS | [(2, 503, 0.811), (8, 503, 0.81), (20, 503, 0.808)] |
+| KEEP-4 | record: what the concurrent calls got during the freeze | PASS | feed 500 x2 (16.81-16.82s); feed 503 x2 (20.03-20.03s); list 500 x2 (16.82-19.82s); publish 500 x1 (16.82-16.82s); publish 503 x1 (15.03-15.03s) / e.g. publish 503: {"error":"database unavailable"}; list 500: {"error":"Connection pool for ServerId{clusterId=ClusterId{value='6ae874c52a83005bbd8fc675' |
+| KEEP-5 | record: log over this check | PASS | 125 lines, ERROR 1, stack lines 79; first ERROR: 2026-11-02T11:34:34.621Z ERROR 17835 --- [communication-service] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task |
+
+## Transcript (request -> status body, trimmed)
+
+== 3. Replay of the verifier's 34 (Mongo stopped and started; plus one stream opened during a freeze): 21/22, the same single FAIL as the verifier's
+Checks: 21/22 passed
+| O-2c | F-18/G-4-10 a stream opened while mongod is frozen: JSON 503 before any byte | FAIL | HTTP/1.1 500 Internal Server Error first bytes after 7.012s '5\r\ndata:\r\nb7\r\n{"error":"Connection pool for ServerId{clusterId=ClusterId{value=\'' |
+
+== 4. How a stream reports a request error, iteration 3 vs iteration 4 (not database-related; shows the SSE framing pre-dates iteration 4)
+GET /v1/feed/stream?tenantId=x with header Last-Event-ID: abc, Accept: text/event-stream, on both jars (iteration 3 on :19721, briefly):
+   both answered 400, Content-Type text/event-stream, body: data:{"error":"lastEventId: 'abc' is not a number"}
+   G-4-10 forces JSON only for the 503 of handleDatabaseUnavailable; every other error on the stream path is SSE-framed in both iterations.
+
+== 5. Ruling material (matrix text, quoted from confidence/feature-matrix.json)
+F-18 feature: SSE stream: GET /v1/feed/stream?tenantId= (text/event-stream) sends one `snapshot` frame per visible item (id = node's log position), then live `created/updated/activated/expired/retired` frames named after the event type lower-cased, `id:` = global seq, `:keepalive` comment every 15s
+     how_to_verify: curl -N the stream, publish/update/retire in another shell, observe frame names, ids monotonic, keepalive comments; UI applies them. Existing: streamEmitsMatchingLiveEventsAndASnapshotStampedWithThePosition, E2E IT round trip
+F-28 feature: Error contract: IllegalArgumentException/bind/input errors → 400, ResponseStatusException → its status, anything else → 500; body always {"error": …}; invalid enum query value → 400 not 500; unknown JSON fields ignored
+     how_to_verify: GET /v1/feed?tenantId=x&type=NOPE → 400 JSON; malformed JSON body → 400; check no stack traces leak. Existing: E2E IT validationAndConflictContracts (invalid enum)
+F-89 feature: Logging & observability: sidecar logs JSON (slog) with version/service/tenant/instance/endpoint at start, 'health target found', 'reported' on change, 'report failed; will retry' with backoff, 'report rejected' on 4xx, 'leaving report sent'; backend logs client id at debug, rejected calls at info, sweep transitions at info, notice opens/retires at info, staleness pause at warn; no secrets logged
+     how_to_verify: Capture both logs during F-91 and check each line exists and is parseable
+F-92 feature: E2E failure paths: backend down (UI error state + Try again; sidecar backoff and recovery), sidecar/app silent beyond the window (DOWN notice naming pods), slow backend (sidecar CS_REPORT_TIMEOUT fires, retries), bad input (400 text surfaced in UI; sidecar 400 logged as permanent), missing/invalid client id (401/400), expired/unknown Last-Event-ID (snapshot fallback), Mongo down (backend 5xx {error} / SSE keepalive continues; recovery without restart)
+     how_to_verify: Scripted fault injection with the compose-style environment; record each observed behaviour against the expected one
+
+Reading, clause by clause (the iteration-3 rule: a matrix clause decides only what it names; a non-default scenario failing while
+the row's own how_to_verify passes is a note plus a deduction):
+ F-28 'anything else -> 500; body always {"error": ...}' : held. Every frozen-database failure that was not a 503 was a 500 whose body is {"error": <driver text>}
+      (JSON on the plain endpoints, the same object SSE-framed on the stream). 'check no stack traces leak': held, no body carries a stack trace.
+      The driver text (host:port, cluster id) is information exposure the README promises away (README.md:146), not a stack trace.
+ F-18 (frames, ids, ':keepalive' every 15 s): held. An open stream kept its keepalives at 11.9 s and 26.9 s after the freeze and received the
+      next frame 0.5 s after the thaw (35b KEEP-1/KEEP-2). The row says nothing about a stream opened while the database hangs.
+ F-89 ('no secrets logged'; each listed line exists and is parseable): held. The scheduler's ERROR with a stack trace is noise the README
+      promises away (README.md:133-134), not a secret; host:port and a cluster id are not credentials.
+ F-92 'Mongo down (backend 5xx {error} / SSE keepalive continues; recovery without restart)': met literally under the freeze too (5xx {error},
+      keepalives continue, readiness/publish/feed back without a restart).
+ What fails is the README's promise (503 'database unavailable' for every call, the same JSON 503 for a stream, driver detail in the log only,
+ WARN without a stack trace from the schedulers) and the G-3-31 / G-4-9 / G-4-10 closures for a database that hangs. No matrix row names those.
+ A/B: the plain endpoints behave the same on the iteration-3 jar (500 + driver text), and iteration 3's sweep logs the same scheduler ERROR.
+ The stream path differs: iteration 3 commits 200 ':connected' and then fails ('ServerHttpResponse already committed', ERROR per stream);
+ iteration 4 answers an SSE-framed 500 carrying the driver text before committing. Neither is the promised JSON 503; iteration 4 is not worse.
+
+RULING: deduction, not the gate. The verifier's -2 integration (GAP-1) and -2 resilience (frozen DB under load) stand; the A/B claim
+'iteration 3 behaves the same' is a MATCH for the plain endpoints and the sweep; for streams the failure changed shape (not a regression).

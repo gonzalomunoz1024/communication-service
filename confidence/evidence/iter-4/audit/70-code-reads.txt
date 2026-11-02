@@ -1,0 +1,136 @@
+Code and text read for the three gate questions (HEAD 42b38e8; code identical to 1cd3f13: 'git diff --stat 1cd3f13 HEAD -- . :!confidence' is 0 lines).
+Generated 2026-11-02T12:20:03Z. Line numbers are the file's own.
+
+== Gate 1 (frozen database): why a paused connection pool is a 500 with the driver's text
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:62:     /** What a caller is told while the database cannot be reached; the detail goes to the log. */
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:63:     public static final String DATABASE_UNAVAILABLE = "database unavailable";
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:64: 
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:65:     /**
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:66:      * Whether {@code ex} says the database cannot be reached: the failures
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:67:      * {@link #handleDatabaseUnavailable} answers with 503 (keep the two lists in step). A stream
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:68:      * whose answer is already committed cannot be given a 503 and uses this to end itself instead.
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:69:      */
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:70:     public static boolean isDatabaseUnavailable(Throwable ex) {
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:71:         return ex instanceof DataAccessResourceFailureException || ex instanceof MongoTimeoutException
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:72:                 || ex instanceof MongoSocketException;
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:73:     }
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:184:     @ExceptionHandler(Exception.class)
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:185:     public Mono<ResponseEntity<Map<String, String>>> handleGeneric(Exception ex) {
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:186:         return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:187:                 .body(Map.of("error", safe(ex.getMessage()))));
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:188:     }
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:297:     private static String safe(String msg) {
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:298:         return msg == null ? "unexpected error" : msg;
+src/main/java/com/atlas/communication/config/GlobalExceptionHandler.java:299:     }
+-> isDatabaseUnavailable knows DataAccessResourceFailureException, MongoTimeoutException and MongoSocketException only. A hung mongod pauses the
+   driver's pool; the waiting operations fail with MongoConnectionPoolClearedException, which Spring Data translates to
+   UncategorizedMongoDbException (seen in the private logs), so handleGeneric answers 500 and echoes ex.getMessage(); safe() replaces only null.
+   The text names the cluster id and host:port; no stack trace reaches the body.
+
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:73:     @Scheduled(fixedDelayString = "${communication.health.sweep-interval-ms:5000}",
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:74:             initialDelayString = "${communication.health.sweep-interval-ms:5000}")
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:75:     public void sweepScheduled() {
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:76:         try {
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:77:             sweep(clock.instant()).block();
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:78:         } catch (DataAccessResourceFailureException ex) {
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:79:             // Mongo is unreachable: one line per skipped run, and the next tick tries again. Left
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:80:             // to escape, Spring's scheduler would log an ERROR with the stack trace every run.
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:81:             log.warn("health sweep skipped: database unavailable: {}", ex.getMessage());
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:82:             log.debug("health sweep skipped", ex);
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:83:         }
+src/main/java/com/atlas/communication/health/application/HealthSweepUseCase.java:84:     }
+-> the sweep catches DataAccessResourceFailureException only, so the paused-pool failure escapes to Spring's scheduler, which logs
+   'Unexpected error occurred in scheduled task' at ERROR with the stack trace (3 per 3 rounds in my iteration-4 replay; 2 on the iteration-3 jar).
+
+README promises this breaks (they are not matrix rows):
+README.md:125: **When Mongo is down.** The service needs its database to start (it creates its indexes first;
+README.md:126: when Mongo cannot be reached it gives up after `communication.mongo.server-selection-timeout`,
+README.md:127: 5 s, exits, and the pod is restarted until it can). Once running it survives losing the database: every call
+README.md:128: that needs it answers `503 {"error":"database unavailable"}` after that timeout (about 20 s for a database
+README.md:129: that hangs instead, see the end of this paragraph), readiness reports
+README.md:130: `DOWN` within a kubelet's default probe timeout (1 s; it waits
+README.md:131: `communication.mongo.readiness-timeout`, 0.8 s, for a ping) so the pod leaves the Service while
+README.md:132: liveness stays `UP`, open SSE streams stay up on keepalives, and
+README.md:133: each scheduler logs one WARN line per skipped run (`health sweep skipped: database unavailable: …`,
+README.md:134: `status sweep skipped: …`) without a stack trace. The event log's poller, which runs every
+README.md:135: `communication.events.poll-interval-ms` (500 ms), logs one WARN line when its polls start failing
+README.md:136: (`event log poll skipped: database unavailable: …`) and one INFO line when they work again
+README.md:137: (`event log poll resumed: database reachable again after <n> skipped poll(s)`), the polls in
+README.md:138: between at DEBUG. However often it is probed, readiness logs two
+README.md:139: lines per outage: `WARN readiness DOWN: MongoDB did not answer a ping: …` when it starts and
+README.md:140: `INFO readiness UP: MongoDB answers again` when it ends (the stack trace at DEBUG).
+README.md:141: A stream opened during the outage reads the event log's head before it answers, so it gets the
+README.md:142: same `503 {"error":"database unavailable"}` (JSON, before any byte of the stream) after that
+README.md:143: timeout, and the client's own backoff applies. One whose snapshot (or resume) query gives up after
+README.md:144: the answer was committed with its `: connected` comment (the database went away in between) ends
+README.md:145: with one WARN line (`feed stream closed: database unavailable: …`) and the client reconnects with
+README.md:146: its backoff. The driver's detail, which names the cluster's addresses, appears in the log only (one WARN
+README.md:147: line per answered call, the stack trace at DEBUG); the driver's own cluster monitor logs at WARN and
+
+== Gate 2 (F-66): the two tests that time out when the workers are starved, and the test configuration
+frontend/vite.config.ts:34:   test: {
+frontend/vite.config.ts:35:     // pure modules run in node; component tests opt into jsdom with `// @vitest-environment jsdom`
+frontend/vite.config.ts:36:     environment: 'node',
+frontend/vite.config.ts:37:     include: ['src/**/*.test.{ts,tsx}'],
+frontend/vite.config.ts:38:     setupFiles: ['src/test/setup.ts'],
+frontend/vite.config.ts:39:     // `npm run test:coverage`: the feature and kit code, not the tests or the entry point
+-> no testTimeout: vitest's default 5000 ms applies.
+frontend/src/test/App.test.tsx:70:   it('"View in feed" opens the feed of the tenant that was published to, filtered to that type', async () => {
+frontend/src/test/App.test.tsx:99:   it('"View in feed" puts keyboard focus on the feed\'s list, while switching tabs leaves it on the tabs', async () => {
+frontend/package.json:11:     "lint": "eslint .",
+frontend/package.json:12:     "test": "vitest run",
+frontend/package.json:13:     "test:coverage": "vitest run --coverage"
+
+== Gate 3 (security): the project's own scan policy
+README.md:78: CI also scans what ships, which no Gradle task does: the SBOM above with `anchore/scan-action` (a
+README.md:79: known vulnerability rated high or critical fails the job), and each image a job builds, this one
+README.md:80: (`communication-service:ci`, the root `Dockerfile` over the jar) and the sidecar's (`health-sidecar:ci`),
+README.md:81: with Trivy 0.58.1, pinned by digest in `ci.yml`. A CRITICAL or HIGH vulnerability that has a fixed
+README.md:82: version fails the job wherever it is: in the base image's packages, the jar's libraries or the sidecar
+README.md:83: binary's Go standard library. The same scan on a laptop (the first run downloads Trivy's database and,
+README.md:84: for a jar, its Java index, about 1 GB together, into the `trivy-cache` volume):
+README.md:85: 
+README.md:86: ```bash
+README.md:87: ./gradlew bootJar && docker build -t communication-service:local .
+README.md:88: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+README.md:89:   ghcr.io/aquasecurity/trivy:0.58.1 \
+README.md:90:   image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:local
+README.md:91: ```
+README.md:105: The `backend` and `sidecar` jobs end by scanning the image they built with Trivy and fail when it has
+README.md:106: a critical or high vulnerability that has a fix ([Build gates](#build-gates)). The `backend` job builds
+README.md:107: its image (`./gradlew bootJar`, `docker build`) once `check` has passed and scans it also when the SBOM
+README.md:108: scan failed, so one run reports both.
+.github/workflows/ci.yml:63:       - name: Scan the image for fixable critical or high vulnerabilities
+.github/workflows/ci.yml:64:         if: ${{ !cancelled() && steps.image.outcome == 'success' }}
+.github/workflows/ci.yml:65:         run: >-
+.github/workflows/ci.yml:66:           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
+.github/workflows/ci.yml:67:           image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 communication-service:ci
+.github/workflows/ci.yml:136:       # the image that ships, UBI micro and the binary: a critical or high finding that has a fix fails the job
+.github/workflows/ci.yml:137:       - name: Scan the image for fixable critical or high vulnerabilities
+.github/workflows/ci.yml:138:         run: >-
+.github/workflows/ci.yml:139:           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE"
+.github/workflows/ci.yml:140:           image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 health-sidecar:ci
+confidence/iter-4/fixes.md:26: - Scans: Trivy 0.58.1 with the database of 2026-11-02 01:14Z: the backend SBOM (113 components: Spring Boot 4.0.9,
+confidence/iter-4/fixes.md:27:   Spring 7.0.10, Netty 4.2.19, reactor-netty 1.3.8, Jackson 3.1.7, and Jackson 2.21.7, which springdoc's swagger-core still brings)
+confidence/iter-4/fixes.md:28:   0 vulnerabilities of any severity (iteration 3: 3 CRITICAL, 10 HIGH); the backend image the e2e stack built (debian 13.7) with
+confidence/iter-4/fixes.md:29:   CI's flags on its OS packages 0 (of 77 entries of any severity none has a fix; the 4 HIGH are in `libuuid1`, status
+confidence/iter-4/fixes.md:30:   "affected"); the sidecar image (the Go 1.27.3 binary on distroless static) with CI's full command 0, the binary itself 0 at any
+confidence/iter-4/fixes.md:31:   severity (iteration 3: 4 HIGH). govulncheck v1.9.0 on the sidecar source and binary: no vulnerabilities (SC-4's evidence).
+
+== Matrix rows quoted (confidence/feature-matrix.json)
+rows: 92
+F-18 services=['BE', 'FE']
+  feature: SSE stream: GET /v1/feed/stream?tenantId= (text/event-stream) sends one `snapshot` frame per visible item (id = node's log position), then live `created/updated/activated/expired/retired` frames named after the event type lower-cased, `id:` = global seq, `:keepalive` comment every 15s
+  how_to_verify: curl -N the stream, publish/update/retire in another shell, observe frame names, ids monotonic, keepalive comments; UI applies them. Existing: streamEmitsMatchingLiveEventsAndASnapshotStampedWithThePosition, E2E IT round trip
+F-28 services=['BE']
+  feature: Error contract: IllegalArgumentException/bind/input errors → 400, ResponseStatusException → its status, anything else → 500; body always {"error": …}; invalid enum query value → 400 not 500; unknown JSON fields ignored
+  how_to_verify: GET /v1/feed?tenantId=x&type=NOPE → 400 JSON; malformed JSON body → 400; check no stack traces leak. Existing: E2E IT validationAndConflictContracts (invalid enum)
+F-66 services=['FE']
+  feature: Frontend build & checks: `npm run build` (tsc -b then vite build → dist/), `npm run typecheck` (strict TS), `npm test` (vitest, node env, 3 files / 21 cases); there is NO lint script, no ESLint config, no coverage config, no component/DOM tests
+  how_to_verify: Run the three commands 3× and record pass/fail and timing; note the missing lint/coverage/DOM-test tooling as findings, not failures
+F-89 services=['SC', 'BE']
+  feature: Logging & observability: sidecar logs JSON (slog) with version/service/tenant/instance/endpoint at start, 'health target found', 'reported' on change, 'report failed; will retry' with backoff, 'report rejected' on 4xx, 'leaving report sent'; backend logs client id at debug, rejected calls at info, sweep transitions at info, notice opens/retires at info, staleness pause at warn; no secrets logged
+  how_to_verify: Capture both logs during F-91 and check each line exists and is parseable
+F-92 services=['FE', 'BE', 'SC']
+  feature: E2E failure paths: backend down (UI error state + Try again; sidecar backoff and recovery), sidecar/app silent beyond the window (DOWN notice naming pods), slow backend (sidecar CS_REPORT_TIMEOUT fires, retries), bad input (400 text surfaced in UI; sidecar 400 logged as permanent), missing/invalid client id (401/400), expired/unknown Last-Event-ID (snapshot fallback), Mongo down (backend 5xx {error} / SSE keepalive continues; recovery without restart)
+  how_to_verify: Scripted fault injection with the compose-style environment; record each observed behaviour against the expected one
