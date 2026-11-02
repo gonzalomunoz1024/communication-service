@@ -9,6 +9,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 
 /**
  * Every {@code /v1/**} request must say who is calling: {@value #HEADER} carrying the caller's
@@ -30,7 +32,9 @@ import reactor.core.publisher.Mono;
  * <p>
  * This is identification, not authentication: nothing is verified. The id is exposed to handlers
  * as the exchange attribute {@link #ATTRIBUTE} and in the Reactor context under the same key, and
- * logged at debug level per request.
+ * every identified request is logged once it completes
+ * ({@code client=<id> <METHOD> <path> -> <status> (<ms> ms)}), so a notice can be traced to the
+ * system that sent it.
  */
 @Slf4j
 @Component
@@ -69,9 +73,26 @@ public class ClientIdWebFilter implements WebFilter {
             return reject(exchange, HttpStatus.BAD_REQUEST, HEADER
                     + " must be 1-100 characters: letters, digits, '.', '_', '-' or '/'");
         }
-        log.debug("client={} {} {}", clientId, request.getMethod(), request.getPath().value());
         exchange.getAttributes().put(ATTRIBUTE, clientId);
-        return chain.filter(exchange).contextWrite(ctx -> ctx.put(ATTRIBUTE, clientId));
+        long started = System.nanoTime();
+        return chain.filter(exchange)
+                .contextWrite(ctx -> ctx.put(ATTRIBUTE, clientId))
+                .doFinally(signal -> access(exchange, clientId, started, signal));
+    }
+
+    private static void access(ServerWebExchange exchange, String clientId, long started, SignalType signal) {
+        ServerHttpRequest request = exchange.getRequest();
+        // the status is null when no handler set one explicitly, which the server sends as 200
+        HttpStatusCode status = exchange.getResponse().getStatusCode();
+        Object outcome = status != null ? status.value()
+                : switch (signal) {
+                    case ON_COMPLETE -> 200;
+                    case CANCEL -> "cancelled";
+                    case ON_ERROR -> "error";
+                    default -> "?";
+                };
+        log.info("client={} {} {} -> {} ({} ms)", clientId, request.getMethod(), request.getPath().value(),
+                outcome, (System.nanoTime() - started) / 1_000_000);
     }
 
     private static boolean applies(ServerHttpRequest request) {
