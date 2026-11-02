@@ -1,0 +1,22 @@
+{"time":"2026-11-01T23:32:34.729379984Z","level":"INFO","msg":"health sidecar starting","version":"ci","service":"e2e-app","tenant":"e2e-pod","instance":"e2e-app-6b7d9c8f5-abcde","endpoint":"http://172.17.0.1:18081","probe":"auto"}
+{"time":"2026-11-01T23:32:34.732672Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-01T23:32:35.83438376Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:49:04.488162274Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-01T23:49:20.561911983Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:49:36.683656874Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:49:50.225002487Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-01T23:49:50.225107831Z","level":"INFO","msg":"health sidecar stopped"}
+{"time":"2026-11-01T23:49:50.470035208Z","level":"INFO","msg":"health sidecar starting","version":"ci","service":"e2e-app","tenant":"e2e-pod","instance":"e2e-app-6b7d9c8f5-abcde","endpoint":"http://172.17.0.1:18081","probe":"auto"}
+{"time":"2026-11-01T23:49:50.471985262Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-01T23:49:50.48507921Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:53:48.141896142Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"1s"}
+{"time":"2026-11-01T23:53:51.233294821Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"2s"}
+{"time":"2026-11-01T23:53:54.595453283Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"4s"}
+{"time":"2026-11-01T23:54:01.003784428Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"8s"}
+{"time":"2026-11-01T23:55:39.53051777Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"1s"}
+{"time":"2026-11-01T23:55:42.899351873Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"2s"}
+{"time":"2026-11-01T23:55:45.928110821Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"4s"}
+{"time":"2026-11-01T23:55:52.325641877Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"8s"}
+{"time":"2026-11-01T23:56:01.518942875Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:18081/v1/health/reports: Post \"http://172.17.0.1:18081/v1/health/reports\": dial tcp 172.17.0.1:18081: connect: connection refused","in":"16s"}
+{"time":"2026-11-02T00:00:43.955601358Z","level":"INFO","msg":"reported","status":"WARN","message":"health document reports WARN"}
+{"time":"2026-11-02T00:00:47.04039669Z","level":"INFO","msg":"reported","status":"UP","message":""}

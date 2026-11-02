@@ -1,0 +1,40 @@
+F-60 PASS watcher: connection indicator shown at load (empty tenant) :: indicator=Connecting
+F-59 PASS watcher: empty tenant shows the "All clear" empty state :: 
+F-52 PASS publish form picks up the header tenant :: form tenant=e2e-ui-392bef
+F-56 PASS UI POST /v1/communications -> 201 with X-Client-Id communication-frontend :: status=201 x-client-id=communication-frontend id=958ce10d-a5f4-40ae-adb1-3998d35aa776
+F-09 PASS ticket typed lower-case is stored upper-cased and becomes externalRef :: {"system":"servicenow","number":"INC0012345"} ref=INC0012345
+F-56 PASS confirmation card: "Outage published", id tag, ticket chip, Publish another + View in feed :: done=true id=true chip=true
+F-56 PASS publisher remembered in localStorage comm-publisher :: e2e-oncall
+F-90 PASS second browser context sees the new card live without refresh :: after 319 ms
+F-09 PASS feed card shows the ticket chip (link only when the service knows the ServiceNow instance; unset here) :: chip visible=true isLink=false
+F-63 PASS card shows Active state, severity, services, publisher :: services=true active=true
+F-58 PASS "Active now" section with count 1 :: Active now1
+F-52 PASS Feed tab badge shows the active count :: Feed1
+F-90 PASS GET /v1/feed?service=checkout-web lists it for a consumer :: status=200 n=1
+F-56 PASS "View in feed" switches to the feed tab showing the item :: http://127.0.0.1:3001/#/feed
+F-62 PASS Resolve -> inline confirm, POST /retire 200 with the note (actor = publisher when known) :: status=200 body={"note":"fixed by e2e"}
+F-90 PASS card disappears in both contexts (local removal + retired event) :: watcher=true publisher-tab=true
+F-90 PASS permalink 200 RETIRED; history has the resolution note :: 200/RETIRED last={"at":"2026-11-01T23:45:27.899Z","actor":"e2e-oncall","action":"ACTIVE -> RETIRED: fixed by e2e"}
+F-62 PASS resolver identity: actor recorded :: actor=e2e-oncall
+F-60 PASS curl-published outage appears live :: id=9740370f-3bd4-4269-90c5-53c8ca134ef6
+F-60 PASS PUT title change arrives as updated frame and the card text changes :: put=200
+F-60 PASS Live switch off -> indicator Paused and no live updates :: paused=true hidden=true
+F-60 PASS Live switch on -> Live again and the missed item arrives via snapshot :: live=true shown=true
+F-60 PASS curl retire removes the card live :: 
+F-16 PASS All types: future MAINTENANCE listed under Upcoming with "Starts in …" :: hdr=Upcoming1 startsIn=true
+F-58 PASS Minimum severity CRITICAL -> query carries severity=CRITICAL and only the critical card remains :: last feed GET: /v1/feed?tenantId=e2e-ui-392bef&severity=CRITICAL&page=0&size=100
+F-58 PASS Service filter -> service=db in the query :: /v1/feed?tenantId=e2e-ui-392bef&service=db&severity=CRITICAL&page=0&size=100
+F-59 PASS no match -> "All clear" empty state names tenant and service :: 
+F-64 PASS every feed GET carried X-Client-Id communication-frontend; stream uses ?clientId= :: feedGETs=6 streams=6
+F-55 PASS empty submit: inline "Title is required" (nothing sent) :: inline=true
+F-57 PASS duplicate externalRef -> 409 text shown in a role=alert banner, form stays editable :: status=409 alert="The service rejected this. duplicate externalRef 'INC0012345' for tenant 'e2e-ui-392bef'"
+F-55 PASS bad ticket number rejected inline before sending :: 
+F-55 PASS Maintenance without Ends -> timing section opens with an inline error :: timingOpen=true err=true
+F-02 PASS Save as draft -> 201 DRAFT, "Draft saved" card without View in feed, invisible in the watcher feed :: status=201/DRAFT card=true noView=true hidden=true
+F-65 FAIL no browser console errors / page errors in the publisher context :: error: Failed to load resource: the server responded with a status of 409 (Conflict)
+F-65 PASS no browser console errors / page errors in the watcher context :: 
+F-64 FAIL no failed network requests :: GET http://127.0.0.1:3001/v1/feed/stream?tenantId=e2e-ui-392bef&type=OUTAGE&clientId=communication-frontend net::ERR_ABORTED | GET http://127.0.0.1:3001/v1/feed/stream?tenantId=e2e-ui-392bef&type=OUTAGE&clientId=communication-frontend net::ERR_ABORTED | GET http://127.0.0.1:3001/v1/feed/stream?tenantId=e2e-ui-392bef&type=OUTAGE&clientId=communication-frontend net::ERR_ABORTED | GET http://127.0.0.
+
+SUMMARY: 36 checks, 34 pass, 2 fail
+  FAIL F-65 no browser console errors / page errors in the publisher context :: error: Failed to load resource: the server responded with a status of 409 (Conflict)
+  FAIL F-64 no failed network requests :: GET http://127.0.0.1:3001/v1/feed/stream?tenantId=e2e-ui-392bef&type=OUTAGE&clientId=communication-frontend net::ERR_ABORTED | GET http://127.0.0.1:3001/v1/feed/stream?tenantId=e2e-ui-392bef&type=OUTAGE&clientId=communication-frontend net::ERR_ABORTED | GET http://127.0.0.1:3001/v1/feed/stream?tenan

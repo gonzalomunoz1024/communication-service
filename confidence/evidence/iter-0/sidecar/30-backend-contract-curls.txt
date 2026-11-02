@@ -1,0 +1,90 @@
+### F-36: push report for an unknown service auto-registers a push-only monitor (202), url null
+{"id":"1cf04b44-78c0-4700-a335-864d903e50dc","tenantId":"sc-be","service":"push-only","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-01T23:40:22.844377010Z","lastSummary":"UP","un
+  monitor push-only url= None publisher= health-monitor staleAfter= None state= UP
+### F-36: report without status -> 400
+{"error":"status: must not be blank"}  HTTP 400
+
+### F-36: report without tenantId -> 400
+{"error":"tenantId: must not be blank"}  HTTP 400
+
+### F-27: report without X-Client-Id -> 401; with a bad id -> 400
+{"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}  HTTP 401
+
+{"error":"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}  HTTP 400
+
+### F-38: vocabulary mapping via push reports (tenant sc-be, one service per code)
+  OK -> HTTP 202; monitor lastStatus= UP 'UP'
+  HEALTHY -> HTTP 202; monitor lastStatus= UP 'UP'
+  OUT_OF_SERVICE -> HTTP 202; monitor lastStatus= DOWN 'DOWN'
+  FATAL -> HTTP 202; monitor lastStatus= DOWN 'DOWN'
+  UNHEALTHY -> HTTP 202; monitor lastStatus= DOWN 'DOWN'
+  WARN -> HTTP 202; monitor lastStatus= DEGRADED 'DEGRADED'
+  UNKNOWN -> HTTP 202; monitor lastStatus= UNKNOWN 'UNKNOWN'
+### F-38: UP overall with a DOWN component -> DEGRADED; nested composite flattened; detail capped
+  HTTP 202
+  monitor lastStatus= DEGRADED summary= 'DEGRADED: db.primary DOWN, legacy.cache DOWN'
+### F-46: per-instance records for pods a and b; repeat a -> still 2; ordering; unknown monitor -> 404
+  pod a -> HTTP 202
+  pod b -> HTTP 202
+  pod a -> HTTP 202
+  instances: [('multi-a', 'UP', False), ('multi-b', 'UP', False)]
+  unknown monitor instances -> HTTP 404
+### F-50: 20 parallel instance reports for one service (sc-be/conc) -> count of 202 vs 409
+202
+202
+202
+202
+202
+409
+[1]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[2]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[3]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[12]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[13]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[4]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+409
+202
+[5]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[14]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+409
+409
+202
+409
+202
+409
+409
+409
+409
+202
+409
+[6]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[7]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[9]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[10]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[11]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[15]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[16]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[17]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[18]   Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[19]-  Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+[20]+  Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+409
+[8]+  Done                    curl -s -o /dev/null -w "%{http_code}\n" -H "$H" -H 'Content-Type: application/json' -X POST $B/v1/health/reports -d "{\"tenantId\":\"sc-be\",\"service\":\"conc\",\"status\":\"UP\",\"instance\":{\"id\":\"conc-$i\"}}"
+  (codes above)
+  instances recorded: 20
+  monitor summary: 'UP (20 of 20 pods UP)' version 9
+### F-48 (backend side): 3 pods UP then all 3 leave -> scaled to zero; 1 pod goes silent (tenant sc-silent) -> expect DOWN naming it after 90 s + sweep (checked by the follow-up script)
+  zero-1 UP -> 202
+  zero-2 UP -> 202
+  zero-3 UP -> 202
+  zero-1 leaving -> 202
+  zero-2 leaving -> 202
+  zero-3 leaving -> 202
+  silent-1 UP (then silence) -> 202
+  reported at 23:40:23; the follow-up checks at +120 s
+  monitor goes-silent UP 'UP (1 of 1 pod UP)' staleAfter 90
+  monitor scaled-to-zero UP 'UNKNOWN (no live pod reports)' staleAfter 90
+### +125 s: sc-silent monitors and feed
+  monitor goes-silent UP 'UP (1 of 1 pod UP)' incidents 0
+  monitor scaled-to-zero UP 'UNKNOWN (no live pod reports)' incidents 0
+  feed: []

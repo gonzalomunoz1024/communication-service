@@ -1,0 +1,173 @@
+[23:44:16] private backend up on :18090 (sweep 2 s, stale grace after start 10 s, instance staleness default 90 s)
+  silent-1 UP -> 202  (no further reports)
+  zero-1 UP -> 202
+  zero-2 UP -> 202
+  zero-1 leaving -> 202
+  zero-2 leaving -> 202
+  partial: two pods UP, one of them then goes silent (the other keeps reporting every 20 s) -> expect DEGRADED or DOWN? (minHealthyPercent 50: 1 of 2 live... the silent one is not live after 90 s, so UP 1 of 1)
+  part-a UP -> 202  part-b UP -> 202
+[23:44:37] +20 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (2 of 2 pods UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:44:57] +40 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (2 of 2 pods UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:45:17] +60 s:
+    monitor goes-silent     lastStatus=UP       unhealthy=0 incidents=0 summary='UP (1 of 1 pod UP)'
+    monitor partial         lastStatus=UP       unhealthy=0 incidents=0 summary='UP (2 of 2 pods UP)'
+    monitor scaled-to-zero  lastStatus=UP       unhealthy=0 incidents=0 summary='UNKNOWN (no live pod reports)'
+    feed: empty
+[23:45:37] +80 s:
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; [print("    monitor %-15s lastStatus=%-8s unhealthy=%s incidents=%s summary=%r" % (m["service"], m["state"].get("lastStatus"), m["state"].get("unhealthyStreak"), m["state"].get("incidents"), m["state"].get("lastSummary"))) for m in json.load(sys.stdin)]
+                                                                                                                                                                                                                                                             ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; d=json.load(sys.stdin); print("    feed:", [(i["type"], i["severity"], i["title"], (i.get("body") or "")[:200]) for i in d["items"]] or "empty")
+                       ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+[23:45:57] +100 s:
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; [print("    monitor %-15s lastStatus=%-8s unhealthy=%s incidents=%s summary=%r" % (m["service"], m["state"].get("lastStatus"), m["state"].get("unhealthyStreak"), m["state"].get("incidents"), m["state"].get("lastSummary"))) for m in json.load(sys.stdin)]
+                                                                                                                                                                                                                                                             ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; d=json.load(sys.stdin); print("    feed:", [(i["type"], i["severity"], i["title"], (i.get("body") or "")[:200]) for i in d["items"]] or "empty")
+                       ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+[23:46:17] +120 s:
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; [print("    monitor %-15s lastStatus=%-8s unhealthy=%s incidents=%s summary=%r" % (m["service"], m["state"].get("lastStatus"), m["state"].get("unhealthyStreak"), m["state"].get("incidents"), m["state"].get("lastSummary"))) for m in json.load(sys.stdin)]
+                                                                                                                                                                                                                                                             ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; d=json.load(sys.stdin); print("    feed:", [(i["type"], i["severity"], i["title"], (i.get("body") or "")[:200]) for i in d["items"]] or "empty")
+                       ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+[23:46:37] +140 s:
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; [print("    monitor %-15s lastStatus=%-8s unhealthy=%s incidents=%s summary=%r" % (m["service"], m["state"].get("lastStatus"), m["state"].get("unhealthyStreak"), m["state"].get("incidents"), m["state"].get("lastSummary"))) for m in json.load(sys.stdin)]
+                                                                                                                                                                                                                                                             ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; d=json.load(sys.stdin); print("    feed:", [(i["type"], i["severity"], i["title"], (i.get("body") or "")[:200]) for i in d["items"]] or "empty")
+                       ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+[23:46:37] backend log lines about staleness:
+[23:46:37] DONE

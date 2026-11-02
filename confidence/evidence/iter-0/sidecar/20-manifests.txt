@@ -1,0 +1,119 @@
+### versions
+(devel)
+v3.16
+development
+Client Version: v1.37.2
+
+### 1. kustomize build (classic component)
+rc=0
+6:kind: ConfigMap
+11:kind: Deployment
+14:    app.kubernetes.io/name: payments-api
+15:  name: payments-api
+20:      app.kubernetes.io/name: payments-api
+24:        app.kubernetes.io/name: payments-api
+29:        name: payments-api
+67:        name: health-sidecar
+
+### 2. kustomize build (native sidecar variant: component patched to add-native-sidecar.yaml)
+14:  - path: add-native-sidecar.yaml
+rc=0
+6:kind: ConfigMap
+11:kind: Deployment
+27:      containers:
+36:      initContainers:
+68:        name: health-sidecar
+80:        restartPolicy: Always
+
+### 3. native variant against a Deployment that ALREADY has an initContainer (lead: JSON Patch add on existing key replaces it)
+20:        - name: db-migrate
+rc=0
+init containers in output:
+['health-sidecar'] containers: ['payments-api']
+
+### 3b. classic component against a Deployment with an existing initContainer and a StatefulSet (regex target)
+Error: accumulating components: loader.New "new root '/home/claude/communication-service/sidecar/deploy/kustomize/component' cannot be absolute"
+rc=1
+
+### 4. helm: library chart alone
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+Error: library charts are not installable
+
+### 5. helm: consuming chart (dependency file://), classic and native, with and without required values
+Saving 1 charts
+Deleting outdated charts
+classic rc=0
+25:        - name: health-sidecar
+29:            - name: CS_ENDPOINT
+31:            - name: CS_TENANT
+33:            - name: CS_CLUSTER
+native rc=0
+20:      initContainers:
+21:        - restartPolicy: Always
+22:          name: health-sidecar
+-- without endpoint (expect error):
+Use --debug flag to render out invalid YAML
+-- without tenant (expect error):
+Use --debug flag to render out invalid YAML
+-- with port/path/clientId/service/extraEnv/resources overrides:
+rc=0
+35:            - name: CS_CLIENT_ID
+36-              value: "payments-repo"
+37:            - name: CS_PORT
+38-              value: "8080"
+39:            - name: CS_PATH
+40-              value: "/health"
+--
+57:            - name: CS_SERVICE
+58-              value: "payments"
+--
+63:            - name: CS_CA_FILE
+64-              value: /etc/cs/ca.pem
+--
+76:              memory: 64Mi
+77-          securityContext:
+
+### 6. manual YAML
+copied
+
+### 7. kubeconform -strict (default schema location, raw.githubusercontent.com)
+kustomize-classic                    k8s 1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+kustomize-classic                    k8s 1.27.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+kustomize-native                     k8s 1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+kustomize-native                     k8s 1.27.0: Summary: 2 resources found in 1 file - Valid: 1, Invalid: 1, Errors: 0, Skipped: 0
+kustomize-native-existing-init       k8s 1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+kustomize-native-existing-init       k8s 1.27.0: Summary: 2 resources found in 1 file - Valid: 1, Invalid: 1, Errors: 0, Skipped: 0
+kustomize-classic-sts                k8s 1.29.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+kustomize-classic-sts                k8s 1.27.0: Summary: 0 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0
+helm-classic                         k8s 1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+helm-classic                         k8s 1.27.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+helm-native                          k8s 1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+helm-native                          k8s 1.27.0: Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+helm-overrides                       k8s 1.29.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+helm-overrides                       k8s 1.27.0: Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+manual                               k8s 1.29.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+manual                               k8s 1.27.0: Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+### 8. restricted-v2 expectations grep over every rendered form (runAsUser/privileged/hostPath/hostNetwork must be absent; the five securityContext keys present on health-sidecar)
+helm-classic.yaml                             runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=1 roRoot=1 nonRoot=1 dropALL=1 seccompRD=1
+helm-native.yaml                              runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=1 roRoot=1 nonRoot=1 dropALL=1 seccompRD=1
+helm-overrides.yaml                           runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=1 roRoot=1 nonRoot=1 dropALL=1 seccompRD=1
+kustomize-classic-sts.yaml                    runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=0 roRoot=0 nonRoot=0 dropALL=0 seccompRD=0
+kustomize-classic.yaml                        runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=1 roRoot=1 nonRoot=1 dropALL=1 seccompRD=1
+kustomize-native-existing-init.yaml           runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=1 roRoot=1 nonRoot=1 dropALL=1 seccompRD=1
+kustomize-native.yaml                         runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=1 roRoot=1 nonRoot=1 dropALL=1 seccompRD=1
+manual.yaml                                   runAsUser=0 privileged=0 hostPath=0 hostNetwork=0 allowPE_false=1 roRoot=1 nonRoot=1 dropALL=1 seccompRD=1
+
+### 9. drift between the three container blocks (kustomize add-sidecar vs helm render vs manual)
+kustomize keys: ['env', 'envFrom', 'image', 'imagePullPolicy', 'livenessProbe', 'name', 'ports', 'resources', 'securityContext']
+helm keys     : ['env', 'image', 'imagePullPolicy', 'livenessProbe', 'name', 'ports', 'resources', 'securityContext']
+manual keys   : ['env', 'envFrom', 'image', 'livenessProbe', 'name', 'ports', 'resources', 'securityContext']
+env kustomize: ['CS_SERVICE', 'CS_VERSION', 'NODE_NAME', 'POD_NAME', 'POD_NAMESPACE']
+env helm     : ['CS_CLUSTER', 'CS_ENDPOINT', 'CS_HEARTBEAT', 'CS_INTERVAL', 'CS_SERVICE', 'CS_TENANT', 'CS_VERSION', 'NODE_NAME', 'POD_NAME', 'POD_NAMESPACE']
+env manual   : ['CS_SERVICE', 'CS_VERSION', 'NODE_NAME', 'POD_NAME', 'POD_NAMESPACE']
+envFrom kustomize/manual: [{'configMapRef': {'name': 'cs-health-sidecar'}}] [{'configMapRef': {'name': 'cs-health-sidecar'}}] | helm envFrom: None
+kustomize ports: [{'containerPort': 9465, 'name': 'cs-status', 'protocol': 'TCP'}] liveness: {'httpGet': {'path': '/healthz', 'port': 'cs-status'}, 'periodSeconds': 30} readiness: None startup: None lifecycle: None resources: {'limits': {'cpu': '50m', 'memory': '32Mi'}, 'requests': {'cpu': '10m', 'memory': '16Mi'}} sc: {'allowPrivilegeEscalation': False, 'capabilities': {'drop': ['ALL']}, 'readOnlyRootFilesystem': True, 'runAsNonRoot': True, 'seccompProfile': {'type': 'RuntimeDefault'}}
+helm ports: [{'name': 'cs-status', 'containerPort': 9465, 'protocol': 'TCP'}] liveness: {'httpGet': {'path': '/healthz', 'port': 'cs-status'}, 'periodSeconds': 30} readiness: None startup: None lifecycle: None resources: {'limits': {'cpu': '50m', 'memory': '32Mi'}, 'requests': {'cpu': '10m', 'memory': '16Mi'}} sc: {'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': True, 'runAsNonRoot': True, 'capabilities': {'drop': ['ALL']}, 'seccompProfile': {'type': 'RuntimeDefault'}}
+manual ports: [{'name': 'cs-status', 'containerPort': 9465}] liveness: {'httpGet': {'path': '/healthz', 'port': 'cs-status'}, 'periodSeconds': 30} readiness: None startup: None lifecycle: None resources: {'requests': {'cpu': '10m', 'memory': '16Mi'}, 'limits': {'cpu': '50m', 'memory': '32Mi'}} sc: {'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': True, 'runAsNonRoot': True, 'capabilities': {'drop': ['ALL']}, 'seccompProfile': {'type': 'RuntimeDefault'}}

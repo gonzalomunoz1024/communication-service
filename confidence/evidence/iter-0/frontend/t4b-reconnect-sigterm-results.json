@@ -1,0 +1,26 @@
+[
+  {
+    "feature": "F-61",
+    "name": "indicator shows 'Reconnecting' while the backend is down",
+    "ok": false,
+    "evidence": "[\"+0.4s indicator → Connecting (EventSource readyStates: 2,0)\",\"+0.6s indicator → Live (EventSource readyStates: 2,2,2,1)\",\"+34.5s 15 s after restart: card shown=true, readyStates=2,2,2,1, indicator=Live\"]"
+  },
+  {
+    "feature": "F-61",
+    "name": "the browser retries the stream and sends Last-Event-ID",
+    "ok": false,
+    "evidence": "[\"+0.4s stream REQUEST FAILED net::ERR_ABORTED\",\"+0.4s stream REQUEST last-event-id=(none)\",\"+0.4s stream RESPONSE 200 text/event-stream;charset=UTF-8\",\"+0.4s stream REQUEST last-event-id=(none)\",\"+0.4s stream REQUEST FAILED net::ERR_ABORTED\",\"+0.5s stream RESPONSE 200 text/event-stream;charset=UTF-8\",\"+0.5s stream REQUEST last-event-id=(none)\"]"
+  },
+  {
+    "feature": "F-61",
+    "name": "after the restart the feed converges: new item shown and the stream is OPEN again (readyState 1)",
+    "ok": true,
+    "evidence": "{\"shown\":true,\"readyStates\":\"2,2,2,1\",\"indicator\":\"Live\"}"
+  },
+  {
+    "feature": "F-20",
+    "name": "every resumed stream request (with Last-Event-ID) got 200",
+    "ok": true,
+    "evidence": "[\"+0.4s stream RESPONSE 200 text/event-stream;charset=UTF-8\",\"+0.5s stream RESPONSE 200 text/event-stream;charset=UTF-8\"]"
+  }
+]

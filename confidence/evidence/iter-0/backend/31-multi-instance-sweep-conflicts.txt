@@ -1,0 +1,5 @@
+# Two backend instances sweeping one database (be-verify, 2026-11-01 23:47Z): optimistic-lock conflicts are skipped, not duplicated
+# (instance :28090 log while the sidecar verifier's instance and mine both ran the health sweep; file private-28090.log in the scratchpad)
+2026-11-01T23:46:56.674Z  WARN 14678 --- [communication-service] [ntLoopGroup-3-3] c.a.c.h.application.HealthSweepUseCase   : 3 of 3 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+2026-11-01T23:47:13.967Z  WARN 14678 --- [communication-service] [ntLoopGroup-3-6] c.a.c.h.application.HealthSweepUseCase   : skipping monitor 65560c8e-c65a-451e-9c08-6c4d77bdd989 (be-p-e90e6b/sched): 409 CONFLICT "monitor 65560c8e-c65a-451e-9c08-6c4d77bdd989 was modified concurrently; reload and retry"
+2026-11-01T23:47:15.984Z  WARN 14678 --- [communication-service] [ntLoopGroup-3-6] c.a.c.h.application.HealthSweepUseCase   : skipping monitor 47e7600c-4d7e-4860-a871-f2480901ed91 (be-p-3242db/sched-closed): 409 CONFLICT "monitor 47e7600c-4d7e-4860-a871-f2480901ed91 was modified concurrently; reload and retry"

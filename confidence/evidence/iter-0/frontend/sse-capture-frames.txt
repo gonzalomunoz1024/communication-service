@@ -1,0 +1,18 @@
+id:302
+event:snapshot
+data:{"seq":302,"type":"SNAPSHOT","at":"2026-11-01T23:47:08.340658409Z","communication":{"id":"f041f173-7934-4200-8d7d-188f63cc388c","tenantId":"fe-http-1793576825","publisher":"fe","type":"OUTAGE","severity":"MAJOR","title":"sse one","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:47:08.307Z","createdAt":"2026-11-01T23:47:08.307Z","updatedAt":"2026-11-01T23:47:08.307Z","version":0,"history":[{"at":"2026-11-01T23:47:08.307Z","actor":"fe","action":"created (ACTIVE)"}]}}
+
+id:303
+event:created
+data:{"seq":303,"type":"CREATED","at":"2026-11-01T23:47:08.310Z","communication":{"id":"f041f173-7934-4200-8d7d-188f63cc388c","tenantId":"fe-http-1793576825","publisher":"fe","type":"OUTAGE","severity":"MAJOR","title":"sse one","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:47:08.307Z","createdAt":"2026-11-01T23:47:08.307Z","updatedAt":"2026-11-01T23:47:08.307Z","version":0,"history":[{"at":"2026-11-01T23:47:08.307Z","actor":"fe","action":"created (ACTIVE)"}]}}
+
+id:304
+event:updated
+data:{"seq":304,"type":"UPDATED","at":"2026-11-01T23:47:10.373Z","communication":{"id":"f041f173-7934-4200-8d7d-188f63cc388c","tenantId":"fe-http-1793576825","publisher":"fe","type":"OUTAGE","severity":"MAJOR","title":"sse one updated","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:47:08.307Z","createdAt":"2026-11-01T23:47:08.307Z","updatedAt":"2026-11-01T23:47:10.369Z","version":1,"history":[{"at":"2026-11-01T23:47:08.307Z","actor":"fe","action":"created (ACTIVE)"},{"at":"2026-11-01T23:47:10.369Z","actor":"fe","action":"updated"}]}}
+
+id:305
+event:retired
+data:{"seq":305,"type":"RETIRED","at":"2026-11-01T23:47:11.391Z","communication":{"id":"f041f173-7934-4200-8d7d-188f63cc388c","tenantId":"fe-http-1793576825","publisher":"fe","type":"OUTAGE","severity":"MAJOR","title":"sse one updated","affectedServices":["svc"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-01T23:47:08.307Z","createdAt":"2026-11-01T23:47:08.307Z","updatedAt":"2026-11-01T23:47:11.386Z","version":2,"history":[{"at":"2026-11-01T23:47:08.307Z","actor":"fe","action":"created (ACTIVE)"},{"at":"2026-11-01T23:47:10.369Z","actor":"fe","action":"updated"},{"at":"2026-11-01T23:47:11.386Z","actor":"fe","action":"ACTIVE -> RETIRED: bye"}]}}
+
+:keepalive
+

@@ -1,0 +1,68 @@
+[
+  {
+    "feature": "F-61",
+    "name": "aux backend is up before the test",
+    "ok": true,
+    "evidence": "port 18093"
+  },
+  {
+    "feature": "F-61",
+    "name": "feed live with one item before the backend is stopped",
+    "ok": true,
+    "evidence": "status=201"
+  },
+  {
+    "feature": "F-61",
+    "name": "aux backend stopped (SIGTERM)",
+    "ok": true,
+    "evidence": "pid=8976"
+  },
+  {
+    "feature": "F-61",
+    "name": "indicator shows 'Reconnecting' when the stream drops",
+    "ok": false,
+    "evidence": "Live"
+  },
+  {
+    "feature": "F-61",
+    "name": "aux backend restarted",
+    "ok": true,
+    "evidence": "GET /v1/feed → 200 again"
+  },
+  {
+    "feature": "F-61",
+    "name": "published a second item right after the restart",
+    "ok": true,
+    "evidence": "status=201"
+  },
+  {
+    "feature": "F-61",
+    "name": "browser reconnects on its own and sends Last-Event-ID (the last id: seen)",
+    "ok": false,
+    "evidence": "{\"reconnectAttempts\":2,\"lastEventIds\":[],\"responseStatuses\":[200,200]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "after the backend is back the indicator returns to 'Live' within 30s",
+    "ok": true,
+    "evidence": "{\"indicator\":\"Live\",\"secondsWaited\":0,\"streamResponseStatuses\":[200,200]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "the item published after the restart appears without a manual refresh (replay or snapshot)",
+    "ok": true,
+    "evidence": "{\"shown\":true,\"cards\":2}"
+  },
+  {
+    "feature": "F-20",
+    "name": "server answers the resumed stream (Last-Event-ID) with 200",
+    "ok": true,
+    "evidence": "{\"statusesAfterReconnect\":[200]}"
+  },
+  {
+    "feature": "F-61",
+    "name": "console/page errors during the reconnect scenario",
+    "ok": true,
+    "evidence": "{\"pageErrors\":[],\"console\":[]}"
+  }
+]

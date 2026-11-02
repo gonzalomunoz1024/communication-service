@@ -1,0 +1,143 @@
+== db.communications.getIndexes()
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      status: 1,
+      startsAt: 1
+    },
+    name: 'sweep_activation_idx'
+  },
+  {
+    v: 2,
+    key: {
+      tenantId: 1,
+      status: 1,
+      startsAt: -1
+    },
+    name: 'feed_idx'
+  },
+  {
+    v: 2,
+    key: {
+      status: 1,
+      expiresAt: 1
+    },
+    name: 'sweep_expiry_idx'
+  },
+  {
+    v: 2,
+    key: {
+      affectedServices: 1
+    },
+    name: 'affectedServices'
+  },
+  {
+    v: 2,
+    key: {
+      tenantId: 1,
+      externalRef: 1
+    },
+    name: 'external_ref_idx',
+    unique: true,
+    partialFilterExpression: {
+      externalRef: {
+        '$exists': true
+      }
+    }
+  }
+]
+== db.communication_events.getIndexes()
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      tenantId: 1,
+      _id: 1
+    },
+    name: 'events_tenant_seq_idx'
+  },
+  {
+    v: 2,
+    key: {
+      at: 1
+    },
+    name: 'events_ttl_idx',
+    expireAfterSeconds: 86400
+  }
+]
+== db.health_monitors.getIndexes()
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      tenantId: 1,
+      service: 1
+    },
+    name: 'monitor_tenant_service_idx',
+    unique: true
+  }
+]
+== db.health_instances.getIndexes()
+[
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      monitorId: 1,
+      instanceId: 1
+    },
+    name: 'instance_monitor_idx'
+  },
+  {
+    v: 2,
+    key: {
+      lastSeenAt: 1
+    },
+    name: 'instance_ttl_idx',
+    expireAfterSeconds: 86400
+  }
+]
+== db.counters.find()
+[
+  {
+    _id: 'communication_events',
+    value: Long('1')
+  }
+]
+== collections
+[
+  'health_monitors',
+  'communication_events',
+  'communications',
+  'health_instances',
+  'counters'
+]
+EXIT=0

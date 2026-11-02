@@ -1,0 +1,19 @@
+### F-69/F-79: app that only speaks HTTPS on its port (self-signed) -> discovery must switch to https and not verify the localhost cert; F-27: X-Client-Id defaults to CS_SERVICE when CS_CLIENT_ID is unset
+  /status: target=https://127.0.0.1:9443/actuator/health upSeen=True last=UP msg='' sent=1
+  recorded X-Client-Id header: ['tls-only-app'] User-Agent: health-sidecar/1.0.0-verify
+{"time":"2026-11-01T23:45:30.3065194Z","level":"INFO","msg":"health target found","target":"https://127.0.0.1:9443/actuator/health","status":"UP"}
+  pinned CS_SCHEME=https CS_PORT=9443 variant:
+  /status: target=https://127.0.0.1:9443/actuator/health last=UP
+
+### dependency inventory (govulncheck DB unreachable): third-party modules and the toolchain baked into the image binary
+  go list -m all:
+    github.com/gonzalomunoz1024/communication-service/sidecar
+  go version -m (image binary):
+    /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar/bin/image-binary: go1.24.13
+    	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+    	build	-buildmode=exe
+    	build	-trimpath=true
+    	build	CGO_ENABLED=0
+
+### F-89 backend-side log lines for the sc-pod notice (shared backend log):
+2026-11-01T23:41:09.905Z  INFO 19870 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor f7cf7ef5-aa86-4c33-b62e-95e1e68114c6 opened OUTAGE 2b2c2a81-077f-4bba-943b-e194ef8c7d01 for sc-p

@@ -1,0 +1,40 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44417 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileTestJava UP-TO-DATE
+> Task :processTestResources UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+
+> Task :integrationTest
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44417 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :integrationTest
+
+CommunicationServiceE2EIT > reconnectingWithLastEventIdReplaysWhatWasMissed() FAILED
+    java.lang.AssertionError: Status expected:<200 OK> but was:<500 INTERNAL_SERVER_ERROR>
+        at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+        at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+        at org.springframework.test.web.reactive.server.StatusAssertions.lambda$assertStatusAndReturn$4(StatusAssertions.java:236)
+        at org.springframework.test.web.reactive.server.ExchangeResult.assertWithDiagnostics(ExchangeResult.java:232)
+        at org.springframework.test.web.reactive.server.StatusAssertions.assertStatusAndReturn(StatusAssertions.java:236)
+        at org.springframework.test.web.reactive.server.StatusAssertions.isOk(StatusAssertions.java:68)
+        at com.atlas.communication.CommunicationServiceE2EIT.reconnectingWithLastEventIdReplaysWhatWasMissed(CommunicationServiceE2EIT.java:148)
+
+2026-11-02T00:25:50.930Z  INFO 24432 --- [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T00:25:50.932Z  INFO 24432 --- [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown complete
+2026-11-02T00:25:52.957Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.955+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn3","msg":"Connection ended","attr":{"remote":"127.0.0.1:45400","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"a5527025-2963-4753-91c4-449dde2e7648"}},"connectionId":3,"connectionCount":9}}
+2026-11-02T00:25:52.957Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.956+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn9","msg":"Connection ended","attr":{"remote":"127.0.0.1:45438","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"528b6127-2d99-4325-937a-e2d611a65a05"}},"connectionId":9,"connectionCount":8}}
+2026-11-02T00:25:52.957Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.956+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn5","msg":"Connection ended","attr":{"remote":"127.0.0.1:45412","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"96335cb6-e9db-4a9a-9a36-154d6ae139a5"}},"connectionId":5,"connectionCount":7}}
+2026-11-02T00:25:52.957Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.956+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn7","msg":"Connection ended","attr":{"remote":"127.0.0.1:45418","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"16d7f336-73c6-4eed-b756-fe7bca50e1c9"}},"connectionId":7,"connectionCount":6}}
+2026-11-02T00:25:52.957Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.956+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn8","msg":"Connection ended","attr":{"remote":"127.0.0.1:45432","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"ce011cb7-c975-49df-bc39-e4534f68a4f2"}},"connectionId":8,"connectionCount":5}}
+2026-11-02T00:25:52.958Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.957+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn10","msg":"Connection ended","attr":{"remote":"127.0.0.1:45440","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"47fe6f6e-f4a4-4e37-9f60-e83e843f215d"}},"connectionId":10,"connectionCount":4}}
+2026-11-02T00:25:52.958Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.957+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn4","msg":"Connection ended","attr":{"remote":"127.0.0.1:45402","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"929c5d62-e9e4-4270-9e52-e3d39cea6339"}},"connectionId":4,"connectionCount":3}}
+2026-11-02T00:25:52.958Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.957+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn6","msg":"Connection ended","attr":{"remote":"127.0.0.1:45416","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"24d9f1e0-7f50-4072-946c-73a5101eb868"}},"connectionId":6,"connectionCount":2}}
+2026-11-02T00:25:52.959Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.958+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn2","msg":"Connection ended","attr":{"remote":"127.0.0.1:45398","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"1938af68-27c9-44ef-ac36-a36069a30cfa"}},"connectionId":2,"connectionCount":1}}
+2026-11-02T00:25:52.959Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.958+00:00"},"s":"I",  "c":"-",        "id":20883,   "ctx":"conn1","msg":"Interrupted operation as its client disconnected","attr":{"opId":13}}
+2026-11-02T00:25:52.959Z  INFO 24432 --- [       Thread-4] d.f.e.m.s.autoconfigure.EmbeddedMongo    : {"t":{"$date":"2026-11-02T00:25:52.958+00:00"},"s":"I",  "c":"NETWORK",  "id":22944,   "ctx":"conn1","msg":"Connection ended","attr":{"remote":"127.0.0.1:45386","isLoadBalanced":false,"uuid":{"uuid":{"$uuid":"b7b65b9f-d8ae-4538-a77a-4578429956f2"}},"connectionId":1,"connectionCount":0}}

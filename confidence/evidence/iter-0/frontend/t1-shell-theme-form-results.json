@@ -1,0 +1,332 @@
+[
+  {
+    "feature": "F-52",
+    "name": "document.title on the feed tab",
+    "ok": true,
+    "evidence": "Feed · Outage Notifications"
+  },
+  {
+    "feature": "F-52",
+    "name": "header shows the app title",
+    "ok": true,
+    "evidence": "header text present"
+  },
+  {
+    "feature": "F-52",
+    "name": "tenant input defaults to 'acme' in a fresh browser",
+    "ok": true,
+    "evidence": "value=acme"
+  },
+  {
+    "feature": "F-52",
+    "name": "tenant input is monospace",
+    "ok": true,
+    "evidence": "\"SF Mono\", ui-monospace, Menlo, monospace"
+  },
+  {
+    "feature": "F-52",
+    "name": "theme toggle present",
+    "ok": true,
+    "evidence": "IconButton found"
+  },
+  {
+    "feature": "F-52",
+    "name": "two tabs Feed / Publish",
+    "ok": true,
+    "evidence": "[\"Feed\",\"Publish\"]"
+  },
+  {
+    "feature": "F-52",
+    "name": "tenant persisted in localStorage comm-tenant and kept across reload",
+    "ok": true,
+    "evidence": "stored=fe-shell-mvyh2b8n afterReload=fe-shell-mvyh2b8n"
+  },
+  {
+    "feature": "F-52",
+    "name": "#/publish lands on the Publish tab",
+    "ok": true,
+    "evidence": "aria-selected=true title=Publish · Outage Notifications"
+  },
+  {
+    "feature": "F-52",
+    "name": "Publish tab survives a reload",
+    "ok": true,
+    "evidence": "aria-selected=true after reload"
+  },
+  {
+    "feature": "F-52",
+    "name": "clicking Feed tab sets #/feed",
+    "ok": true,
+    "evidence": "http://127.0.0.1:3000/#/feed"
+  },
+  {
+    "feature": "F-52",
+    "name": "seeded 2 active + 1 upcoming via API",
+    "ok": true,
+    "evidence": "201 201 201"
+  },
+  {
+    "feature": "F-52",
+    "name": "Feed tab badge equals the Active now count (upcoming not counted)",
+    "ok": true,
+    "evidence": "badge=2 heading=Active now2"
+  },
+  {
+    "feature": "F-52",
+    "name": "no console errors / page errors on the shell",
+    "ok": true,
+    "evidence": "{\"errors\":[],\"console\":[]}"
+  },
+  {
+    "feature": "F-53",
+    "name": "index.html carries the inline pre-paint theme script (atlas-theme)",
+    "ok": true,
+    "evidence": "inline script present"
+  },
+  {
+    "feature": "F-53",
+    "name": "system mode + light OS → light",
+    "ok": true,
+    "evidence": "dark=false colorScheme=light"
+  },
+  {
+    "feature": "F-53",
+    "name": "toggle flips to dark, persists atlas-theme=dark, label flips",
+    "ok": true,
+    "evidence": "dark=true stored=dark labels=Switch to dark mode → Switch to light mode"
+  },
+  {
+    "feature": "F-53",
+    "name": "after reload the theme is dark before React mounts (no flash) and stays dark",
+    "ok": true,
+    "evidence": "darkAtInit=true dark=true"
+  },
+  {
+    "feature": "F-53",
+    "name": "explicit dark ignores an OS change",
+    "ok": true,
+    "evidence": "still dark"
+  },
+  {
+    "feature": "F-53",
+    "name": "system mode follows the OS (dark → light) without reload",
+    "ok": true,
+    "evidence": "darkOS=true lightOS=false"
+  },
+  {
+    "feature": "F-53",
+    "name": "color-scheme meta present",
+    "ok": true,
+    "evidence": "light dark"
+  },
+  {
+    "feature": "F-54",
+    "name": "type segmented control: Outage/Incident/Maintenance/Change, no Health",
+    "ok": true,
+    "evidence": "[\"Outage\",\"Incident\",\"Maintenance\",\"Change\"]"
+  },
+  {
+    "feature": "F-54",
+    "name": "type hint text changes with the type",
+    "ok": true,
+    "evidence": "outage hint=1 maintenance hint=1"
+  },
+  {
+    "feature": "F-54",
+    "name": "severity segmented Info/Minor/Major/Critical, Major preselected",
+    "ok": true,
+    "evidence": "Info,Minor,Major,Critical major=true"
+  },
+  {
+    "feature": "F-54",
+    "name": "title input has maxLength 200 and a 0/200 counter",
+    "ok": true,
+    "evidence": "maxlength=200"
+  },
+  {
+    "feature": "F-54",
+    "name": "title counter updates (27/200)",
+    "ok": true,
+    "evidence": "counter 27/200"
+  },
+  {
+    "feature": "F-54",
+    "name": "affected services split on commas, trimmed, deduped, previewed as chips (the field is a single-line input, so the newline split in parseServices is unreachable from the UI)",
+    "ok": true,
+    "evidence": "[\"payments-api\",\"checkout-web\",\"foo\"]"
+  },
+  {
+    "feature": "F-54",
+    "name": "ServiceNow incident field present with INC placeholder",
+    "ok": true,
+    "evidence": "placeholder ok"
+  },
+  {
+    "feature": "F-54",
+    "name": "tenant prefilled from the header",
+    "ok": true,
+    "evidence": "fe-form"
+  },
+  {
+    "feature": "F-54",
+    "name": "header tenant flows into the form until the form field is edited, then the edit wins",
+    "ok": true,
+    "evidence": "flowed=fe-form-2 kept=fe-form-edited"
+  },
+  {
+    "feature": "F-54",
+    "name": "audience select Customers/Public/Internal (Customers default)",
+    "ok": true,
+    "evidence": "[\"Customers\",\"Public\",\"Internal\"]"
+  },
+  {
+    "feature": "F-54",
+    "name": "external reference field present",
+    "ok": true,
+    "evidence": "present"
+  },
+  {
+    "feature": "F-54",
+    "name": "timing panel collapsed by default with the \"Starts now\" subtitle",
+    "ok": true,
+    "evidence": "collapsed"
+  },
+  {
+    "feature": "F-54",
+    "name": "Schedule opens Starts/Ends/Expires datetime-local inputs",
+    "ok": true,
+    "evidence": "[\"datetime-local\",\"datetime-local\",\"datetime-local\"]"
+  },
+  {
+    "feature": "F-54",
+    "name": "Ends is marked required only for MAINTENANCE",
+    "ok": true,
+    "evidence": "maintenance=\"Ends*\" outage=\"Ends\""
+  },
+  {
+    "feature": "F-54",
+    "name": "Save as draft switch is role=switch, off by default",
+    "ok": true,
+    "evidence": "aria-checked=false"
+  },
+  {
+    "feature": "F-54",
+    "name": "submit label follows the type",
+    "ok": true,
+    "evidence": "Publish outage"
+  },
+  {
+    "feature": "F-54",
+    "name": "draft on → submit says Save draft",
+    "ok": true,
+    "evidence": "Save draft"
+  },
+  {
+    "feature": "F-54",
+    "name": "POST body: instants converted from local (Europe/Madrid, UTC+1 in December) to UTC ISO",
+    "ok": true,
+    "evidence": "{\"startsAt\":\"2026-12-01T09:00:00.000Z\",\"endsAt\":\"2026-12-01T11:00:00.000Z\",\"expiresAt\":\"2026-12-01T12:00:00.000Z\"}"
+  },
+  {
+    "feature": "F-54",
+    "name": "POST body: services array, ticket {servicenow, UPPER}, audience, severity, trimmed strings",
+    "ok": true,
+    "evidence": "{\"tenantId\":\"fe-form-edited\",\"publisher\":\"fe-oncall\",\"type\":\"OUTAGE\",\"severity\":\"CRITICAL\",\"title\":\"Payments API returning 503s\",\"body\":\"Card payments fail.\\nRetries succeed.\",\"affectedServices\":[\"payments-api\",\"checkout-web\",\"foo\"],\"audience\":\"INTERNAL\",\"startsAt\":\"2026-12-01T09:00:00.000Z\",\"endsAt\":\"2026-12-01T11:00:00.000Z\",\"expiresAt\":\"2026-12-01T12:00:00.000Z\",\"externalRef\":\"fe-form-ref-1793576377872\",\"ticket\":{\"system\":\"servicenow\",\"number\":\"INC0012345\"}}"
+  },
+  {
+    "feature": "F-54",
+    "name": "Clear resets the fields but keeps tenant, publisher and type",
+    "ok": true,
+    "evidence": "{\"title\":\"\",\"publisher\":\"fe-oncall-2\",\"tenant\":\"fe-form-edited\",\"change\":\"true\"}"
+  },
+  {
+    "feature": "F-54",
+    "name": "no console/page errors while using the form",
+    "ok": true,
+    "evidence": "{\"errors\":[],\"console\":[]}"
+  },
+  {
+    "feature": "F-55",
+    "name": "empty submit → three inline errors (tenant, publisher, title), nothing sent",
+    "ok": true,
+    "evidence": "{\"texts\":[\"Title is required\",\"Tenant is required\",\"Publisher is required\"],\"posts\":0}"
+  },
+  {
+    "feature": "F-55",
+    "name": "invalid inputs carry aria-invalid=true, valid ones do not",
+    "ok": true,
+    "evidence": "[\"true\",\"true\",\"true\",null]"
+  },
+  {
+    "feature": "F-55",
+    "name": "field error clears on edit",
+    "ok": true,
+    "evidence": "[\"Tenant is required\",\"Publisher is required\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "title cannot exceed 200 characters in the UI (maxLength caps the input; the validate() rule is covered by validation.test.ts)",
+    "ok": true,
+    "evidence": "valueLength after filling 201 chars=200"
+  },
+  {
+    "feature": "F-55",
+    "name": "body over 16 KB counted in UTF-8 bytes (6000 × €) → error",
+    "ok": true,
+    "evidence": "[\"Body is larger than 16 KB\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "21 services → \"At most 20 services\"",
+    "ok": true,
+    "evidence": "[\"At most 20 services\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "INFO outage → \"Outages need MINOR or higher\"",
+    "ok": true,
+    "evidence": "[\"Outages need MINOR or higher\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "INFO incident → \"Incidents need MINOR or higher\"",
+    "ok": true,
+    "evidence": "[\"Incidents need MINOR or higher\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "MAINTENANCE without end → Timing panel opens itself with \"Maintenance needs an end time\"",
+    "ok": true,
+    "evidence": "[\"Maintenance needs an end time\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "end and expiry before start → \"Must be after the start\" on both",
+    "ok": true,
+    "evidence": "[\"Must be after the start\",\"Must be after the start\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "'inc12' → ticket error naming the expected format",
+    "ok": true,
+    "evidence": "[\"Not an incident number; expected INC0012345\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "INFO severity allowed for CHANGE (no severity error)",
+    "ok": true,
+    "evidence": "[\"Not an incident number; expected INC0012345\"]"
+  },
+  {
+    "feature": "F-55",
+    "name": "nothing was sent while invalid",
+    "ok": true,
+    "evidence": "POSTs=0"
+  },
+  {
+    "feature": "F-55",
+    "name": "once valid the form submits (CHANGE INFO with end time) → 201",
+    "ok": true,
+    "evidence": "status=201"
+  }
+]

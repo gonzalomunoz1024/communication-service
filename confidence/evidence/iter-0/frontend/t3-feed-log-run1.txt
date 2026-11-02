@@ -1,0 +1,44 @@
+PASS [F-14] seeded 7 items via API (5 visible now/upcoming, 2 hidden future) :: [201,201,201,201,201,201,201]
+PASS [F-58] default filter Type=Outage: GET /v1/feed?tenantId&type=OUTAGE&page=0&size=100, two outages, CRITICAL before MAJOR :: {"q":"?tenantId=fe-feed-mvyhmrb4&type=OUTAGE&page=0&size=100","titles":["outage critical checkout","outage major payments"]}
+PASS [F-58] 'All types' drops the type param; Active now 4 + Upcoming 1; sorted active first, severity desc, then latest start :: {"q":"?tenantId=fe-feed-mvyhmrb4&page=0&size=100","activeCount":"4","upcomingCount":"1","titles":["outage critical checkout","outage major payments","incident minor payments","change info other","maintenance tomorrow"]}
+PASS [F-16] future OUTAGE and maintenance outside the 7-day window are hidden; maintenance tomorrow is under Upcoming :: ["outage critical checkout","outage major payments","incident minor payments","change info other","maintenance tomorrow"]
+PASS [F-63] upcoming card shows the 'Starts in …' state tag and timing (24h just under a day, 1d from a day on) :: Starts in 24hInfoMaintenanceUpdated just nowmaintenance tomorrowpayments-apiStarts in 24hExpected end in 1dfe-seedResolve
+PASS [F-58] Service filter 'payments-api' → service param, exact match on affectedServices :: {"q":"?tenantId=fe-feed-mvyhmrb4&service=payments-api&page=0&size=100","titles":["outage major payments","incident minor payments","maintenance tomorrow"]}
+PASS [F-58] Minimum severity MAJOR → severity param, only MAJOR and CRITICAL :: {"q":"?tenantId=fe-feed-mvyhmrb4&severity=MAJOR&page=0&size=100","titles":["outage critical checkout","outage major payments"]}
+PASS [F-58] Refresh issues a new GET /v1/feed :: before=8 after=9
+PASS [F-63] card: Active tag, Critical, Outage, Internal audience, ticket chip (plain: no url from this backend), externalRef tag, title, pre-wrapped body, service chip, Started/Expected end/publisher/Updated :: {"richText":"ActiveCriticalOutageInternalINC0012345ref-mvyhmrb4Updated just nowoutage critical checkoutline one\nline twocheckout-webStarted just nowExpected end in 2hfe-seedResolve","rail":"absolute inset-y-0 left-0 w-1 bg-critical","chipLink":0,"chipTitle":"ServiceNow INC0012345","hoverTitles":["ServiceNow INC0012345","1 Nov 2026, 23:55:27","1 Nov 2026, 23:55:27","2 Nov 2026, 01:55:27"]}
+PASS [F-63] audience CUSTOMERS not tagged; no ticket → no chip; externalRef absent → no tag; rail colour by severity (MAJOR → warning) :: ActiveMajorOutageUpdated just nowoutage major paymentspayments-apiStarted 1h agofe-seedResolve
+PASS [F-09] ticket with url → chip is a link opening in a new tab (target=_blank rel=noreferrer) with the external icon :: {"href":"https://acme.service-now.com/nav_to.do?uri=incident.do?sysparm_query=number=INC0099999","target":"_blank"}
+PASS [F-58] no console/page errors on the feed :: {"errors":[],"console":[]}
+PASS [F-58] a slow stale response (all types) arriving after a newer request (Outage) is ignored :: ["outage critical checkout","outage with ticket url","outage major payments"]
+PASS [F-14] size=500 is capped to 100; page=-1 → 400; size=0 → 400; blank tenantId → 400; paging math (size 2: hasNext then last page) :: {"bigSize":100,"neg":400,"zero":400,"blank":400,"one":[2,true],"two":[1,false]}
+PASS [F-59] empty tenant → 'Choose a tenant' :: shown
+PASS [F-59] loading with no items → three skeleton cards in an aria-busy container :: skeletons=3
+PASS [F-59] no items → 'All clear' naming the type filter and tenant :: All clearNothing outage is active or upcoming for fe-empty-mvyhmrb4.
+PASS [F-59] 'All clear' message names the service filter :: All clearNothing outage is active or upcoming for fe-empty-mvyhmrb4 on nothing-here.
+PASS [F-59] 'All clear' with All types reads 'Nothing is active or upcoming for <tenant>.' :: All clearNothing is active or upcoming for fe-empty-mvyhmrb4.
+PASS [F-59] error → 'Couldn't load the feed' + the service text + Try again :: Couldn't load the feedfeed exploded (probe)
+PASS [F-59] Try again recovers to the normal state :: All clear after retry
+FAIL [F-60] EventSource URL carries tenantId and clientId=communication-frontend (type omitted for All types) :: http://127.0.0.1:3000/v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communication-frontend
+PASS [F-60] created event → card appears without a new GET /v1/feed :: feedRequests before=4 after=4
+PASS [F-60] updated event → card text changes in place :: PUT=200 cards=1
+PASS [F-60] retired event → card removed :: card gone
+FAIL [F-16] CONTRACT CHECK: a future-dated OUTAGE published while the feed is open — live frame vs GET /v1/feed visibility must agree :: {"shownLiveUnderUpcoming":true,"visibleInServerFeed":false,"note":"live view shows it under Upcoming, a reload hides it (server feed excludes future non-maintenance)"}
+PASS [F-15] after expiresAt the server feed excludes the item at once and the permalink says EXPIRED (sweeper not yet run) :: {"inFeed":false,"permalink":"EXPIRED"}
+PASS [F-15] UI drops the expired card when the sweeper's expired event arrives (took 21s after expiry; the card is kept until then) :: {"stillShownRightAfterExpiry":true}
+PASS [F-60] scheduled item first listed under Upcoming, moved to Active now by the activated event (30s) :: {"underUpcoming":true}
+PASS [F-60] 'Live updates' off → Paused and no updates arrive; on → Connecting then Live and the snapshot brings the missed item :: {"notShownWhilePaused":true,"states":["Paused","Live"]}
+PASS [F-60] no console/page errors during live updates :: {"errors":[],"console":[]}
+PASS [F-62] Resolve opens the inline confirm ('Resolving retires it…') with a note input and Cancel :: ActiveMajorOutageUpdated just nowto be resolvedStarted just nowfe-resolverResolving retires it: it leaves every consumer's feed and cannot be reopened.CancelResolve
+PASS [F-62] Cancel closes the confirm row :: closed
+PASS [F-62] Resolve → POST /retire {actor: publisher, note}; 200; card removed at once :: {"status":200,"body":{"actor":"fe-resolver","note":"fixed by failover"}}
+PASS [F-06] server: status RETIRED and the audit history carries the actor and note :: {"status":"RETIRED","last":{"at":"2026-11-01T23:56:58.447Z","actor":"fe-resolver","action":"ACTIVE -> RETIRED: fixed by failover"}}
+PASS [F-06] resolving an item already retired elsewhere → 200 (idempotent) and the card is gone :: status=200
+FAIL [F-06] retiring an EXPIRED item → 409 :: {"status":200}
+PASS [F-62] Q11: a fresh browser (no publisher yet) resolves with no actor; the server records the item's publisher as the actor :: {"body":"{}","lastActor":"original-publisher","action":"ACTIVE -> RETIRED"}
+PASS [F-58] Q10: 103 active items exist (server hasNext=true, total=103); UI shows 100, heading says 100, no paging/truncation hint :: {"created":103,"shown":100,"heading":"100","totalElements":103,"hasNext":true,"truncationHints":0}
+
+== t3-feed: 39 checks, 3 failed
+   FAILED [F-60] EventSource URL carries tenantId and clientId=communication-frontend (type omitted for All types)
+   FAILED [F-16] CONTRACT CHECK: a future-dated OUTAGE published while the feed is open — live frame vs GET /v1/feed visibility must agree
+   FAILED [F-06] retiring an EXPIRED item → 409

@@ -1,0 +1,4 @@
+shared 3000→8080 (empty tenant) :: Connecting @343ms | stream response 200 @15346ms | Live @15433ms
+shared 3000→8080 (tenant with 1 item) :: Connecting @381ms | stream response 200 @406ms | Live @587ms
+aux 3011→18093 (empty tenant) :: Connecting @315ms | stream response 200 @15322ms | Live @15403ms
+aux 3011→18093 (tenant with 1 item) :: Connecting @342ms | stream response 200 @381ms | Live @545ms

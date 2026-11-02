@@ -1,0 +1,73 @@
+[23:40:22] STEP A: app container joins the pod (fakeapp:ci, UID 1001)
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=16
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 incidents=0 openNotice=None
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=False lastSeen=2026-11-01T23:40:24.218Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  feed: empty
+stats sc-pod-main-sidecar: cpu=0.09% mem=3.254MiB / 15.71GiB
+[23:40:31] STEP B: 25 s of steady state (heartbeat 10 s) then stats
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=18
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=3 incidents=0 openNotice=None
+stats sc-pod-main-sidecar: cpu=0.00% mem=2.777MiB / 15.71GiB
+[23:40:57] STEP C: app answers DOWN (db DOWN) -> expect DOWN after retry delay, OUTAGE notice after the 2nd DOWN report (failureThreshold 2, heartbeat 10 s)
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=DOWN msg='health document reports DOWN' sendError='' sent=19
+  monitor: lastStatus=DOWN summary='DOWN (0 of 1 pod UP (DOWN: sc-app-5c9d7f6b8-q1w2e)): db DOWN' unhealthy=1 healthy=0 incidents=0 openNotice=None
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=DOWN left=False lastSeen=2026-11-01T23:40:59.454Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[{'name': 'db', 'status': 'DOWN', 'detail': 'database=PostgreSQL'}]
+  feed: empty
+[23:41:19] after the heartbeat:
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=DOWN msg='health document reports DOWN' sendError='' sent=20
+  monitor: lastStatus=DOWN summary='DOWN (0 of 1 pod UP (DOWN: sc-app-5c9d7f6b8-q1w2e)): db DOWN' unhealthy=2 healthy=0 incidents=1 openNotice=None
+  feed: [('OUTAGE', 'MAJOR', 'sc-app is down', 'ACTIVE')]
+[23:41:19] STEP D: app recovers -> UP; notice retired after recoveryThreshold 2 UP reports
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=21
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 incidents=1 openNotice=None
+  feed: [('OUTAGE', 'MAJOR', 'sc-app is down', 'ACTIVE')]
+[23:41:41] after the heartbeat:
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=23
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=3 incidents=1 openNotice=None
+  feed: empty
+[23:41:41] STEP E: kill the app container (connection refused) -> DOWN (unreachable); the port is gone so the sidecar rediscovers; then restart the app
+  /status: target=None upSeen=True last=UNKNOWN msg='no health target found yet' sendError='' sent=25
+  monitor: lastStatus=DOWN summary='UNKNOWN (1 pod starting, none reporting yet)' unhealthy=1 healthy=0 incidents=1 openNotice=None
+  feed: empty
+[23:41:50] restart app
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=26
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 incidents=1 openNotice=None
+  feed: empty
+[23:42:11] after heartbeat:
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=27
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=2 incidents=1 openNotice=None
+  feed: empty
+[23:42:12] STEP F: sidecar crash (docker kill -s KILL) and restart (emulates a liveness restart) -> UP again, same monitor, no new notice
+  sidecar state: exited exit=137
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=False lastSeen=2026-11-01T23:42:02.583Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=1
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=3 incidents=1 openNotice=None
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=False lastSeen=2026-11-01T23:42:14.280Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  feed: empty
+[23:42:21] STEP G: steady state 30 s, stats
+stats sc-pod-main-sidecar: cpu=0.00% mem=2.742MiB / 15.71GiB
+  /status: target=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg='' sendError='' sent=4
+  monitor: lastStatus=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+[23:42:52] STEP H: docker stop sidecar (SIGTERM, 30 s grace) -> leaving report, left=true, exit 0
+  stop took 0.08 s; exit code 0
+  instance: id=sc-app-5c9d7f6b8-q1w2e status=UP left=True lastSeen=2026-11-01T23:42:52.515Z sidecar=1.0.0-verify version=1.2.3 ns=sc-ns node=node-a cluster=sandbox comps=[]
+  monitor: lastStatus=UP summary='UNKNOWN (no live pod reports)' unhealthy=0 healthy=6 incidents=1 openNotice=None
+  feed: empty
+[23:42:53] SIDECAR LOG (whole run):
+{"time":"2026-11-01T23:37:32.164122558Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-verify","service":"sc-app","tenant":"sc-pod","instance":"sc-app-5c9d7f6b8-q1w2e","endpoint":"http://172.17.0.1:8080","probe":"auto"}
+{"time":"2026-11-01T23:37:32.182049492Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-01T23:40:24.216140977Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-01T23:40:24.228761496Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:40:59.467348355Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+{"time":"2026-11-01T23:41:20.601711482Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:41:46.248601212Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-01T23:41:46.261206696Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+{"time":"2026-11-01T23:41:49.379764888Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found yet"}
+{"time":"2026-11-01T23:41:52.542542951Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-01T23:41:52.553152416Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:42:14.27360882Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0-verify","service":"sc-app","tenant":"sc-pod","instance":"sc-app-5c9d7f6b8-q1w2e","endpoint":"http://172.17.0.1:8080","probe":"auto"}
+{"time":"2026-11-01T23:42:14.278082127Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-01T23:42:14.287084576Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:42:52.522825091Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-01T23:42:52.522952581Z","level":"INFO","msg":"health sidecar stopped"}
+[23:42:53] DONE (containers left running for inspection: sc-pod-main, sc-pod-main-app; sidecar stopped)

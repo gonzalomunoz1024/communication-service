@@ -1,0 +1,62 @@
+- main:
+  - tablist "Sections":
+    - tab "Feed"
+    - tab "Publish" [selected]
+  - heading "What's happening" [level=3]
+  - paragraph: Consumers of the feed see exactly this.
+  - text: Type
+  - radiogroup "Communication type":
+    - radio "Outage"
+    - radio "Incident" [checked]
+    - radio "Maintenance"
+    - radio "Change"
+  - paragraph: Degraded or partially failing
+  - text: Severity
+  - radiogroup "Severity":
+    - radio "Info"
+    - radio "Minor"
+    - radio "Major" [checked]
+    - radio "Critical"
+  - text: Title
+  - textbox "Title":
+    - /placeholder: Payments API returning 503s
+  - paragraph: 0/200
+  - text: Details
+  - textbox "Details":
+    - /placeholder: Card payments fail for roughly 30% of requests. Retries succeed. Next update in 30 minutes.
+  - paragraph: Impact, workaround, next update. Plain text.
+  - text: Affected services
+  - textbox "Affected services":
+    - /placeholder: payments-api, checkout-web
+  - paragraph: Comma separated. Consumers filter the feed by these names.
+  - text: ServiceNow incident
+  - textbox "ServiceNow incident":
+    - /placeholder: INC0012345
+  - paragraph: Optional. The INC tracking this; consumers get a link to it.
+  - heading "Who and where" [level=3]
+  - text: Tenant
+  - textbox "Tenant":
+    - /placeholder: acme
+    - text: ux-sre2
+  - paragraph: The tenant whose feed this lands in.
+  - text: Publisher
+  - textbox "Publisher":
+    - /placeholder: payments-oncall
+    - text: ux-keyboard
+  - paragraph: Your team or name, recorded in the audit trail.
+  - text: Audience
+  - combobox "Audience":
+    - option "Customers" [selected]
+    - option "Public"
+    - option "Internal"
+  - text: External reference
+  - textbox "External reference":
+    - /placeholder: payments-2026-11-01
+  - paragraph: Idempotency key, optional; defaults to the incident number.
+  - heading "Timing" [level=3]
+  - paragraph: Starts now and stays up until you retire it.
+  - button "Schedule"
+  - switch "Save as draft"
+  - text: Save as draft (not visible to consumers)
+  - button "Clear"
+  - button "Publish incident"

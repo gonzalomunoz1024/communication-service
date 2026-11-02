@@ -1,0 +1,37 @@
+== private instance :28090 (db be-verify-bv2) application log lines (startup noise removed)
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+2026-11-01T23:49:09.500Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor 630d8feb-bc50-4d6b-98d0-dc3c81e505ce opened OUTAGE 4d31e644-4b71-40de-a395-d6d0785e2ed5 for be-p-64bb54/sched
+2026-11-01T23:49:16.566Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : monitor 86cda23f-a13b-48d4-9f97-dacae0fddad2 opened OUTAGE 44f6aab5-004e-4f39-b154-64e8c3ae9443 for be-p-64bb54/sched-closed
+2026-11-01T23:49:23.483Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : retired notice 4d31e644-4b71-40de-a395-d6d0785e2ed5: monitor deleted
+2026-11-01T23:49:23.522Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 44f6aab5-004e-4f39-b154-64e8c3ae9443: monitor deleted
+2026-11-01T23:49:28.666Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor 8a21c3fe-c90f-4f61-9793-6715f0069fc3 opened OUTAGE 4d138918-1a24-4d78-9633-cf4fa80ab3a0 for be-p-64bb54/stale-1
+2026-11-01T23:49:32.609Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 4d138918-1a24-4d78-9633-cf4fa80ab3a0: recovered: UP
+2026-11-01T23:49:37.725Z  WARN 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.application.HealthSweepUseCase   : 2 of 4 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+2026-11-01T23:49:45.761Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.application.HealthSweepUseCase   : staleness evaluation resumed
+2026-11-01T23:49:45.774Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor 69e7df78-b4fb-4d1e-a78b-21b983aa7b13 opened OUTAGE 3c83acb4-313e-4497-9695-70e0cc4e2a19 for be-p-64bb54/stale-4
+2026-11-01T23:49:56.731Z  INFO 16197 --- [communication-service] [ntLoopGroup-3-8] c.a.c.h.a.HealthObservationUseCase       : retired notice 3c83acb4-313e-4497-9695-70e0cc4e2a19: recovered: UP
+2026-11-01T23:50:00.896Z  WARN 16197 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.application.HealthSweepUseCase   : 3 of 6 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+2026-11-01T23:50:06.512Z  INFO 16197 --- [communication-service] [or-http-epoll-1] c.a.c.config.ClientIdWebFilter           : rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)
+
+== counts by level/logger
+      8 INFO c.a.c.h.a.HealthObservationUseCase
+      3 INFO c.a.c.CommunicationServiceApplication
+      2 WARN c.a.c.h.application.HealthSweepUseCase
+      2 INFO .s.d.r.c.RepositoryConfigurationDelegate
+      1 WARN o.s.w.r.resource.ResourceHandlerUtils
+      1 INFO org.mongodb.driver.cluster
+      1 INFO org.mongodb.driver.client
+      1 INFO o.s.b.web.embedded.netty.NettyWebServer
+      1 INFO c.a.c.h.application.HealthSweepUseCase
+      1 INFO c.a.c.config.ClientIdWebFilter
+
+== shared backend :8080 log: lines mentioning client ids / rejected / requests (expect only rejections at INFO; client id is logged at DEBUG only, ClientIdWebFilter.java:72)
+2026-11-01T23:37:58.879Z  INFO 19870 --- [communication-service] [or-http-epoll-3] c.a.c.config.ClientIdWebFilter           : rejected GET /v1/feed with 401: missing X-Client-Id header: identify the calling system by its repository name (EventSource 
+2026-11-01T23:37:58.882Z  INFO 19870 --- [communication-service] [or-http-epoll-4] c.a.c.config.ClientIdWebFilter           : rejected GET /v1/feed with 400: X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'
+2026-11-01T23:37:58.884Z  INFO 19870 --- [communication-service] [or-http-epoll-1] c.a.c.config.ClientIdWebFilter           : rejected GET /v1/feed with 400: X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'
+2026-11-01T23:38:02.904Z  INFO 19870 --- [communication-service] [or-http-epoll-1] c.a.c.config.ClientIdWebFilter           : rejected GET /v1/feed/stream with 401: missing X-Client-Id header: identify the calling system by its repository name (Event
+2026-11-01T23:38:02.984Z  INFO 19870 --- [communication-service] [or-http-epoll-2] c.a.c.config.ClientIdWebFilter           : rejected POST /v1/health/reports with 401: missing X-Client-Id header: identify the calling system by its repository name (E
+(count of 'rejected' lines: 18)
+
+== status sweeper (instance :18091 log, db be-verify, during check C-22): transitions are logged at INFO (StatusSweepUseCase.java:52)
+2026-11-01T23:45:06.599Z  INFO 28787 --- [communication-service] [ntLoopGroup-3-1] c.a.c.p.application.StatusSweepUseCase   : sweep applied 2 status transition(s)

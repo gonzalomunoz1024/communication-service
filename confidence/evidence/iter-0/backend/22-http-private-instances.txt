@@ -1,0 +1,56 @@
+# HTTP checks C: fan-out across two instances, sweeper, scheduler, staleness, safety valve, pod silence (private instances :18090/:18091, db be-verify, fast intervals)
+
+Checks: 8/9 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| C-21a | F-21 | PASS | published on :18090, `created` seen on :18091 stream: ['created'] |
+| C-21b | F-21 | PASS | updated on :18091 seen on :18090: ['snapshot', 'updated'] |
+| C-21c | F-21 | PASS | ids on :18090 monotonic [1, 2] |
+| C-21d | F-21/F-20 | FAIL | resume on the other node with Last-Event-ID -> HTTP 500 |
+| C-22a | F-22 | PASS | activated frame=True stored=ACTIVE history=['created (SCHEDULED)', 'SCHEDULED -> ACTIVE'] frames=['created', 'created', 'activated', 'expired'] |
+| C-22b | F-22 | PASS | expired frame=True stored=EXPIRED last={'at': '2026-11-01T23:45:06.572Z', 'actor': 'sweeper', 'action': 'ACTIVE -> EXPIRED'} |
+| C-13a | F-13/F-06 | PASS | retire a stored-EXPIRED item -> 409 {'error': 'communication 18fdf93b-d05a-4d04-912c-160a4d770f5b already expired; retiring would rewrite history'} |
+| C-13b | F-13/F-05 | PASS | update a stored-EXPIRED item -> 409 {'error': 'communication 18fdf93b-d05a-4d04-912c-160a4d770f5b is EXPIRED and can no longer be updated'} |
+| C-17 | F-17 | PASS | expired permalink -> 200 EXPIRED |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:18090/v1/communications body={"tenantId": "be-p-e90e6b", "publisher": "p", "type": "OUTAGE", "severity": "MAJOR", "title": "fan-out", "affectedServices": ["x"]} -> 201 {"id":"f0d2753d-1176-4c32-a9d4-cad87d843393","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"fan-out","affectedServices":["x"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:44:54.842193833Z","createdAt":"2026-11-01T23:44:54.842193833Z","updatedAt":"2026-11-01T23:44:54.842193833Z","version":0,"history":[{"at":"2026-11-01T23:44:54.842193833Z"
+SSE http://localhost:18091/v1/feed/stream?tenantId=be-p-e90e6b hdr=None -> 200, 1 frames, 0 comments
+  [PASS] C-21a (F-21): published on :18090, `created` seen on :18091 stream: ['created']
+GET http://localhost:18091/v1/communications/f0d2753d-1176-4c32-a9d4-cad87d843393 body= -> 200 {"id":"f0d2753d-1176-4c32-a9d4-cad87d843393","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"fan-out","affectedServices":["x"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:44:54.842Z","createdAt":"2026-11-01T23:44:54.842Z","updatedAt":"2026-11-01T23:44:54.842Z","version":0,"history":[{"at":"2026-11-01T23:44:54.842Z","actor":"p","action":"c
+PUT http://localhost:18091/v1/communications/f0d2753d-1176-4c32-a9d4-cad87d843393 body={"title": "fan-out (updated on 18091)", "expectedVersion": 0} -> 200 {"id":"f0d2753d-1176-4c32-a9d4-cad87d843393","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"fan-out (updated on 18091)","affectedServices":["x"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:44:54.842Z","createdAt":"2026-11-01T23:44:54.842Z","updatedAt":"2026-11-01T23:45:00.232353820Z","version":1,"history":[{"at":"2026-11-01T23:44:54.842Z
+SSE http://localhost:18090/v1/feed/stream?tenantId=be-p-e90e6b hdr=None -> 200, 2 frames, 0 comments
+  [PASS] C-21b (F-21): updated on :18091 seen on :18090: ['snapshot', 'updated']
+  [PASS] C-21c (F-21): ids on :18090 monotonic [1, 2]
+SSE http://localhost:18091/v1/feed/stream?tenantId=be-p-e90e6b hdr={'Last-Event-ID': '1'} -> 500, 1 frames, 0 comments
+  [FAIL] C-21d (F-21/F-20): resume on the other node with Last-Event-ID -> HTTP 500
+POST http://localhost:18090/v1/communications body={"tenantId": "be-p-e90e6b", "publisher": "p", "type": "OUTAGE", "severity": "MAJOR", "title": "activates soon", "affectedServices": ["sweep"], "startsAt": "2026-11-01T23:45:06Z"} -> 201 {"id":"fae489f0-4744-401f-83a0-2aa91cb4597d","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"activates soon","affectedServices":["sweep"],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-01T23:45:06Z","createdAt":"2026-11-01T23:45:03.625207131Z","updatedAt":"2026-11-01T23:45:03.625207131Z","version":0,"history":[{"at":"2026-11-01T23:45:03.6252071
+POST http://localhost:18090/v1/communications body={"tenantId": "be-p-e90e6b", "publisher": "p", "type": "OUTAGE", "severity": "MAJOR", "title": "expires soon", "affectedServices": ["sweep"], "expiresAt": "2026-11-01T23:45:06Z"} -> 201 {"id":"18fdf93b-d05a-4d04-912c-160a4d770f5b","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"expires soon","affectedServices":["sweep"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:45:03.651123888Z","expiresAt":"2026-11-01T23:45:06Z","createdAt":"2026-11-01T23:45:03.651123888Z","updatedAt":"2026-11-01T23:45:03.651123888Z","version":0,"hist
+SSE http://localhost:18090/v1/feed/stream?tenantId=be-p-e90e6b&service=sweep hdr=None -> 200, 4 frames, 0 comments
+GET http://localhost:18090/v1/communications/fae489f0-4744-401f-83a0-2aa91cb4597d body= -> 200 {"id":"fae489f0-4744-401f-83a0-2aa91cb4597d","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"activates soon","affectedServices":["sweep"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-01T23:45:06Z","createdAt":"2026-11-01T23:45:03.625Z","updatedAt":"2026-11-01T23:45:06.572Z","version":1,"history":[{"at":"2026-11-01T23:45:03.625Z","actor":"p","act
+GET http://localhost:18090/v1/communications/18fdf93b-d05a-4d04-912c-160a4d770f5b body= -> 200 {"id":"18fdf93b-d05a-4d04-912c-160a4d770f5b","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"expires soon","affectedServices":["sweep"],"audience":"CUSTOMERS","status":"EXPIRED","startsAt":"2026-11-01T23:45:03.651Z","expiresAt":"2026-11-01T23:45:06Z","createdAt":"2026-11-01T23:45:03.651Z","updatedAt":"2026-11-01T23:45:06.572Z","version":1,"history":[{"at":"2026
+  [PASS] C-22a (F-22): activated frame=True stored=ACTIVE history=['created (SCHEDULED)', 'SCHEDULED -> ACTIVE'] frames=['created', 'created', 'activated', 'expired']
+  [PASS] C-22b (F-22): expired frame=True stored=EXPIRED last={'at': '2026-11-01T23:45:06.572Z', 'actor': 'sweeper', 'action': 'ACTIVE -> EXPIRED'}
+POST http://localhost:18090/v1/communications/18fdf93b-d05a-4d04-912c-160a4d770f5b/retire body={"note": "too late"} -> 409 {"error":"communication 18fdf93b-d05a-4d04-912c-160a4d770f5b already expired; retiring would rewrite history"}
+  [PASS] C-13a (F-13/F-06): retire a stored-EXPIRED item -> 409 {'error': 'communication 18fdf93b-d05a-4d04-912c-160a4d770f5b already expired; retiring would rewrite history'}
+PUT http://localhost:18090/v1/communications/18fdf93b-d05a-4d04-912c-160a4d770f5b body={"title": "x", "expectedVersion": 1} -> 409 {"error":"communication 18fdf93b-d05a-4d04-912c-160a4d770f5b is EXPIRED and can no longer be updated"}
+  [PASS] C-13b (F-13/F-05): update a stored-EXPIRED item -> 409 {'error': 'communication 18fdf93b-d05a-4d04-912c-160a4d770f5b is EXPIRED and can no longer be updated'}
+GET http://localhost:18090/v1/feed/18fdf93b-d05a-4d04-912c-160a4d770f5b body= -> 200 {"id":"18fdf93b-d05a-4d04-912c-160a4d770f5b","tenantId":"be-p-e90e6b","publisher":"p","type":"OUTAGE","severity":"MAJOR","title":"expires soon","affectedServices":["sweep"],"audience":"CUSTOMERS","status":"EXPIRED","startsAt":"2026-11-01T23:45:03.651Z","expiresAt":"2026-11-01T23:45:06Z","updatedAt":"2026-11-01T23:45:06.572Z"}
+  [PASS] C-17 (F-17): expired permalink -> 200 EXPIRED
+POST http://localhost:18090/v1/health/monitors body={"tenantId": "be-p-e90e6b", "service": "sched", "url": "http://127.0.0.1:18555/down", "intervalSeconds": 5, "failureThreshold": 2, "recoveryThreshold": 1} -> 201 {"id":"65560c8e-c65a-451e-9c08-6c4d77bdd989","tenantId":"be-p-e90e6b","service":"sched","url":"http://127.0.0.1:18555/down","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthy
+SCRIPT ABORTED:
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/urllib/request.py", line 1331, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/http/client.py", line 1386, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/http/client.py", line 1432, in _send_request
+    self.endheaders(body,
+```

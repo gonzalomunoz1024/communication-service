@@ -1,0 +1,33 @@
+# backend A (18081) log excerpts, iteration 0 E2E run
+
+## staleness safety valve
+2026-11-01T23:38:06.052Z  WARN 21826 --- [communication-service] [ntLoopGroup-3-3] c.a.c.h.application.HealthSweepUseCase   : 2 of 5 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+2026-11-01T23:43:52.029Z  INFO 21826 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.application.HealthSweepUseCase   : staleness evaluation resumed
+2026-11-01T23:44:04.096Z  WARN 21826 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.application.HealthSweepUseCase   : 1 of 3 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+2026-11-01T23:54:11.878Z  WARN 19569 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.application.HealthSweepUseCase   : 2 of 3 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+2026-11-01T23:56:11.883Z  WARN 20594 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.application.HealthSweepUseCase   : 2 of 3 push-only monitors are silent at once; not declaring them DOWN until some report again (can the clusters reach this service?)
+2026-11-01T23:57:16.237Z  INFO 20594 --- [communication-service] [ntLoopGroup-3-7] c.a.c.h.application.HealthSweepUseCase   : staleness evaluation resumed
+
+## notices opened / retired by the health flows
+2026-11-01T23:43:58.114Z  INFO 21826 --- [communication-service] [ntLoopGroup-3-6] c.a.c.h.a.HealthObservationUseCase       : retired notice d819a0ec-d4d8-4ea6-990f-fa3d77118b99: recovered: UP (1 of 1 pod UP)
+2026-11-01T23:49:17.197Z  INFO 21826 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor 5a1ae214-e994-4df2-b5c5-7a20f83a77b9 opened OUTAGE 6c97193f-e8ca-4ccf-bf6b-93a250783ffd for e2e-pod/e2e-ap
+2026-11-01T23:49:33.315Z  INFO 21826 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : retired notice 6c97193f-e8ca-4ccf-bf6b-93a250783ffd: reclassified as DEGRADED: DEGRADED (0 of 1 pod UP (DEGRADED: 
+2026-11-01T23:49:33.321Z  INFO 21826 --- [communication-service] [ntLoopGroup-3-1] c.a.c.h.a.HealthObservationUseCase       : monitor 5a1ae214-e994-4df2-b5c5-7a20f83a77b9 opened HEALTH 55b810df-0057-4663-b75d-e55821ae6c11 for e2e-pod/e2e-ap
+2026-11-01T23:49:49.683Z  INFO 21826 --- [communication-service] [ntLoopGroup-3-6] c.a.c.h.a.HealthObservationUseCase       : retired notice 55b810df-0057-4663-b75d-e55821ae6c11: recovered: UP (1 of 1 pod UP)
+2026-11-01T23:58:52.005Z  INFO 20594 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : retired notice 7b7e0a19-bfc2-4e55-984f-51907136bb23: recovered: UP (1 of 1 pod UP)
+2026-11-02T00:00:39.709Z  INFO 20594 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : monitor 2e1d568a-7ae5-4721-9976-55348fcb5cb9 opened OUTAGE a9912c5c-6c6c-4fed-bb6b-098ac2a98b53 for e2e-slow/slow-
+2026-11-02T00:00:39.732Z  INFO 20594 --- [communication-service] [ntLoopGroup-3-4] c.a.c.h.a.HealthObservationUseCase       : retired notice a9912c5c-6c6c-4fed-bb6b-098ac2a98b53: monitor deleted
+
+## Last-Event-ID resume errors (count)
+0
+
+## shutdown timing on SIGTERM (first kill 23:53:38, second 23:55:36)
+20:2026-11-01T23:32:10.484Z  INFO 21826 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 6.132 seconds (process runni
+40:2026-11-01T23:53:37.994Z  INFO 21826 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+41:2026-11-01T23:54:08.004Z  INFO 21826 --- [communication-service] [ionShutdownHook] o.s.c.support.DefaultLifecycleProcessor  : Shutdown phase 2147482623 ends with 1 bean still running after timeout 
+42:2026-11-01T23:54:08.007Z  INFO 21826 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown aborted with one or more requests still active
+98:2026-11-01T23:54:10.877Z  INFO 19569 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 5.004 seconds (process runni
+100:2026-11-01T23:55:36.486Z  INFO 19569 --- [communication-service] [ionShutdownHook] o.s.b.w.embedded.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+101:2026-11-01T23:56:06.498Z  INFO 19569 --- [communication-service] [ionShutdownHook] o.s.c.support.DefaultLifecycleProcessor  : Shutdown phase 2147482623 ends with 1 bean still running after timeout
+102:2026-11-01T23:56:06.499Z  INFO 19569 --- [communication-service] [ netty-shutdown] o.s.b.w.embedded.netty.GracefulShutdown  : Graceful shutdown aborted with one or more requests still active
+122:2026-11-01T23:56:10.876Z  INFO 20594 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 3.559 seconds (process runn

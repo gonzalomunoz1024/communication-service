@@ -1,0 +1,27 @@
++0.0s aux backend up: true
++0.2s stream REQUEST #1 Last-Event-ID=(none)
++0.3s stream REQUEST FAILED net::ERR_ABORTED
++0.3s stream REQUEST #2 Last-Event-ID=(none)
++0.3s stream RESPONSE 200
++0.3s indicator → Live
++0.3s stream REQUEST FAILED net::ERR_ABORTED
++0.3s stream REQUEST #3 Last-Event-ID=(none)
++0.4s stream RESPONSE 200
++0.4s feed is Live with one item (3 stream requests so far)
++0.4s backend SIGKILLed (pid 22928)
++0.4s backend is down (connect refused)
++0.4s EventSource saw the drop (readyState 0): true; indicator=Live
++0.5s indicator → Reconnecting
++3.4s stream REQUEST #4 Last-Event-ID=(none)
++8.4s 8 s later (backend still down): stream requests=4, es log=["00:16:27.950 es#2 open","00:16:28.036 es#3 open","00:16:28.104 es#3 error readyState=0"]
++12.5s stream RESPONSE 500
++12.5s stream REQUEST FAILED net::ERR_ABORTED
++12.5s backend restarted (GET 200)
++30.1s browser's reconnect Last-Event-ID=null; stream responses=[200,200,500]; EventSource CLOSED for good=true; indicator=Reconnecting
++30.3s published after restart → 201
++50.4s card 'published after restart' shown after >20s; indicator=Reconnecting; stream requests=4; es log=["00:16:27.950 es#2 open","00:16:28.036 es#3 open","00:16:28.104 es#3 error readyState=0","00:16:40.205 es#3 error readyState=2"]
++50.6s indicator → Paused
++50.9s stream REQUEST #5 Last-Event-ID=(none)
++50.9s stream RESPONSE 200
++51.0s indicator → Live
++51.2s diagnostic: Live updates off/on → indicator=Live, missed card shown=true, last stream request Last-Event-ID=(none)

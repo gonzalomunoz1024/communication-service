@@ -1,0 +1,15 @@
+tenant e2e-health-89d63a
+monitors: {'burst-89d63a': ('UP', 'UP (20 of 20 pods UP)'), 'podsvc': ('UP', 'UP (1 of 1 pod UP)'), 'pushsvc': ('DEGRADED', 'UNKNOWN'), 'scaled': ('UP', 'UNKNOWN (no live pod reports)'), 'silent': ('UP', 'UP (2 of 2 pods UP)')}
+delete scaled -> 204 23:41:28
+23:41:35 F-48 after removing the scaled monitor: outage items = 0 | title: None | body:  | state: UP | UP (2 of 2 pods UP)
+F-50 parallel x20 on existing monitor: 202s= 7 409s= 13 [202, 409]
+F-50 staggered 20 req/s: 202s= 20 409s= 0
+F-50 staggered 5 req/s: 202s= 20 409s= 0
+pods recorded: 20
+delete burst-89d63a 204
+delete podsvc 204
+23:43:51 remaining stale-capable monitors in db e2e: silent (5 s window) + the e2e-pod sidecar monitor -> below PAUSE_MIN_MONITORS=3
+23:43:58 F-48 clean re-test: outage items = 1 | title: silent is down | severity: MAJOR | body: Automated health check reported **DOWN** at 2026-11-01T23:43:51.439559966Z (no health report received since 2026-11-01T23:38:00.821Z). |  | 2 pods have not reported since 2026-11-01T23:38:00.821Z (p1, p2) |  | This notice is managed automatically a | state: DOWN | DOWN (2 pods have not reported since 2026-11-01T23:38:00.821Z (p1, p2))
+after one pod reports UP again (recoveryThreshold=1): outage items = 0 | state: UP | UP (1 of 1 pod UP)
+F-50 random arrivals ~33 req/s for 3 s (100 reports, one service): 202s= 97 409s= 3 other= []
+pods recorded: 100 | summary: UP (100 of 100 pods UP)

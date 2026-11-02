@@ -1,0 +1,29 @@
++0.0s front on http://127.0.0.1:3041 → backend :18093, HOLD=true
++3.5s GET /v1/feed/stream?tenantId=fe-reconn4-smoke → 502 (ECONNRESET)
++14.9s GET /v1/feed/stream?tenantId=acme&type=OUTAGE&clientId=communica → 502 (ECONNRESET)
++14.9s stream /v1/feed/stream?tenantId=fe-reconn-prod-mvyidrcq&type=OUTAGE… last-event-id=(none) → upstream 200
++15.0s upstream stream aborted → ending the browser's response
++15.0s stream /v1/feed/stream?tenantId=fe-reconn-prod-mvyidrcq&clientId=co… last-event-id=(none) → upstream 200
++15.1s upstream stream aborted → ending the browser's response
++18.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++18.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++19.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++19.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++20.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++20.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++21.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++21.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++22.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++22.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++23.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++23.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++24.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++24.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++25.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++25.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++26.1s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++26.6s stream request held: backend refused (ECONNREFUSED); retrying in 500 ms (last-event-id=12)
++27.2s stream /v1/feed/stream?tenantId=fe-reconn-prod-mvyidrcq&clientId=co… last-event-id=12 → upstream 500
++27.2s upstream stream aborted → ending the browser's response
++65.6s stream /v1/feed/stream?tenantId=fe-reconn-prod-mvyidrcq&clientId=co… last-event-id=(none) → upstream 200
++65.9s upstream stream aborted → ending the browser's response

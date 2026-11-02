@@ -1,0 +1,61 @@
+## go vet ./...
+VET_RC=0
+## gofmt -l .
+GOFMT_RC=0
+## go build ./...
+BUILD_RC=0
+## go test -count=1 ./... (run 1)
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.056s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.005s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.007s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.431s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.045s
+TEST1_RC=0
+## go test -count=1 -race ./... (run 2)
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.170s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.024s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.064s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.523s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.547s
+TEST2_RC=0
+## go test -count=1 ./... (run 3)
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.064s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.011s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.015s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.436s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.021s
+TEST3_RC=0
+## go test -count=1 -v ./... (test names)
+--- PASS: TestReportsChangesAndHeartbeats (0.01s)
+--- PASS: TestStartupGraceReportsUnknownUntilFirstUp (0.01s)
+--- PASS: TestNoListeningPortStaysUnknown (0.00s)
+--- PASS: TestPinnedTargetThatNeverAnswersUpStaysUnknown (0.01s)
+--- PASS: TestSendFailuresBackOffAndKeepLatest (0.01s)
+--- PASS: TestRunSendsLeavingReportOnShutdown (0.01s)
+--- PASS: TestRediscoversWhenPortDisappears (0.01s)
+--- PASS: TestHandler (0.01s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.086s
+--- PASS: TestDeriveService (0.00s)
+--- PASS: TestFromEnvDefaults (0.00s)
+--- PASS: TestFromEnvOverridesAndValidation (0.00s)
+--- PASS: TestParsePortRanges (0.00s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.012s
+--- PASS: TestParseKeepsOnlyListeningSockets (0.00s)
+--- PASS: TestListeningPortsMergesTablesAndSkips (0.00s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.006s
+--- PASS: TestProbeActuatorDocument (0.00s)
+--- PASS: TestProbeDownDocumentAndOldActuatorShape (0.00s)
+--- PASS: TestProbePlainHTTPClassification (0.00s)
+--- PASS: TestProbeUnreachableAndTCP (0.00s)
+--- PASS: TestNormalize (0.00s)
+--- PASS: TestDetectPrefersActuatorOverAnyPort (0.00s)
+--- PASS: TestDetectFallsBackToRootThenTCP (2.41s)
+--- PASS: TestDetectSwitchesToHTTPS (0.00s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.430s
+--- PASS: TestSendPostsReportWithClientId (0.00s)
+--- PASS: TestSendClassifiesFailures (0.00s)
+--- PASS: TestNewClientRejectsBadCAFile (0.02s)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.032s

@@ -1,0 +1,40 @@
+# HTTP checks C2: health scheduler, staleness, safety valve, pod silence vs leaving (private instance :28090, db be-verify, fast intervals)
+
+Checks: 2/3 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| C-43 | F-43 | PASS | after 13s without /probe: state={'lastStatus': 'DOWN', 'lastReportAt': '2026-11-01T23:47:07.872Z', 'lastProbeAt': '2026-11-01T23:47:07.872Z', 'lastSummary': 'DOWN (HTTP 503): db DOWN', 'unhealthyStreak': 3, 'healthyStreak': 0, 'openCommunicationId': '3c619a41-bdb8-4f7d-bf94-bf30df138414', 'openStatu |
+| C-43b | F-43 | PASS | closed-port monitor opened a notice ('DOWN (probe failed: finishConnect(..) failed: Connection refused: /127.0.0.1:1)') and the other keeps being probed (2026-11-01T23:47:07.872Z -> 2026-11-01T23:47:12.934Z) |
+| C-44a | F-44 | FAIL | silent 9s with staleAfterSeconds=5 -> state=UNKNOWN summary=None notice body='' |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:28090/v1/health/monitors body={"tenantId": "be-p-3242db", "service": "sched", "url": "http://127.0.0.1:18555/down", "intervalSeconds": 5, "failureThreshold": 2, "recoveryThreshold": 1} -> 201 {"id":"db0c0645-f9b0-4d33-b173-d79735c24d00","tenantId":"be-p-3242db","service":"sched","url":"http://127.0.0.1:18555/down","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthy
+GET http://localhost:28090/v1/health/monitors/db0c0645-f9b0-4d33-b173-d79735c24d00 body= -> 200 {"id":"db0c0645-f9b0-4d33-b173-d79735c24d00","tenantId":"be-p-3242db","service":"sched","url":"http://127.0.0.1:18555/down","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-01T23:4
+GET http://localhost:28090/v1/feed?tenantId=be-p-3242db&service=sched body= -> 200 {"items":[{"id":"3c619a41-bdb8-4f7d-bf94-bf30df138414","tenantId":"be-p-3242db","publisher":"health-monitor","type":"OUTAGE","severity":"MAJOR","title":"sched is down","body":"Automated health check reported **DOWN** at 2026-11-01T23:47:02.793745589Z (probe of http://127.0.0.1:18555/down).\n\nHTTP 503\n\nFailing components:\n- db: DOWN - error=Connection refused\n\nThis notice is managed automatic
+  [PASS] C-43 (F-43): after 13s without /probe: state={'lastStatus': 'DOWN', 'lastReportAt': '2026-11-01T23:47:07.872Z', 'lastProbeAt': '2026-11-01T23:47:07.872Z', 'lastSummary': 'DOWN (HTTP 503): db DOWN', 'unhealthyStreak': 3, 'healthyStreak': 0, 'openCommunicationId': '3c619a41-bdb8-4f7d-bf94-bf30df138414', 'openStatus': 'DOWN', 'openSignature': 'DOWN[db=DOWN]', 'incidents': 1} notices=1
+POST http://localhost:28090/v1/health/monitors body={"tenantId": "be-p-3242db", "service": "sched-closed", "url": "http://127.0.0.1:1/x", "intervalSeconds": 5, "failureThreshold": 1} -> 201 {"id":"47e7600c-4d7e-4860-a871-f2480901ed91","tenantId":"be-p-3242db","service":"sched-closed","url":"http://127.0.0.1:1/x","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":1,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthy
+GET http://localhost:28090/v1/health/monitors/47e7600c-4d7e-4860-a871-f2480901ed91 body= -> 200 {"id":"47e7600c-4d7e-4860-a871-f2480901ed91","tenantId":"be-p-3242db","service":"sched-closed","url":"http://127.0.0.1:1/x","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":1,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-01T23:4
+GET http://localhost:28090/v1/health/monitors/db0c0645-f9b0-4d33-b173-d79735c24d00 body= -> 200 {"id":"db0c0645-f9b0-4d33-b173-d79735c24d00","tenantId":"be-p-3242db","service":"sched","url":"http://127.0.0.1:18555/down","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"2026-11-01T23:4
+  [PASS] C-43b (F-43): closed-port monitor opened a notice ('DOWN (probe failed: finishConnect(..) failed: Connection refused: /127.0.0.1:1)') and the other keeps being probed (2026-11-01T23:47:07.872Z -> 2026-11-01T23:47:12.934Z)
+DELETE http://localhost:28090/v1/health/monitors/db0c0645-f9b0-4d33-b173-d79735c24d00 body= -> 204 
+DELETE http://localhost:28090/v1/health/monitors/47e7600c-4d7e-4860-a871-f2480901ed91 body= -> 204 
+POST http://localhost:28090/v1/health/monitors body={"tenantId": "be-p-3242db", "service": "stale-1", "staleAfterSeconds": 5, "failureThreshold": 1, "recoveryThreshold": 1} -> 201 {"id":"3a5fe02c-bf37-4f8d-84a8-d60e6ad7baf6","tenantId":"be-p-3242db","service":"stale-1","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":1,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":5,"minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"
+GET http://localhost:28090/v1/health/monitors/3a5fe02c-bf37-4f8d-84a8-d60e6ad7baf6 body= -> 200 {"id":"3a5fe02c-bf37-4f8d-84a8-d60e6ad7baf6","tenantId":"be-p-3242db","service":"stale-1","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":1,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":5,"minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"
+GET http://localhost:28090/v1/feed?tenantId=be-p-3242db&service=stale-1 body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+  [FAIL] C-44a (F-44): silent 9s with staleAfterSeconds=5 -> state=UNKNOWN summary=None notice body=''
+POST http://localhost:28090/v1/health/reports body={"tenantId": "be-p-3242db", "service": "stale-1", "status": "UP"} -> 202 {"id":"3a5fe02c-bf37-4f8d-84a8-d60e6ad7baf6","tenantId":"be-p-3242db","service":"stale-1","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":1,"recoveryThreshold":1,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":5,"minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-01T23:47:26.21374156
+GET http://localhost:28090/v1/communications/None body= -> 404 {"error":"communication None not found"}
+SCRIPT ABORTED:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/backend/runner.py", line 6, in <module>
+    runpy.run_path(script, run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 294, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "check_c2_private.py", line 35, in <module>
+    check("C-44b", "F-44", not s["state"].get("openCommunicationId") and full["status"] == "RETIRED" and "recovered" in full["history"][-1]["action"], f"UP report -> notice {full['status']} ({full['history'][-
+```

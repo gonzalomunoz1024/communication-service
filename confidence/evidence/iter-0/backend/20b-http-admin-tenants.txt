@@ -1,0 +1,20 @@
+# HTTP checks A2: admin tenant summary (re-check with the real field name 'counts')
+
+Checks: 3/3 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| A-24a | F-24 shape | PASS | keys=['counts', 'tenantId', 'total'] |
+| A-24b | F-24 sorted by tenant | PASS | 33 tenants, first=be-a-313411 last=ux-sre2 |
+| A-24c | F-24 counts match the publisher listing (stored status) | PASS | checked be-a-* tenants; mismatches=[] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+GET http://localhost:8080/v1/admin/tenants body= -> 200 [{"tenantId":"be-a-313411","counts":{"SCHEDULED":1,"ACTIVE":6,"RETIRED":7},"total":14},{"tenantId":"be-a-fe8f0c","counts":{"SCHEDULED":1,"ACTIVE":7,"RETIRED":7},"total":15},{"tenantId":"be-a2-313411","counts":{"ACTIVE":1},"total":1},{"tenantId":"be-a2-fe8f0c","counts":{"ACTIVE":1},"total":1},{"tenantId":"be-feed-313411","counts":{"SCHEDULED":2,"ACTIVE":4},"total":6},{"tenantId":"be-feed-fe8f0c","c
+  [PASS] A-24a (F-24 shape): keys=['counts', 'tenantId', 'total']
+  [PASS] A-24b (F-24 sorted by tenant): 33 tenants, first=be-a-313411 last=ux-sre2
+GET http://localhost:8080/v1/communications?tenantId=be-a-313411&size=100 body= -> 200 {"items":[{"id":"f0cb6a00-f7df-43af-a3ed-e4c6474ef399","tenantId":"be-a-313411","publisher":"be-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T00:36:19Z","ticket":{"system":"servicenow","number":"INC0099999"},"createdAt":"2026-11-01T23:36:19.530Z","updatedAt":"2026-11-01T23:36:24.750Z","v
+GET http://localhost:8080/v1/communications?tenantId=be-a-fe8f0c&size=100 body= -> 200 {"items":[{"id":"aec1b0d4-fe0f-4aeb-9047-50a55b25f191","tenantId":"be-a-fe8f0c","publisher":"be-sre","type":"OUTAGE","severity":"MAJOR","title":"future outage","affectedServices":["svc-a"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T00:37:02Z","ticket":{"system":"servicenow","number":"INC0099999"},"createdAt":"2026-11-01T23:37:02.558Z","updatedAt":"2026-11-01T23:37:07.372Z","v
+  [PASS] A-24c (F-24 counts match the publisher listing (stored status)): checked be-a-* tenants; mismatches=[]
+```

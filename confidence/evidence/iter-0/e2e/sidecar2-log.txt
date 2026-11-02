@@ -1,0 +1,16 @@
+{"time":"2026-11-01T23:58:53.455461617Z","level":"INFO","msg":"health sidecar starting","version":"ci","service":"app2","tenant":"e2e-pod2","instance":"app2-5d4c7b6a9-zzzzz","endpoint":"http://172.17.0.1:18081","probe":"auto"}
+{"time":"2026-11-01T23:58:53.478060958Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-01T23:59:02.354696066Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-01T23:59:02.374258174Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:59:05.770513297Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-01T23:59:05.791700062Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+{"time":"2026-11-01T23:59:08.196513264Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found yet"}
+{"time":"2026-11-01T23:59:45.566651003Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-01T23:59:45.582891142Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T00:00:25.402342621Z","level":"INFO","msg":"health sidecar starting","version":"ci","service":"app2","tenant":"e2e-pod2","instance":"app2-5d4c7b6a9-zzzzz","endpoint":"http://172.17.0.1:18081","probe":"auto"}
+{"time":"2026-11-02T00:00:25.404821111Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T00:00:25.425082028Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T00:00:35.507022537Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T00:00:35.522077665Z","level":"INFO","msg":"reported","status":"DOWN","message":"GET http://127.0.0.1:8080/actuator/health: connection refused"}
+{"time":"2026-11-02T00:00:37.869660326Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8081/actuator/health","status":"UP"}
+{"time":"2026-11-02T00:00:37.885928406Z","level":"INFO","msg":"reported","status":"UP","message":""}

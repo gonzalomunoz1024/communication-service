@@ -1,0 +1,6 @@
+integration run 1: tests=26 failures=1 errors=0 skipped=0
+    com.atlas.communication.CommunicationServiceE2EIT.reconnectingWithLastEventIdReplaysWhatWasMissed(): java.lang.AssertionError: Status expected:<200 OK> but was:<500 INTERNAL_SERVER_ERROR>
+integration run 2: tests=26 failures=1 errors=0 skipped=0
+    com.atlas.communication.CommunicationServiceE2EIT.reconnectingWithLastEventIdReplaysWhatWasMissed(): java.lang.AssertionError: Status expected:<200 OK> but was:<500 INTERNAL_SERVER_ERROR>
+integration run 3: tests=26 failures=1 errors=0 skipped=0
+    com.atlas.communication.CommunicationServiceE2EIT.reconnectingWithLastEventIdReplaysWhatWasMissed(): java.lang.AssertionError: Status expected:<200 OK> but was:<500 INTERNAL_SERVER_ERROR>

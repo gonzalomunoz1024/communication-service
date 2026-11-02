@@ -1,0 +1,181 @@
+### S1 no configuration at all
+{"time":"2026-11-01T23:38:48.911630705Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit=2
+
+### S2 CS_ENDPOINT only
+{"time":"2026-11-01T23:38:49.276384943Z","level":"ERROR","msg":"invalid configuration","error":"CS_TENANT is required"}
+exit=2
+
+### S3 CS_ENDPOINT without scheme
+{"time":"2026-11-01T23:38:49.601243916Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+exit=2
+
+### S4 CS_PROBE=tcp without CS_PORT
+{"time":"2026-11-01T23:38:49.947532634Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT is required when CS_PROBE=tcp"}
+exit=2
+
+### S5 CS_INTERVAL=abc
+{"time":"2026-11-01T23:38:50.308154769Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"abc\""}
+exit=2
+
+### S6 wrong endpoint (nothing listens on :1), app pinned to the fake app on 127.0.0.1:18080, 9 s of logs then /status
+{"time":"2026-11-01T23:38:50.597878895Z","level":"INFO","msg":"health sidecar starting","version":"ci","service":"demo","tenant":"ux-sc","instance":"vm","endpoint":"http://127.0.0.1:1","probe":"auto"}
+{"time":"2026-11-01T23:38:50.604963427Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 127.0.0.1:1: connect: connection refused","in":"1s"}
+{"time":"2026-11-01T23:38:53.002236839Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 127.0.0.1:1: connect: connection refused","in":"2s"}
+{"time":"2026-11-01T23:38:55.394343368Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 127.0.0.1:1: connect: connection refused","in":"4s"}
+-- GET :9465/status
+{
+    "version": "ci",
+    "service": "demo",
+    "tenant": "ux-sc",
+    "instance": "vm",
+    "target": "http://127.0.0.1:18080/actuator/health",
+    "upSeen": true,
+    "lastReport": {
+        "tenantId": "ux-sc",
+        "service": "demo",
+        "status": "UP",
+        "components": {
+            "db": {
+                "details": {
+                    "database": "PostgreSQL"
+                },
+                "status": "UP"
+            },
+            "ping": {
+                "status": "UP"
+            }
+        },
+        "observedAt": "2026-11-01T23:38:59.633Z",
+        "publisher": "health-sidecar",
+        "instance": {
+            "id": "vm",
+            "sidecar": "ci"
+        }
+    },
+    "sendError": "post http://127.0.0.1:1/v1/health/reports: Post \"http://127.0.0.1:1/v1/health/reports\": dial tcp 127.0.0.1:1: connect: connection refused",
+    "reportsSent": 0
+}
+-- GET :9465/healthz
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Date: Sun, 01 Nov 2026 23:38:59 GMT
+Content-Length: 3
+
+
+### S7 the README laptop command adapted (CS_ENDPOINT=http://127.0.0.1:8080 CS_TENANT=ux-sc CS_SERVICE=demo CS_PORT=18080), then what the backend shows, then SIGTERM
+{"time":"2026-11-01T23:38:59.982664338Z","level":"INFO","msg":"health sidecar starting","version":"ci","service":"demo","tenant":"ux-sc","instance":"vm","endpoint":"http://127.0.0.1:8080","probe":"auto"}
+{"time":"2026-11-01T23:39:00.006356062Z","level":"INFO","msg":"reported","status":"UP","message":""}
+-- /status
+{
+    "version": "ci",
+    "service": "demo",
+    "tenant": "ux-sc",
+    "instance": "vm",
+    "target": "http://127.0.0.1:18080/actuator/health",
+    "upSeen": true,
+    "lastReport": {
+        "tenantId": "ux-sc",
+        "service": "demo",
+        "status": "UP",
+        "components": {
+            "db": {
+                "details": {
+                    "database": "PostgreSQL"
+                },
+                "status": "UP"
+            },
+            "ping": {
+                "status": "UP"
+            }
+        },
+        "observedAt": "2026-11-01T23:38:59.982Z",
+        "publisher": "health-sidecar",
+        "instance": {
+            "id": "vm",
+            "sidecar": "ci"
+        }
+    },
+    "lastSendAt": "2026-11-01T23:38:59.982810761Z",
+-- backend: GET /v1/health/monitors?tenantId=ux-sc
+[
+    {
+        "id": "6d5d5143-4df0-442f-b537-565a9675b28d",
+        "tenantId": "ux-sc",
+        "service": "demo",
+        "policy": {
+            "publisher": "health-sidecar",
+            "intervalSeconds": 30,
+            "timeoutMs": 5000,
+            "failureThreshold": 2,
+            "recoveryThreshold": 2,
+            "downSeverity": "MAJOR",
+            "degradedSeverity": "MINOR",
+            "audience": "CUSTOMERS",
+            "staleAfterSeconds": 90,
+            "minHealthyPercent": 50
+        },
+        "state": {
+            "lastStatus": "UP",
+            "lastReportAt": "2026-11-01T23:38:59.990Z",
+            "lastSummary": "UP (1 of 1 pod UP)",
+            "unhealthyStreak": 0,
+            "healthyStreak": 1,
+            "incidents": 0
+        },
+        "createdAt": "2026-11-01T23:38:59.996Z",
+        "updatedAt": "2026-11-01T23:38:59.990Z",
+        "version": 1
+    }
+]
+-- docker stop (SIGTERM) and the last log lines
+-- backend: instances after the stop
+[
+    {
+        "monitorId": "6d5d5143-4df0-442f-b537-565a9675b28d",
+        "instanceId": "vm",
+        "status": "UP",
+        "components": [],
+        "message": "instance shutting down",
+        "sidecar": "ci",
+        "left": true,
+        "lastSeenAt": "2026-11-01T23:39:04.147Z"
+    }
+]
+-- note: logs after stop are gone with --rm; re-run without --rm to capture the leaving line
+{"time":"2026-11-01T23:39:05.443176412Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-01T23:39:08.482882997Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-01T23:39:08.483117663Z","level":"INFO","msg":"health sidecar stopped"}
+
+### S8 the image itself: user, entrypoint, no shell
+User=1001 Entrypoint=[/usr/local/bin/health-sidecar] Cmd=[]
+docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: "/bin/sh": stat /bin/sh: no such file or directory
+
+
+### S9 kustomize build of the documented example
+3:  CS_CLUSTER: ocp-east
+4:  CS_ENDPOINT: https://communication.apps.example.com
+5:  CS_TENANT: retail
+6:kind: ConfigMap
+8:  name: cs-health-sidecar
+11:kind: Deployment
+14:    app.kubernetes.io/name: payments-api
+15:  name: payments-api
+20:      app.kubernetes.io/name: payments-api
+24:        app.kubernetes.io/name: payments-api
+27:      containers:
+28:      - image: registry.example.com/retail/payments-api:1.4.2
+29:        name: payments-api
+37:        - name: POD_NAME
+41:        - name: POD_NAMESPACE
+45:        - name: NODE_NAME
+49:        - name: CS_SERVICE
+53:        - name: CS_VERSION
+58:        - configMapRef:
+59:            name: cs-health-sidecar
+60:        image: registry.example.com/platform/health-sidecar:1.0.0
+67:        name: health-sidecar
+70:          name: cs-status
+
+### S10 helm: what happens if the operator runs helm template on the library chart as the README's table might suggest
+Error: library charts are not installable

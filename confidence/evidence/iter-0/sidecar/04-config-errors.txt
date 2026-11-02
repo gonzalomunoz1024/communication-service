@@ -1,0 +1,45 @@
+### no env at all (expect exit 2, both required vars named)
+{"time":"2026-11-01T23:35:08.988977829Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit=2
+### CS_ENDPOINT without scheme
+{"time":"2026-11-01T23:35:08.994100278Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+exit=2
+### bad CS_INTERVAL
+{"time":"2026-11-01T23:35:08.999111656Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"often\""}
+exit=2
+### CS_INTERVAL below 1s
+{"time":"2026-11-01T23:35:09.006070666Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL must be at least 1s"}
+exit=2
+### CS_PROBE=tcp without CS_PORT
+{"time":"2026-11-01T23:35:09.01523547Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT is required when CS_PROBE=tcp"}
+exit=2
+### CS_PROBE=bogus
+{"time":"2026-11-01T23:35:09.021377983Z","level":"ERROR","msg":"invalid configuration","error":"CS_PROBE must be auto, actuator, http or tcp (got \"bogus\")\nCS_PORT is required when CS_PROBE=bogus"}
+exit=2
+### CS_PORT out of range
+{"time":"2026-11-01T23:35:09.025363658Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT out of range: 70000"}
+exit=2
+### CS_PORT not a number
+{"time":"2026-11-01T23:35:09.030669314Z","level":"ERROR","msg":"invalid configuration","error":"CS_PORT: strconv.Atoi: parsing \"eighty\": invalid syntax"}
+exit=2
+### CS_SCHEME=ftp
+{"time":"2026-11-01T23:35:09.036860749Z","level":"ERROR","msg":"invalid configuration","error":"CS_SCHEME must be http or https (got \"ftp\")"}
+exit=2
+### CS_IGNORE_PORTS bad range
+{"time":"2026-11-01T23:35:09.041697508Z","level":"ERROR","msg":"invalid configuration","error":"CS_IGNORE_PORTS: bad port range \"9000-80\""}
+exit=2
+### several errors at once (joined)
+{"time":"2026-11-01T23:35:09.046333274Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"xx\"\nCS_ENDPOINT must start with http:// or https://\nCS_TENANT is required\nCS_PORT is required when CS_PROBE=tcp"}
+exit=2
+### CS_CA_FILE missing file
+{"time":"2026-11-01T23:35:09.062472597Z","level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: open /nonexistent.pem: no such file or directory"}
+exit=2
+### CS_CA_FILE with no certs
+{"time":"2026-11-01T23:35:09.100329644Z","level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: no certificates found in /etc/hostname"}
+exit=2
+### CS_SERVICE derivation when unset: POD_NAME forms (binary started with a dead endpoint, read service from /status)
+payments-api-7f9c6d5b4-x2k4q     -> service=payments-api
+payments-api-x2k4q               -> service=payments-api
+web-0                            -> service=web
+payments-api                     -> service=payments-api
+single                           -> service=single

@@ -1,0 +1,24 @@
+[23:40:23] certs: subject=CN = localhost X509v3 Subject Alternative Name:      IP Address:127.0.0.1, DNS:localhost 
+[23:40:24] CASE 1: https endpoint, no CA configured -> expect x509 send error, reports fail
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='post https://127.0.0.1:9100/v1/health/reports: Post "https://127.0.0.1:9100/v1/health/reports": tls: failed to verify certificate: x509: certificate signed by unknown authority' sent=0
+{"time":"2026-11-01T23:40:25.174160921Z","level":"WARN","msg":"report failed; will retry","error":"post https://127.0.0.1:9100/v1/health/reports: Post \"https://127.0.0.1:9100/v1/health/reports\": tls: failed to verify certificate: x509: certificate signed by unknown authority","in":"1s"}
+{"time":"2026-11-01T23:40:27.511340718Z","level":"WARN","msg":"report failed; will retry","error":"post https://127.0.0.1:9100/v1/health/reports: Post \"https://127.0.0.1:9100/v1/health/reports\": tls: failed to verify certificate: x509: certificate signed by unknown authority","in":"2s"}
+[23:40:31] CASE 2: CS_CA_FILE=/certs/ca.pem (read-only mount) -> expect reports accepted
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=2
+{"time":"2026-11-01T23:40:31.464019264Z","level":"INFO","msg":"reported","status":"UP","message":""}
+[23:40:37] CASE 3: CS_INSECURE_SKIP_VERIFY=true -> expect reports accepted
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=2
+{"time":"2026-11-01T23:40:37.781833591Z","level":"INFO","msg":"reported","status":"UP","message":""}
+[23:40:43] CASE 4: HTTPS_PROXY/HTTP_PROXY set to a dead proxy -> localhost probe must still work (target found, UP), while the report goes through the proxy and fails (documented behaviour: proxy honoured for reports)
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='report rejected: HTTP 400 Client sent an HTTP request to an HTTPS server.' sent=0
+{"time":"2026-11-01T23:40:44.090572927Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+[23:40:50] CASE 5: same with NO_PROXY=127.0.0.1 -> reports accepted
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='report rejected: HTTP 400 Client sent an HTTP request to an HTTPS server.' sent=0
+[23:40:56] backend stub saw  requests in total (cases 2,3,5)
+[23:40:56] DONE
+
+### CORRECTION to cases 4/5: Go never proxies loopback destinations, so a loopback endpoint cannot show proxy use. Re-run against the REAL backend (172.17.0.1:8080, non-loopback) with a dead proxy, then with NO_PROXY.
+[23:42:00] CASE 4b: HTTP_PROXY/HTTPS_PROXY=http://127.0.0.1:1 (dead) -> expect probe OK (target found, UP) but reports failing through the proxy
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='post http://172.17.0.1:8080/v1/health/reports: Post "http://172.17.0.1:8080/v1/health/reports": proxyconnect tcp: dial tcp 127.0.0.1:1: connect: connection refu' sent=0
+[23:42:06] CASE 5b: same plus NO_PROXY=172.17.0.1 -> reports accepted
+  /status: target=http://127.0.0.1:8080/actuator/health last=UP sendError='' sent=2

@@ -1,0 +1,8 @@
+VET_RC=0
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.060s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.006s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.005s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.534s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.022s
+TEST_RC=0

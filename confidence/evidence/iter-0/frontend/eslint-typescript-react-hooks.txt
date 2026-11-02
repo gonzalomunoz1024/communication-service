@@ -1,0 +1,43 @@
+
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend/eslint/src/outages/OutageFeed.tsx
+  45:6  warning  React Hook useEffect has a missing dependency: 'onCount'. Either include it or remove the dependency array. If 'onCount' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend/eslint/src/outages/useOutageFeed.ts
+  33:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend/eslint/src/outages/useOutageFeed.ts:33:7
+  31 |   useEffect(() => {
+  32 |     if (!filter.tenantId.trim()) {
+> 33 |       setItems([])
+     |       ^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |       setError(null)
+  35 |       return
+  36 |     }                                                                         react-hooks/set-state-in-effect
+  45:6  warning  React Hook useEffect has a missing dependency: 'filter'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+  49:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend/eslint/src/outages/useOutageFeed.ts:49:7
+  47 |   useEffect(() => {
+  48 |     if (!live || !filter.tenantId.trim() || typeof EventSource === 'undefined') {
+> 49 |       setConnection('off')
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  50 |       return
+  51 |     }
+  52 |     setConnection('connecting')  react-hooks/set-state-in-effect
+  57:6  warning  React Hook useEffect has a missing dependency: 'filter'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+
+✖ 5 problems (2 errors, 3 warnings)
+
+ESLINT_RC=1

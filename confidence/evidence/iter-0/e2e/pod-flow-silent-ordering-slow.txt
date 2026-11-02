@@ -1,0 +1,29 @@
+23:57:15.214 === F-92/F-48 sidecar silent (docker pause) -> stale -> DOWN naming the pod
+23:57:15.311 monitors in db e2e now: e2e-pod/e2e-app
+23:57:15.375 docker pause e2e-sidecar e2e-sidecar
+23:58:41.839 F-48 PASS pod silent (paused, no leaving report) -> after staleAfterSeconds=90 an OUTAGE naming the pod :: after 87s title="e2e-app is down" body="Automated health check reported **DOWN** at 2026-11-01T23:58:41.047794595Z (no health report received since 2026-11-01T23:57:10.184Z). |  | 1 pod has not reported since 2026-11-01T23:57:10.184Z (e2e-app-6b7d9c8f5-abcde) |  | This notice is managed automaticall"
+23:58:41.889 docker unpause e2e-sidecar
+23:58:53.006 F-48 PASS pod reports again -> notice retired (recovered) :: after 11s last="ACTIVE -> RETIRED: recovered: UP (1 of 1 pod UP)" (pause-valve warnings so far in A's log: 4)
+23:58:53.006 === F-72/F-88 startup ordering, app restart, sidecar crash, rediscovery (pod 2)
+23:59:00.508 F-72 PASS sidecar started before the app: reports UNKNOWN ("starting: waiting for the app to listen"), monitor registered with no notice :: monitor lastStatus=UNKNOWN summary="UNKNOWN (1 pod starting, none reporting yet)" sidecar lastReport=UNKNOWN "starting: waiting for the app to listen"
+23:59:00.517 F-88 PASS no false outage while the app is not up yet :: items=0
+23:59:02.758 F-88 PASS app starts after the sidecar: discovered and UP :: after 2.0s "UP (1 of 1 pod UP)" target=http://127.0.0.1:8080/actuator/health
+23:59:43.233 F-88 FAIL app container stopped -> OUTAGE notice after two DOWN observations :: after 40.4s body=""
+00:00:23.711 F-88 FAIL app back -> notice retired (recovered) :: after 40.4s "undefined"
+00:00:33.425 F-88 PASS sidecar SIGKILL + restart: reports UP again, no new notice, app unaffected :: incidents 0->0 items=0
+00:00:38.676 F-77 PASS app restarted on another port: sidecar rediscovers the new target :: after 5.0s target=http://127.0.0.1:8081/actuator/health
+00:00:38.716 F-89 PASS sidecar2 log lines are JSON with level/msg (start, target found, reported) :: 16 lines, msgs=health sidecar starting / reported / health target found / health target gone; will rediscover
+00:00:39.107 === slow probe target, wire contract capture, instance id limits
+00:00:39.156 F-92 PASS pull monitor registered with timeoutMs=500 against a 3 s stub :: status=201
+00:00:39.712 F-92 FAIL slow target: probe counts as DOWN with a timeout message :: 200 lastStatus=DOWN "DOWN (probe failed: no response within 500ms)"
+00:00:39.720 F-92 PASS OUTAGE notice for the slow service (failureThreshold 1) :: "slow-svc is down" body="Automated health check reported **DOWN** at 2026-11-02T00:00:39.161880008Z (probe of http://127.0.0.1:28999/slow). |  | probe failed: no response within 500ms |"
+00:00:40.425 F-75 PASS wire: headers Content-Type/Accept application/json, X-Client-Id = CS_CLIENT_ID, User-Agent health-sidecar/<version> :: {"ct":"application/json","accept":"application/json","cid":"wire-repo","ua":"health-sidecar/ci"}
+00:00:40.425 F-75 PASS wire: body {tenantId, service, status, components, observedAt, publisher, instance{id,namespace,node,cluster,version,sidecar}} :: {"tenantId":"e2e-wire","service":"wire-svc","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T00:00:39.922Z","publisher":"health-sidecar","instance":{"id":"wire-7f9c6d5b4-abcde","namespace":"wire-ns","node":"worker-1","cluster":"ocp-east","version":"3.1.4","sidecar":"ci"}}
+00:00:40.441 F-75 PASS the captured body is accepted verbatim by the backend (202) :: status=202 {"lastStatus":"UP","lastReportAt":"2026-11-02T00:00:40.429983981Z","lastSummary":"UP (1 of 1 pod UP)","unhealthyStreak":
+00:00:40.578 F-75 PASS instance.id 253 chars accepted, 254 rejected with 400 :: 202 / 400 {"error":"instance.id: size must be between 0 and 253"}
+00:00:44.631 F-70 PASS app says WARN -> sidecar passes WARN through -> backend classifies DEGRADED :: sidecar lastReport=WARN backend="DEGRADED (0 of 1 pod UP (DEGRADED: e2e-app-6b7d9c8f5-abcde))"
+
+SUMMARY: 18 checks, 15 pass, 3 fail
+  FAIL F-88 app container stopped -> OUTAGE notice after two DOWN observations :: after 40.4s body=""
+  FAIL F-88 app back -> notice retired (recovered) :: after 40.4s "undefined"
+  FAIL F-92 slow target: probe counts as DOWN with a timeout message :: 200 lastStatus=DOWN "DOWN (probe failed: no response within 500ms)"
