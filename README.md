@@ -66,7 +66,8 @@ Any `application.yml` setting can be passed the same way as an environment varia
 | `test`, `integrationTest` | unit tests; `*IT` tests against embedded MongoDB | `build/reports/tests/test/`, `build/reports/tests/integrationTest/` |
 | `spotbugsMain` | SpotBugs on the main classes (effort max, confidence medium and up); findings that are false by design are listed, each with its reason, in `config/spotbugs/exclude.xml` | `build/reports/spotbugs/main.html` |
 | `jacocoTestCoverageVerification` | line coverage of the unit and integration runs together >= 92 % (the Spring wiring in `config/` and the main class are not counted; 95.5 % when the gate was set) | `build/reports/jacoco/test/html/index.html`, `.../jacocoTestReport.xml` |
-| `cyclonedxBom` | CycloneDX SBOM of the runtime dependencies, for the vulnerability scan CI runs on it | `build/reports/cyclonedx/bom.json` |
+| `cyclonedxBom` | CycloneDX SBOM of what ships: the runtime classpath only (`cyclonedxDirectBom` includes `runtimeClasspath`), for the vulnerability scan CI runs on it | `build/reports/cyclonedx/bom.json` |
+| `verifySbomScope` | that SBOM lists no build or test tool (SpotBugs, BCEL, JaCoCo, JUnit, Mockito, AssertJ, embedded MongoDB, Lombok); their advisories must not fail the scan of an application they never run in | task output |
 
 ### Continuous integration
 

@@ -144,9 +144,43 @@ tasks.jacocoTestCoverageVerification {
     }
 }
 
+// The SBOM describes what ships: the runtime classpath, nothing the build or the tests use. A tool
+// listed in it would have its advisories fail the CI scan of an application it never runs in.
+// cyclonedxBom (the file CI scans) aggregates this project's cyclonedxDirectBom.
+tasks.named<org.cyclonedx.gradle.CyclonedxDirectTask>("cyclonedxDirectBom") {
+    includeConfigs = listOf("runtimeClasspath")
+}
+
+// Reads the BOM CI scans and fails when a build or test tool is listed in it.
+val verifySbomScope by tasks.registering {
+    description = "Fails when the SBOM lists a build or test tool: it must describe the runtime classpath only."
+    group = "verification"
+    val bom = tasks.named<org.cyclonedx.gradle.CyclonedxAggregateTask>("cyclonedxBom").flatMap { it.jsonOutput }
+    val tools = listOf("spotbugs", "bcel", "jacoco", "junit", "mockito", "assertj", "flapdoodle", "lombok")
+    inputs.file(bom)
+    doLast {
+        val file = bom.get().asFile
+        val purls = mutableListOf<String>()
+        fun collect(components: Any?) {
+            (components as? List<*>)?.forEach { component ->
+                val fields = component as Map<*, *>
+                (fields["purl"] as? String)?.let(purls::add)
+                collect(fields["components"])
+            }
+        }
+        collect((groovy.json.JsonSlurper().parse(file) as Map<*, *>)["components"])
+        val listed = purls.filter { purl -> tools.any { purl.contains(it) } }.sorted()
+        if (listed.isNotEmpty()) {
+            throw GradleException("$file lists ${listed.size} build or test tool(s) among ${purls.size} components;"
+                    + " the SBOM must describe the runtime classpath only:\n  " + listed.joinToString("\n  "))
+        }
+        logger.lifecycle("SBOM scope: ${purls.size} components, none of them a build or test tool")
+    }
+}
+
 // `check` (and therefore `build`): compile with -Werror, unit and integration tests, SpotBugs,
-// the coverage report and threshold, and the SBOM.
+// the coverage report and threshold, and the SBOM with its scope check.
 tasks.check {
     dependsOn(integrationTest, tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification,
-            tasks.named("cyclonedxBom"))
+            tasks.named("cyclonedxBom"), verifySbomScope)
 }
