@@ -56,3 +56,14 @@ pod `app` (+ host port 127.0.0.1:19465 → the sidecar's :9465) and `sidecar` re
 New in the repository: `Dockerfile` (backend image from the prebuilt jar), `e2e/` (docker compose project `e2e` on ports
 28030/28080/28090/28091 and a Playwright 1.63 suite), `.github/workflows/{ci,e2e}.yml`. The host `go` is 1.24.7; `go.mod`
 selects go1.25 through the module proxy automatically.
+
+## Iteration 3 stack (from 2026-11-02 06:35Z)
+Code at `4a0e84e` (37 iteration-3 commits merged; `6079180` adds only `iter-3/fixes.md` and the fixers' evidence). Backend jar
+built from that code (copy `/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter3.jar`,
+log `.../scratchpad/logs/backend-iter3.log`) and started on :8080; the frontend dev server on :3000 serves the merged
+`frontend/` (no dependency change, so no `npm ci`); sidecar image `health-sidecar:ci` rebuilt (`version=ci-iter3`,
+`revision=4a0e84e`, `GO_IMAGE=local/go-toolset:1.25`, `BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot`); pod `app`
+(+ 127.0.0.1:19465 → the sidecar's :9465) and `sidecar` recreated with the same environment as before. The e2e suite's
+images build with `GO_IMAGE=go-toolset:e2e` (a local golang:1.25 with the CA bundle at the UBI path; recipe in `e2e/README.md`)
+and `BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot`; the suite's jar is `build/libs/*.jar` (copy the iteration-3 jar
+there if `build/libs/` is empty) and its bundle `frontend/dist` (`npm run build`).
