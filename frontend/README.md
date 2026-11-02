@@ -46,7 +46,10 @@ error state reopens it at once.
 `npm test` runs the unit and component tests (vitest; pure modules in Node, components in
 jsdom with Testing Library), `npm run test:coverage` adds a V8 coverage report (`coverage/`),
 `npm run typecheck` type-checks and `npm run lint` runs ESLint with the React Compiler-era hooks
-rules. `npm run build` type-checks and bundles to `dist/`.
+rules. `npm run build` type-checks and bundles to `dist/`. `package.json` pins `minimatch` to a
+fixed release through `overrides` (the ESLint toolchain's own range still resolves to a version
+with a known ReDoS; development-only, the bundle does not contain it), so `npm audit` is clean;
+drop the entry once ESLint and typescript-eslint require `minimatch` 11 themselves.
 
 ## What it calls
 
