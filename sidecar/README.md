@@ -104,12 +104,17 @@ management.endpoint.health.show-details: always
 
 - Every 15 s (`CS_INTERVAL`) it probes; a non-UP answer is probed once more after 2 s before it
   counts, so a GC pause or a restart in progress is not an outage.
-- While the app is UP it sends a report when the status (or the set of failing components)
-  changes and a heartbeat every 30 s (`CS_HEARTBEAT`) otherwise. While the status is anything
-  but UP (DOWN, a degraded status, UNKNOWN) it sends after every probe, so the service's
-  `failureThreshold` of consecutive observations is reached one probe interval after the first
-  DOWN, not one heartbeat later. 1,000 healthy pods are about 33 requests/s; 1,000 unhealthy
-  ones about 67.
+- What is sent when:
+  - a change of the status or of the components that are not UP is sent at once;
+  - while the report is not UP for the service, it is sent after every probe: a status other
+    than UP (DOWN, a degraded status, UNKNOWN), or UP with a failing component, nested ones
+    included (DOWN, `OUT_OF_SERVICE` or another word such as `WARN`), which the service
+    classifies as DEGRADED. Its `failureThreshold` of consecutive observations is then reached
+    one probe interval after the first failure, not one heartbeat later;
+  - an UP report whose components are all UP (or UNKNOWN) is repeated only as a heartbeat
+    every 30 s (`CS_HEARTBEAT`).
+
+  1,000 healthy pods are about 33 requests/s; 1,000 failing ones about 67.
 - Until the app has answered UP once, and for at most 5 minutes (`CS_STARTUP_GRACE`), it
   reports UNKNOWN, which the service ignores: slow starts and rolling deploys never open notices.
   The same applies to a service that boots unhealthy (its endpoint answers but never UP): it is
@@ -154,7 +159,7 @@ The report body is Actuator's vocabulary plus the instance:
 | `CS_PORT`, `CS_PATH`, `CS_SCHEME` | discovered | pin the target; `CS_PORT` is required for a non-auto mode |
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
 | `CS_IGNORE_PORTS` | `15000-15099` | ports discovery skips, e.g. `15000-15099,9090` |
-| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while the app is UP and nothing changes (every probe is sent while it is not UP) |
+| `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component (any other report is sent every probe, see [What it reports and when](#what-it-reports-and-when)) |
 | `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `5s` | per probe / per report |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
 | `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |
@@ -177,9 +182,9 @@ curl -s localhost:9465/status | jq .
 ```
 
 A `reported` line is logged at INFO when the status, the failing components or the message
-change (UP → DOWN, DOWN → UP, a new cause); the sends in between (heartbeats, the repeated
-probes of an app that is not UP) are logged at DEBUG, below the default level, so a dead app
-shows as one DOWN line and then its recovery.
+change (UP → DOWN, DOWN → UP, a new cause); the sends in between (heartbeats, and the sends
+repeated after every probe while the report is not UP) are logged at DEBUG, below the default
+level, so a dead app shows as one DOWN line and then its recovery.
 
 `/status` answers with:
 

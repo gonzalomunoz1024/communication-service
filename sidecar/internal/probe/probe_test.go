@@ -2,6 +2,7 @@ package probe
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -113,6 +114,39 @@ func TestProbeUnreachableAndTCP(t *testing.T) {
 	host, open, _ := serve(t, func(w http.ResponseWriter, r *http.Request) {})
 	if res := p.Probe(context.Background(), Target{Mode: ModeTCP, Host: host, Port: open}); res.Status != UP {
 		t.Errorf("tcp to open port should be UP: %+v", res)
+	}
+}
+
+// G-3-16: Failing names the components the communication service counts as failing (its
+// HealthReport.failing: DOWN or DEGRADED after its own flattening), nested ones included, so
+// the sidecar sends an UP report with one every probe, as the service classifies it DEGRADED.
+// Signature, which shares the walk, keeps every component that is not UP under its dotted path.
+func TestFailingCountsTheComponentsTheServiceCounts(t *testing.T) {
+	for _, tc := range []struct {
+		name, doc string
+		failing   bool
+		signature string
+	}{
+		{"none", `{}`, false, "UP|"},
+		{"all UP", `{"db":{"status":"UP"},"ping":{"status":"UP"}}`, false, "UP|"},
+		{"DOWN", `{"db":{"status":"DOWN"},"ping":{"status":"UP"}}`, true, "UP|db=DOWN"},
+		{"OUT_OF_SERVICE", `{"db":{"status":"OUT_OF_SERVICE"}}`, true, "UP|db=DOWN"},
+		{"an unrecognised word", `{"cache":{"status":"warn"}}`, true, "UP|cache=WARN"},
+		{"nested DOWN under an UP parent", `{"db":{"status":"UP","components":{"primary":{"status":"UP"},"replica":{"status":"DOWN"}}}}`, true, "UP|db.replica=DOWN"},
+		{"a parent is represented by its children", `{"db":{"status":"DOWN","components":{"primary":{"status":"UP"}}}}`, false, "UP|"},
+		{"UNKNOWN is not failing, but is part of the signature", `{"discovery":{"status":"UNKNOWN"}}`, false, "UP|discovery=UNKNOWN"},
+		{"no status, or not an object", `{"db":{},"note":"text"}`, false, "UP|"},
+	} {
+		var components map[string]any
+		if err := json.Unmarshal([]byte(tc.doc), &components); err != nil {
+			t.Fatal(err)
+		}
+		if got := Failing(components); got != tc.failing {
+			t.Errorf("%s: Failing(%s) = %v, want %v", tc.name, tc.doc, got, tc.failing)
+		}
+		if got := (Result{Status: UP, Components: components}).Signature(); got != tc.signature {
+			t.Errorf("%s: Signature = %q, want %q", tc.name, got, tc.signature)
+		}
 	}
 }
 

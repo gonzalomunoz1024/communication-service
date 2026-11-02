@@ -82,12 +82,29 @@ type Result struct {
 // change is worth reporting.
 func (r Result) Signature() string {
 	var parts []string
-	flatten("", r.Components, &parts)
+	leaves("", r.Components, func(path, status string) {
+		if status != UP {
+			parts = append(parts, path+"="+status)
+		}
+	})
 	sort.Strings(parts)
 	return r.Status + "|" + strings.Join(parts, ",")
 }
 
-func flatten(prefix string, components map[string]any, out *[]string) {
+// Failing reports whether a component, nested ones included, is neither UP nor UNKNOWN: the
+// components the communication service counts as failing, one of which turns an UP report into
+// DEGRADED there.
+func Failing(components map[string]any) bool {
+	failing := false
+	leaves("", components, func(_, status string) {
+		failing = failing || (status != UP && status != UNKNOWN)
+	})
+	return failing
+}
+
+// leaves calls fn with the dotted path and the normalised status of every component without
+// components of its own; one that has them is represented by them, as on the service.
+func leaves(prefix string, components map[string]any, fn func(path, status string)) {
 	for name, raw := range components {
 		node, ok := raw.(map[string]any)
 		if !ok {
@@ -98,11 +115,11 @@ func flatten(prefix string, components map[string]any, out *[]string) {
 			path = prefix + "." + name
 		}
 		if children, ok := node["components"].(map[string]any); ok && len(children) > 0 {
-			flatten(path, children, out)
+			leaves(path, children, fn)
 			continue
 		}
-		if status, ok := node["status"].(string); ok && Normalize(status) != UP {
-			*out = append(*out, path+"="+Normalize(status))
+		if status, ok := node["status"].(string); ok {
+			fn(path, Normalize(status))
 		}
 	}
 }

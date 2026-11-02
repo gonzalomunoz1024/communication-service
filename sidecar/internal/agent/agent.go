@@ -296,11 +296,12 @@ func (a *Agent) instance(leaving bool) *report.Instance {
 }
 
 // send posts when the status changed, the heartbeat is due, a failed send is being retried, or
-// the status is not UP: the service opens a notice after failureThreshold consecutive
-// observations, so while the app is not UP every probe is sent and the threshold is reached one
-// probe interval after the first DOWN rather than one heartbeat later. Failures back off
-// exponentially up to a minute, keeping only the latest report. A transition (a new status, set
-// of failing components or message) is logged at INFO, the sends in between at DEBUG.
+// the report is not UP for the service (see notUp): the service opens a notice after
+// failureThreshold consecutive observations, so while the app is not UP every probe is sent and
+// the threshold is reached one probe interval after the first failure rather than one heartbeat
+// later. Failures back off exponentially up to a minute, keeping only the latest report. A
+// transition (a new status, set of failing components or message) is logged at INFO, the sends
+// in between at DEBUG.
 func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 	a.mu.Lock()
 	sig := signature(rep)
@@ -309,7 +310,7 @@ func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 		return
 	}
 	due := a.dirty || sig != a.lastSig || now.Sub(a.lastSend) >= a.cfg.Heartbeat ||
-		(rep.Status != probe.UP && !a.rejected)
+		(notUp(rep) && !a.rejected)
 	changed := sig != a.lastSig || rep.Message != a.lastMessage
 	a.mu.Unlock()
 	if !due {
@@ -422,6 +423,13 @@ func (a *Agent) Handler() http.Handler {
 		_ = json.NewEncoder(w).Encode(a.Status())
 	})
 	return mux
+}
+
+// notUp reports whether the service classifies the report as anything but UP: a status other
+// than UP, or UP with a failing component, nested ones included, which the service classifies
+// as DEGRADED (HealthReport.effectiveStatus), not only an overall status other than UP.
+func notUp(r report.Report) bool {
+	return r.Status != probe.UP || probe.Failing(r.Components)
 }
 
 func signature(r report.Report) string {

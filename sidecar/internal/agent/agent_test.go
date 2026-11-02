@@ -30,8 +30,10 @@ import (
 type fakeApp struct {
 	mu     sync.Mutex
 	status string
-	srv    *httptest.Server
-	port   int
+	// doc, when set, is served as the whole health document instead of the one built from status.
+	doc  string
+	srv  *httptest.Server
+	port int
 }
 
 func newFakeApp(t *testing.T, status string) *fakeApp {
@@ -43,8 +45,12 @@ func newFakeApp(t *testing.T, status string) *fakeApp {
 			return
 		}
 		app.mu.Lock()
-		status := app.status
+		status, doc := app.status, app.doc
 		app.mu.Unlock()
+		if doc != "" {
+			fmt.Fprint(w, doc)
+			return
+		}
 		if status != "UP" {
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
@@ -60,6 +66,12 @@ func (a *fakeApp) set(status string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.status = status
+}
+
+func (a *fakeApp) setDoc(doc string) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.doc = doc
 }
 
 // fakeSender records reports and can be told to fail.
@@ -638,6 +650,38 @@ func TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat(t *testing.T) {
 			for i, r := range runOnTheClock(t, h, tc.want) {
 				if r.Status != tc.status {
 					t.Errorf("report %d: status %s, want %s", i, r.Status, tc.status)
+				}
+			}
+		})
+	}
+}
+
+// G-3-16: the cadence follows the service's classification, not the overall status alone. An
+// UP report with a failing component, nested ones included, is DEGRADED on the service
+// (HealthReport.effectiveStatus), so it is sent every probe like DOWN and the service's
+// failureThreshold is reached one probe interval after the first failure, not one heartbeat
+// later. A component the service does not count as failing (UP or UNKNOWN) leaves an UP report
+// on the heartbeat.
+func TestUpWithAFailingComponentIsSentEveryProbe(t *testing.T) {
+	everyProbe, heartbeat := []int{1, 2, 3, 4, 5, 6}, []int{1, 1, 2, 2, 3, 3}
+	for _, tc := range []struct {
+		name, doc string
+		want      []int // reports sent after each tick
+	}{
+		{"db DOWN: every probe", `{"status":"UP","components":{"db":{"status":"DOWN"},"ping":{"status":"UP"}}}`, everyProbe},
+		{"nested db.replica DOWN: every probe",
+			`{"status":"UP","components":{"db":{"status":"UP","components":{"primary":{"status":"UP"},"replica":{"status":"DOWN"}}}}}`, everyProbe},
+		{"cache WARN, a word the service counts as DEGRADED: every probe", `{"status":"UP","components":{"cache":{"status":"WARN"}}}`, everyProbe},
+		{"discovery UNKNOWN, not failing on the service: heartbeat", `{"status":"UP","components":{"discovery":{"status":"UNKNOWN"}}}`, heartbeat},
+		{"every component UP: heartbeat", `{"status":"UP","components":{"db":{"status":"UP"},"ping":{"status":"UP"}}}`, heartbeat},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := newFakeApp(t, "UP")
+			app.setDoc(tc.doc)
+			h := newHarness(t, baseConfig(), app.port)
+			for i, r := range runOnTheClock(t, h, tc.want) {
+				if r.Status != "UP" || len(r.Components) == 0 {
+					t.Errorf("report %d: %s %v, want UP with the app's components", i, r.Status, r.Components)
 				}
 			}
 		})
