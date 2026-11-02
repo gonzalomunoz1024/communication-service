@@ -268,9 +268,12 @@ func parseDocument(body []byte) (document, bool) {
 }
 
 // Normalize maps the many spellings of "fine" and "broken" onto the canonical statuses and
-// passes anything else through upper-cased (the service treats those as DEGRADED).
+// passes anything else through upper-cased (the service treats those as DEGRADED). It trims what
+// the service's String.trim() trims, every character up to U+0020 (spaces, tabs, line breaks and
+// the other control characters), and no other white space, so a padded word reads the same on
+// both sides.
 func Normalize(status string) string {
-	s := strings.ToUpper(strings.TrimSpace(status))
+	s := strings.ToUpper(strings.TrimFunc(status, func(r rune) bool { return r <= ' ' }))
 	switch s {
 	case "UP", "OK", "PASS", "HEALTHY", "GREEN", "SERVING":
 		return UP

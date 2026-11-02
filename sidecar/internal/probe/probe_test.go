@@ -160,6 +160,33 @@ func TestNormalize(t *testing.T) {
 	}
 }
 
+// G-4-16 (GAP-sidecar3-3): a status word is trimmed of exactly what the service's String.trim()
+// removes, every character up to U+0020, and of no other white space, so a padded word, overall
+// or as a component, reads the same on both sides. The service's HealthStatusTest runs the same
+// inputs. "pass\u00a0" used to read UP here (strings.TrimSpace removes U+00A0) while the service
+// counted it DEGRADED, and "pass\u0001" the other way round.
+func TestStatusWordsAreTrimmedLikeTheService(t *testing.T) {
+	for _, tc := range []struct {
+		name, word string
+		up         bool // UP on the service; otherwise a word it does not know, so DEGRADED there
+	}{
+		{"ASCII space", "pass ", true},
+		{"tab", "\tpass", true},
+		{"U+0001, a control character", "pass\u0001", true},
+		{"U+00A0, no-break space", "pass\u00a0", false},
+		{"U+2003, em space", "pass\u2003", false},
+	} {
+		got := Normalize(tc.word)
+		failing := Failing(map[string]any{"c": map[string]any{"status": tc.word}})
+		if tc.up && (got != UP || failing) {
+			t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want UP and not failing, as on the service", tc.name, tc.word, got, failing)
+		}
+		if !tc.up && (got == UP || got == DOWN || got == UNKNOWN || !failing) {
+			t.Errorf("%s: Normalize(%q) = %q, failing as a component %v; want an unknown word, failing, as the service's DEGRADED", tc.name, tc.word, got, failing)
+		}
+	}
+}
+
 func TestDetectPrefersActuatorOverAnyPort(t *testing.T) {
 	_, plain, _ := serve(t, func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("hello")) })
 	host, act, _ := serve(t, actuator("UP", `{"status":"UP"}`))
