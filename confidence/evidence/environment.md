@@ -67,3 +67,18 @@ log `.../scratchpad/logs/backend-iter3.log`) and started on :8080; the frontend 
 images build with `GO_IMAGE=go-toolset:e2e` (a local golang:1.25 with the CA bundle at the UBI path; recipe in `e2e/README.md`)
 and `BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot`; the suite's jar is `build/libs/*.jar` (copy the iteration-3 jar
 there if `build/libs/` is empty) and its bundle `frontend/dist` (`npm run build`).
+
+## Iteration 4 stack (from 2026-11-02 10:05Z)
+Code at `1cd3f13` (37 iteration-4 commits; `ec4cfcb` adds only `iter-4/fixes.md` and the gate evidence). Backend jar built from
+that code with Spring Boot 4.0.9 (copy `/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter4.jar`,
+sha256 `64e07ece…`, the same bytes as `build/libs/communication-service-0.0.1-SNAPSHOT.jar`; log `.../scratchpad/logs/backend-iter4.log`)
+started on :8080 against `mongo7` (database `communication`; `--spring.data.mongodb.uri=` still works, and Boot 4's own key is
+`spring.mongodb.uri`); the frontend dev server on :3000 serves the merged `frontend/` (no dependency change); `frontend/dist`
+rebuilt from it. Sidecar image `health-sidecar:ci` rebuilt (`version=ci-iter4`, `revision=ec4cfcb`,
+`GO_IMAGE=local/go-toolset:1.27` (golang:1.27.3 with the CA bundle at the UBI path, recipe in `e2e/README.md`),
+`BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot`); pod `app` (+ 127.0.0.1:19465 → the sidecar's :9465) and `sidecar`
+recreated with the same environment as before. At 10:14:47Z the orchestrator's mistaken `docker exec sidecar health-sidecar
+-version` (the binary has no such flag and started a second agent) sent one extra report and, when stopped, a leaving report for
+`fake-app-7f9c6d5b4-x2k4q`; the pod's next heartbeat at 10:15:01Z made it present and UP again. Do not exec the sidecar binary
+in the shared pod. Trivy's database for everybody: `.../scratchpad/orch-trivy/cache/trivy` (mount it at `/root/.cache/trivy`,
+`--skip-db-update`, under `flock .../scratchpad/orch-trivy/.lock`; database of 2026-11-02 01:14Z).
