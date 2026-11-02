@@ -1,0 +1,5 @@
+== 2026-11-02T10:44:39Z start: node v7c-unknown-lastEventId.js (commit d10369b)
+PASS [F-92] an id never issued by the log (999999999), as ?lastEventId= or as the Last-Event-ID header → 200 and a fresh snapshot first (the fallback the client relies on), same frames as a fresh subscription :: {"fresh":["snapshot"],"query":["snapshot"],"header":["snapshot"]}
+
+== v7c-unknown-lastEventId: 1 checks, 0 failed
+EXIT 0 (9 s)

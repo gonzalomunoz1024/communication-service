@@ -1,0 +1,110 @@
+
+### 1. UBI registry reachability (expected blocked)
+$ curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://registry.access.redhat.com/v2/
+curl: (56) CONNECT tunnel failed, response 403
+000
+exit=56
+$ docker pull registry.access.redhat.com/ubi9/go-toolset:1.27
+Error response from daemon: failed to resolve reference "registry.access.redhat.com/ubi9/go-toolset:1.27": failed to do request: Head "https://registry.access.redhat.com/v2/ubi9/go-toolset/manifests/1.27": Forbidden
+exit=1
+$ docker pull registry.access.redhat.com/ubi9/ubi-micro:9.5
+Error response from daemon: failed to resolve reference "registry.access.redhat.com/ubi9/ubi-micro:9.5": failed to do request: Head "https://registry.access.redhat.com/v2/ubi9/ubi-micro/manifests/9.5": Forbidden
+exit=1
+
+### 2. Dockerfile defaults and the stand-in builder
+12:ARG GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.27
+13:ARG BASE_IMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.5
+17:ENV GOTOOLCHAIN=local CGO_ENABLED=0 GOFLAGS=-trimpath
+36:USER 1001
+37:EXPOSE 9465
+38:ENTRYPOINT ["/usr/local/bin/health-sidecar"]
+stand-in builder: go version go1.27.3 linux/amd64; env GOTOOLCHAIN=local
+
+### 3. docker build from the repository Dockerfile (bases substituted)
+$ docker build -t health-sidecar:vs4 --build-arg GO_IMAGE=local/go-toolset:1.27 --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot --build-arg VERSION=1.0.0-vs4 --build-arg REVISION=d10369b21d65e9500bbfae7de53013ce5f7b78cc /home/claude/communication-service/sidecar
+exit=0
+#1 [internal] load build definition from Dockerfile
+#10 [build 4/6] COPY --chown=1001:0 cmd ./cmd
+#11 [build 5/6] COPY --chown=1001:0 internal ./internal
+#12 [build 6/6] RUN go build -ldflags="-s -w -X main.version=1.0.0-vs4" -o /tmp/health-sidecar ./cmd/health-sidecar
+#13 [stage-1 2/3] COPY --from=build /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt
+#14 [stage-1 3/3] COPY --from=build /tmp/health-sidecar /usr/local/bin/health-sidecar
+#15 naming to docker.io/library/health-sidecar:vs4
+#15 naming to docker.io/library/health-sidecar:vs4 0.1s done
+#2 [internal] load metadata for docker.io/local/go-toolset:1.27
+#3 [internal] load metadata for gcr.io/distroless/static-debian12:nonroot
+#4 [internal] load .dockerignore
+#5 [internal] load build context
+#6 [stage-1 1/3] FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+#7 [build 1/6] FROM docker.io/local/go-toolset:1.27@sha256:4052526e5ea1a39289551a82c2b2b998f8240f6937f664631076b30f56f7ad67
+#8 [build 2/6] WORKDIR /opt/app-root/src
+#9 [build 3/6] COPY --chown=1001:0 go.mod ./
+
+### 4. image config
+User=1001 Entrypoint=["/usr/local/bin/health-sidecar"] Cmd=null ExposedPorts={"9465/tcp":{}} Env=["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"] WorkingDir=/home/nonroot Size=17474124
+{
+    "org.opencontainers.image.description": "Probes the app in its pod and reports health to the communication service",
+    "org.opencontainers.image.revision": "d10369b21d65e9500bbfae7de53013ce5f7b78cc",
+    "org.opencontainers.image.source": "https://github.com/gonzalomunoz1024/communication-service",
+    "org.opencontainers.image.title": "health-sidecar",
+    "org.opencontainers.image.version": "1.0.0-vs4"
+}
+
+### 5. binary
+-rwxr-xr-x 1 root root 7622816 Nov  2 10:22 /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar4/bin/health-sidecar-vs4
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar4/bin/health-sidecar-vs4: go1.27.3
+	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+	build	-buildmode=exe
+	build	-compiler=gc
+	build	-trimpath=true
+	build	CGO_ENABLED=0
+	build	GOARCH=amd64
+	build	GOOS=linux
+	build	GOAMD64=v1
+dynamic section NEEDED entries: 0; INTERP: 0
+binary holds main.version=1.0.0-vs4: 1
+
+### 6. image filesystem
+-rw-r--r-- 0/0              64 1970-01-01 00:00 etc/group
+-rw-r--r-- 0/0             149 1970-01-01 00:00 etc/passwd
+-rw-r--r-- 0/0          222073 2026-11-02 08:00 etc/pki/tls/certs/ca-bundle.crt
+-rwxr-xr-x 0/0         7622816 2026-11-02 10:22 usr/local/bin/health-sidecar
+setuid/setgid files: 1
+shells: 0
+CA bundle certs at the UBI path: 148
+tests/deploy/README in image: 3
+files in image: 1342
+
+### 7. docker history (layers the Dockerfile adds)
+0B	ENTRYPOINT ["/usr/local/bin/health-sidecar"]
+0B	EXPOSE [9465/tcp]
+0B	USER 1001
+7.64MB	COPY /tmp/health-sidecar /usr/local/bin/health-sidecar # buildkit
+246kB	COPY /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt # buildkit
+0B	LABEL org.opencontainers.image.title=health-sidecar org.opencontainers.image.description=Probes the app in its pod and reports health to the communication service org.
+0B	ARG REVISION=d10369b21d65e9500bbfae7de53013ce5f7b78cc
+0B	ARG VERSION=1.0.0-vs4
+319kB	bazel build //common:cacerts_debian12_amd64_tar
+16.4kB	bazel build //common:os_release_debian12
+
+### 8. run with no environment: exit 2 naming both required variables
+{"time":"2026-11-02T10:22:35.881281058Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit=2
+
+### 9. G-4-2: an older builder stops the build (GOTOOLCHAIN=local)
+builder golang:1.25: go version go1.25.14 linux/amd64
+$ docker build -t health-sidecar:vs4-old --build-arg GO_IMAGE=golang:1.25 --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot /home/claude/communication-service/sidecar
+exit=1
+#12 0.454 go: go.mod requires go >= 1.27.3 (running go 1.25.14; GOTOOLCHAIN=local)
+#12 ERROR: process "/bin/sh -c go build -ldflags=\"-s -w -X main.version=${VERSION}\" -o /tmp/health-sidecar ./cmd/health-sidecar" did not complete successfully: exit code: 1
+0.454 go: go.mod requires go >= 1.27.3 (running go 1.25.14; GOTOOLCHAIN=local)
+ERROR: failed to build: failed to solve: process "/bin/sh -c go build -ldflags=\"-s -w -X main.version=${VERSION}\" -o /tmp/health-sidecar ./cmd/health-sidecar" did not complete successfully: exit code: 1
+builder golang:1.24: go version go1.24.13 linux/amd64
+$ docker build -t health-sidecar:vs4-old --build-arg GO_IMAGE=golang:1.24 --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot /home/claude/communication-service/sidecar
+exit=1
+#12 0.738 go: go.mod requires go >= 1.27.3 (running go 1.24.13; GOTOOLCHAIN=local)
+#12 ERROR: process "/bin/sh -c go build -ldflags=\"-s -w -X main.version=${VERSION}\" -o /tmp/health-sidecar ./cmd/health-sidecar" did not complete successfully: exit code: 1
+0.738 go: go.mod requires go >= 1.27.3 (running go 1.24.13; GOTOOLCHAIN=local)
+ERROR: failed to build: failed to solve: process "/bin/sh -c go build -ldflags=\"-s -w -X main.version=${VERSION}\" -o /tmp/health-sidecar ./cmd/health-sidecar" did not complete successfully: exit code: 1
+image health-sidecar:vs4-old exists: no

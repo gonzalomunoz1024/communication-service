@@ -1,0 +1,20 @@
+# JaCoCo, iteration 4 (report of run 1, `check --rerun-tasks`; both test runs, exclusions build.gradle.kts:117-121 = config/*Config*, config/*Properties*, *Application*)
+
+LINE         covered 1545 of 1590 = 0.9717
+BRANCH       covered 825 of 954 = 0.8648
+INSTRUCTION  covered 9839 of 10221 = 0.9626
+METHOD       covered 483 of 495 = 0.9758
+CLASS        covered 72 of 72 = 1.0000
+
+Rule (build.gradle.kts:141-155): LINE >= 0.92, BRANCH >= 0.84 -> jacocoTestCoverageVerification executed in the check run (gradle-check-1.txt:338), BUILD SUCCESSFUL.
+fixes.md claim: line 1545/1590 = 0.9717, branch 825/954 = 0.8648.
+
+Lowest branch coverage by package (ratio, package, branches, lines):
+  0.500 com/atlas/communication/feed/domain branches 3/6 lines 9/10
+  0.714 com/atlas/communication/feed/application branches 20/28 lines 46/48
+  0.743 com/atlas/communication/common/adapters/outbound branches 52/70 lines 241/263
+  0.847 com/atlas/communication/common/domain branches 127/150 lines 142/143
+  0.851 com/atlas/communication/health/domain branches 240/282 lines 321/324
+  0.857 com/atlas/communication/health/adapters/outbound branches 24/28 lines 88/88
+  com/atlas/communication/feed/adapters/inbound/RestControllerFeedAdapter: lines 35/35, branches 9/10
+  com/atlas/communication/config/GlobalExceptionHandler: lines 120/120, branches 109/112

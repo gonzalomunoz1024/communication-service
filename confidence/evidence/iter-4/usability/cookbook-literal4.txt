@@ -1,0 +1,194 @@
+===== run 1 (bash -v, README cookbook with the host set to private A :19600, curl -N wrapped in timeout 3) =====
+# dates relative to now (ISO-8601 UTC)
+in2h=$(date -u -d '+2 hours' +%FT%TZ 2>/dev/null || date -u -v+2H +%FT%TZ)
+tomorrow01=$(date -u -d 'tomorrow 01:00' +%FT%TZ 2>/dev/null || date -u -v+1d -v1H -v0M -v0S +%FT%TZ)
+tomorrow03=$(date -u -d 'tomorrow 03:00' +%FT%TZ 2>/dev/null || date -u -v+1d -v3H -v0M -v0S +%FT%TZ)
+
+# publish an outage tied to its ServiceNow incident (externalRef defaults to the number), expiring in two hours
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications -H 'Content-Type: application/json' -d '{
+  "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR",
+  "title":"API degradation in eu-west","body":"We are investigating elevated errors.",
+  "affectedServices":["vm-api"],"ticket":{"number":"INC0012345"},
+  "expiresAt":"'"$in2h"'"}'
+{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313501262Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.313501262Z","updatedAt":"2026-11-02T10:52:46.313501262Z","version":0,"history":[{"at":"2026-11-02T10:52:46.313501262Z","acto
+# externalRef (here the ticket number) is a permanent idempotency key, usable once per tenant: sending
+# the request above again is a safe retry (409 naming the notice that holds INC0012345); a follow-up
+# notice on the same incident gets its own value
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications -H 'Content-Type: application/json' -d '{
+  "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR",
+  "title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],
+  "ticket":{"number":"INC0012345"},"externalRef":"INC0012345-2","expiresAt":"'"$in2h"'"}'
+{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.333863986Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.333863986Z","updatedAt":"2026-11-02T10:52:46.333863986Z","version":0,"history":[{"at":"2026-11-02T10:52:46.333863986Z","actor":"vmforge-sre","action":"c
+# schedule a maintenance window for tomorrow night (expiry defaults to the window end)
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications -H 'Content-Type: application/json' -d '{
+  "tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO",
+  "title":"Planned upgrade","startsAt":"'"$tomorrow01"'","endsAt":"'"$tomorrow03"'"}'
+{"id":"4adffe8e-873f-45b9-9758-c1cbddefcaa4","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:46.351018747Z","updatedAt":"2026-11-02T10:52:46.351018747Z","version":0,"history":[{"at":"2026-11-02T10:52:46.351018747Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+# what VMForge shows its customers right now
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/feed?tenantId=vmforge&service=vm-api'
+{"items":[{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"updatedAt":"2026-11-02T10:52:46.313Z"},{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","seve
+# live stream (keep open in a second terminal; -N disables buffering)
+timeout 3 curl -N -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/feed/stream?tenantId=vmforge'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0:connected
+
+id:74
+event:snapshot
+data:{"seq":74,"type":"SNAPSHOT","at":"2026-11-02T10:52:46.412377723Z","communication":{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.313Z","updatedAt":"2026-11-02T10:52:46.313Z
+
+id:74
+event:snapshot
+data:{"seq":74,"type":"SNAPSHOT","at":"2026-11-02T10:52:46.412377723Z","communication":{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.333Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.333Z","updatedAt":"2026-11-02T10:52:46.333Z","version":0,"history":[{"a
+
+id:74
+event:snapshot
+data:{"seq":74,"type":"SNAPSHOT","at":"2026-11-02T10:52:46.412377723Z","communication":{"id":"4adffe8e-873f-45b9-9758-c1cbddefcaa4","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:46.351Z","updatedAt":"2026-11-02T10:52:46.351Z","version":0,"history":[{"at":"2026-11-02T10:52:46.351Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+
+100  2076    0  2076    0     0  10278      0 --:--:-- --:--:-- --:--:-- 10277id:72
+event:created
+data:{"seq":72,"type":"CREATED","at":"2026-11-02T10:52:46.317Z","communication":{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.313Z","updatedAt":"2026-11-02T10:52:46.313Z","vers
+
+id:73
+event:created
+data:{"seq":73,"type":"CREATED","at":"2026-11-02T10:52:46.336Z","communication":{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.333Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.333Z","updatedAt":"2026-11-02T10:52:46.333Z","version":0,"history":[{"at":"202
+
+id:74
+event:created
+data:{"seq":74,"type":"CREATED","at":"2026-11-02T10:52:46.353Z","communication":{"id":"4adffe8e-873f-45b9-9758-c1cbddefcaa4","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:46.351Z","updatedAt":"2026-11-02T10:52:46.351Z","version":0,"history":[{"at":"2026-11-02T10:52:46.351Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}}
+
+100  4116    0  4116    0     0   3013      0 --:--:--  0:00:01 --:--:--  3013100  4116    0  4116    0     0   1738      0 --:--:--  0:00:02 --:--:--  1738
+# resume after a disconnect: everything after event 1234 in order, then live (browsers send Last-Event-ID)
+timeout 3 curl -N -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/feed/stream?tenantId=vmforge&lastEventId=1234'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0:connected
+
+id:74
+event:snapshot
+data:{"seq":74,"type":"SNAPSHOT","at":"2026-11-02T10:52:49.414150643Z","communication":{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.313Z","updatedAt":"2026-11-02T10:52:46.313Z
+
+id:74
+event:snapshot
+data:{"seq":74,"type":"SNAPSHOT","at":"2026-11-02T10:52:49.414150643Z","communication":{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.333Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.333Z","updatedAt":"2026-11-02T10:52:46.333Z","version":0,"history":[{"a
+
+id:74
+event:snapshot
+data:{"seq":74,"type":"SNAPSHOT","at":"2026-11-02T10:52:49.414150643Z","communication":{"id":"4adffe8e-873f-45b9-9758-c1cbddefcaa4","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:46.351Z","updatedAt":"2026-11-02T10:52:46.351Z","version":0,"history":[{"at":"2026-11-02T10:52:46.351Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+
+100  2076    0  2076    0     0  10289      0 --:--:-- --:--:-- --:--:-- 10277100  2076    0  2076    0     0   1726      0 --:--:--  0:00:01 --:--:--  1725100  2076    0  2076    0     0    941      0 --:--:--  0:00:02 --:--:--   941
+# change the body: send back the version you last read as expectedVersion (409 if someone else got there first)
+curl -s -H 'X-Client-Id: vmforge-tools' -X PUT localhost:19600/v1/communications/<id> \
+  -H 'Content-Type: application/json' -d '{"body":"Mitigation in progress.","expectedVersion":0}'
+cookbook.sh: line 36: id: No such file or directory
+
+# retire (the stream terminal shows the retired event)
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications/<id>/retire \
+  -H 'Content-Type: application/json' -d '{"actor":"admin","note":"resolved"}'
+cookbook.sh: line 40: id: No such file or directory
+
+# admin: everything retired, across tenants, with audit history
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/admin/communications?status=RETIRED'
+{"items":[{"id":"28cb7c6c-00b5-4792-a94b-6cdb583805a0","tenantId":"acme","publisher":"sre-team","type":"INCIDENT","severity":"MAJOR","title":"for the admin example","affectedServices":[],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T10:50:00.747Z","createdAt":"2026-11-02T10:50:00.747Z","updatedAt":"2026-11-02T10:50:03.018Z","version":1,"history":[{"at":"2026-11-02T10:50:00.747Z","actor":"sre-team","action":"created (ACTIVE)"},{"at":"2026-11-02T10:50:03.018Z","actor":"ops-desk","action":"ACTIVE -> RETIRED: Retired by the operations desk: a duplicate of another notice."}]},{"i
+# health: what the monitors currently think, and force a probe (<monitorId> = .[].id in the list)
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/health/monitors?tenantId=vmforge'
+[]curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/health/monitors/<monitorId>/probe
+cookbook.sh: line 48: monitorId: No such file or directory
+exit 1
+===== run 2 (bash -v, README cookbook with the host set to private A :19600, curl -N wrapped in timeout 3) =====
+# dates relative to now (ISO-8601 UTC)
+in2h=$(date -u -d '+2 hours' +%FT%TZ 2>/dev/null || date -u -v+2H +%FT%TZ)
+tomorrow01=$(date -u -d 'tomorrow 01:00' +%FT%TZ 2>/dev/null || date -u -v+1d -v1H -v0M -v0S +%FT%TZ)
+tomorrow03=$(date -u -d 'tomorrow 03:00' +%FT%TZ 2>/dev/null || date -u -v+1d -v3H -v0M -v0S +%FT%TZ)
+
+# publish an outage tied to its ServiceNow incident (externalRef defaults to the number), expiring in two hours
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications -H 'Content-Type: application/json' -d '{
+  "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR",
+  "title":"API degradation in eu-west","body":"We are investigating elevated errors.",
+  "affectedServices":["vm-api"],"ticket":{"number":"INC0012345"},
+  "expiresAt":"'"$in2h"'"}'
+{"error":"externalRef 'INC0012345' is already used by notice 671f2b11-3a3e-4fd7-81b4-909e78266c95 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-3, which is still free).","suggestedExternalRef":"INC0012345-3"}
+# externalRef (here the ticket number) is a permanent idempotency key, usable once per tenant: sending
+# the request above again is a safe retry (409 naming the notice that holds INC0012345); a follow-up
+# notice on the same incident gets its own value
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications -H 'Content-Type: application/json' -d '{
+  "tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR",
+  "title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],
+  "ticket":{"number":"INC0012345"},"externalRef":"INC0012345-2","expiresAt":"'"$in2h"'"}'
+{"error":"externalRef 'INC0012345-2' is already used by notice 2dd9184f-86f4-4341-8ccd-398b3014c698 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-3, which is still free).","suggestedExternalRef":"INC0012345-3"}
+# schedule a maintenance window for tomorrow night (expiry defaults to the window end)
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications -H 'Content-Type: application/json' -d '{
+  "tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO",
+  "title":"Planned upgrade","startsAt":"'"$tomorrow01"'","endsAt":"'"$tomorrow03"'"}'
+{"id":"a87da522-94f7-46cd-8c9e-875947c0ff74","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:52.514011478Z","updatedAt":"2026-11-02T10:52:52.514011478Z","version":0,"history":[{"at":"2026-11-02T10:52:52.514011478Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+# what VMForge shows its customers right now
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/feed?tenantId=vmforge&service=vm-api'
+{"items":[{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"updatedAt":"2026-11-02T10:52:46.313Z"},{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","seve
+# live stream (keep open in a second terminal; -N disables buffering)
+timeout 3 curl -N -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/feed/stream?tenantId=vmforge'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0:connected
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:52.548866581Z","communication":{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.313Z","updatedAt":"2026-11-02T10:52:46.313Z
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:52.548866581Z","communication":{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.333Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.333Z","updatedAt":"2026-11-02T10:52:46.333Z","version":0,"history":[{"a
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:52.548866581Z","communication":{"id":"a87da522-94f7-46cd-8c9e-875947c0ff74","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:52.514Z","updatedAt":"2026-11-02T10:52:52.514Z","version":0,"history":[{"at":"2026-11-02T10:52:52.514Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:52.548866581Z","communication":{"id":"4adffe8e-873f-45b9-9758-c1cbddefcaa4","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:46.351Z","updatedAt":"2026-11-02T10:52:46.351Z","version":0,"history":[{"at":"2026-11-02T10:52:46.351Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+
+id:75
+event:created
+data:{"seq":75,"type":"CREATED","at":"2026-11-02T10:52:52.517Z","communication":{"id":"a87da522-94f7-46cd-8c9e-875947c0ff74","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:52.514Z","updatedAt":"2026-11-02T10:52:52.514Z","version":0,"history":[{"at":"2026-11-02T10:52:52.514Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}}
+
+100  3316    0  3316    0     0   2706      0 --:--:--  0:00:01 --:--:--  2709100  3316    0  3316    0     0   1489      0 --:--:--  0:00:02 --:--:--  1489
+# resume after a disconnect: everything after event 1234 in order, then live (browsers send Last-Event-ID)
+timeout 3 curl -N -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/feed/stream?tenantId=vmforge&lastEventId=1234'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0:connected
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:55.554823035Z","communication":{"id":"671f2b11-3a3e-4fd7-81b4-909e78266c95","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MAJOR","title":"API degradation in eu-west","body":"We are investigating elevated errors.","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.313Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.313Z","updatedAt":"2026-11-02T10:52:46.313Z
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:55.554823035Z","communication":{"id":"2dd9184f-86f4-4341-8ccd-398b3014c698","tenantId":"vmforge","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"API degradation in eu-west: residual errors","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T10:52:46.333Z","expiresAt":"2026-11-02T12:52:46Z","externalRef":"INC0012345-2","ticket":{"system":"servicenow","number":"INC0012345"},"createdAt":"2026-11-02T10:52:46.333Z","updatedAt":"2026-11-02T10:52:46.333Z","version":0,"history":[{"a
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:55.554823035Z","communication":{"id":"a87da522-94f7-46cd-8c9e-875947c0ff74","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:52.514Z","updatedAt":"2026-11-02T10:52:52.514Z","version":0,"history":[{"at":"2026-11-02T10:52:52.514Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+
+id:75
+event:snapshot
+data:{"seq":75,"type":"SNAPSHOT","at":"2026-11-02T10:52:55.554823035Z","communication":{"id":"4adffe8e-873f-45b9-9758-c1cbddefcaa4","tenantId":"vmforge","publisher":"vmforge-sre","type":"MAINTENANCE","severity":"INFO","title":"Planned upgrade","affectedServices":[],"audience":"CUSTOMERS","status":"SCHEDULED","startsAt":"2026-11-03T01:00:00Z","endsAt":"2026-11-03T03:00:00Z","expiresAt":"2026-11-03T03:00:00Z","createdAt":"2026-11-02T10:52:46.351Z","updatedAt":"2026-11-02T10:52:46.351Z","version":0,"history":[{"at":"2026-11-02T10:52:46.351Z","actor":"vmforge-sre","action":"created (SCHEDULED)"}]}
+
+100  2700    0  2700    0     0   2245      0 --:--:--  0:00:01 --:--:--  2246100  2700    0  2700    0     0   1225      0 --:--:--  0:00:02 --:--:--  1225
+# change the body: send back the version you last read as expectedVersion (409 if someone else got there first)
+curl -s -H 'X-Client-Id: vmforge-tools' -X PUT localhost:19600/v1/communications/<id> \
+  -H 'Content-Type: application/json' -d '{"body":"Mitigation in progress.","expectedVersion":0}'
+cookbook.sh: line 36: id: No such file or directory
+
+# retire (the stream terminal shows the retired event)
+curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/communications/<id>/retire \
+  -H 'Content-Type: application/json' -d '{"actor":"admin","note":"resolved"}'
+cookbook.sh: line 40: id: No such file or directory
+
+# admin: everything retired, across tenants, with audit history
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/admin/communications?status=RETIRED'
+{"items":[{"id":"28cb7c6c-00b5-4792-a94b-6cdb583805a0","tenantId":"acme","publisher":"sre-team","type":"INCIDENT","severity":"MAJOR","title":"for the admin example","affectedServices":[],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T10:50:00.747Z","createdAt":"2026-11-02T10:50:00.747Z","updatedAt":"2026-11-02T10:50:03.018Z","version":1,"history":[{"at":"2026-11-02T10:50:00.747Z","actor":"sre-team","action":"created (ACTIVE)"},{"at":"2026-11-02T10:50:03.018Z","actor":"ops-desk","action":"ACTIVE -> RETIRED: Retired by the operations desk: a duplicate of another notice."}]},{"i
+# health: what the monitors currently think, and force a probe (<monitorId> = .[].id in the list)
+curl -s -H 'X-Client-Id: vmforge-tools' 'localhost:19600/v1/health/monitors?tenantId=vmforge'
+[]curl -s -H 'X-Client-Id: vmforge-tools' -X POST localhost:19600/v1/health/monitors/<monitorId>/probe
+cookbook.sh: line 48: monitorId: No such file or directory
+exit 1

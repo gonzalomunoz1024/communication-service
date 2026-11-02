@@ -1,0 +1,34 @@
+# Dependency and image scans, iteration 4 (Trivy 0.58.1, offline: --skip-db-update --skip-java-db-update, cache <scratch>/orch-trivy/cache/trivy, DB of 2026-11-02 01:14Z; every run under flock <scratch>/orch-trivy/.lock)
+
+Command shape: flock <scratch>/orch-trivy/.lock docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v <cache>:/root/.cache/trivy -v <scratch>/backend4/trivy:/work mirror.gcr.io/aquasec/trivy:0.58.1 <sbom|image> --skip-db-update --skip-java-db-update --scanners vuln ...
+The Java DB is never downloaded: the jar's libraries are scanned through the CycloneDX SBOM, the image with --pkg-types os.
+
+## 1. SBOM from the build (build/reports/cyclonedx/bom.json, sha256 fb898bf159ffab75…, identical to <scratch>/backend4/runs/run1 of the check run): 113 components
+$ trivy sbom --format json /work/build-bom.json -> exit 0
+  target=Java vulnerabilities=0 {}
+$ trivy sbom --list-all-pkgs --format json /work/build-bom.json -> exit 0
+  packages matched=114 vulnerabilities=0; versions: spring-core 7.0.10, spring-webflux 7.0.10, netty-codec-http 4.2.19.Final, reactor-netty-http 1.3.8, jackson-databind 3.1.7, jackson-core 3.1.7, mongodb-driver-core 5.6.5, logback-classic 1.5.38, swagger-core-jakarta 2.2.47
+
+## 2. SBOM inside the jar (build/libs jar 64e07ece…, META-INF/sbom/bom.json, 113 components, sha256 90fe55ff42c8a9c2…; differs from §1 only in serial/timestamp)
+$ trivy sbom --format json /work/jar-bom.json -> exit 0
+  target=Java vulnerabilities=0 {}
+
+## 3. Positive control: the iteration-3 SBOM (<scratch>/backend3/run1/reports/cyclonedx/bom.json) with the same scanner and DB
+$ trivy sbom --list-all-pkgs --format json /work/iter3-bom.json -> exit 0
+  packages matched=88 vulnerabilities=29 {'HIGH': 10, 'MEDIUM': 16, 'CRITICAL': 3} (iteration 3 reported 3 CRITICAL + 10 HIGH: the scanner and DB do find them)
+    CRITICAL CVE-2026-75595 io.netty:netty-handler 4.1.135.Final fixed=4.2.17.Final, 4.1.137.Final
+    CRITICAL CVE-2026-47890 org.springframework:spring-webflux 6.2.19 fixed=7.0.9
+    CRITICAL CVE-2026-47892 org.springframework:spring-webflux 6.2.19 fixed=7.0.9
+
+## 4. Image vb4-backend:test (root Dockerfile, base gcr.io/distroless/java21-debian13:nonroot@sha256:b22857e9…), OS packages
+$ trivy image --pkg-types os --format json vb4-backend:test -> exit 0
+  target=vb4-backend:test (debian 13.7) entries=77 {'MEDIUM': 50, 'LOW': 20, 'UNKNOWN': 3, 'HIGH': 4}; with a fix: 0
+    HIGH CVE-2026-76642 libuuid1 2.41.5-0+deb13u1 fixed=- status=affected
+    HIGH CVE-2026-78408 libuuid1 2.41.5-0+deb13u1 fixed=- status=affected
+    HIGH CVE-2026-78409 libuuid1 2.41.5-0+deb13u1 fixed=- status=affected
+    HIGH CVE-2026-78410 libuuid1 2.41.5-0+deb13u1 fixed=- status=affected
+  CI's policy for the image (ci.yml:63-67, README.md:90): --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 -> these 4 HIGH have no fix (status affected) and do not fail it; fixes.md:26-30 records them.
+
+## 5. CI scanner pin (G-4-31): ci.yml:21 TRIVY_IMAGE ghcr.io/aquasecurity/trivy:0.58.1@sha256:ab70a022…; local mirror.gcr.io/aquasec/trivy:0.58.1 RepoDigests: ["mirror.gcr.io/aquasec/trivy@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7"] -> same digest
+
+Trivy log lines of note (all runs): Recommend using Trivy to generate SBOMs;Third-party SBOM may lead to inaccurate vulnerability detection;Unsupported hash algorithm	algorithm="SHA-384";Unsupported hash algorithm	algorithm="SHA-512";Unsupported hash algorithm	algorithm="SHA3-256";Unsupported hash algorithm	algorithm="SHA3-384";Unsupported hash algorithm	algorithm="SHA3-512";

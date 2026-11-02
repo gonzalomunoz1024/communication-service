@@ -1,0 +1,16 @@
+# Test runs, iteration 4: `check --rerun-tasks` once, then `test --rerun integrationTest --rerun` twice (raw logs <scratch>/backend4/gradle-check-1.txt, gradle-rerun2.txt, gradle-rerun3.txt; JUnit XML copied to <scratch>/backend4/runs/run{1,2,3})
+
+| run | command | Gradle exit | unit tests | IT tests | pass | fail | error | skipped |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `./gradlew --max-workers=2 --no-daemon check --rerun-tasks` | 0 (3 m 7 s) | 270 | 55 | 325 | 0 | 0 | 0 |
+| 2 | `./gradlew --max-workers=2 --no-daemon test --rerun integrationTest --rerun` | 1 (4 m 34 s): integrationTest FAILED | 270 | 55 | 324 | 1 | 0 | 0 |
+| 3 | `same as run 2` | 0 (3 m 9 s) | 270 | 55 | 325 | 0 | 0 | 0 |
+
+Same 325 test cases in every run: True. Cases passing in all three runs: 324/325.
+Non-passing results:
+  run 2: integrationTest com.atlas.communication.CommunicationServiceE2EIT.openApiSpecIsServed() -> fail:java.lang.IllegalStateException: Timeout on blocking read for 5000000000 NANOSECONDS
+
+openApiSpecIsServed time per run, iteration 4: [('pass', 3.622), ('fail:java.lang.IllegalStateException: Timeout on blocking read for 5000000000 NANOSECONDS', 5.07), ('pass', 3.37)]; iteration 3 (<scratch>/backend3/run1-3): [('pass', 1.221), ('pass', 1.246), ('pass', 1.56)]
+  The test uses the default WebTestClient response timeout of 5 s (CommunicationServiceE2EIT.java:437-445; the client is only mutated to add a header at :50-55).
+
+Slowest 8 IT cases in run 2 (s): ForcedProbeWhileTheSchedulerProbesIT.forcedProbesOfASlowEndpointAnswer200WhileTheSchedulerProbesItEverySweep() 10.95; CommunicationServiceE2EIT.publishFeedStreamRetireRoundTrip() 5.63; HealthMonitoringE2EIT.aFleetOfPodsReportingInTheSameInstantIsAccepted() 5.44; CommunicationServiceE2EIT.openApiSpecIsServed() 5.07; OperationsEndpointsIT.aStreamOpenedWhileTheDatabaseIsUnreachableIs503BeforeAnyByteWithOneWarning() 4.63; OperationsEndpointsIT.aStreamWhoseDatabaseGoesAwayAfterItOpenedEndsWithOneWarningAndNoError() 2.67; HealthMonitoringE2EIT.probedServiceGoingDownPublishesAnOutageAndRecoveryRetiresIt() 1.30; OpenApiContractIT.everyRequestExampleIsAcceptedByItsRouteAsItIs() 1.14

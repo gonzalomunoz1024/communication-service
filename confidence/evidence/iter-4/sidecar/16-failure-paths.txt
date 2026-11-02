@@ -1,0 +1,79 @@
+start 10:45:03.915
+### PART A: a slow service (stub :19340), default CS_REPORT_TIMEOUT (10s); CS_INTERVAL=2s CS_HEARTBEAT=4s
+  [10:45:05.208] the service answers 202 after 7000 ms
+  [10:45:23.531] /status: {"last":"UP","obs":"10:45:14.665","tick":"10:45:14.665","n":2,"err":""}
+  [10:45:23.573] the service answers 202 after 12000 ms
+  [10:45:55.577] /status: {"last":"UP","obs":"10:45:48.474","tick":"10:45:14.665","n":2,"err":"post http://172.17.0.1:19340/v1/health/reports: Post \"http://172.17.0.1:19340/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)"}
+  [10:45:55.598] the service answers at once
+  [10:46:04.602] /status: {"last":"UP","obs":"10:46:02.957","tick":"10:46:00.623","n":3,"err":""}
+  attempts (sidecar log line; when the request arrived at the service; how long the attempt took):
+  10:45:12.531 reported                   arrived 10:45:05.524  took 7.01s  
+  10:45:21.670 reported                   arrived 10:45:14.667  took 7.00s  
+  10:45:33.974 report failed; will retry  arrived 10:45:23.968  took 10.01s  post http://172.17.0.1:19340/v1/health/reports: Post "http://172.17.0.1:19340/v1/health/reports": co
+  10:45:46.098 report failed; will retry  arrived 10:45:36.091  took 10.01s  post http://172.17.0.1:19340/v1/health/reports: Post "http://172.17.0.1:19340/v1/health/reports": co
+  10:45:58.477 report failed; will retry  arrived 10:45:48.475  took 10.00s  post http://172.17.0.1:19340/v1/health/reports: Post "http://172.17.0.1:19340/v1/health/reports": co
+  10:46:00.625 report delivered again     arrived 10:46:00.625  took 0.00s   failedAttempts=3 failingFor=36.655s
+  10:46:00.625 reported                   arrived 10:46:00.625  took 0.00s  
+### PART B: private backend B (:19302) on its own database container vs4-mongo (:19301); database STOPPED
+  sidecar CS_INTERVAL=5s CS_HEARTBEAT=10s (default report timeout 10 s)
+  [10:46:13.181] /status: {"last":"UP","obs":"10:46:12.192","tick":"10:46:06.168","n":1,"err":""}
+  [10:46:13.497] docker stop vs4-mongo returned
+  [10:46:13.615] {"last":"UP","obs":"10:46:12.192","tick":"10:46:06.168","n":1,"err":""}
+  [10:46:22.789] {"last":"UP","obs":"10:46:17.5Z","tick":"10:46:06.168","n":1,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [10:46:13.584] direct report to B (database stopped) -> 503 in 5.027047s body={"error":"database unavailable"}
+  [10:46:54.410] second direct report (database still stopped) -> 503 in 5.010331s body={"error":"database unavailable"}
+  [10:46:59.661] docker start vs4-mongo returned
+  [10:46:59.679] {"last":"UP","obs":"10:46:49.641","tick":"10:46:06.168","n":1,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [10:47:01.722] {"last":"UP","obs":"10:47:00.005","tick":"10:47:00.005","n":2,"err":""}
+  [10:47:12.958] {"last":"UP","obs":"10:47:12.184","tick":"10:47:12.184","n":3,"err":""}
+  [10:47:24.185] {"last":"UP","obs":"10:47:24.017","tick":"10:47:24.017","n":4,"err":""}
+  sidecar log (PART B):
+{"t":"10:46:06.171","level":"INFO","msg":"health target found","status":"UP"}
+{"t":"10:46:22.517","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"1s"}
+{"t":"10:46:32.737","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"2s"}
+{"t":"10:46:43.657","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"4s"}
+{"t":"10:46:54.653","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"8s"}
+{"t":"10:47:01.441","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":4,"failingFor":"42.505s"}
+  (accepted UP reports: 4)
+  /healthz of the sidecar during all this: ok HTTP 200; app untouched: running restarts=0
+### PART C: the same database PAUSED (docker pause: a hung database)
+  C1: a sidecar that sends every ~2 s (CS_INTERVAL=2s CS_HEARTBEAT=2s, default report timeout 10 s)
+  [10:47:30.712] backend B answers reports again (202)
+  [10:47:39.660] /status before: {"last":"UP","obs":"10:47:38.037","tick":"10:47:38.037","n":4,"err":""}
+  [10:47:39.727] docker pause vs4-mongo returned
+  [10:47:39.751] {"last":"UP","obs":"10:47:38.037","tick":"10:47:38.037","n":4,"err":""}
+  [10:47:50.983] {"last":"UP","obs":"10:47:40.123","tick":"10:47:38.037","n":4,"err":"post http://172.17.0.1:19302/v1/health/reports: Post \"http://172.17.0.1:19302/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)"}
+  [10:47:58.116] {"last":"UP","obs":"10:47:52.517","tick":"10:47:38.037","n":4,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [10:48:41.011] docker unpause vs4-mongo returned
+  [10:48:41.032] {"last":"UP","obs":"10:48:40.08Z","tick":"10:47:38.037","n":4,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [10:49:01.440] {"last":"UP","obs":"10:49:00.495","tick":"10:49:00.495","n":5,"err":""}
+  [10:49:03.481] {"last":"UP","obs":"10:49:02.534","tick":"10:49:02.534","n":6,"err":""}
+  [10:49:05.522] {"last":"UP","obs":"10:49:04.755","tick":"10:49:04.755","n":7,"err":""}
+  sidecar log (PART C1), every line but accepted UP sends:
+{"t":"10:47:31.661","level":"INFO","msg":"health target found","status":"UP"}
+{"t":"10:47:50.124","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: Post \"http://172.17.0.1:19302/v1/health/reports\": context deadline exceeded (Client.Timeout exceeded w","in":"1s"}
+{"t":"10:47:57.529","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"2s"}
+{"t":"10:48:04.872","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"4s"}
+{"t":"10:48:12.242","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"8s"}
+{"t":"10:48:19.481","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"16s"}
+{"t":"10:48:35.716","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"30s"}
+{"t":"10:49:00.517","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":6,"failingFor":"1m20.373s"}
+  (accepted UP reports: 7)
+  backend B's access lines for the sidecar's reports while paused (client=dbhang; status and duration):
+2026-11-02T10:47:50.125Z client=dbhang POST /v1/health/reports -> 200 (9999 ms)
+2026-11-02T10:47:57.529Z client=dbhang POST /v1/health/reports -> 503 (5006 ms)
+2026-11-02T10:48:04.871Z client=dbhang POST /v1/health/reports -> 503 (5007 ms)
+2026-11-02T10:48:12.245Z client=dbhang POST /v1/health/reports -> 503 (5007 ms)
+2026-11-02T10:48:19.482Z client=dbhang POST /v1/health/reports -> 503 (5011 ms)
+2026-11-02T10:48:35.715Z client=dbhang POST /v1/health/reports -> 503 (5007 ms)
+  ... (202 lines omitted: 7)
+  [10:49:06.788] sidecar stopped (SIGTERM): {"msg":"leaving report sent","error":null} {"msg":"health sidecar stopped","error":null} 
+  C2: direct reports with the database paused again, nothing else sending reports
+  [10:49:08.888] docker pause vs4-mongo returned
+  [10:49:08.891] direct report 1 -> 503 in 20.023955s body={"error":"database unavailable"}
+  [10:49:28.929] direct report 2 -> 503 in 5.008689s body={"error":"database unavailable"}
+  [10:49:33.953] direct report 3 -> 503 in 5.009163s body={"error":"database unavailable"}
+  [10:49:39.065] docker unpause vs4-mongo returned
+  [10:49:42.073] direct report after unpause -> 202 in 0.019658s body={"id":"e2ef8503-501a-43d6-b8c0-b17fa8f7e7fa","tenantId":"vs4-fpb","service":"direct","policy":{"publisher":"health-monit
+  vs4-mongo: running
+end 10:49:42.748

@@ -1,0 +1,6 @@
+# 2026-11-02T11:09:14Z read-only: verifier databases on the shared Mongo (mongo7) after my teardown; I keep vf4_reconnect, as iterations 2 and 3 kept theirs
+$ docker exec mongo7 mongosh --quiet --eval "db.adminCommand({listDatabases:1}).databases.filter(d=>/^vf/.test(d.name)).forEach(d=>print(d.name, d.sizeOnDisk))"
+vf2_reconnect Long('720896')
+vf3_reconnect Long('704512')
+vf4_reconnect Long('843776')
+exit=0

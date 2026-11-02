@@ -1,0 +1,18 @@
+# private stack of the usability reviewer, iteration 4 (<scratchpad> = the session scratchpad)
+A  pid 29832: java -jar <scratchpad>/communication-service-iter4.jar --server.port=19600 --spring.mongodb.uri=mongodb://127.0.0.1:27017/ux4 --communication.health.sweep-interval-ms=1000 --communication.sweep.interval-ms=2000 --communication.health.stale-grace-after-start-ms=0 
+B  pid 29992 (10:18-10:51, SIGKILLed by ux4-reconnect.js), then pid 22977: java -jar <scratchpad>/communication-service-iter4.jar --server.port=19601 --spring.mongodb.uri=mongodb://127.0.0.1:19617/ux4b 
+ux4-mongo: docker run -d --name ux4-mongo -p 127.0.0.1:19617:27017 mongo:7.0   (B's own database ux4b; ux4-dbdown.js: stopped 10:30:08-10:31:33 (85 s), paused 10:33:10-10:34:06 (56 s); ux4-stuck-error.js: stopped 10:36:49-10:37:12; hung-db-timing.sh: paused 3 x 15-20 s at 11:06-11:08)
+vite pid 30150 (cwd frontend/, nothing installed there): node ./node_modules/.bin/vite --port 3600 --host 127.0.0.1 --strictPort  COMM_BACKEND=http://127.0.0.1:19600
+vite pid 30162 (cwd frontend/, nothing installed there): node ./node_modules/.bin/vite --port 3601 --host 127.0.0.1 --strictPort  COMM_BACKEND=http://127.0.0.1:19601
+vite pid 20035 (cwd frontend/, nothing installed there): node ./node_modules/.bin/vite preview --port 3602 --host 127.0.0.1 --strictPort  COMM_BACKEND=http://127.0.0.1:19601
+frontend/dist served by preview :3602 was built at 10:05:04 UTC by someone else (before these walks); not rebuilt or touched here
+
+# start lines
+2026-11-02T10:18:10.011Z  INFO 29832 --- [communication-service] [           main] o.s.boot.reactor.netty.NettyWebServer    : Netty started on port 19600 (http)
+2026-11-02T10:18:10.026Z  INFO 29832 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 1
+2026-11-02T10:18:13.279Z  INFO 29992 --- [communication-service] [           main] o.s.boot.reactor.netty.NettyWebServer    : Netty started on port 19601 (http)
+2026-11-02T10:18:13.335Z  INFO 29992 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 1
+2026-11-02T10:52:07.742Z  INFO 22977 --- [communication-service] [           main] o.s.boot.reactor.netty.NettyWebServer    : Netty started on port 19601 (http)
+2026-11-02T10:52:07.769Z  INFO 22977 --- [communication-service] [           main] c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 6
+
+# emulated pods (sidecar-pod4.sh, auto-notice4.js, ux4-dbdown.js): ux4-app / ux4-sidecar* containers with --user 1000660000:0 --read-only --cap-drop ALL --security-opt no-new-privileges; all removed (docker run --rm or docker rm -f)

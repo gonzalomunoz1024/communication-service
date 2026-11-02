@@ -1,0 +1,54 @@
+# Static checks of the e2e project (run in e2e/ as its README says) and of the fake app; lint probe proves the lint gate bites
+
+== 2026-11-02T10:17:46Z git HEAD d10369b, node v22.23.4, npm 10.9.9
+$ npm ci
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 113 packages, and audited 114 packages in 2s
+
+40 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+exit=0
+$ npm run lint
+
+> communication-service-e2e@0.1.0 lint
+> eslint . --max-warnings 0
+
+exit=0
+$ npm run typecheck
+
+> communication-service-e2e@0.1.0 typecheck
+> tsc --noEmit
+
+exit=0
+$ npm audit
+found 0 vulnerabilities
+exit=0
+$ npx playwright --version
+Version 1.63.0
+
+## lint probe: a throw-away spec with test.only / waitForTimeout / conditional expect / skip, fed on stdin (no file written in the repo); the gate must fail
+$ npx eslint --max-warnings 0 --stdin --stdin-filename tests/zz-lint-probe.spec.ts < lint-probe.spec.ts.txt
+
+/home/claude/communication-service/e2e/tests/zz-lint-probe.spec.ts
+  2:1   warning  Expected blank line before this statement   playwright/consistent-spacing-between-blocks
+  2:6   error    Unexpected focused test                     playwright/no-focused-test
+  3:9   warning  Unexpected use of page.waitForTimeout()     playwright/no-wait-for-timeout
+  5:3   warning  Avoid having conditionals in tests          playwright/no-conditional-in-test
+  5:25  warning  Avoid calling `expect` conditionally        playwright/no-conditional-expect
+  7:1   warning  Expected blank line before this statement   playwright/consistent-spacing-between-blocks
+  7:1   warning  Test has no assertions                      playwright/expect-expect
+  7:6   warning  Unexpected use of the `.skip()` annotation  playwright/no-skipped-test
+
+✖ 8 problems (1 error, 7 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+
+exit=1
+
+## fake app (e2e/fakeapp)
+$ (e2e/fakeapp) go version: go version go1.24.7 linux/amd64
+$ go vet ./... && go test -count=1 ./...
+ok  	fakeapp	0.011s
+exit=0

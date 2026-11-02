@@ -1,0 +1,46 @@
+## 45: CS_HOST, 11:13:12.490 UTC; image health-sidecar:vs4; backend A (http://172.17.0.1:19300), tenant vs4-v6
+== A. app on [::1]:8080 only, CS_HOST default
+  app: listen tcp [::1]:8080: socket: address family not supported by protocol
+  CS_HOST=(default)  /status: target=None lastTarget=None upSeen=False sendError=None | lastReport.status=UNKNOWN message='starting: waiting for the app to listen'
+  sidecar log lines (level msg, count):
+  lines: 2 non-JSON: 0 keys seen: ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'tenant', 'time', 'version']
+     1  INFO  health sidecar starting
+     1  INFO  reported
+== B. app on [::1]:8080 only, CS_HOST=127.0.0.1
+  app: listen tcp [::1]:8080: socket: address family not supported by protocol
+  CS_HOST=127.0.0.1  /status: target=None lastTarget=None upSeen=False sendError=None | lastReport.status=UNKNOWN message='starting: waiting for the app to listen'
+  sidecar log lines (level msg, count):
+  lines: 2 non-JSON: 0 keys seen: ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'tenant', 'time', 'version']
+     1  INFO  health sidecar starting
+     1  INFO  reported
+== C. app on 127.0.0.1:8080 only, CS_HOST=::1
+  app: listening on 127.0.0.1:8080
+  CS_HOST=::1  /status: target=None lastTarget=None upSeen=False sendError=None | lastReport.status=UNKNOWN message='starting: waiting for the app to listen'
+  sidecar log lines (level msg, count):
+  lines: 2 non-JSON: 0 keys seen: ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'tenant', 'time', 'version']
+     1  INFO  health sidecar starting
+     1  INFO  reported
+== D. app on 127.0.0.1:8080 only, CS_HOST default (control)
+  app: listening on 127.0.0.1:8080
+  CS_HOST=(default)  /status: target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True sendError=None | lastReport.status=UP message=None
+  sidecar log lines (level msg, count):
+  lines: 3 non-JSON: 0 keys seen: ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'target', 'tenant', 'time', 'version']
+     1  INFO  health sidecar starting
+     1  INFO  health target found
+     1  INFO  reported
+         1 "target":"http://127.0.0.1:8080/actuator/health"
+== service side (backend A), monitor v6svc, after the four runs
+  v6svc-7f9c6d5b4-v6a id=bfa86e9f url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (v6svc-7f9c6d5b4-v6a: starting: waiting for the app to listen))' unhealthy=0 healthy=0 notice=None
+  v6svc-7f9c6d5b4-v6b id=aa6ca0aa url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (v6svc-7f9c6d5b4-v6b: starting: waiting for the app to listen))' unhealthy=0 healthy=0 notice=None
+  v6svc-7f9c6d5b4-v6c id=61aac353 url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (v6svc-7f9c6d5b4-v6c: starting: waiting for the app to listen))' unhealthy=0 healthy=0 notice=None
+  (no monitor for v6svc)
+containers removed: 0 left
+== all monitors of tenant vs4-v6 (full list)
+  v6svc-7f9c6d5b4-v6a id=bfa86e9f url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (v6svc-7f9c6d5b4-v6a: starting: waiting for the app to listen))' unhealthy=0 healthy=0 notice=None
+  v6svc-7f9c6d5b4-v6b id=aa6ca0aa url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (v6svc-7f9c6d5b4-v6b: starting: waiting for the app to listen))' unhealthy=0 healthy=0 notice=None
+  v6svc-7f9c6d5b4-v6c id=61aac353 url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet (v6svc-7f9c6d5b4-v6c: starting: waiting for the app to listen))' unhealthy=0 healthy=0 notice=None
+  v6svc-7f9c6d5b4-v6d id=dd98a5d2 url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+note: the pod names end in a 3-character suffix (v6a…v6d), not a 5-character pod hash, so DeriveService
+      (config.go:274-287) keeps the whole name as the service; one monitor per case, as intended by this run.
+note: cases A and B have no app: this sandbox's container network namespaces have no IPv6 (socket: address
+      family not supported by protocol), so probing over ::1 cannot be exercised here.

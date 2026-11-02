@@ -1,0 +1,10 @@
+# 20b: the full kubeconform message for the README's include WITHOUT nindent (README L56-61), on the render saved by 20-manifests.sh
+$ kubeconform -strict -kubernetes-version 1.27.0 -summary work/rendered/helm-no-nindent.yaml
+exit=1
+additionalProperties 'env', 'image', 'securityContext', 'ports', 'livenessProbe', 'imagePullPolicy', 'resources' not allowed
+Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+$ kubeconform -strict -kubernetes-version 1.29.0 -summary work/rendered/helm-no-nindent.yaml
+exit=1
+additionalProperties 'securityContext', 'livenessProbe', 'resources', 'env', 'image', 'imagePullPolicy', 'ports' not allowed
+Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+README L59-61: puts only the container's first line at that column: `helm template` and `helm lint` still pass, but the rest of the container becomes keys of the Deployment's `spec`, which `kubeconform -strict` rejects (`additionalProperties 'env', 'image', … not allowed`). 

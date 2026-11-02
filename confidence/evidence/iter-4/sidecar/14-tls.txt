@@ -1,0 +1,36 @@
+TLS 1.1-only server check: New, TLSv1.0, Cipher is ECDHE-RSA-AES256-SHA     Protocol  : TLSv1.1 
+template parsing error: template: :1:18: executing "" at <.NetworkSettings.IPAddress>: map has no entry for key "IPAddress"
+pod IP (non-loopback address of the app): 
+== no-ca (verification on, private CA unknown)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19336/v1/health/reports: Post "https://172.17.0.1:19336/v1/health/reports": tls: failed to verify certificate: x509: certificate signed by unknown authority'
+== with-ca (CS_CA_FILE mounted read-only)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=10:34:19.612 sendError=None
+== CS_INSECURE_SKIP_VERIFY=yes
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=10:34:19.899 sendError=None
+== CS_INSECURE_SKIP_VERIFY=No (must verify)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19336/v1/health/reports: Post "https://172.17.0.1:19336/v1/health/reports": tls: failed to verify certificate: x509: certificate signed by unknown authority'
+== TLS 1.1-only endpoint (skip-verify on; MinVersion TLS 1.2)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19338/v1/health/reports: Post "https://172.17.0.1:19338/v1/health/reports": remote error: tls: protocol version not supported'
+== dead HTTPS_PROXY, https endpoint
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19336/v1/health/reports: Post "https://172.17.0.1:19336/v1/health/reports": proxyconnect tcp: dial tcp 172.17.0.1:19399: connect: connection refused'
+== same + NO_PROXY=172.17.0.1
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=10:34:21.069 sendError=None
+== dead https_proxy (lower case), https endpoint
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19336/v1/health/reports: Post "https://172.17.0.1:19336/v1/health/reports": proxyconnect tcp: dial tcp 172.17.0.1:19399: connect: connection refused'
+== http endpoint (nothing listens there) + HTTP_PROXY=recording stub
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=10:34:21.869 sendError=None
+== http endpoint + only a dead HTTPS_PROXY
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=10:34:22.102 sendError=None
+== probe on the pod IP with dead HTTP(S)_PROXY/http_proxy, NO_PROXY=service host
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=10:34:22.345 sendError=None
+== empty CA file: container state exited exit=2
+{"level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: no certificates found in /w/empty-ca.pem"}
+== requests that reached the TLS stub, by service:
+no-proxy=1 skip-yes=1 with-ca=1
+== requests that reached the plain-http service stub 19339, by service:
+https-proxy-only=1 probe-no-proxy=1
+== requests that reached the recording 'proxy' 19331 (method, path, service; a proxied http request carries the absolute URL):
+[{"m":"POST","p":"/v1/health/reports","svc":"via-http-proxy","ua":"health-sidecar/1.0.0-vs4","cid":"via-http-proxy"}]
+== probes are never proxied: probe-no-proxy reads its app on  (a non-loopback address Go's ProxyFromEnvironment WOULD proxy):
+{"msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+end 10:34:32.170

@@ -1,0 +1,40 @@
+
+### P1 = C5r2 redone: GET, PUT the whole document (400 names the fields), drop exactly those, expectedVersion = the version read, PUT
+P1a-publish -> 201
+   {"id":"4a76f4f8-f996-4b94-84fc-a77862705228","tenantId":"ux4-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"rmw target","body":"before","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T11:01:53.350805356Z","createdAt":"2026-11-02T11:01:53.350805356Z","updatedAt":"2026-11-02T11:01:53.350805356Z","version":0,"history":[{"at":"2026-11-02T11:01:53.350805356Z","actor":"vmforge-sre","action":"created (ACTIVE)"}]}
+   GET version=0
+P1b-put-whole-document -> 400
+   {"error":"unknown fields 'createdAt', 'history', 'id', 'publisher', 'status', 'tenantId', 'type', 'updatedAt', 'version'; known fields: actor, affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, ticket, title"}
+   named: ["createdAt", "history", "id", "publisher", "status", "tenantId", "type", "updatedAt", "version"]
+   sent keys: ['affectedServices', 'audience', 'body', 'expectedVersion', 'severity', 'startsAt', 'title']
+P1c-put-after-dropping-named -> 200
+   {"id":"4a76f4f8-f996-4b94-84fc-a77862705228","tenantId":"ux4-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"rmw target","body":"rmw after dropping what the 400 named","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T11:01:53.350Z","createdAt":"2026-11-02T11:01:53.350Z","updatedAt":"2026-11-02T11:01:53.610728033Z","version":1,"history":[{"at":"2026-11-02T11:01:53.350Z","actor":"vmforge-sre","action":"created (ACTIVE)"},{"at":"2026-11-02T11:01:53.610728033Z","actor":"vmforge-sre","action":"updated"}]}
+   body=rmw after dropping what the 400 named version=1
+
+### P2 monitor registration mixing a constraint and a domain rule (README: validation lists every failing field at once)
+P2a-interval2-and-downINFO -> 400
+   {"error":"intervalSeconds: must be greater than or equal to 5"}
+P2b-downINFO-only -> 400
+   {"error":"downSeverity must be MINOR or higher (it publishes an OUTAGE)"}
+P2c-interval2-and-blank-service -> 400
+   {"error":"intervalSeconds: must be greater than or equal to 5; service: must not be blank"}
+
+### P3 publish mixing constraints and a domain rule
+P3a-blank-title-and-blank-publisher -> 400
+   {"error":"publisher: must not be blank; title: must not be blank"}
+P3b-blank-title-and-expires-before-starts -> 400
+   {"error":"title: must not be blank"}
+P3c-expires-before-starts-only -> 400
+   {"error":"endsAt 2026-11-02T14:01:53Z must be after startsAt 2026-11-02T14:01:53Z"}
+
+### P4 F-34 success path: a probed monitor on A's own health endpoint, probe now, read back, delete
+P4a-register -> 201
+   {"id":"6d356e51-4265-4555-8e08-bd8385073255","tenantId":"ux4-api","service":"vm-self","url":"http://127.0.0.1:19600/actuator/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"2026-11-02T11:01:53.865337254Z","updatedAt":"2026-11-02T11:01:53.865337254Z","version":0}
+   lastProbeAt before: None lastStatus: None
+P4b-probe -> 200
+   {"id":"6d356e51-4265-4555-8e08-bd8385073255","tenantId":"ux4-api","service":"vm-self","url":"http://127.0.0.1:19600/actuator/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02T11:01:54.007310584Z","lastProbeAt":"2026-11-02T11:01:54.007310584Z","lastSummary":"UP (HTTP 200)","unhealthyStreak":0,"healthyStreak":1,"incidents":0},"createdAt":"2026-11-02T11:01:53.865Z","updatedAt":"2026-11-02T11:01:54.007310584Z","version":1}
+   lastProbeAt after: None lastStatus: None
+P4c-delete -> 204
+   
+P5-retire -> 200
+   {"id":"4a76f4f8-f996-4b94-84fc-a77862705228","tenantId":"ux4-api","publisher":"vmforge-sre","type":"OUTAGE","severity":"MINOR","title":"rmw target","body":"rmw after dropping what the 400 named","affectedServices":["vm-api"],"audience":"CUSTOMERS","status":"RETIRED","startsAt":"2026-11-02T11:01:53.350Z","createdAt":"2026-11-02T11:01:53.350Z","updatedAt":"2026-11-02T11:01:54.164368639Z","version":2,"history":[{"at":"2026-11-02T11:01:53.350Z","actor":"vmforge-sre","action":"created (ACTIVE)"},{"at":"2026-11-02T11:01:53.610Z","actor":"vmforge-sre","action":"updated"},{"at":"2026-11-02T11:01:54.164368639Z","actor":"ux4-reviewer","action":"ACTIVE -> RETIRED: review cleanup"}]}

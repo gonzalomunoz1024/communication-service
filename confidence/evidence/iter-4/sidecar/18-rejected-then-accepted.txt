@@ -1,0 +1,15 @@
+start 10:51:09.166 (CS_INTERVAL=2s CS_HEARTBEAT=4s, default CS_LOG_LEVEL)
+  [10:51:09.179] the service answers 400
+  [10:51:16.410] the service answers 401
+  [10:51:23.422] the service answers 202
+  /status: {"reportsSent":2,"lastSendAt":"10:51:31.378","sendError":null}
+  every log line of the sidecar (default level):
+    {"t":"10:51:09.399","level":"INFO","msg":"health sidecar starting","status":null,"failedAttempts":null,"failingFor":null,"error":""}
+    {"t":"10:51:09.403","level":"INFO","msg":"health target found","status":"UP","failedAttempts":null,"failingFor":null,"error":""}
+    {"t":"10:51:09.404","level":"ERROR","msg":"report rejected","status":null,"failedAttempts":null,"failingFor":null,"error":"report rejected: HTTP 400 {\"stub\":\"answered 400\"}"}
+    {"t":"10:51:13.784","level":"ERROR","msg":"report rejected","status":null,"failedAttempts":null,"failingFor":null,"error":"report rejected: HTTP 400 {\"stub\":\"answered 400\"}"}
+    {"t":"10:51:18.240","level":"ERROR","msg":"report rejected","status":null,"failedAttempts":null,"failingFor":null,"error":"report rejected: HTTP 401 {\"stub\":\"answered 401\"}"}
+    {"t":"10:51:22.582","level":"ERROR","msg":"report rejected","status":null,"failedAttempts":null,"failingFor":null,"error":"report rejected: HTTP 401 {\"stub\":\"answered 401\"}"}
+    {"t":"10:51:27.008","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":4,"failingFor":"17.608s","error":""}
+  answers the stub gave: {"202":2,"400":2,"401":2}
+end 10:51:32.811

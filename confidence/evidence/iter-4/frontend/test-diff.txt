@@ -1,0 +1,100 @@
+# test changes in iteration 4: git diff 6c15715..d10369b -- frontend/src/test/ (6c15715 = the iteration-3 head the fixers branched from)
+$ git diff --stat
+ frontend/src/test/App.test.tsx               | 26 ++++++++
+ frontend/src/test/OutageCard.test.tsx        | 28 +++++++++
+ frontend/src/test/OutageFeed.test.tsx        | 56 ++++++++++++++++-
+ frontend/src/test/PublishOutageForm.test.tsx | 13 ++++
+ frontend/src/test/api.test.ts                | 12 ++++
+ frontend/src/test/errors.test.ts             | 22 +++++++
+ frontend/src/test/stream.test.ts             | 91 +++++++++++++++++++++++++++-
+ frontend/src/test/useOutageFeed.test.tsx     | 88 ++++++++++++++++++++++++++-
+ 8 files changed, 329 insertions(+), 7 deletions(-)
+
+## every hunk that removes a line (git diff -U0): 7 removed lines, each with what replaced it
++++ b/frontend/src/test/OutageFeed.test.tsx
+@@ -194 +194,30 @@ describe('OutageFeed', () => {
+-  it("says the service cannot reach its database for its own 503, while the badge keeps reporting the stream", async () => {
++  it('announces a failed load as an alert, a new one for every failed retry, and keeps keyboard focus on Try again', async () => {
++    const user = userEvent.setup()
++    const f = fakeClient([item('a')])
++    vi.mocked(f.client.feed).mockRejectedValueOnce(new ApiError(503, 'database unavailable', true))
++    render(<OutageFeed client={f.client} tenantId="acme" />)
++    const first = await screen.findByRole('alert')
++    expect(first).toHaveTextContent("Couldn't load the feed")
++    expect(first).toHaveTextContent('The service cannot reach its database right now (HTTP 503): database unavailable.')
++
++    // Try again from the keyboard: the alert stays while the reload runs, and a new failure is a new alert
++    let fail: (e: unknown) => void = () => {}
++    vi.mocked(f.client.feed).mockImplementationOnce(() => new Promise((_, reject) => (fail = reject)))
++    within(first).getByRole('button', { name: 'Try again' }).focus()
++    await user.keyboard('{Enter}')
++    expect(screen.getByRole('alert')).toBe(first)
++    await act(async () => fail(new ApiError(503, 'database unavailable', true)))
++    const second = screen.getByRole('alert')
++    expect(second).not.toBe(first)
++    expect(second).toHaveTextContent("Couldn't load the feed")
++    expect(within(second).getByRole('button', { name: 'Try again' })).toHaveFocus()
++
++    // the next attempt works: the list takes the alert's place, and focus moves to it rather than to <body>
++    await user.keyboard('{Enter}')
++    expect(await screen.findByText('Notice a')).toBeInTheDocument()
++    expect(screen.queryByRole('alert')).toBeNull()
++    expect(document.activeElement).not.toBe(document.body)
++    expect(document.activeElement?.contains(screen.getByText('Notice a'))).toBe(true)
++  })
++
++  it("says the service cannot reach its database for its own 503, and the badge does not say Live beside it", async () => {
++++ b/frontend/src/test/OutageFeed.test.tsx
+@@ -202 +231 @@ describe('OutageFeed', () => {
+-    // a failed GET does not tear the stream down: the badge says what the stream is doing, not what the GET got
++    // a failed GET does not tear the stream down, but a page whose list could not be loaded is not live
++++ b/frontend/src/test/OutageFeed.test.tsx
+@@ -205 +234,22 @@ describe('OutageFeed', () => {
+-    expect(screen.getByText('Live')).toBeInTheDocument()
++    expect(badge()).toHaveTextContent(/^Service degraded$/)
++    expect(screen.queryByText('Live')).toBeNull()
++  })
++
++  it('keeps the error on screen through the reload after the stream comes back, then lists the notices and says Live', async () => {
++    const f = fakeClient([item('a')])
++    vi.mocked(f.client.feed).mockRejectedValueOnce(new ApiError(503, 'database unavailable', true))
++    render(<OutageFeed client={f.client} tenantId="acme" />)
++    expect(await screen.findByText("Couldn't load the feed")).toBeInTheDocument()
++    let answer: (p: Page<FeedItem>) => void = () => {}
++    vi.mocked(f.client.feed).mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
++    // the stream was down and works again: the list reloads once, and until it answers the reason stays
++    act(() => f.last().onConnection?.(false))
++    act(() => f.last().onConnection?.(true))
++    await waitFor(() => expect(f.client.feed).toHaveBeenCalledTimes(2))
++    expect(screen.getByText(/cannot reach its database/)).toBeInTheDocument()
++    expect(document.querySelector('div[aria-busy="true"]')).toBeNull()
++    expect(badge()).toHaveTextContent(/^Service degraded$/)
++    await act(async () => answer({ items: [item('a')], page: 0, size: 100, totalElements: 1, hasNext: false }))
++    expect(screen.getByText('Notice a')).toBeInTheDocument()
++    expect(screen.queryByText("Couldn't load the feed")).toBeNull()
++    expect(badge()).toHaveTextContent(/^Live$/)
+diff --git a/frontend/src/test/PublishOutageForm.test.tsx b/frontend/src/test/PublishOutageForm.test.tsx
+index 01f74fa..7ef024e 100644
+--- a/frontend/src/test/PublishOutageForm.test.tsx
++++ b/frontend/src/test/stream.test.ts
+@@ -2 +2 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+-import { RECONNECT_MAX_MS, createCommunicationClient, reconnectDelay } from '../outages/api'
++import { RECONNECT_MAX_MS, STREAM_SETTLE_MS, createCommunicationClient, reconnectDelay } from '../outages/api'
++++ b/frontend/src/test/stream.test.ts
+@@ -122 +123 @@ describe('stream liveness', () => {
+-  it('starts the backoff again from one second after a successful open', () => {
++  it('starts the backoff again from one second once a reopened stream works', () => {
++++ b/frontend/src/test/stream.test.ts
+@@ -133 +134 @@ describe('stream liveness', () => {
+-    // the service is back: this attempt opens, and the next outage is retried after one second again
++    // the service is back: this attempt opens and stays open, and the next outage is retried after one second again
++++ b/frontend/src/test/useOutageFeed.test.tsx
+@@ -4 +4 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+-import type { CommunicationClient, StreamHandlers } from '../outages/api'
++import { ApiError, createCommunicationClient, reconnectDelay, type CommunicationClient, type StreamHandlers } from '../outages/api'
+
+## why: confidence/iter-4/fixes.md 'Existing tests touched' (frontend, G-4-17): two stream.test.ts tests advance STREAM_SETTLE_MS after open() (a bare open is no longer a working stream; their expectations are unchanged); OutageFeed's 503 test asserted Live next to the database error, which was the defect (UX-42 residual): it now asserts 'Service degraded' and no Live. The two import lines gain names.
+
+## grep for skipped / focused / todo tests (exit 1 = no match)
+$ grep -rnE "\.(skip|only|todo)\(|\bxit\(|\bxdescribe\(|\bfit\(|\bfdescribe\(|skipIf|runIf" frontend/src/test/
+exit 1

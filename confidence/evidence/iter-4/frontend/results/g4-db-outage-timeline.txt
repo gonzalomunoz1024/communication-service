@@ -1,0 +1,82 @@
+tStop=1.77 tStart=77.01
++1.10s P1 ready: seed 201, card listed, badge Live
++1.77s docker stop vf4-mongo
++6.86s P1 retire during the outage → 503 after 5073 ms; Escape while busy: {"group":1,"busy":1,"cancelDisabled":true,"note":"escape probe","focus":{"tag":"input","id":"_r_1_-note","role":null,"tabindex":null,"label":"Resolution note (optional)","text":"","inViewport":true,"top":486,"bottom":516,"innerHeight":900,"scrollY":0}}; error 'The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.'
++13.01s P1 Refresh → alert after 5507 ms; badge Service degraded
++19.32s P1 Try again #1: {"status":503,"ms":5350,"newAlerts":1,"oldDetached":true,"focus":{"tag":"button","id":"_r_0_-retry","role":null,"tabindex":null,"label":"","text":"Try again","inViewport":true,"top":459,"bottom":487,"innerHeight":900,"scrollY":0},"badge":"Service degraded"}
++24.69s P1 Try again #2: {"status":503,"ms":5347,"newAlerts":1,"oldDetached":true,"focus":{"tag":"button","id":"_r_0_-retry","role":null,"tabindex":null,"label":"","text":"Try again","inViewport":true,"top":459,"bottom":487,"innerHeight":900,"scrollY":0},"badge":"Service degraded"}
++25.51s P2 (dev) and P3 (prod, dark) opened during the outage
++29.73s direct stream request during the outage: {"status":503,"ctype":"application/json","body":"{\"error\":\"database unavailable\"}","ms":5032}
++74.75s P2 dev during the outage: badges ["Waiting for a tenant@25.18","Connecting@25.48","Reconnecting (1)@30.52","Reconnecting (2)@36.55","Reconnecting (3)@43.57","Reconnecting (4)@52.59","Reconnecting (5)@65.59"]
++74.75s P2 dev during the outage: 5 stream requests (gaps s [6,7,9,13]), stream answers [503,503,503,503,503], list GETs 1
++74.76s P3 prod during the outage: badges ["Waiting for a tenant@25.03","Connecting@25.35","Reconnecting (1)@30.38","Reconnecting (2)@36.40","Reconnecting (3)@43.42","Reconnecting (4)@52.44","Reconnecting (5)@65.45"]
++74.76s P3 prod during the outage: 5 stream requests (gaps s [6,7,9,13]), stream answers [503,503,503,503,503], list GETs 1
++77.01s docker start vf4-mongo
++81.42s P2 dev recovery: {"cardMs":2398,"liveMs":2409}; badges after start ["Service degraded@79.32","Live@79.39"]; list GETs after start 1; first 200 stream at 79.30
++81.43s P3 prod recovery: {"cardMs":2382,"liveMs":2393}; badges after start ["Service degraded@79.31","Live@79.37"]; list GETs after start 1; first 200 stream at 79.29
++84.43s P1 7.4 s after docker start, untouched: badge Service degraded; stream requests 1 (at stop 1)
++85.03s backend C log during the outage: 0 ERROR, WARN by message {"event log poll skipped":1,"status sweep skipped":7,"POST /v1/communications/47da8e97-0a39-4dba-9ce1-aaf24a5cdd6e/retire -> 503, database unava":1,"health sweep skipped":7,"GET /v1/feed -> 503, database unavailable":5,"GET /v1/feed/stream -> 503, database unavailable":11}
+--- P1 /v1 traffic (s since start)
+0.96 req GET
+1.01 req stream
+1.01 res GET 200
+1.06 res stream 200
+1.79 req POST
+6.80 res POST 503 {"error":"database unavailable"}
+7.27 req GET
+12.30 res GET 503 {"error":"database unavailable"}
+13.98 req GET
+19.00 res GET 503 {"error":"database unavailable"}
+19.35 req GET
+24.37 res GET 503 {"error":"database unavailable"}
+84.47 req GET
+84.49 res GET 200
+--- P2 dev /v1 traffic (s since start)
+25.50 req GET
+25.50 req stream
+30.53 res GET 503 {"error":"database unavailable"}
+30.53 res stream 503 {"error":"database unavailable"}
+31.52 req stream
+36.54 res stream 503 {"error":"database unavailable"}
+38.54 req stream
+43.55 res stream 503 {"error":"database unavailable"}
+47.57 req stream
+52.57 res stream 503 {"error":"database unavailable"}
+60.57 req stream
+65.59 res stream 503 {"error":"database unavailable"}
+75.60 req stream
+79.30 res stream 200
+79.33 req GET
+79.36 res GET 200
+--- P3 prod /v1 traffic (s since start)
+25.35 req GET
+25.36 req stream
+30.38 res GET 503 {"error":"database unavailable"}
+30.38 res stream 503 {"error":"database unavailable"}
+31.38 req stream
+36.40 res stream 503 {"error":"database unavailable"}
+38.40 req stream
+43.41 res stream 503 {"error":"database unavailable"}
+47.42 req stream
+52.43 res stream 503 {"error":"database unavailable"}
+60.43 req stream
+65.45 res stream 503 ?
+75.45 req stream
+79.29 res stream 200
+79.32 req GET
+79.33 res GET 200
+--- P1 badge changes
+["Waiting for a tenant@0.73","Connecting@0.95","Live@1.08","Service degraded@12.31","Live@84.50"]
+--- P1 role=alert insertions
+6.83 The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.
+12.31 Couldn't load the feed The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment. Try again
+19.01 Couldn't load the feed The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment. Try again
+24.38 Couldn't load the feed The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment. Try again
+--- P2 dev badge changes
+["Waiting for a tenant@25.18","Connecting@25.48","Reconnecting (1)@30.52","Reconnecting (2)@36.55","Reconnecting (3)@43.57","Reconnecting (4)@52.59","Reconnecting (5)@65.59","Service degraded@79.32","Live@79.39"]
+--- P2 dev role=alert insertions
+30.54 Couldn't load the feed The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment. Try again
+--- P3 prod badge changes
+["Waiting for a tenant@25.03","Connecting@25.35","Reconnecting (1)@30.38","Reconnecting (2)@36.40","Reconnecting (3)@43.42","Reconnecting (4)@52.44","Reconnecting (5)@65.45","Service degraded@79.31","Live@79.37"]
+--- P3 prod role=alert insertions
+30.39 Couldn't load the feed The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment. Try again

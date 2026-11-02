@@ -1,0 +1,10 @@
+$ trivy image health-sidecar:vs4 --skip-db-update --skip-java-db-update --scanners vuln --list-all-pkgs --format json
+exit=0
+  target=health-sidecar:vs4 (debian 12.15) class=os-pkgs type=debian packages=5 go-packages=[] vulnerabilities=4 {'UNKNOWN': 4}
+  target=usr/local/bin/health-sidecar class=lang-pkgs type=gobinary packages=2 go-packages=[('github.com/gonzalomunoz1024/communication-service/sidecar', None), ('stdlib', 'v1.27.3')] vulnerabilities=0 {}
+$ trivy rootfs /work/vs4 --skip-db-update --skip-java-db-update --scanners vuln --list-all-pkgs --format json
+exit=0
+  target=health-sidecar-vs4 class=lang-pkgs type=gobinary packages=2 go-packages=[('github.com/gonzalomunoz1024/communication-service/sidecar', None), ('stdlib', 'v1.27.3')] vulnerabilities=0 {}
+$ trivy rootfs /work/control --skip-db-update --skip-java-db-update --scanners vuln --list-all-pkgs --format json
+exit=0
+  target=control-go12514 class=lang-pkgs type=gobinary packages=2 go-packages=[('github.com/gonzalomunoz1024/communication-service/sidecar', None), ('stdlib', 'v1.25.14')] vulnerabilities=14 {'HIGH': 4, 'MEDIUM': 9, 'LOW': 1}

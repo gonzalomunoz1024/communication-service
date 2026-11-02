@@ -1,0 +1,193 @@
+
+### 1. Kustomize classic: repo example (components: [../component])
+  kustomize build example: exit=0
+  [kust-example] ConfigMap/cs-health-sidecar data={"CS_CLUSTER": "ocp-east", "CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail"}
+  [kust-example] Deployment/payments-api: initContainers=[] containers=['payments-api', 'health-sidecar']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=None
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"containerPort": 9465, "name": "cs-status", "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+
+### 2. Kustomize native: repo testdata (native component on a Deployment + StatefulSet that already have init containers)
+  exit=0
+  [native-with-init] ConfigMap/cs-health-sidecar data={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail"}
+  [native-with-init] Deployment/payments-api: initContainers=['health-sidecar(restartPolicy=Always)', 'db-migrate'] containers=['payments-api']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=Always
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"containerPort": 9465, "name": "cs-status", "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  [native-with-init] StatefulSet/ledger: initContainers=['health-sidecar(restartPolicy=Always)', 'fetch-config'] containers=['ledger']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=Always
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"containerPort": 9465, "name": "cs-status", "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  kustomize build example-native: exit=0
+  [example-native] ConfigMap/cs-health-sidecar data={"CS_CLUSTER": "ocp-east", "CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail"}
+  [example-native] Deployment/payments-api: initContainers=['health-sidecar(restartPolicy=Always)'] containers=['payments-api']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=Always
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"containerPort": 9465, "name": "cs-status", "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  kustomize build classic-with-init: exit=0
+  [classic-with-init] ConfigMap/cs-health-sidecar data={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail"}
+  [classic-with-init] Deployment/payments-api: initContainers=['db-migrate'] containers=['payments-api', 'health-sidecar']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=None
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"containerPort": 9465, "name": "cs-status", "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  [classic-with-init] StatefulSet/ledger: initContainers=['fetch-config'] containers=['ledger', 'health-sidecar']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=None
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"containerPort": 9465, "name": "cs-status", "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  kustomize build images-override: exit=0
+  [images-override] ConfigMap/cs-health-sidecar data={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail"}
+  [images-override] Deployment/payments-api: initContainers=[] containers=['payments-api', 'health-sidecar']
+    health-sidecar image=registry.apps.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=None
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"containerPort": 9465, "name": "cs-status", "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  images-override: app image 1 x unchanged; sidecar image -> registry.apps.example.com/platform/health-sidecar:1.0.0
+
+### 3. Helm library chart: lint, template alone, consuming chart from the README's pieces (G-3-10)
+  
+  1 chart(s) linted, 0 chart(s) failed
+  helm template the library alone: Error: library charts are not installable (exit 1)
+  README containers lines pasted:
+    |       containers:
+    |         - name: my-app
+    |           image: registry.example.com/my-team/my-app:1.4.2
+    |         {{- include "cs-health-sidecar.container" . | nindent 8 }}
+  README initContainers lines pasted:
+    |       initContainers:
+    |         {{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
+  [containers] helm dependency update: exit=0
+  [containers] helm lint: 1 chart(s) linted, 0 chart(s) failed  (exit 0)
+  [containers] helm template: exit=0 
+  [helm-containers] Deployment/my-app: initContainers=[] containers=['my-app', 'health-sidecar']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=None
+    envFrom=[] env={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail", "CS_INTERVAL": "15s", "CS_HEARTBEAT": "30s", "POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"name": "cs-status", "containerPort": 9465, "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  [init] helm dependency update: exit=0
+  [init] helm lint: 1 chart(s) linted, 0 chart(s) failed  (exit 0)
+  [init] helm template: exit=0 
+  [helm-init] Deployment/my-app: initContainers=['health-sidecar(restartPolicy=Always)'] containers=['my-app']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=Always
+    envFrom=[] env={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail", "CS_INTERVAL": "15s", "CS_HEARTBEAT": "30s", "POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"name": "cs-status", "containerPort": 9465, "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  [no-nindent] helm dependency update: exit=0
+  [no-nindent] helm lint: 1 chart(s) linted, 0 chart(s) failed  (exit 0)
+  [no-nindent] helm template: exit=0 
+  [no-nindent] rendered sidecar lines: 23:        - name: health-sidecar 24:  image: registry.example.com/platform/health-sidecar:1.0.0 26:  env: 
+
+### 4. Helm values: pinned port/path, extraEnv, literal service, clientId, cluster, image override; missing required values
+  [pinned] helm template: exit=0
+  [helm-pinned] Deployment/my-app: initContainers=[] containers=['my-app', 'health-sidecar']
+    health-sidecar image=registry.apps.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=None
+    envFrom=[] env={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail", "CS_CLUSTER": "ocp-east", "CS_CLIENT_ID": "my-app-repo", "CS_PORT": "8080", "CS_PATH": "/health", "CS_INTERVAL": "15s", "CS_HEARTBEAT": "30s", "POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "my-app-svc", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']", "CS_CA_FILE": "/etc/cs-ca/ca.pem", "CS_LOG_LEVEL": "debug"}
+    ports=[{"name": "cs-status", "containerPort": 9465, "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"limits": {"cpu": "50m", "memory": "32Mi"}, "requests": {"cpu": "10m", "memory": "16Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  [missing endpoint] helm template: exit 1: csHealthSidecar.endpoint is required | Error: execution error at (my-app/templates/deployment.yaml:21:12): csHealthSidecar.endpoint is required
+  [missing tenant] helm template: exit 1: csHealthSidecar.tenant is required | Error: execution error at (my-app/templates/deployment.yaml:21:12): csHealthSidecar.tenant is required
+
+### 5. Plain YAML (deploy/manual/deployment.yaml)
+  [manual] ConfigMap/cs-health-sidecar data={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail", "CS_CLUSTER": "ocp-east"}
+  [manual] Deployment/payments-api: initContainers=[] containers=['payments-api', 'health-sidecar']
+    health-sidecar image=registry.example.com/platform/health-sidecar:1.0.0 pullPolicy=IfNotPresent restartPolicy=None
+    envFrom=['cs-health-sidecar'] env={"POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']"}
+    ports=[{"name": "cs-status", "containerPort": 9465, "protocol": "TCP"}] liveness={"httpGet": {"path": "/healthz", "port": "cs-status"}, "periodSeconds": 30} readiness=None startup=None
+    resources={"requests": {"cpu": "10m", "memory": "16Mi"}, "limits": {"cpu": "50m", "memory": "32Mi"}}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+
+### 6. kubeconform -strict, Kubernetes 1.27.0 and 1.29.0 (native forms are expected to fail on 1.27.0: restartPolicy on a container is 1.28+)
+  kubeconform -strict 1.27.0 kust-example.yaml: exit=0 | Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.29.0 kust-example.yaml: exit=0 | Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 kust-native-with-init.yaml: exit=1 | Summary: 3 resources found in 1 file - Valid: 1, Invalid: 2, Errors: 0, Skipped: 0
+      kust-native-with-init.yaml - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/0' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spe
+      kust-native-with-init.yaml - StatefulSet ledger is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/0' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/statefulset-apps-v1.json#/properties/spec/pr
+  kubeconform -strict 1.29.0 kust-native-with-init.yaml: exit=0 | Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 kust-example-native.yaml: exit=1 | Summary: 2 resources found in 1 file - Valid: 1, Invalid: 1, Errors: 0, Skipped: 0
+      kust-example-native.yaml - Deployment payments-api is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/0' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spec/
+  kubeconform -strict 1.29.0 kust-example-native.yaml: exit=0 | Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 kust-classic-with-init.yaml: exit=0 | Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.29.0 kust-classic-with-init.yaml: exit=0 | Summary: 3 resources found in 1 file - Valid: 3, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 kust-images-override.yaml: exit=0 | Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.29.0 kust-images-override.yaml: exit=0 | Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 helm-containers.yaml: exit=0 | Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.29.0 helm-containers.yaml: exit=0 | Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 helm-init.yaml: exit=1 | Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+      helm-init.yaml - Deployment my-app is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec/template/spec/initContainers/0' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spec/properties/templ
+  kubeconform -strict 1.29.0 helm-init.yaml: exit=0 | Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 helm-pinned.yaml: exit=0 | Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.29.0 helm-pinned.yaml: exit=0 | Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.27.0 helm-no-nindent.yaml: exit=1 | Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+      helm-no-nindent.yaml - Deployment my-app is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.27.0-standalone-strict/deployment-apps-v1.json#/properties/spec/additionalProperties: additionalPropertie
+  kubeconform -strict 1.29.0 helm-no-nindent.yaml: exit=1 | Summary: 1 resource found in 1 file - Valid: 0, Invalid: 1, Errors: 0, Skipped: 0
+      helm-no-nindent.yaml - Deployment my-app is invalid: problem validating schema. Check JSON formatting: jsonschema: '/spec' does not validate with https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.29.0-standalone-strict/deployment-apps-v1.json#/properties/spec/additionalProperties: additionalPropertie
+  kubeconform -strict 1.27.0 manual.yaml: exit=0 | Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.29.0 manual.yaml: exit=0 | Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+### 7. the sidecar container block is the same in the three paths (Kustomize classic vs manual vs Helm), env aside
+  kustomize vs manual: differing keys []
+  kustomize vs helm: differing keys ['env', 'envFrom']
+  helm env names: ['CS_ENDPOINT', 'CS_TENANT', 'CS_INTERVAL', 'CS_HEARTBEAT', 'POD_NAME', 'POD_NAMESPACE', 'NODE_NAME', 'CS_SERVICE', 'CS_VERSION']
+
+### 8. no readiness/startup probe, no preStop, no terminationGracePeriodSeconds in any snippet source
+  none in the sidecar snippets (component, component-native, helm chart, manual container block)
+  example app (team-owned): 24:          readinessProbe:
+
+### 9. G-4-26: the README's extraEnv snippet (L267-271) in a consuming chart's values, next to endpoint and tenant; the map form
+    | ```yaml
+    | # values.yaml of the consuming chart, next to endpoint and tenant
+    | csHealthSidecar:
+    |   extraEnv:
+    |     - name: CS_LOG_LEVEL
+    |       value: debug
+    | ```
+  values.yaml used:
+    | csHealthSidecar:
+    |   endpoint: https://communication.apps.example.com
+    |   tenant: retail
+    |   extraEnv:
+    |     - name: CS_LOG_LEVEL
+    |       value: debug
+  [extraEnv list] helm template: exit=0 
+    envFrom=[] env={"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail", "CS_INTERVAL": "15s", "CS_HEARTBEAT": "30s", "POD_NAME": "fieldRef:metadata.name", "POD_NAMESPACE": "fieldRef:metadata.namespace", "NODE_NAME": "fieldRef:spec.nodeName", "CS_SERVICE": "fieldRef:metadata.labels['app.kubernetes.io/name']", "CS_VERSION": "fieldRef:metadata.labels['app.kubernetes.io/version']", "CS_LOG_LEVEL": "debug"}
+    restricted checks: 10/10 pass; pod-level: no host namespaces/hostPath/grace override
+  kubeconform -strict 1.27.0 helm-extraenv.yaml: exit=0 | Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  kubeconform -strict 1.29.0 helm-extraenv.yaml: exit=0 | Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+  [extraEnv map, as README L263-264 warns] helm template: exit=1: Error: YAML parse error on my-app/templates/deployment.yaml: error converting YAML to JSON: yaml: line 52: did not find expected '-' indicator
+
+### 10. G-4-27: what the plain-YAML path needs (README row L32, the file's header) and the ConfigMap reference of each form
+  README L32: | **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | applies the `cs-health-sidecar` ConfigMap at the top of that file in the app's namespace, with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER`, and pastes the container block into its Deployment |
+  manual header: # Fallback for teams that manage plain YAML. Two pieces are the sidecar's: the cs-health-sidecar
+  manual header: # ConfigMap below (CS_ENDPOINT, CS_TENANT and, optionally, CS_CLUSTER), applied in the app's
+  manual header: # namespace, and the "health-sidecar" container, pasted into the pod spec; without the ConfigMap
+  manual header: # the container cannot start (CreateContainerConfigError). The rest of the Deployment is the
+  manual header: # team's own.
+  kust-example.yaml      ConfigMaps in the output: [('cs-health-sidecar', ['CS_CLUSTER', 'CS_ENDPOINT', 'CS_TENANT'])]; sidecar envFrom: [{"configMapRef": {"name": "cs-health-sidecar"}}]
+  manual.yaml            ConfigMaps in the output: [('cs-health-sidecar', ['CS_CLUSTER', 'CS_ENDPOINT', 'CS_TENANT'])]; sidecar envFrom: [{"configMapRef": {"name": "cs-health-sidecar"}}]
+  helm-containers.yaml   ConfigMaps in the output: []; sidecar envFrom: []
+  README 'usual causes' item 4 (L311-313):
+    | 4. The sidecar never started (no logs, the pod in `CreateContainerConfigError`): the
+    |    `cs-health-sidecar` ConfigMap is missing from the app's namespace (Kustomize and plain YAML);
+    |    `oc describe pod <pod>` names it.
+  (a missing ConfigMap named by a non-optional envFrom is CreateContainerConfigError at the kubelet: not exercisable without a cluster)
+
+### 11. tool versions (go install builds report (devel); module versions from the binaries)
+  kustomize: sigs.k8s.io/kustomize/kustomize/v5 v5.5.0
+  helm: helm.sh/helm/v3 v3.16.3
+  kubeconform: github.com/yannh/kubeconform v0.6.7
+  kubectl: k8s.io/kubernetes v1.37.2

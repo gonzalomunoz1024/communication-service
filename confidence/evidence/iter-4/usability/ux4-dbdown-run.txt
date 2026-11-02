@@ -1,0 +1,31 @@
+[seed] {"status":201}
+[sidecar-before] {"sendError":null,"reportsSent":1,"lastSendAt":"2026-11-02T10:30:02.848454531Z","last":"UNKNOWN"}
+[page1-before] {"badge":"Live","error":false,"skeleton":0,"cards":1}
+[mongo-stopped] {}
+[api-feed-while-down] {"status":503,"text":"{\"error\":\"database unavailable\"}","ms":5014}
+[api-readiness] {"status":503,"text":"{\"status\":\"DOWN\"}","ms":815}
+[api-liveness] {"status":200,"text":"{\"status\":\"UP\"}"}
+[api-publish-while-down] {"status":503,"text":"{\"error\":\"database unavailable\"}","ms":5015}
+[api-stream-while-down] {"out":"{\"error\":\"database unavailable\"} HTTP=503 type=application/json","ms":5026}
+[page1-untouched-while-down] {"page1":["0.0s Live cards=1"]}
+[page1-after-refresh-while-down] {"badge":"Service degraded","error":true,"skeleton":0,"cards":0,"alert":"Couldn't load the feed\n\nThe service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.\n\nTry again","announced":["29120ms status:","34142ms status:Service degraded","34142ms alert:Couldn't load the feedThe service cannot reach its database right now (HTTP 503): database unavailable. It recovers on i"]}
+[page2-fresh-during-outage] {"samples":["0s Connecting skeleton cards=0","1s Connecting skeleton cards=0","2s Connecting skeleton cards=0","3s Connecting skeleton cards=0","4s Connecting skeleton cards=0","5s Connecting skeleton cards=0","6s Reconnecting (1) skeleton cards=0","7s Reconnecting (1) skeleton cards=0","8s Reconnecting (1) skeleton cards=0","9s Reconnecting (1) skeleton cards=0","10s Reconnecting (1) ERROR cards=0","11s Reconnecting (2) ERROR cards=0","12s Reconnecting (2) ERROR cards=0","13s Reconnecting (2) ERROR cards=0","14s Reconnecting (2) ERROR cards=0","15s Reconnecting (2) ERROR cards=0","16s Reconnecting (2) ERROR cards=0","17s Reconnecting (2) ERROR cards=0","18s Reconnecting (3) ERROR cards=0","19s Reconnecting (3) ERROR cards=0","20s Reconnecting (3) ERROR cards=0","21s Reconnecting (3) ERROR cards=0","22s Reconnecting (3) ERROR cards=0","23s Reconnecting (3) ERROR cards=0","24s Reconnectin
+[page3-publish-while-down] {"banner":"The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.","title":"Publish while the database is down"}
+[sidecar-while-down] {"sendError":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","reportsSent":2,"lastSendAt":"2026-11-02T10:30:06.293920287Z","last":"UP","afterDownMs":84799}
+[mongo-started] {"downForMs":85045}
+[api-ready-again] {"afterMs":1525}
+[api-feed-after] {"status":200,"ms":17}
+[recovery-untouched-60s] {"page1":["0.0s Service degraded ERROR cards=0"],"page2":["0.0s Reconnecting (6) ERROR cards=0","9.7s Live cards=1"]}
+[page1-after-60s] {"badge":"Service degraded","error":true,"skeleton":0,"cards":0,"announced":[]}
+[page2-after-60s] {"badge":"Live","error":false,"skeleton":0,"cards":1,"announced":["55343ms status:Reconnecting (6)","65383ms status:Service degraded","65383ms status:","65449ms status:Live"]}
+[page3-publish-after] {"heading":"Outage published","banner":null}
+[sidecar-after] {"sendError":null,"reportsSent":10,"lastSendAt":"2026-11-02T10:32:57.179516535Z","last":"UP"}
+[mongo-paused] {}
+[api-while-paused] {"feed":{"status":503,"ms":25096,"text":"{\"error\":\"database unavailable\"}"},"publish":{"status":503,"ms":25090,"text":"{\"error\":\"database unavailable\"}"},"stream":{"out":"{\"error\":\"database unavailable\"} HTTP=503 type=application/json","ms":20065}}
+[page4-fresh-while-paused] {"samples":["0s Connecting skeleton cards=0","1s Connecting skeleton cards=0","2s Connecting skeleton cards=0","3s Connecting skeleton cards=0","4s Connecting skeleton cards=0","5s Reconnecting (1) skeleton cards=0","6s Reconnecting (1) skeleton cards=0","7s Reconnecting (1) skeleton cards=0","8s Reconnecting (1) skeleton cards=0","9s Reconnecting (1) skeleton cards=0","10s Reconnecting (1) ERROR cards=0","11s Reconnecting (2) ERROR cards=0","12s Reconnecting (2) ERROR cards=0","13s Reconnecting (2) ERROR cards=0","14s Reconnecting (2) ERROR cards=0","15s Reconnecting (2) ERROR cards=0","16s Reconnecting (2) ERROR cards=0","17s Reconnecting (2) ERROR cards=0","18s Reconnecting (3) ERROR cards=0","19s Reconnecting (3) ERROR cards=0","20s Reconnecting (3) ERROR cards=0","21s Reconnecting (3) ERROR cards=0","22s Reconnecting (3) ERROR cards=0","23s Reconnecting (3) ERROR cards=0","24s Recon
+[sidecar-while-paused] {"sendError":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","reportsSent":11,"lastSendAt":"2026-11-02T10:33:10.304057345Z","last":"UP"}
+[mongo-unpaused] {"pausedForMs":56046}
+[api-ready-after-unpause] {"afterMs":16}
+[recovery-after-pause-40s] {"page1":["0.0s Live cards=2"],"page4":["0.0s Reconnecting (4) ERROR cards=0","5.2s Live cards=2"]}
+[sidecar-after-pause] {"sendError":null,"reportsSent":15,"lastSendAt":"2026-11-02T10:34:45.165868821Z","last":"UP"}
+exit 0

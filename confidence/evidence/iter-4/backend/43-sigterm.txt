@@ -1,0 +1,13 @@
+# SIGTERM with two open SSE streams, private :19141 (iteration-4 jar, db vb4_sigterm); script <scratch>/backend4/scripts/sigterm_test.py
+
+started pid 4500 after 8s
+publish -> 201
+SIGTERM sent at t0
+stream 1: ended 0.014s after SIGTERM (eof, 2 event frames seen)
+stream 2: ended 0.010s after SIGTERM (eof, 2 event frames seen)
+process exit code 143 after 4.13s
+log: 2026-11-02T11:06:06.120Z  INFO 4500 --- [communication-service] [ionShutdownHook] o.s.boot.reactor.netty.GracefulShutdown  : Commencing graceful shutdown. Waiting for active requests to complete
+log: 2026-11-02T11:06:06.124Z  INFO 4500 --- [communication-service] [ netty-shutdown] o.s.boot.reactor.netty.GracefulShutdown  : Graceful shutdown complete
+script exit 0
+
+ERROR lines in the instance log: 0; WARN lines: 2 (e.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by defau;e.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. ;)

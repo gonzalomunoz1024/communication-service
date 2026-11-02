@@ -1,0 +1,10 @@
+  warm-up report -> 202 in 0.026031s
+  [10:51:58.584] vs4-mongo paused
+  client gives up: curl --max-time 3 -> http=000 after 3.002129s (curl exit 28)
+  control: the client waits -> http=503 after 20.025666s
+  [10:52:22.696] vs4-mongo unpaused
+  backend B access lines for these three clients:
+    client=vs4-warm POST /v1/health/reports -> 202 (19 ms)
+    client=vs4-cancel POST /v1/health/reports -> 200 (3001 ms)
+    client=vs4-wait POST /v1/health/reports -> 503 (20022 ms)
+  where the logged outcome comes from: 94:        HttpStatusCode status = exchange.getResponse().getStatusCode();

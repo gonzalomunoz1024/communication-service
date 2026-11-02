@@ -1,0 +1,63 @@
+### 1. service side (curl, the word as component c of an UP report) -> lastSummary
+  "pass "        expect UP       -> HTTP 202, service: UP
+  " pass"        expect UP       -> HTTP 202, service: UP
+  "\tpass\t"     expect UP       -> HTTP 202, service: UP
+  "pass\u0001"   expect UP       -> HTTP 202, service: UP
+  "\u0001fail"   expect DOWN     -> HTTP 202, service: DEGRADED: c DOWN
+  "pass\u00a0"   expect failing  -> HTTP 202, service: DEGRADED: c DEGRADED
+  "\u00a0pass"   expect failing  -> HTTP 202, service: DEGRADED: c DEGRADED
+  "pass\u2003"   expect failing  -> HTTP 202, service: DEGRADED: c DEGRADED
+  " "            expect UNKNOWN  -> HTTP 202, service: UP
+  "\t"           expect UNKNOWN  -> HTTP 202, service: UP
+  "\u0001"       expect UNKNOWN  -> HTTP 202, service: UP
+  "\u00a0"       expect failing  -> HTTP 202, service: DEGRADED: c DEGRADED
+  "\u2003"       expect failing  -> HTTP 202, service: DEGRADED: c DEGRADED
+  ""             expect UNKNOWN  -> HTTP 202, service: UP
+  "fa\u0131l"    expect DOWN     -> HTTP 202, service: DEGRADED: c DOWN
+  "pa\u00dF"     expect case?    -> HTTP 202, service: UP
+### 1b. service side, the word as the overall status -> lastStatus
+  "pass "        -> HTTP 202, service: UP | UP
+  " pass"        -> HTTP 202, service: UP | UP
+  "\tpass\t"     -> HTTP 202, service: UP | UP
+  "pass\u0001"   -> HTTP 202, service: UP | UP
+  "\u0001fail"   -> HTTP 202, service: DOWN | DOWN
+  "pass\u00a0"   -> HTTP 202, service: DEGRADED | DEGRADED
+  "\u00a0pass"   -> HTTP 202, service: DEGRADED | DEGRADED
+  "pass\u2003"   -> HTTP 202, service: DEGRADED | DEGRADED
+  " "            -> HTTP 400, service: 
+  "\t"           -> HTTP 400, service: 
+  "\u0001"       -> HTTP 202, service: UNKNOWN | UNKNOWN
+  "\u00a0"       -> HTTP 202, service: DEGRADED | DEGRADED
+  "\u2003"       -> HTTP 400, service: 
+  ""             -> HTTP 400, service: 
+  "fa\u0131l"    -> HTTP 202, service: DOWN | DOWN
+  "pa\u00dF"     -> HTTP 202, service: UP | UP
+### 2. through the sidecar (live pods, CS_INTERVAL=3s CS_HEARTBEAT=30s, debug): sends in 40 s (every probe ~12 = the
+###    sidecar counts c as failing; heartbeat ~2 = not failing) and the service's reading of those reports
+  "pass "        expect UP       sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  " pass"        expect UP       sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  "\tpass\t"     expect UP       sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  "pass\u0001"   expect UP       sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  "\u0001fail"   expect DOWN     sidecar sends in 40 s: 14  service: DEGRADED (0 of 1 pod UP (DEGRADED: side-4-0)): c DOWN
+  "pass\u00a0"   expect failing  sidecar sends in 40 s: 14  service: DEGRADED (0 of 1 pod UP (DEGRADED: side-5-0)): c DEGRADED
+  "\u00a0pass"   expect failing  sidecar sends in 40 s: 14  service: DEGRADED (0 of 1 pod UP (DEGRADED: side-6-0)): c DEGRADED
+  "pass\u2003"   expect failing  sidecar sends in 40 s: 14  service: DEGRADED (0 of 1 pod UP (DEGRADED: side-7-0)): c DEGRADED
+  " "            expect UNKNOWN  sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  "\t"           expect UNKNOWN  sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  "\u0001"       expect UNKNOWN  sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  "\u00a0"       expect failing  sidecar sends in 40 s: 13  service: DEGRADED (0 of 1 pod UP (DEGRADED: side-11-0)): c DEGRADED
+  "\u2003"       expect failing  sidecar sends in 40 s: 13  service: DEGRADED (0 of 1 pod UP (DEGRADED: side-12-0)): c DEGRADED
+  ""             expect UNKNOWN  sidecar sends in 40 s: 2   service: UP (1 of 1 pod UP)
+  "fa\u0131l"    expect DOWN     sidecar sends in 40 s: 13  service: DEGRADED (0 of 1 pod UP (DEGRADED: side-14-0)): c DOWN
+  "pa\u00dF"     expect case?    sidecar sends in 40 s: 13  service: UP (1 of 1 pod UP)
+### 3. one sidecar's report as the service received it (the word is passed through raw in components)
+{"status":"UP","message":""}
+### 4. notices opened for this tenant (a HEALTH notice per service the service reads as DEGRADED)
+      1   3db2d6b7 HEALTH 'side-5 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:f76f1f27-e68e-4746-8f7a-d13647758a13:1 startsAt=10:31:30
+      1   4e0b92e4 HEALTH 'side-4 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:6adb4520-993d-455a-8dfd-2b356016e89d:1 startsAt=10:31:30
+      1   659ab8ec HEALTH 'side-7 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:7636ea88-33a5-4998-8667-8477ee90dfd6:1 startsAt=10:31:30
+      1   b72124c0 HEALTH 'side-12 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:c13b0f74-d2f9-455a-9e90-d35b5bc5c5e2:1 startsAt=10:31:32
+      1   ba2cd99d HEALTH 'side-6 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:8f9125cd-5b9b-441a-83cb-55f523048dd4:1 startsAt=10:31:30
+      1   cf2c7482 HEALTH 'side-14 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:72b151a7-c7e3-439d-a1d7-e02e57d0acdb:1 startsAt=10:31:32
+      1   e25ddc65 HEALTH 'side-11 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:4f0d3307-a25b-4239-877d-84f5507f9e03:1 startsAt=10:31:32
+end 10:32:15.578

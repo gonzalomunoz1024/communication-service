@@ -1,0 +1,21 @@
+== 2026-11-02T10:30:28Z start: node g4-17-settle.js (commit d10369b)
++7.45s (dev) empty tenant: badges ["Waiting for a tenant","Connecting","Live"]; stream 200s 1; Live 6004 ms after the last 200; frames 0
+PASS [G-4-17] (dev) a filter with no notice gets no frame: the badge reads 'Connecting' until the stream has stayed open ~6 s (STREAM_SETTLE_MS), then 'Live'; never 'Live' before :: {"badgeTexts":["Waiting for a tenant","Connecting","Live"],"msFromStream200ToLive":6004,"stream200s":1,"frames":0}
++8.39s (dev) one notice: seed 201; badges ["Waiting for a tenant","Connecting","Live"]; first frame snapshot 0 ms, Live 17 ms after the 200
+PASS [G-4-17] (dev) a filter with a notice: its first frame (snapshot, or the merged live 'created' of a notice published just before) arrives right after the 200 and the badge reads 'Live' at once (well under the 6 s settle time) :: {"badgeTexts":["Waiting for a tenant","Connecting","Live"],"firstFrame":"snapshot","frames":["snapshot"],"msFrom200ToFirstFrame":0,"msFrom200ToLive":17}
++15.44s (prod) empty tenant: badges ["Waiting for a tenant","Connecting","Live"]; stream 200s 1; Live 6001 ms after the last 200; frames 0
+PASS [G-4-17] (prod) a filter with no notice gets no frame: the badge reads 'Connecting' until the stream has stayed open ~6 s (STREAM_SETTLE_MS), then 'Live'; never 'Live' before :: {"badgeTexts":["Waiting for a tenant","Connecting","Live"],"msFromStream200ToLive":6001,"stream200s":1,"frames":0}
++16.16s (prod) one notice: seed 201; badges ["Waiting for a tenant","Connecting","Live"]; first frame snapshot 34 ms, Live 39 ms after the 200
+PASS [G-4-17] (prod) a filter with a notice: its first frame (snapshot, or the merged live 'created' of a notice published just before) arrives right after the 200 and the badge reads 'Live' at once (well under the 6 s settle time) :: {"badgeTexts":["Waiting for a tenant","Connecting","Live"],"firstFrame":"snapshot","frames":["snapshot"],"msFrom200ToFirstFrame":34,"msFrom200ToLive":39}
++18.40s /__drop → 1 stream(s) cut
++21.42s /__drop → 1 stream(s) cut
++25.44s /__drop → 1 stream(s) cut
++31.45s /__drop → 1 stream(s) cut
++52.38s (drop) badges ["Waiting for a tenant@16.3","Connecting@16.4","Reconnecting (1)@18.4","Reconnecting (2)@21.4","Reconnecting (3)@25.4","Reconnecting (4)@31.5","Live@45.5"]
++52.38s (drop) 5 stream requests; reopen gaps after each cut (ms) [1002,2006,4003,8014]; list GETs before Live 1, after 1
+PASS [G-4-17] a stream that opens and is ended before it delivered a frame or stayed 6 s is a failed attempt: the client reopens with its growing backoff (≈1, 2, 4, 8 s after the cuts), the badge counts 'Reconnecting (1)'…'(4)', never 'Live' in between, and no list reload happens per failed attempt :: {"badgeTexts":["Waiting for a tenant","Connecting","Reconnecting (1)","Reconnecting (2)","Reconnecting (3)","Reconnecting (4)","Live"],"reopenGapsMs":[1002,2006,4003,8014],"streamRequests":5,"listGetsBeforeLive":1}
+PASS [G-4-17] the fifth attempt, left alone, turns 'Live' about 6 s after it opened, and the list is reloaded exactly once then (events may have been missed while the stream was down) :: {"msFromLastStreamRequestToLive":6023,"listGetsAfterLive":1}
+PASS [G-4-17] no page errors on the drop page :: []
+
+== g4-17-settle: 7 checks, 0 failed
+EXIT 0 (53 s)

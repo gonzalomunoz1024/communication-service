@@ -1,0 +1,23 @@
+### 1. docker inspect sidecar (image, user, read-only rootfs, capabilities, no-new-privileges, network, state)
+image=health-sidecar:ci user=1000660000:0 readonly=true capdrop=[ALL] capadd=[] secopt=[no-new-privileges] network=container:98ea92e1526b819de0999d71ee91bb31781f93a5d9f7cfa30398551e4e54b6b7 running=true restarts=0 started=2026-11-02T10:05:38.747165453Z
+health-sidecar:ci id=sha256:710eacb3a6029194049ef7f1631481e103e4aef0ca9d477b627b6d36391b99d5 created=2026-11-02T10:05:37.462061052Z user=1001 labels={"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.revision":"ec4cfcb","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar","org.opencontainers.image.version":"ci-iter4"}
+### 2. GET http://127.0.0.1:19465/status and /healthz
+{"version":"ci-iter4","service":"fake-app","tenant":"podtest","instance":"fake-app-7f9c6d5b4-x2k4q","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"podtest","service":"fake-app","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T10:46:10.027Z","publisher":"health-sidecar","instance":{"id":"fake-app-7f9c6d5b4-x2k4q","namespace":"podtest-ns","node":"worker-1","cluster":"sandbox","version":"1.0.0","sidecar":"ci-iter4"}},"lastSendAt":"2026-11-02T10:46:10.02719607Z","reportsSent":74}
+
+  http=200
+  HTTP/1.1 200 OK
+  Content-Type: text/plain
+  ok
+### 3. docker logs sidecar: line count, shape, and the last lines
+  lines: 3 non-JSON: 0
+      1  INFO  health sidecar starting
+      1  INFO  health target found
+      1  INFO  reported
+  first line: {"time":"2026-11-02T10:05:38.847998201Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter4","service":"fake-app","tenant":"podtest","instance":"fake-app-7f9c6d5b4-x2k4q","endpoint":"http://172.17.0.1:8080","probe":"auto"}
+  last 3 lines:
+    {"time":"2026-11-02T10:05:38.847998201Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter4","service":"fake-app","tenant":"podtest","instance":"fake-app-7f9c6d5b4-x2k4q","endpoint":"http://172.17.0.1:8080","probe":"auto"}
+    {"time":"2026-11-02T10:05:38.850931371Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+    {"time":"2026-11-02T10:05:38.887011989Z","level":"INFO","msg":"reported","status":"UP","message":""}
+### 4. /status essentials (is it still reporting?) and the image's source tree
+  now 10:46:18 reportsSent=74 lastSendAt=10:46:10.027 sendError=None lastReport.status=UP
+  the label's revision ec4cfcb vs 1cd3f13, sidecar/: git diff --quiet -> exit 0 (0 = same sidecar source)

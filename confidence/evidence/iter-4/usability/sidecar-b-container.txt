@@ -1,0 +1,17 @@
+{"time":"2026-11-02T10:30:02.848243774Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter4","service":"db-api","tenant":"ux4-db","instance":"61e77e86c96c","endpoint":"http://172.17.0.1:19601","probe":"auto"}
+{"time":"2026-11-02T10:30:02.980797764Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-02T10:30:06.296782409Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T10:30:06.324764265Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T10:30:24.826678102Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"1s"}
+{"time":"2026-11-02T10:30:33.040582171Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"2s"}
+{"time":"2026-11-02T10:30:41.297222845Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"4s"}
+{"time":"2026-11-02T10:30:49.321429237Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"8s"}
+{"time":"2026-11-02T10:30:57.505204765Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"16s"}
+{"time":"2026-11-02T10:31:12.670499786Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"30s"}
+{"time":"2026-11-02T10:31:36.61765374Z","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":6,"failingFor":"1m16.782s"}
+{"time":"2026-11-02T10:33:25.453257585Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"1s"}
+{"time":"2026-11-02T10:33:33.668997492Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"2s"}
+{"time":"2026-11-02T10:33:41.774006298Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"4s"}
+{"time":"2026-11-02T10:33:50.182053504Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"8s"}
+{"time":"2026-11-02T10:33:58.523125018Z","level":"WARN","msg":"report failed; will retry","error":"post http://172.17.0.1:19601/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"16s"}
+{"time":"2026-11-02T10:34:11.911881843Z","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":5,"failingFor":"51.41s"}

@@ -1,0 +1,47 @@
+# vitest --coverage (v8) at d10369b, from static/07b-coverage-rerun.txt (183/183 passed; 07-coverage had one timeout and vitest wrote no report)
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   96.73 |    92.78 |   94.26 |   97.74 |                   
+ src               |   98.33 |      100 |     100 |   98.11 |                   
+  App.tsx          |   98.33 |      100 |     100 |   98.11 | 19                
+ src/outages       |   95.19 |    90.96 |    90.6 |   96.51 |                   
+  OutageCard.tsx   |   97.14 |    91.66 |     100 |     100 | 52,75,115,137     
+  OutageFeed.tsx   |   87.69 |       85 |   77.27 |    90.9 | ...16-124,134,204 
+  ...utageForm.tsx |   90.38 |    83.78 |   78.57 |   91.11 | ...07,246,261-275 
+  TicketTag.tsx    |      80 |    57.14 |     100 |      75 | 19                
+  api.ts           |   98.88 |    86.04 |     100 |     100 | ...39,156,207,224 
+  display.ts       |    87.5 |       75 |     100 |   85.71 | 30                
+  errors.ts        |     100 |    98.27 |     100 |     100 | 112               
+  feed-state.ts    |     100 |    98.07 |     100 |     100 | 25                
+  useOutageFeed.ts |   97.26 |    96.15 |     100 |     100 | 84-96             
+  validation.ts    |   97.77 |    96.42 |     100 |     100 | 70,80             
+ src/ui            |   99.27 |    94.21 |     100 |     100 |                   
+  Button.tsx       |     100 |     91.3 |     100 |     100 | 99-100            
+  EmptyState.tsx   |     100 |    83.33 |     100 |     100 | 21                
+  Field.tsx        |     100 |    83.78 |     100 |     100 | ...55,190,198-199 
+  Icon.tsx         |     100 |     62.5 |     100 |     100 | 144-147           
+  Segmented.tsx    |   94.44 |    93.54 |     100 |     100 | 39,80             
+  Tabs.tsx         |   94.11 |       95 |     100 |     100 | 28                
+  Tag.tsx          |     100 |       88 |     100 |     100 | 51-55,102         
+  format.ts        |     100 |    98.27 |     100 |     100 | 109,130           
+  useTheme.ts      |     100 |       96 |     100 |     100 | 46                
+-------------------|---------|----------|---------|---------|-------------------
+=============================== Coverage summary ===============================
+Statements   : 96.73% ( 829/857 )
+Branches     : 92.78% ( 875/943 )
+Functions    : 94.26% ( 230/244 )
+Lines        : 97.74% ( 693/709 )
+================================================================================
+
+# iteration-4 source changes (git diff -U0 6c15715..d10369b -- frontend/src ':!frontend/src/test') against coverage-final.json (statement map)
+file | changed/added lines | executable (a statement starts or spans the line) | covered | uncovered lines
+frontend/src/App.tsx | 10 | 9 | 9 | -
+frontend/src/outages/OutageCard.tsx | 9 | 7 | 7 | -
+frontend/src/outages/OutageFeed.tsx | 40 | 32 | 32 | -
+frontend/src/outages/api.ts | 74 | 52 | 52 | -
+frontend/src/outages/errors.ts | 24 | 7 | 7 | -
+frontend/src/outages/types.ts | 9 | 0 | 0 | -
+frontend/src/outages/useOutageFeed.ts | 30 | 12 | 12 | -
+TOTAL: 119/119 executable changed lines covered

@@ -1,0 +1,10 @@
+[
+{"step": "n1", "at": "2026-11-02T10:28:12.220Z", "outcome": "Outage published"},
+{"step": "n2-attempt1", "at": "2026-11-02T10:28:13.673Z", "outcome": "409", "banner": "The service rejected this. INC4100001 is already the reference of a notice in tenant ux4-third (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC4100001-2.", "suggestion": "INC4100001-2"},
+{"step": "n2-attempt2-follows-advice", "at": "2026-11-02T10:28:15.475Z", "outcome": "Outage published"},
+{"step": "n3-attempt1", "at": "2026-11-02T10:28:16.949Z", "outcome": "409", "banner": "The service rejected this. INC4100001 is already the reference of a notice in tenant ux4-third (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC4100001-3.", "suggestion": "INC4100001-3"},
+{"step": "n3-attempt2-follows-advice", "at": "2026-11-02T10:28:18.726Z", "outcome": "Outage published"},
+{"step": "m1", "at": "2026-11-02T10:28:20.670Z", "outcome": "Maintenance scheduled"},
+{"step": "m2-same-date-ref", "at": "2026-11-02T10:28:22.331Z", "outcome": "409", "banner": "The service rejected this. payments-2026-11-12 is already the External reference of a notice in tenant ux4-third. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as payments-2026-11-13.", "suggestion": "payments-2026-11-13"},
+{"step": "refs", "at": "2026-11-02T10:28:22.684Z", "refs": ["payments-2026-11-12 SCHEDULED", "INC4100001-3 ACTIVE", "INC4100001-2 ACTIVE", "INC4100001 ACTIVE"]}
+]

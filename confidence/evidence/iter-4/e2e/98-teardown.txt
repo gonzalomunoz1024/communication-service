@@ -1,0 +1,51 @@
+== 2026-11-02T10:56:52Z teardown of the verifier's own resources
+$ shared stack before (read only)
+sidecar Up 51 minutes created=2026-11-02 10:05:38 +0000 UTC
+app Up 51 minutes created=2026-11-02 10:05:38 +0000 UTC
+mongo7 Up 12 hours created=2026-11-01 23:14:32 +0000 UTC
+load sampler stopped (stop-loadlog)
+$ docker rm -f -v e2e4-mongo   (with its anonymous volumes /data/db and /data/configdb)
+e2e4-mongo
+exit=0
+$ bash scripts/stack-down.sh
+1ddaf1c0114c
+c45c14a1bc4a
+1337b0f29459
+49d4dba23d8c
+private stack down
+exit=0
+$ docker rmi health-sidecar:e2e4
+Deleted: sha256:40f9d4b176c504bf2404f44bf14617bdd840c53de5b0cb1a7dc12c07abd6793b
+exit=0
+
+== 2026-11-02T10:57:05Z checks after teardown
+e2e4-* containers left: 0; e2e-* (suite) containers left: 0
+e2e4 / e2e networks left: 0
+volume 736ee0b74fb6 (e2e4-mongo) removed
+volume d6ecb267033e (e2e4-mongo) removed
+images: health-sidecar:e2e4 gone; e2e4-mut-* 0 left; suite images kept as found: health-sidecar:e2e communication-service:e2e fakeapp:e2e 
+ports 28030/28080/28090/28091 and 195xx checked (a line above only if one is still open)
+java/vite processes of mine: 13 java, 2 vite
+loadlog.sh running: 2
+$ shared stack after (read only)
+sidecar Up 51 minutes created=2026-11-02 10:05:38 +0000 UTC
+app Up 51 minutes created=2026-11-02 10:05:38 +0000 UTC
+mongo7 Up 12 hours created=2026-11-01 23:14:32 +0000 UTC
+shared :8080 readiness 200, :3000 200
+correction to the two pgrep counts above: pgrep -f also matched the checking shell's own command line and the other verifiers' backends (they run the same scratchpad jar).
+Precise list at 2026-11-02T10:57:21Z: java on --server.port=19100 19101 19110 19120 19125 19300 19302 19600 19601 (none in 19500-19599: none of mine); vite preview: 3602 (not 19530); loadlog.sh: 0 running
+removed e2e4/mut and e2e4/img: 2/2 gone
+
+== 2026-11-02T11:06:38Z $ git status --short   (mine: confidence/evidence/iter-4/e2e/ and confidence/iter-4/verifier-e2e.md; the other untracked paths belong to the backend, frontend and sidecar verifiers)
+?? confidence/evidence/iter-4/backend/
+?? confidence/evidence/iter-4/e2e/
+?? confidence/evidence/iter-4/frontend/
+?? confidence/evidence/iter-4/sidecar/
+?? confidence/iter-4/verifier-e2e.md
+?? confidence/iter-4/verifier-sidecar.md
+exit=0
+$ git diff --stat (tracked files changed)
+exit=0 (empty = no tracked file changed)
+$ git rev-parse --short HEAD; git branch --show-current
+d10369b
+confidence-loop/2026-11-01

@@ -1,0 +1,81 @@
+# npm test runs at d10369b (code = 1cd3f13), 4 CPUs shared with four other verifiers. Scored runs: 04/05/06 (the 3x) and 07 (coverage),
+# repeats A-1..3 (load ~25), B-1..3 + coverage-rerun (load 2-7) and C-1..3 (load 2-4, after my private stack was down) are scored.
+# D-* and P-* are DIAGNOSTIC (not scored): D-* add --testTimeout=20000 under shared load; P-* run confined to CPU 0 (taskset, PIN=0),
+# P-...-8workers adds --maxWorkers=8 (8 test files share one core, ~1/8 core each, like the failing runs) and reproduces the timeouts
+# locally without loading the other cores; the same with --testTimeout=20000 passes 183/183 (the cause is the 5 s margin, not a hang).
+## run-static.sh steps (load not logged; my three JVMs were starting during 05/06: load 16-21 at 10:24)
+04-test-run1 | exit 0 | 22.9s | npm test -- --reporter=verbose
+05-test-run2 | exit 1 | 63.5s | npm test
+06-test-run3 | exit 1 | 63.9s | npm test
+07-coverage | exit 1 | 38.1s | npm run test:coverage -- --coverage.reportsDirectory=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/coverage --coverage.reporter=text --coverage.reporter=html --coverage.reporter=json
+### 04-test-run1
+ Test Files  19 passed (19)
+      Tests  183 passed (183)
+   Duration  22.15s (tests 42%, environment 28%, setup 21%, transform 5%, import 4%, worker 1%)
+### 05-test-run2
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ Test Files  3 failed | 16 passed (19)
+      Tests  4 failed | 179 passed (183)
+   Duration  61.42s (tests 44%, environment 37%, setup 14%, import 3%, transform 1%)
+ FAIL  src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+Error: Test timed out in 5000ms.
+ FAIL  src/test/OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation
+Error: Test timed out in 5000ms.
+ FAIL  src/test/OutageCard.test.tsx > OutageCard > offers Withdraw instead of Resolve for a notice that has not started
+AssertionError: expected "vi.fn()" to be called with arguments: [ { id: 'c1', …(12) }, '' ]
+ FAIL  src/test/useOutageFeed.test.tsx > useOutageFeed > retires a card at its expiry and starts a scheduled one on time, without a frame
+AssertionError: expected [ [ 'b', 'ACTIVE' ] ] to deeply equal [ [ 'b', 'SCHEDULED' ] ]
+### 06-test-run3
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ Test Files  2 failed | 17 passed (19)
+      Tests  3 failed | 180 passed (183)
+   Duration  60.99s (tests 47%, environment 39%, setup 10%, import 2%, transform 1%)
+ FAIL  src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+Error: Test timed out in 5000ms.
+ FAIL  src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs
+Error: Test timed out in 5000ms.
+ FAIL  src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > moves focus to the first invalid field and lists every problem next to the button
+Error: Test timed out in 5000ms.
+### 07-coverage
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ Test Files  1 failed | 18 passed (19)
+      Tests  1 failed | 182 passed (183)
+   Duration  36.36s (tests 51%, environment 28%, setup 10%, transform 5%, import 3%, worker 2%)
+ FAIL  src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+Error: Test timed out in 5000ms.
+
+## repeats (scripts/test-repeat.sh): time | label | exit | wall | 1-min load before -> after | result | failed tests
+# repeat runs of npm test at d10369b (code = 1cd3f13); nproc=4
+10:25:55 | A-1 | exit 0 | 23.4s | load 30.84 -> 25.28 | Tests 183 passed (183) | 
+10:26:33 | A-2 | exit 0 | 37.3s | load 25.28 -> 24.53 | Tests 183 passed (183) | 
+10:27:20 | A-3 | exit 1 | 47.5s | load 24.53 -> 25.74 | Tests 2 failed | 181 passed (183) | src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type;src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs;
+10:29:00 | D-testTimeout20000-diagnostic-1 | exit 0 | 20.7s | load 16.60 -> 17.15 | Tests 183 passed (183) | 
+10:29:13 | D-testTimeout20000-diagnostic-2 | exit 0 | 13.2s | load 17.15 -> 15.95 | Tests 183 passed (183) | 
+10:42:22 | B-1 | exit 0 | 14.2s | load 1.84 -> 3.77 | Tests 183 passed (183) | 
+10:42:36 | B-2 | exit 0 | 14.3s | load 3.77 -> 4.98 | Tests 183 passed (183) | 
+10:42:51 | B-3 | exit 0 | 15.2s | load 4.98 -> 6.88 | Tests 183 passed (183) | 
+10:43:08 | coverage-rerun | exit 0 | 17s | load 6.88 -> 7.03 |  Tests 183 passed (183)
+11:03:17 | C-1 | exit 0 | 12.9s | load 2.32 -> 3.40 | Tests 183 passed (183) | 
+11:03:30 | C-2 | exit 0 | 12.7s | load 3.40 -> 3.80 | Tests 183 passed (183) | 
+11:03:42 | C-3 | exit 0 | 11.8s | load 3.80 -> 3.66 | Tests 183 passed (183) | 
+11:04:22 | P-pinned-cpu0-diagnostic-1 | exit 0 | 34.3s | load 3.36 -> 3.85 | Tests 183 passed (183) | 
+11:04:57 | P-pinned-cpu0-diagnostic-2 | exit 0 | 34.8s | load 3.85 -> 3.92 | Tests 183 passed (183) | 
+11:05:51 | P-pinned-cpu0-8workers-diagnostic-1 | exit 1 | 32.1s | load 3.07 -> 6.56 | Tests 2 failed | 181 passed (183) | src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type;src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs;
+11:06:31 | P-pinned-cpu0-8workers-testTimeout20000-diagnostic-1 | exit 0 | 33.7s | load 6.59 -> 7.73 | Tests 183 passed (183) | 
+
+## the local reproduction (P-pinned-cpu0-8workers-diagnostic-1): the two tests that failed in 06 and A-3, timed out again
+× "View in feed" opens the feed of the tenant that was published to, filtered to that type 5160ms
+× "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs 5107ms
+Error: Test timed out in 5000ms.
+Error: Test timed out in 5000ms.
+
+## the cascade in 05-test-run2: the timed-out test's pending typing ('fixed…') reached the next test's note field
+48-AssertionError: expected "vi.fn()" to be called with arguments: [ { id: 'c1', …(12) }, '' ]
+60--   "",
+61-+   "fixe",
+65-Number of calls: 1
+
+## slowest tests in the idle verbose run (04): close to the 5 s default only under contention
+✓ src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type 1209ms
+✓ src/test/App.test.tsx > App > the header tenant field > loads the feed and opens the stream once for a tenant typed, not once per keystroke 1608ms
+✓ src/test/Tabs.test.tsx > Tabs > moves with the arrow keys, skipping disabled tabs and wrapping around 1242ms

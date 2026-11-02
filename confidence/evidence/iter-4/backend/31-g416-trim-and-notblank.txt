@@ -1,0 +1,51 @@
+# 31 · G-4-16 trim rule over HTTP, and the @NotBlank gate (iteration-3 jar :19131 vs iteration-4 jar :19130)
+
+Script: scripts/g416_trim.py (each word as a push report's overall status, as a component status in a push report, and as the status of a pull document served by the stub /doc?status=<word>).
+
+```
+Checks: 27/28 passed
+'pass '          iter3: overall=UP           component=('UP', 'UP')                                 pull=UP        | iter4: overall=UP           component=('UP', 'UP')                                 pull=UP        | rule says UP
+' pass'          iter3: overall=UP           component=('UP', 'UP')                                 pull=UP        | iter4: overall=UP           component=('UP', 'UP')                                 pull=UP        | rule says UP
+'\tpass\n'       iter3: overall=UP           component=('UP', 'UP')                                 pull=UP        | iter4: overall=UP           component=('UP', 'UP')                                 pull=UP        | rule says UP
+'pass\u0001'     iter3: overall=UP           component=('UP', 'UP')                                 pull=UP        | iter4: overall=UP           component=('UP', 'UP')                                 pull=UP        | rule says UP
+'\u0001pass'     iter3: overall=UP           component=('UP', 'UP')                                 pull=UP        | iter4: overall=UP           component=('UP', 'UP')                                 pull=UP        | rule says UP
+'pass\u00a0'     iter3: overall=DEGRADED     component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | iter4: overall=DEGRADED     component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | rule says DEGRADED
+'pass\u2003'     iter3: overall=DEGRADED     component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | iter4: overall=DEGRADED     component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | rule says DEGRADED
+lone '\u00a0'    iter3: overall=DEGRADED     component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | iter4: overall=DEGRADED     component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | rule says DEGRADED
+lone '\u2003'    iter3: overall=UNKNOWN      component=('UP', 'UP')                                 pull=UNKNOWN   | iter4: overall=400 status: must not be blank component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | rule says DEGRADED
+lone '\u0001'    iter3: overall=400 status: must not be blank component=('DEGRADED', 'DEGRADED: db DEGRADED')        pull=DEGRADED  | iter4: overall=UNKNOWN      component=('UP', 'UP')                                 pull=UNKNOWN   | rule says UNKNOWN
+lone '\t'        iter3: overall=400 status: must not be blank component=('UP', 'UP')                                 pull=UNKNOWN   | iter4: overall=400 status: must not be blank component=('UP', 'UP')                                 pull=UNKNOWN   | rule says UNKNOWN
+lone ' '         iter3: overall=400 status: must not be blank component=('UP', 'UP')                                 pull=UNKNOWN   | iter4: overall=400 status: must not be blank component=('UP', 'UP')                                 pull=UNKNOWN   | rule says UNKNOWN
+'DOWN\u0000'     iter3: overall=DOWN         component=('DEGRADED', 'DEGRADED: db DOWN')            pull=DOWN      | iter4: overall=DOWN         component=('DEGRADED', 'DEGRADED: db DOWN')            pull=DOWN      | rule says DOWN
+'down\u001f '    iter3: overall=DOWN         component=('DEGRADED', 'DEGRADED: db DOWN')            pull=DOWN      | iter4: overall=DOWN         component=('DEGRADED', 'DEGRADED: db DOWN')            pull=DOWN      | rule says DOWN
+```
+| G416-overall-lone '\u2003' | F-36/F-38/G-4-16 report overall status | FAIL | overall 400 status: must not be blank; rule DEGRADED (blank after trimming is 400 by @NotBlank or UNKNOWN); iteration 3 UNKNOWN |
+
+Reading:
+- Pull and component paths follow the <=U+0020 rule on every row (iteration 4). Java (HealthStatusTest:46-67) and Go (sidecar probe_test.go:168-183) tables hold the same 10 rows with the same expectations.
+- Changed readings iteration 3 -> 4: lone U+2003 UNKNOWN -> DEGRADED (component, pull); lone U+0001 DEGRADED -> UNKNOWN (component, pull). Lone U+00A0 was already DEGRADED in iteration 3 on all three paths: iter-4/fixes.md's 'a lone U+00A0 now reads DEGRADED (was UNKNOWN)' describes U+2003, not U+00A0.
+- Overall status of a push report: it passes @NotBlank first (HealthReportCommand.java:28). Lone U+2003 -> 400 'status: must not be blank' (rule says DEGRADED; iteration 3 202 UNKNOWN); lone U+0001 -> 202 UNKNOWN (iteration 3 400).
+
+## The same @NotBlank change on the publish fields (notblank-ab.txt)
+```
+publish title     = U+0001   : iter3 400 'title: must not be blank'                iter4 201 'ACTIVE'
+publish tenantId  = U+0001   : iter3 400 'tenantId: must not be blank'             iter4 201 'ACTIVE'
+publish publisher = U+0001   : iter3 400 'publisher: must not be blank'            iter4 201 'ACTIVE'
+publish title     = U+0001 x3: iter3 400 'title: must not be blank'                iter4 201 'ACTIVE'
+publish tenantId  = U+0001 x3: iter3 400 'tenantId: must not be blank'             iter4 201 'ACTIVE'
+publish publisher = U+0001 x3: iter3 400 'publisher: must not be blank'            iter4 201 'ACTIVE'
+publish title     = U+2003   : iter3 400 'title is required'                       iter4 400 'title: must not be blank'
+publish tenantId  = U+2003   : iter3 400 'tenantId is required'                    iter4 400 'tenantId: must not be blank'
+publish publisher = U+2003   : iter3 400 'publisher is required'                   iter4 400 'publisher: must not be blank'
+publish title     = U+3000   : iter3 400 'title is required'                       iter4 400 'title: must not be blank'
+publish tenantId  = U+3000   : iter3 400 'tenantId is required'                    iter4 400 'tenantId: must not be blank'
+publish publisher = U+3000   : iter3 400 'publisher is required'                   iter4 400 'publisher: must not be blank'
+publish title     = U+00A0   : iter3 201 'ACTIVE'                                  iter4 201 'ACTIVE'
+publish tenantId  = U+00A0   : iter3 201 'ACTIVE'                                  iter4 201 'ACTIVE'
+publish publisher = U+00A0   : iter3 201 'ACTIVE'                                  iter4 201 'ACTIVE'
+publish title     = U+200B   : iter3 201 'ACTIVE'                                  iter4 201 'ACTIVE'
+publish tenantId  = U+200B   : iter3 201 'ACTIVE'                                  iter4 201 'ACTIVE'
+publish publisher = U+200B   : iter3 201 'ACTIVE'                                  iter4 201 'ACTIVE'
+```
+Validator in the jars: iteration 3 hibernate-validator-8.0.3.Final + jakarta.validation-api-3.0.2; iteration 4 hibernate-validator-9.0.2.Final + jakarta.validation-api-3.1.1 (unzip -Z1 BOOT-INF/lib).
+Reading: since the Boot 4 move a value made only of control characters (U+0001..U+001F) passes @NotBlank: title/tenantId/publisher of '\u0001' -> 201 ACTIVE (iteration 3: 400 '<field>: must not be blank'). Unicode spaces (U+2003, U+3000) are still rejected, now by @NotBlank instead of the domain's 'is required'. Not documented in iter-4/fixes.md; no test covers it (GAP-backend4-2).

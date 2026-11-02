@@ -1,0 +1,14 @@
+# SBOM scope, iteration 4 (build/reports/cyclonedx/bom.json, CycloneDX 1.6, from the check run; verifySbomScope build.gradle.kts:171-195)
+
+gradle-check-1.txt: '> Task :verifySbomScope' -> 'SBOM scope: 113 components, none of them a build or test tool'
+bom.json: 113 components, scopes {'required': 113}; metadata.component communication-service 0.0.1-SNAPSHOT
+jar BOOT-INF/lib: 106 jars (unzip -Z1 build/libs jar)
+jars in BOOT-INF/lib not in the SBOM (by name+version): 8 ['netty-resolver-dns-native-macos-4.2.19.Final-osx-x86_64.jar', 'netty-transport-native-epoll-4.2.19.Final-linux-x86_64.jar', 'netty-codec-native-quic-4.2.19.Final-linux-x86_64.jar', 'netty-codec-native-quic-4.2.19.Final-linux-aarch_64.jar', 'netty-codec-native-quic-4.2.19.Final-osx-x86_64.jar', 'netty-codec-native-quic-4.2.19.Final-osx-aarch_64.jar', 'netty-codec-native-quic-4.2.19.Final-windows-x86_64.jar', 'spring-boot-jarmode-tools-4.0.9.jar']
+SBOM components with no jar of that name+version in BOOT-INF/lib: 15 ['jackson-bom:2.21.7', 'jackson-bom:3.1.7', 'netty-codec-native-quic:4.2.19.Final', 'netty-resolver-dns-native-macos:4.2.19.Final', 'netty-transport-native-epoll:4.2.19.Final', 'spring-boot-starter-actuator:4.0.9', 'spring-boot-starter-data-mongodb-reactive:4.0.9', 'spring-boot-starter-jackson:4.0.9', 'spring-boot-starter-logging:4.0.9', 'spring-boot-starter-micrometer-metrics:4.0.9', 'spring-boot-starter-reactor-netty:4.0.9', 'spring-boot-starter-validation:4.0.9']
+components that look like a build/test tool (junit, mockito, flapdoodle, spotbugs, jacoco, cyclonedx, ...): []
+The same 113 components are embedded in the jar (META-INF/sbom/bom.json, 07-dependency-scan.txt §2).
+Reading the two differences: the 7 netty native jars carry an OS classifier in their file name; the SBOM lists them by
+name+version (netty-codec-native-quic, netty-resolver-dns-native-macos, netty-transport-native-epoll 4.2.19.Final), so
+they are covered. spring-boot-jarmode-tools-4.0.9.jar is added by bootJar (the `-Djarmode=tools` helper), not a
+runtimeClasspath dependency, so the SBOM does not list it (same in iteration 3). The SBOM's extra entries are BOMs and
+Spring Boot starters, which ship no jar of their own.

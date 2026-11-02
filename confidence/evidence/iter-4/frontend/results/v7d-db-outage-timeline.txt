@@ -1,0 +1,4 @@
++0.9s docker stop vf4-mongo
++31.1s 30 s with the database down: 4 stream requests, 2 list GETs; badge ["Connecting","Reconnecting (1)","Reconnecting (2)","Reconnecting (3)","Reconnecting (4)"]
++31.3s docker start vf4-mongo
++36.2s card back without a click 4841 ms after docker start; Live=true

@@ -1,0 +1,22 @@
+### CASE 1: flap damping, default CS_RETRY_DELAY (2s): the app fails exactly one request (own pod and app)
+  [10:31:18.875] one failing answer armed
+  armed failures left unconsumed: 0; statuses reported: UP
+### CASE 2: CS_RETRY_DELAY=0: the same single failure is reported (own pod and app)
+  [10:31:31.623] one failing answer armed
+  armed failures left unconsumed: 0; statuses reported: UP,DOWN,UP
+### CASE 3: pinned targets (discovery off)
+  pin1: target=http://127.0.0.1:8080/ping lastTarget=http://127.0.0.1:8080/ping upSeen=True last=UP msg=None comps=None sent=1 lastSendAt=10:31:40.102 sendError=None
+  pin2: target=tcp://127.0.0.1:8080 lastTarget=tcp://127.0.0.1:8080 upSeen=True last=UP msg=None comps=None sent=1 lastSendAt=10:31:40.299 sendError=None
+  pin3: target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=10:31:40.516 sendError=None
+  pin4: target=http://127.0.0.1:8080/ lastTarget=http://127.0.0.1:8080/ upSeen=True last=UP msg=None comps=None sent=1 lastSendAt=10:31:40.732 sendError=None
+  pin5: target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=10:31:40.978 sendError=None
+### CASE 4: every port ignored, grace 6s: UNKNOWN 'starting', then 'no health target found after 6s'
+  +2s: target=None lastTarget=None upSeen=False last=UNKNOWN msg='starting: waiting for the app to listen' comps=None sent=1 lastSendAt=10:31:46.866 sendError=None
+  +9s: target=None lastTarget=None upSeen=False last=UNKNOWN msg='no health target found after 6s: no listening port answered; set CS_PORT and CS_PATH' comps=None sent=2 lastSendAt=10:31:53.280 sendError=None
+  ign reports: [{"at":"46.868","s":"UNKNOWN","m":"starting: waiting for the app to listen"},{"at":"53.282","s":"UNKNOWN","m":"no health target found after 6s: no listening port answered; set CS_PORT and CS_PATH"}]
+### CASE 6: instance id of 253 and 254 characters against private backend A (limit 253)
+  253: {"level":"INFO","msg":"reported","error":""} 
+  254: {"level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"error\":\"instance.id: size must be between 0 and 253\"}"} 
+  254 sends in 5 s at a 2 s interval (a permanent rejection waits for the heartbeat): 1
+  instances:   pppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
+end 10:32:04.076

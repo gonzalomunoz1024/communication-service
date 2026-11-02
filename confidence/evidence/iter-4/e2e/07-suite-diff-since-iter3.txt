@@ -1,0 +1,45 @@
+# Did the suite lose or loosen anything since iteration 3? (6c15715 = the iteration-3 code, 1cd3f13 = this iteration's last code commit)
+$ git diff --stat 6c15715 1cd3f13 -- e2e/
+ e2e/README.md                                | 48 ++++++++++-------
+ e2e/docker-compose.yml                       | 13 ++---
+ e2e/stack.sh                                 |  5 +-
+ e2e/tests/01-api-contract.spec.ts            |  7 +--
+ e2e/tests/03-f91-sidecar-auto-notice.spec.ts |  2 +-
+ e2e/tests/07-f92-database-down.spec.ts       | 79 +++++++++++++++++++++++++---
+ e2e/tests/helpers.ts                         |  7 ++-
+ 7 files changed, 123 insertions(+), 38 deletions(-)
+
+$ test titles at 6c15715 vs 1cd3f13 (one per line)
+2c2
+<   test('F-09 a reused externalRef is a 409 with an {error} body'
+---
+>   test('F-09 a reused externalRef is a 409 with an {error} body that suggests the first free follow-up value'
+9c9
+< test('F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why and offers Try again, the open page keeps its stream → the database is back → both recover by themselves'
+---
+> test('F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves'
+
+$ skip/only/fixme/retries in the suite now
+e2e/tests/02-f90-publish-live-resolve.spec.ts:22:  await page.getByLabel('Details').fill('Card payments fail for about a third of requests; retries succeed.')
+e2e/tests/07-f92-database-down.spec.ts:101:    // two retries). Nothing it opens meanwhile can deliver the feed, so all along it keeps the database
+e2e/playwright.config.ts:15:  retries: 0,
+
+$ git diff 6c15715 1cd3f13 -- e2e/tests/01-api-contract.spec.ts e2e/tests/03-f91-sidecar-auto-notice.spec.ts
+-  test('F-09 a reused externalRef is a 409 with an {error} body', async ({ request }) => {
++  test('F-09 a reused externalRef is a 409 with an {error} body that suggests the first free follow-up value', async ({ request }) => {
+-      // the wording is the service's to choose; the shape is the contract
+-      expect(await again.json()).toEqual({ error: expect.any(String) })
++      // the wording is the service's to choose; the shape is the contract: the reason, and beside it the first
++      // follow-up value the tenant does not hold yet (none of this run's -n values exist, so it is -2)
++      expect(await again.json()).toEqual({ error: expect.any(String), suggestedExternalRef: `e2e-ref-${RUN}-2` })
+-    // the tuned debounce: a probe within 2 s, a second look 0.5 s later, the report, the next heartbeat 4 s on
++    // the tuned debounce: a probe within 2 s and a second look 0.5 s later send the first DOWN report, the next probe the second
+
+$ git diff 6c15715 1cd3f13 -- e2e/tests/07-f92-database-down.spec.ts (removed lines only; additions are the MutationObserver timeline and the soft checks at :107/:109)
+-import { expect, test } from '@playwright/test'
+-import { BACKEND, RUN, TENANT, card, expectNotReloaded, headers, openFeed, outage, publish, retire, stack, type Published } from './helpers'
+-test('F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why and offers Try again, the open page keeps its stream → the database is back → both recover by themselves', a
+-    if (/\/v1\/feed\/stream\?/.test(r.url())) streamOpens += 1
+-    if (r.method() === 'GET' && /\/v1\/feed\?/.test(r.url())) feedLoads += 1
+-    // the late page recovers on its own: the error state gives way to the list
+-    console.log(`F-92: the late page showed the feed ${seconds(backAt)} s after the backend was ready`)

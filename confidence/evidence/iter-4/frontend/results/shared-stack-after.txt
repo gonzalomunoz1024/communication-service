@@ -1,0 +1,6 @@
+# 2026-11-02T10:54:08Z shared stack after my teardown (read-only checks; I never stopped/restarted it)
+backend :8080 readiness 200
+frontend :3000 200
+sidecar Up 48 minutes
+app Up 48 minutes
+mongo7 Up 12 hours

@@ -1,0 +1,8 @@
+# SpotBugs gate, iteration 4 (spotbugsMain executed inside `check --rerun-tasks`, run 1, exit 0; build.gradle.kts:84-89 effort MAX, reportLevel MEDIUM, excludeFilter config/spotbugs/exclude.xml; spotbugsTest disabled build.gradle.kts:110-112)
+
+main.html (copied to <scratch>/backend4/runs/run1/reports/spotbugs): "3177 lines of code analyzed, in 96 classes, in 23 packages", High Priority Warnings 0, Medium Priority Warnings 0.
+main.xml: SpotBugs 4.10.5, 96 <Jar> class entries, 0 BugInstance, <Errors errors="0" missingClasses="0">.
+  (FindBugsSummary total_classes="0" is the XML writer's summary quirk; iteration 3's report has the same 0 beside 92 analysed classes.)
+Iteration 3: 2955 lines in 92 classes, 0 warnings.
+Exclusion filter changes in iteration 4: `git diff 6c15715 1cd3f13 -- config/spotbugs/exclude.xml` -> 0 lines (no new exclusion).
+Not re-run here: the LOW-confidence look of iteration 3 (verifier-only init script); the MEDIUM gate is what CI enforces.

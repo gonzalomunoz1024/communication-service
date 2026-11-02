@@ -1,0 +1,45 @@
+start 10:31:13.989 (sidecar defaults: CS_INTERVAL 15s, CS_HEARTBEAT 30s; service: instance-stale-after-seconds 90, sweep 1 s)
+PHASE 1: last accepted report 10:31:47.354; the proxy goes down 25 s after it
+<string>:1: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  10:32:12.398 proxy DOWN
+  10:32:34.412 proxy UP (outage 22 s)
+  first accepted report after the outage: 10:32:36.279 (1.9 s after the proxy came back; silence since the last accepted one: 48.9 s)
+PHASE 2: last accepted report 10:33:44.528; the proxy goes down 25 s after it, for 100 s
+<string>:1: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  10:34:09.554 proxy DOWN
+  10:35:49.569 proxy UP (outage 100 s)
+  first accepted report after the outage: 10:36:09.060 (19.5 s after the proxy came back; silence since the last accepted one: 144.5 s)
+== accepted reports (sidecar 'reported' lines) and the attempts that failed
+{"t":"10:31:14.043","msg":"reported","in":null}
+{"t":"10:31:47.354","msg":"reported","in":null}
+{"t":"10:32:20.305","msg":"report failed; will retry","in":"1s"}
+{"t":"10:32:36.279","msg":"reported","in":null}
+{"t":"10:33:10.241","msg":"reported","in":null}
+{"t":"10:33:44.528","msg":"reported","in":null}
+{"t":"10:34:17.075","msg":"report failed; will retry","in":"1s"}
+{"t":"10:34:32.357","msg":"report failed; will retry","in":"2s"}
+{"t":"10:34:48.678","msg":"report failed; will retry","in":"4s"}
+{"t":"10:35:06.231","msg":"report failed; will retry","in":"8s"}
+{"t":"10:35:23.693","msg":"report failed; will retry","in":"16s"}
+{"t":"10:35:39.119","msg":"report failed; will retry","in":"30s"}
+{"t":"10:36:09.060","msg":"reported","in":null}
+{"t":"10:36:42.723","msg":"reported","in":null}
+== the service's view, each change of status/summary (sampled every second)
+10:31:14.057 UNKNOWN | null | notice=-
+10:31:15.116 UP | UP (1 of 1 pod UP) | notice=-
+10:35:15.522 DOWN | DOWN (1 pod has not reported since 2026-11-02 10:33:44 UTC (stale-app-7f9c6d5b4-x2k4q)) | notice=-
+10:35:16.546 DOWN | DOWN (1 pod has not reported since 2026-11-02 10:33:44 UTC (stale-app-7f9c6d5b4-x2k4q)) | notice=8f3b3d15-53ae-44ee-81fb-ce4f49903f4f
+10:36:09.091 UP | UP (1 of 1 pod UP) | notice=8f3b3d15-53ae-44ee-81fb-ce4f49903f4f
+10:36:42.967 UP | UP (1 of 1 pod UP) | notice=-
+== G-4-25: INFO 'report delivered again' lines (status, failedAttempts, failingFor) and the INFO lines around them
+{"t":"10:32:20.305","level":"WARN","msg":"report failed; will retry","status":null,"failedAttempts":null,"failingFor":null,"in":"1s"}
+{"t":"10:32:36.279","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":1,"failingFor":"15.95s","in":null}
+{"t":"10:34:17.075","level":"WARN","msg":"report failed; will retry","status":null,"failedAttempts":null,"failingFor":null,"in":"1s"}
+{"t":"10:34:32.357","level":"WARN","msg":"report failed; will retry","status":null,"failedAttempts":null,"failingFor":null,"in":"2s"}
+--
+{"t":"10:35:39.119","level":"WARN","msg":"report failed; will retry","status":null,"failedAttempts":null,"failingFor":null,"in":"30s"}
+{"t":"10:36:09.060","level":"INFO","msg":"report delivered again","status":"UP","failedAttempts":6,"failingFor":"1m51.973s","in":null}
+  count: 2
+== notices
+  (feed empty)
+end 10:36:55.510

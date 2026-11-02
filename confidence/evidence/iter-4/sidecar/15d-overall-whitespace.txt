@@ -1,0 +1,22 @@
+### A. overall status words (HTTP 200) from the start; 20 s
+  " ": sidecar lastReport.status= U P \n log:  1 {"level":"INFO","msg":"reported","error":""} service: UP | UP (1 of 1 pod UP)
+  "\u0001": sidecar lastReport.status= U P \n log:  1 {"level":"INFO","msg":"reported","error":""} service: UP | UP (1 of 1 pod UP)
+  "\u00a0": sidecar lastReport.status= 302 240 \n log:  3 {"level":"DEBUG","msg":"reported","error":""}  1 {"level":"INFO","msg":"reported","error":""} service: DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: ows-2-0))
+  "\u2003": sidecar lastReport.status= - \n log:  1 {"level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"error\":\"status: must not be blank\"}"} service: 
+### B. a pod that was UP, then its app answers {"status":"\u2003"} (HTTP 200): what the service makes of it over 110 s
+  [10:34:13.526] before:   ows-switch id=dc3d6236 url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:34:13.689] app now answers {"status":"\u2003"}
+  [10:34:23.697]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:34:33.748]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:34:43.915]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:34:54.020]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:35:04.063]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:35:14.151]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:35:24.214]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:35:34.260]   ows-switch url=None stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  [10:35:44.307]   ows-switch url=None stale=90 last=DOWN summary='DOWN (1 pod has not reported since 2026-11-02 10:34:07 UTC (ows-switch-7f9c6d5b4-x2k4q))' unhealthy=6 healthy=0 notice=122e14ed-4591-4f7b-86ff-147b7e13f83a
+  [10:35:54.418]   ows-switch url=None stale=90 last=DOWN summary='DOWN (1 pod has not reported since 2026-11-02 10:34:07 UTC (ows-switch-7f9c6d5b4-x2k4q))' unhealthy=16 healthy=0 notice=122e14ed-4591-4f7b-86ff-147b7e13f83a
+  [10:36:04.473]   ows-switch url=None stale=90 last=DOWN summary='DOWN (1 pod has not reported since 2026-11-02 10:34:07 UTC (ows-switch-7f9c6d5b4-x2k4q))' unhealthy=25 healthy=0 notice=122e14ed-4591-4f7b-86ff-147b7e13f83a
+  sidecar log: {"t":"10:34:16.299","level":"ERROR","msg":"report rejected","status":null,"error":"report rejected: HTTP 400 {\"error\":\"status: must not be blank\"}"} {"t":"10:34:48.065","level":"ERROR","msg":"report rejected","status":null,"error":"report rejected: HTTP 400 {\"error\":\"status: must not be blank\"}"} {"t":"10:35:19.778","level":"ERROR","msg":"report rejected","status":null,"error":"report rejected: HTTP 400 {\"error\":\"status: must not be blank\"}"} {"t":"10:35:51.830","level":"ERROR","msg":"report rejected","status":null,"error":"report rejected: HTTP 400 {\"error\":\"status: must not be blank\"}"}
+  feed:   122e14ed OUTAGE 'ows-switch is down' status=ACTIVE sev=MAJOR publisher=health-sidecar ref=health:dc3d6236-063c-433b-9a6d-7df065723a08:1 startsAt=10:35:39
+end 10:36:05.383

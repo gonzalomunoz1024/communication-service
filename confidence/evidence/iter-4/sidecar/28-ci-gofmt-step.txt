@@ -1,0 +1,12 @@
+gofmt from: /root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.3.linux-amd64/bin/gofmt (go version go1.27.3 linux/amd64)
+--- ci.yml lines 119-126 as written:
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt -l lists files that are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+--- running the step's script with bash -e:
+step exit=0

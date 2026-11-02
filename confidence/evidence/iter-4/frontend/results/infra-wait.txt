@@ -1,0 +1,6 @@
+ready http://127.0.0.1:19200/actuator/health/readiness (2 s)
+ready http://127.0.0.1:19201/actuator/health/readiness (1 s)
+ready http://127.0.0.1:19202/actuator/health/readiness (1 s)
+ready http://127.0.0.1:3200/ (1 s)
+ready http://127.0.0.1:3201/ (0 s)
+ready http://127.0.0.1:3206/ (0 s)

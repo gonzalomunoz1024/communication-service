@@ -1,0 +1,12 @@
+rp :3202 -> :8080 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-default-tenant) 
+rp :3203 -> :8080 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-xorigin) 
+rp :3204 -> :8080 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist-badclientid) 
+rp :3205 -> :19200 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist) 
+rp :3207 -> :19299 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist) EMPTY502=1
+rp :3208 -> :19202 (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend4/dist) 
+ready http://127.0.0.1:3202/ (0 s)
+ready http://127.0.0.1:3203/ (0 s)
+ready http://127.0.0.1:3204/ (1 s)
+ready http://127.0.0.1:3205/ (0 s)
+ready http://127.0.0.1:3207/ (0 s)
+ready http://127.0.0.1:3208/ (0 s)

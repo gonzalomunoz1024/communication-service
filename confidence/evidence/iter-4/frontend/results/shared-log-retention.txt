@@ -1,0 +1,1 @@
+{"oldest":{"_id":{"high":0,"low":1,"unsigned":false},"at":"2026-11-01T23:27:04.470Z"},"newest":{"_id":{"high":0,"low":2676,"unsigned":false},"at":"2026-11-02T10:46:25.245Z"},"count":2676,"ttl":[{"key":{"at":1},"expireAfterSeconds":86400}]}

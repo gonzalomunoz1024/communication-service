@@ -1,0 +1,16 @@
+# 2026-11-02T10:53:38Z infra.sh status (before teardown)
+backend :19200 pid=20806 readiness=200
+backend :19201 pid=4243 readiness=200
+backend :19202 pid=4547 readiness=200
+front :3200 200
+front :3201 200
+front :3202 200
+front :3203 200
+front :3204 200
+front :3205 200
+front :3206 200
+front :3207 200
+front :3208 200
+vf4-sidecar Exited (0) 5 minutes ago 
+vf4-app Up 5 minutes 127.0.0.1:19291->8080/tcp, 127.0.0.1:19292->9465/tcp
+vf4-mongo Up 5 minutes 127.0.0.1:19290->27017/tcp

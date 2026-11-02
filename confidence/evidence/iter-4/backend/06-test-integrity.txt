@@ -1,0 +1,29 @@
+# Test integrity, iteration 3 code (6c15715) -> iteration 4 code (1cd3f13; HEAD d10369b changes only confidence/ files)
+
+$ git grep -c '@Test\b' <rev> -- src/test (summed)        -> 297 before, 325 after (+28)
+$ git diff --stat 6c15715 1cd3f13 -- src/test            -> 28 files changed, 1174 insertions(+), 93 deletions(-)
+$ git diff --name-status -M 6c15715 1cd3f13 -- src/test | grep '^[DR]'   -> nothing (no test file deleted or renamed)
+$ git diff 6c15715 1cd3f13 -- src/test | grep '^+' for @Disabled/@Ignore/assume*/@EnabledIf/@DisabledIf/@EnabledOnOs   -> nothing
+$ git diff 6c15715 1cd3f13 -- build.gradle.kts | grep exclude/filter/includeTestsMatching/ignoreFailures/retry   -> nothing
+Executed: 270 unit + 55 IT = 325 cases in each of the three runs, 0 skipped (02-test-runs.txt).
+
+Removed lines with an assertion: 18. Each one is replaced by an equal or stronger assertion:
+- OpenApiContractIT (10): Jackson 3 renames, asText() -> asString(), fieldNames() -> propertyNames(); the same values asserted.
+- GlobalExceptionHandlerMessagesTest (6): PayloadTooLargeException -> ContentTooLargeException (Spring 7's rename; the
+  413 answer and the message asserted as before); JsonParseException's constructor change (Jackson 3).
+- HealthMonitorUseCaseTest (2): probe(...) is split into probeTarget(...) + observe(...) by G-4-4; "probed once"
+  becomes verify(observation, times(1)).observe(fresh, SEEN, NOW) plus verify(observation, times(1)).probeTarget(any(), any())
+  (stronger: the target is probed once, not once per attempt); the retry count stays
+  verify(observation, times(HealthMonitorUseCase.PROBE_ATTEMPTS)).observe(stale, SEEN, NOW) (HealthMonitorUseCaseTest.java:260).
+- OperationsEndpointsIT (13 removed lines): the stream-during-outage IT is renamed for G-4-10; its assertions move into
+  aStreamOpenedWhileTheDatabaseIsUnreachableIs503BeforeAnyByteWithOneWarning and
+  aStreamWhoseDatabaseGoesAwayAfterItOpenedEndsWithOneWarningAndNoError.
+- MongoOutageReadinessTest (10), ClientIdWebFilterEdgeCasesTest (8) and the one-line changes elsewhere: Spring Boot 4 /
+  Jackson 3 package moves (org.springframework.boot.health.*, tools.jackson.*) and spring.data.mongodb.uri ->
+  spring.mongodb.uri in test properties; no assertion removed.
+Deliberate behaviour changes asserted anew (fixes.md "Deliberate behaviour changes"): HealthStatusTest's new trim table
+(U+00A0 and U+2003 DEGRADED, lone U+0001 UNKNOWN), G-4-13 "unknown fields" sentences, G-4-11 suggestedExternalRef.
+src/test/resources/application.yml +18 lines: copies main's Jackson 3, actuator and springdoc settings (no relaxation).
+
+Verdict: no test skipped, deleted or loosened without justification. Gaps in coverage are reported separately
+(GAP-backend4-1: no test pauses the database or feeds a pool-cleared error; GAP-backend4-3: openApiSpecIsServed's 5 s budget).

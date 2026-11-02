@@ -1,0 +1,40 @@
+# G-4-7: a connect that fails after the probe gave up (10.255.255.1:81), iteration 4 (:19120) vs iteration 3 (:19122)
+
+Checks: 3/3 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| G47-a | F-34/G-4-7 a probe that times out answers 200 DOWN 'no response within 1000ms' | PASS | [(200, 1.05, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.01, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.01, 'DOWN (probe failed: no response within 1000ms)')] |
+| G47-b | F-89/G-4-7 the connect that fails after the probe gave up logs no ERROR and no stack trace (iteration 4) | PASS | ERROR 0, stack 0, dropped 0 |
+| G47-c | A/B iteration-3 jar, same steps (record only) | PASS | ERROR 0, onErrorDropped/connect-timeout lines 0, stack lines 0; probes [(200, 1.08, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.09, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.03, 'DOWN (probe failed: no response within 1000ms)')] |
+
+## Transcript (request -> status body, trimmed)
+
+```
+POST http://localhost:19120/v1/health/monitors body={"tenantId": "vb4-g47-22e24a", "service": "blackhole", "url": "http://10.255.255.1:81/health", "intervalSeconds": 3600, "timeoutMs": 1000} -> 201 {"id":"ff0d5ddb-b2b1-4b52-96d3-6862adafec6e","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak
+POST http://localhost:19122/v1/health/monitors body={"tenantId": "vb4-g47-22e24a", "service": "blackhole", "url": "http://10.255.255.1:81/health", "intervalSeconds": 3600, "timeoutMs": 1000} -> 201 {"id":"f6115601-1bf7-4dc2-adf8-e8a403dba4bb","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak
+POST http://localhost:19120/v1/health/monitors/ff0d5ddb-b2b1-4b52-96d3-6862adafec6e/probe body= -> 200 {"id":"ff0d5ddb-b2b1-4b52-96d3-6862adafec6e","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"202
+POST http://localhost:19122/v1/health/monitors/f6115601-1bf7-4dc2-adf8-e8a403dba4bb/probe body= -> 200 {"id":"f6115601-1bf7-4dc2-adf8-e8a403dba4bb","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"202
+POST http://localhost:19120/v1/health/monitors/ff0d5ddb-b2b1-4b52-96d3-6862adafec6e/probe body= -> 200 {"id":"ff0d5ddb-b2b1-4b52-96d3-6862adafec6e","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"202
+POST http://localhost:19122/v1/health/monitors/f6115601-1bf7-4dc2-adf8-e8a403dba4bb/probe body= -> 200 {"id":"f6115601-1bf7-4dc2-adf8-e8a403dba4bb","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"202
+POST http://localhost:19120/v1/health/monitors/ff0d5ddb-b2b1-4b52-96d3-6862adafec6e/probe body= -> 200 {"id":"ff0d5ddb-b2b1-4b52-96d3-6862adafec6e","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"202
+POST http://localhost:19122/v1/health/monitors/f6115601-1bf7-4dc2-adf8-e8a403dba4bb/probe body= -> 200 {"id":"f6115601-1bf7-4dc2-adf8-e8a403dba4bb","tenantId":"vb4-g47-22e24a","service":"blackhole","url":"http://10.255.255.1:81/health","policy":{"publisher":"health-monitor","intervalSeconds":3600,"timeoutMs":1000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"DOWN","lastReportAt":"202
+DELETE http://localhost:19120/v1/health/monitors/ff0d5ddb-b2b1-4b52-96d3-6862adafec6e body= -> 204 
+DELETE http://localhost:19122/v1/health/monitors/f6115601-1bf7-4dc2-adf8-e8a403dba4bb body= -> 204 
+iter4: register 201; forced probes (status, seconds, summary) [(200, 1.05, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.01, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.01, 'DOWN (probe failed: no response within 1000ms)')]; log after 45 s: ERROR 0, onErrorDropped/connect-timeout lines 0, stack lines 0
+iter3: register 201; forced probes (status, seconds, summary) [(200, 1.08, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.09, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.03, 'DOWN (probe failed: no response within 1000ms)')]; log after 45 s: ERROR 0, onErrorDropped/connect-timeout lines 0, stack lines 0
+  [PASS] G47-a (F-34/G-4-7 a probe that times out answers 200 DOWN 'no response within 1000ms'): [(200, 1.05, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.01, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.01, 'DOWN (probe failed: no response within 1000ms)')]
+  [PASS] G47-b (F-89/G-4-7 the connect that fails after the probe gave up logs no ERROR and no stack trace (iteration 4)): ERROR 0, stack 0, dropped 0
+  [PASS] G47-c (A/B iteration-3 jar, same steps (record only)): ERROR 0, onErrorDropped/connect-timeout lines 0, stack lines 0; probes [(200, 1.08, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.09, 'DOWN (probe failed: no response within 1000ms)'), (200, 1.03, 'DOWN (probe failed: no response within 1000ms)')]
+```
+
+Reading: this attempt does not reach the iteration-3 defect. On both jars the probe's timeout cancels the pending connect
+to the blackholed address, so no failure arrives later and neither jar logs anything (the A/B shows no difference).
+G-4-7 therefore rests on the code and the unit test:
+- WebClientHealthProbeAdapter.java:54-74: an AtomicBoolean set by doOnCancel (:72); the onErrorResume placed before
+  .timeout (:65-70) turns a failure that arrives after the give-up into one DEBUG line "probe of {} failed after it was given
+  up: {}" (:67) and an empty Mono, instead of an error the timeout operator would drop (Hooks.onErrorDropped -> ERROR + trace).
+- WebClientHealthProbeAdapterTest.java:109 aConnectFailureThatArrivesAfterTheProbeTimedOutIsOneDebugLineNotAnErrorWithATrace
+  (a fake exchange that ignores cancel() and fails 300 ms after the timeout): passed in all three runs (02-test-runs.txt).
+- Every iteration-4 backend log of this verification (shared backend-iter4.log and 9 private logs, over 9,000 lines):
+  0 "onErrorDropped" lines; the only ERROR lines are the frozen-database ones of 35-frozen-db-ab.txt (HealthSweepUseCase).

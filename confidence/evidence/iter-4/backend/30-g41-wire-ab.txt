@@ -1,0 +1,200 @@
+# 30 · G-4-1 wire format A/B (ab_wire.py): iteration-3 jar :19131 vs iteration-4 jar :19130 (tenant vb4-ab-89be1b)
+
+| # | request | verdict | iter3 | iter4 |
+|---|---|---|---|---|
+| 1 | publish full (emoji, nbsp, U+2028, nanos, offset, ticket) | SAME | 201 | 201 |
+| 2 | publish minimal (defaults, nulls omitted) | SAME | 201 | 201 |
+| 3 | publish draft | SAME | 201 | 201 |
+| 4 | publish maintenance (endsAt -> expiresAt) | SAME | 201 | 201 |
+| 5 | GET by id (history) | SAME | 200 | 200 |
+| 6 | GET feed permalink | SAME | 200 | 200 |
+| 7 | GET feed list (activeAt in window) | SAME | 200 | 200 |
+| 8 | GET publisher list | SAME | 200 | 200 |
+| 9 | GET publisher list page 1 | SAME | 200 | 200 |
+| 10 | GET admin search | SAME | 200 | 200 |
+| 11 | GET admin tenants (filtered view) | SAME | 200 | 200 |
+| 12 | PUT update (version 0) | SAME | 200 | 200 |
+| 13 | POST publish draft | SAME | 200 | 200 |
+| 14 | POST retire | SAME | 200 | 200 |
+| 15 | 400 malformed JSON | DIFF | 400 | 400 |
+| 16 | 400 truncated JSON | DIFF | 400 | 400 |
+| 17 | 400 empty body | SAME | 400 | 400 |
+| 18 | 400 body null | SAME | 400 | 400 |
+| 19 | 400 body array | SAME | 400 | 400 |
+| 20 | 400 one unknown field | SAME | 400 | 400 |
+| 21 | 400 two unknown fields | DIFF(expected: G-4-13 names every unknown field) | 400 | 400 |
+| 22 | 400 nested unknown | SAME | 400 | 400 |
+| 23 | 400 invalid enum | SAME | 400 | 400 |
+| 24 | 400 lower-case enum | SAME | 400 | 400 |
+| 25 | 400 date without zone | SAME | 400 | 400 |
+| 26 | 400 date garbage | SAME | 400 | 400 |
+| 27 | epoch-number date | SAME | 201 | 201 |
+| 28 | epoch-number date with fraction | SAME | 201 | 201 |
+| 29 | string for boolean draft | SAME | 201 | 201 |
+| 30 | number for boolean draft | SAME | 201 | 201 |
+| 31 | null for boolean draft | SAME | 201 | 201 |
+| 32 | number for string title | SAME | 201 | 201 |
+| 33 | object for string title | SAME | 400 | 400 |
+| 34 | array for string title | SAME | 400 | 400 |
+| 35 | string for list | SAME | 400 | 400 |
+| 36 | duplicate key (last wins?) | SAME | 201 | 201 |
+| 37 | trailing tokens | SAME | 201 | 201 |
+| 38 | trailing second object | SAME | 201 | 201 |
+| 39 | trailing comma | DIFF | 400 | 400 |
+| 40 | comment in JSON | SAME | 400 | 400 |
+| 41 | single quotes | DIFF | 400 | 400 |
+| 42 | NaN number | SAME | 400 | 400 |
+| 43 | huge integer expectedVersion | SAME | 400 | 400 |
+| 44 | fractional expectedVersion | SAME | 409 | 409 |
+| 45 | string expectedVersion | SAME | 200 | 200 |
+| 46 | null expectedVersion | SAME | 400 | 400 |
+| 47 | 400 validation (title too long) | SAME | 400 | 400 |
+| 48 | 400 missing tenantId | SAME | 400 | 400 |
+| 49 | 400 query enum | SAME | 400 | 400 |
+| 50 | 400 query int | SAME | 400 | 400 |
+| 51 | 400 query date | SAME | 400 | 400 |
+| 52 | 400 missing tenantId query | SAME | 400 | 400 |
+| 53 | 400 bad client id | SAME | 400 | 400 |
+| 54 | 400 nested 400 levels | SAME | 400 | 400 |
+| 55 | 400 nested 600 levels | SAME | 400 | 400 |
+| 56 | 400 nested 1200 levels | SAME | 400 | 400 |
+| 57 | 400 health report missing status | SAME | 400 | 400 |
+| 58 | 400 monitor bound | SAME | 400 | 400 |
+| 59 | 400 monitor fractional interval | SAME | 201 | 201 |
+| 60 | 400 monitor misspelled field | DIFF(expected: G-4-5 strict registration) | 201 | 400 |
+| 61 | 401 no client id | SAME | 401 | 401 |
+| 62 | 401 stream no client id | SAME | 401 | 401 |
+| 63 | 404 unknown id | SAME | 404 | 404 |
+| 64 | 404 unknown route | SAME | 404 | 404 |
+| 65 | 404 trailing slash | SAME | 404 | 404 |
+| 66 | 404 unknown monitor | SAME | 404 | 404 |
+| 67 | 404 purge unknown | SAME | 404 | 404 |
+| 68 | 405 PATCH | SAME | 405 | 405 |
+| 69 | 405 DELETE collection | SAME | 405 | 405 |
+| 70 | 406 Accept xml | DIFF | 406 | 406 |
+| 71 | 409 stale version | SAME | 409 | 409 |
+| 72 | 409 publish twice | SAME | 409 | 409 |
+| 73 | 409 duplicate externalRef | DIFF(expected: G-4-11 names a free follow-up and adds suggestedExternalRef) | 409 | 409 |
+| 74 | 413 body over 256 KB | SAME | 413 | 413 |
+| 75 | 415 text/plain | SAME | 415 | 415 |
+| 76 | 415 no content type | SAME | 415 | 415 |
+| 77 | register monitor (defaults) | SAME | 201 | 201 |
+| 78 | push report with instance | SAME | 202 | 202 |
+| 79 | monitors list | DIFF | 200 | 200 |
+| 80 | actuator health | SAME | 200 | 200 |
+| 81 | actuator liveness | SAME | 200 | 200 |
+| 82 | actuator readiness | SAME | 200 | 200 |
+| 83 | actuator root | DIFF | 200 | 200 |
+| 84 | actuator info | SAME | 404 | 404 |
+| 85 | actuator env | SAME | 404 | 404 |
+| 86 | swagger-ui.html | SAME | 302 | 302 |
+| 87 | HEAD feed | SAME | 200 | 200 |
+| 88 | OPTIONS feed (no CORS config) | SAME | 200 | 200 |
+| 89 | CORS preflight | DIFF | 403 | 200 |
+| 90 | SSE stream | SAME | 200 | 200 |
+
+79 SAME, 3 DIFF expected (documented), 8 DIFF unexpected, of 90
+
+Reading of the 11 non-SAME rows (raw bytes compared after normalising uuids, timestamp values, seq/version numbers):
+- expected (documented in iter-4/fixes.md): two unknown fields (G-4-13), misspelled monitor field 201 -> 400 (G-4-5), duplicate externalRef 409 gains the free follow-up and suggestedExternalRef (G-4-11).
+- monitors list: the only difference is the 'typo' monitor iteration 3 accepted with 201 (G-4-5's consequence): iter3 [frac, pull, push, typo], iter4 [frac, pull, push].
+- actuator root: identical apart from the port in the _links hrefs (my normalisation keeps ports).
+- NOT documented, Jackson 3 parser wording inside the malformed-JSON 400 (status and {error} shape unchanged): 'was expecting double-quote to start field name' -> '... property name' (3 rows); a truncated body's 'start marker at [...; line: 1, column: 1]' -> '[...; byte offset: #UNKNOWN]'.
+- NOT documented, Spring's own 406 body (not the service's {error} contract in either version): timestamp '+00:00' -> 'Z'.
+- NOT documented, CORS preflight without CORS configuration: 403 (Vary headers) -> 200 with no Access-Control-Allow-* header (full headers below); the browser still refuses the cross-origin call, so the posture is unchanged (no CORS config, inventory Q2).
+- Dates (nanos in, millis out; +02:00 normalised to Z), null omission, key order, emoji written as escaped surrogate pairs, U+2028/U+00A0, epoch-number dates, coercions ("true"/1/null for draft, 0.5/"1" for expectedVersion), duplicate keys, trailing tokens, comments, 401/404/405/409(version)/413/415, health bodies, actuator health groups, SSE frames and ids: SAME.
+- Nesting: 400 and 1200 levels SAME; 600 levels SAME at the status (400) as well; the difference the fixes name (>500) is in the message text only and did not show here (see transcript of '400 nested 600 levels').
+
+## Transcript of the non-SAME rows and the SSE comparison
+
+```
+### 400 malformed JSON: POST /v1/communications body={not json
+  iter3 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 2: Unexpected character ('n' (code 110)): was expecting double-quote to start field name"}
+  iter4 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 2: Unexpected character ('n' (code 110)): was expecting double-quote to start property name"}
+  verdict: DIFF
+### 400 truncated JSON: POST /v1/communications body={"tenantId": "x"
+  iter3 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 17: Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])"}
+  iter4 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 17: Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); byte offset: #UNKNOWN])"}
+  verdict: DIFF
+### 400 two unknown fields: POST /v1/communications body={"tenantId": "vb4-ab-89be1b", "publisher": "vb4-ab", "type": "OUTAGE", "severity": "MAJOR", "title": "ab", "affectedServices": ["svc"], "sevrity": "MAJOR", "titel": "x"}
+  iter3 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"unknown field 'sevrity'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"}
+  iter4 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"unknown fields 'sevrity', 'titel'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"}
+  verdict: DIFF(expected: G-4-13 names every unknown field)
+### trailing comma: POST /v1/communications body={"tenantId": "vb4-ab-89be1b", "publisher": "vb4-ab", "type": "OUTAGE", "severity": "MAJOR", "title": "tc", "affectedServices": ["svc"],}
+  iter3 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 136: Unexpected character ('}' (code 125)): was expecting double-quote to start field name"}
+  iter4 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 136: Unexpected character ('}' (code 125)): was expecting double-quote to start property name"}
+  verdict: DIFF
+### single quotes: POST /v1/communications body={'tenantId':'x'}
+  iter3 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 2: Unexpected character (''' (code 39)): was expecting double-quote to start field name"}
+  iter4 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"malformed JSON at line 1, column 2: Unexpected character (''' (code 39)): was expecting double-quote to start property name"}
+  verdict: DIFF
+### 400 monitor misspelled field: POST /v1/health/monitors body={"tenantId": "vb4-ab-89be1b", "service": "typo", "intervalSecond": 5}
+  iter3 -> 201 {"content-type": "application/json", "location": "/v1/health/monitors/<uuid>", "content-length": "<len>"} {"id":"<uuid>","tenantId":"vb4-ab-<run>","service":"typo","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"<ts.9Z>","updatedAt":"<ts.9Z>","version":<n>}
+  iter4 -> 400 {"content-type": "application/json", "content-length": "<len>"} {"error":"unknown field 'intervalSecond'; known fields: audience, degradedSeverity, downSeverity, failureThreshold, intervalSeconds, minHealthyPercent, publisher, recoveryThreshold, service, staleAfterSeconds, tenantId, timeoutMs, url"}
+  verdict: DIFF(expected: G-4-5 strict registration)
+### 406 Accept xml: GET /v1/feed?tenantId=vb4-ab-89be1b body=
+  iter3 -> 406 {"content-type": "application/json", "content-length": "<len>"} {"timestamp":"<ts.3+00:00>","path":"/v1/feed","status":406,"error":"Not Acceptable","requestId":"7dc92d06-91"}
+  iter4 -> 406 {"content-type": "application/json", "content-length": "<len>"} {"timestamp":"<ts.3Z>","path":"/v1/feed","status":406,"error":"Not Acceptable","requestId":"114b0767-91"}
+  verdict: DIFF
+### 409 duplicate externalRef: POST /v1/communications body={"tenantId": "vb4-ab-89be1b", "publisher": "vb4-ab", "type": "OUTAGE", "severity": "MAJOR", "title": "dup", "affectedServices": ["svc"], "externalRef": "INC-89be1b"}
+  iter3 -> 409 {"content-type": "application/json", "content-length": "<len>"} {"error":"externalRef 'INC-<run>' is already used by notice <uuid> in tenant vb4-ab-<run>. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC-<run>-2)."}
+  iter4 -> 409 {"content-type": "application/json", "content-length": "<len>"} {"error":"externalRef 'INC-<run>' is already used by notice <uuid> in tenant vb4-ab-<run>. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC-<run>-2, which is still free).","suggestedExternalRef":"INC-<run>-2"}
+  verdict: DIFF(expected: G-4-11 names a free follow-up and adds suggestedExternalRef)
+### monitors list: GET /v1/health/monitors?tenantId=vb4-ab-89be1b body=
+  iter3 -> 200 {"content-type": "application/json", "transfer-encoding": "chunked"} [{"id":"<uuid>","tenantId":"vb4-ab-<run>","service":"frac","url":"http://127.0.0.1:19160/up","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"<ts.3Z>","updatedAt":"<ts.3Z>","version":<n>},{"id":"<uuid>","tenantId":"vb4-ab-<run>","service":"pull","url":"http://127.0.0.1:19160/up","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"<ts.3Z>","updatedAt":"<ts.3Z>","version"
+  iter4 -> 200 {"content-type": "application/json", "transfer-encoding": "chunked"} [{"id":"<uuid>","tenantId":"vb4-ab-<run>","service":"frac","url":"http://127.0.0.1:19160/up","policy":{"publisher":"health-monitor","intervalSeconds":5,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"<ts.3Z>","updatedAt":"<ts.3Z>","version":<n>},{"id":"<uuid>","tenantId":"vb4-ab-<run>","service":"pull","url":"http://127.0.0.1:19160/up","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","unhealthyStreak":0,"healthyStreak":0,"incidents":0},"createdAt":"<ts.3Z>","updatedAt":"<ts.3Z>","version"
+  verdict: DIFF
+### actuator root: GET /actuator body=
+  iter3 -> 200 {"content-type": "application/vnd.spring-boot.actuator.v3+json", "content-length": "<len>"} {"_links":{"self":{"href":"http://localhost:19131/actuator","templated":false},"health":{"href":"http://localhost:19131/actuator/health","templated":false},"health-path":{"href":"http://localhost:19131/actuator/health/{*path}","templated":true}}}
+  iter4 -> 200 {"content-type": "application/vnd.spring-boot.actuator.v3+json", "content-length": "<len>"} {"_links":{"self":{"href":"http://localhost:19130/actuator","templated":false},"health":{"href":"http://localhost:19130/actuator/health","templated":false},"health-path":{"href":"http://localhost:19130/actuator/health/{*path}","templated":true}}}
+  verdict: DIFF
+### CORS preflight: OPTIONS /v1/feed?tenantId=vb4-ab-89be1b body=
+  iter3 -> 403 {"content-length": "<len>", "vary": "Access-Control-Request-Headers"} 
+  iter4 -> 200 {"content-length": "<len>"} 
+  verdict: DIFF
+### SSE stream (snapshot frames, a created frame, chunking)
+  iter3 -> HTTP/1.1 200 OK ['content-type:text/event-stream;charset=UTF-8', 'transfer-encoding:chunked']
+
+<chunk>
+:connected
+
+
+<chunk>
+id:<n>
+event:snapshot
+data:
+<chunk>
+{"seq":<n>,"type":"SNAPSHOT","at":"<ts.9Z>","communication":{"id":"<uuid>","tenantId":"vb4-ab-<run>","publisher":"vb4-ab","type":"OUTAGE","severity":"MAJOR","title":"trail2","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"<ts.3Z>","createdAt":"<ts.3Z>","updatedAt":"<ts.3Z>","version":<n>,"history":[{"at":"<ts.3Z>","actor":"vb4-ab","action":"created (ACTIVE)"}]}}
+<chunk>
+
+
+
+<chunk>
+id:<n>
+event:snapshot
+data:
+<chunk>
+{"seq":<n>,"type":"SNAPSHOT","at":"<ts.9Z>","communication":{"id":"<uuid>","tenantId":"vb4-ab-<run>","publisher":"vb4-ab","type":"OUTAGE","severity":"MAJOR","title":"trail","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"<ts.3Z>","createdAt":"<ts.3Z>","updatedAt":"<ts.3Z>","version":<n>,"history":[{"at":"<ts.3Z>","actor":"vb4-ab","action":"created (ACTIVE)"}]}}
+<chunk>
+
+
+
+<chunk>
+id:<n>
+event:snapshot
+... SSE comparison trimmed: 30 of 126 lines kept; full file: <scratch>/backend4/full-evidence/30-g41-wire-ab.txt
+```
+
+```
+
+## Nesting limit, measured where the body is parsed in full (a lenient health report's details map)
+```
+depth(details)=490: iter3 202 '{"id":"d010a0d6-f22f-43d2-b987-0a45df5f0560","tenantId":"vb4-nest","service":"deep","polic' | iter4 202 '{"id":"68075bf1-dd09-4b87-9fb4-ea9b2bad4fb4","tenantId":"vb4-nest","service":"deep","policy":{"publisher":"hea'
+depth(details)=497: iter3 202 '{"id":"d010a0d6-f22f-43d2-b987-0a45df5f0560","tenantId":"vb4-nest","service":"deep","polic' | iter4 202 '{"id":"68075bf1-dd09-4b87-9fb4-ea9b2bad4fb4","tenantId":"vb4-nest","service":"deep","policy":{"publisher":"hea'
+depth(details)=498: iter3 202 '{"id":"d010a0d6-f22f-43d2-b987-0a45df5f0560","tenantId":"vb4-nest","service":"deep","polic' | iter4 202 '{"id":"68075bf1-dd09-4b87-9fb4-ea9b2bad4fb4","tenantId":"vb4-nest","service":"deep","policy":{"publisher":"hea'
+depth(details)=510: iter3 202 '{"id":"d010a0d6-f22f-43d2-b987-0a45df5f0560","tenantId":"vb4-nest","service":"deep","polic' | iter4 400 '{"error":"Failed to read HTTP message"}'
+depth(details)=990: iter3 202 '{"id":"d010a0d6-f22f-43d2-b987-0a45df5f0560","tenantId":"vb4-nest","service":"deep","polic' | iter4 400 '{"error":"Failed to read HTTP message"}'
+depth(details)=998: iter3 202 '{"id":"d010a0d6-f22f-43d2-b987-0a45df5f0560","tenantId":"vb4-nest","service":"deep","polic' | iter4 400 '{"error":"Failed to read HTTP message"}'
+depth(details)=1010: iter3 400 '{"error":"Failed to read HTTP message"}' | iter4 400 '{"error":"Failed to read HTTP message"}'
+```
+Reading: iteration 3 accepts up to ~1000 levels, iteration 4 up to ~500 (Jackson 3's StreamReadConstraints default); above the limit both answer 400 {"error":"Failed to read HTTP message"}. This is the one difference iter-4/fixes.md documents.

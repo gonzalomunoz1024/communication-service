@@ -1,0 +1,59 @@
+### 1. sidecar and CI files differ between 1cd3f13 and HEAD (d10369b)?
+  git diff --quiet 1cd3f13 HEAD -- sidecar .github -> exit 0 (0 = identical)
+### 2. test files changed 6c15715..1cd3f13 (added / removed lines)
+  3	0	sidecar/cmd/health-sidecar/main_test.go
+  49	0	sidecar/deploy/deploy_test.go
+  36	12	sidecar/deploy/dockerfile_test.go
+  55	5	sidecar/deploy/helm_test.go
+  60	0	sidecar/internal/agent/agent_test.go
+  103	9	sidecar/internal/config/config_test.go
+  34	0	sidecar/internal/config/docs_test.go
+  40	0	sidecar/internal/probe/probe_test.go
+### 3. test functions removed or renamed (func Test... lines with '-' and no matching '+')
+  +func TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo(t *testing.T) {
+  +func TestDurationsTheSidecarCannotUseAreRejected(t *testing.T) {
+  +func TestEachAttachPathNamesTheConfigMapItsContainerReads(t *testing.T) {
+  +func TestHelmExtraEnvFromTheReadmeReachesTheSidecar(t *testing.T) {
+  +func TestProxyVariablesAreDocumented(t *testing.T) {
+  +func TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts(t *testing.T) {
+  +func TestStatusWordsAreTrimmedLikeTheService(t *testing.T) {
+  -func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
+  (only '+' lines = tests added; a '-' line without its '+' twin = a test removed or renamed)
+### 4. every removed line in sidecar test files (assertions loosened?)
+  -// goLine is the Go minor the module requires: go.mod's go directive and the go-toolset tag the
+  -// Dockerfile builds with by default must both name it, so a toolchain move is one deliberate
+  -// change to all of them rather than a drift between the two files.
+  -const goLine = "1.25"
+  -// G-2-14: go.mod and the Dockerfile agree on the Go line.
+  -	if got := goDirective(readFile(t, filepath.Join("..", "go.mod"))); got != goLine {
+  -		t.Errorf("go.mod says go %s, want %s", got, goLine)
+  -	if got := df.args["GO_IMAGE"]; !strings.HasSuffix(got, "/go-toolset:"+goLine) {
+  -		t.Errorf("Dockerfile default GO_IMAGE = %q, want a go-toolset:%s tag", got, goLine)
+  -// and, per stage, its own ARG defaults and LABELs.
+  -// parseDockerfile joins continuation lines, drops comments and reads ARG, FROM and LABEL.
+  -			df.stages = append(df.stages, stage{args: map[string]string{}, labels: map[string]string{}})
+  -// line under spec.template.spec.<list> of its Deployment, sets the two required values, and
+  -// returns `helm template` of it. Helm's cache, configuration and data stay in the test's
+  -// temporary directory.
+  -func renderConsumingChart(t *testing.T, helm, list, line string) string {
+  -	return run("template", "payments-api", chart)
+  -// G-3-15: a report waits longer than the service's own database timeout (5 s,
+  -// communication.mongo.server-selection-timeout in its application.yml): while the service
+  -// cannot reach its database it answers 503 "database unavailable" after those 5 s, and that
+  -// answer must arrive before the sidecar gives up, so /status.sendError names the real cause
+  -// instead of "context deadline exceeded". An explicit CS_REPORT_TIMEOUT still wins.
+  -func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
+  -	const serviceDatabaseTimeout = 5 * time.Second
+  -	if cfg.ReportTimeout != 10*time.Second || cfg.ReportTimeout <= serviceDatabaseTimeout {
+  -		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s: longer than the service's %v database timeout", cfg.ReportTimeout, serviceDatabaseTimeout)
+### 5. t.Skip / t.SkipNow / testing.Short in the sidecar tests at 1cd3f13
+  1cd3f13:sidecar/deploy/deploy_test.go:39:		t.Skip("kustomize not on PATH")
+  1cd3f13:sidecar/deploy/helm_test.go:37:		t.Skip("helm not on PATH")
+  1cd3f13:sidecar/deploy/helm_test.go:86:		t.Skip("helm not on PATH")
+### 6. the same at 6c15715 (to compare)
+  6c15715:sidecar/deploy/deploy_test.go:38:		t.Skip("kustomize not on PATH")
+  6c15715:sidecar/deploy/helm_test.go:37:		t.Skip("helm not on PATH")
+### 7. tests that fixes.md says were touched (sidecar)
+36:| G-4-2 sidecar on Go 1.27.3 | `8783226`, `3476fa4` | `deploy/dockerfile_test.go TestGoModAndDockerfileAgreeOnTheGoLine`; Trivy and govulncheck of the binary (0) | sc-4-G-4-2, e2e-4-G-4-2 |
+50:| G-4-16 one trim rule for status words | `e2018dc`, `8559e50`, `67f0d77` | `probe_test.go TestStatusWordsAreTrimmedLikeTheService` (10 rows), `HealthStatusTest.aStatusIsTrimmedOfExactlyTheCharactersUpToUPlus0020LikeTheSidecar` | sc-4-G-
+67:## Existing tests touched (each named in the commit that touched it)

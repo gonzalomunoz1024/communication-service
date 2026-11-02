@@ -1,0 +1,12 @@
+
+### 6. image filesystem
+-rw-r--r-- 0/0              64 1970-01-01 00:00 etc/group
+-rw-r--r-- 0/0             149 1970-01-01 00:00 etc/passwd
+-rw-r--r-- 0/0          222073 2026-11-02 08:00 etc/pki/tls/certs/ca-bundle.crt
+-rwxr-xr-x 0/0         7622816 2026-11-02 10:22 usr/local/bin/health-sidecar
+setuid/setgid regular files: 0; setgid directories (distroless base): var/local/ 
+shells: 0
+CA bundle certs at the UBI path: 148
+repository tests, deploy/ or README in the image: 0 (distroless doc files named README: 3)
+files in image: 1342
+rootfs exported from: sha256:9083167a375bcd3049f14ff490ade28687f94b13e5dd7120ce81da8971b0089d

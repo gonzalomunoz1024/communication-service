@@ -1,0 +1,19 @@
+# private backends (iteration-4 jar, sha256 64e07ece...): ERROR / WARN line counts, stack-trace lines; then WARN lines grouped by logger and message
+backend :19200  lines=498  ERROR=0  WARN=6  stack-trace lines=0
+backend :19201  lines=28  ERROR=0  WARN=2  stack-trace lines=0
+backend :19202  lines=237  ERROR=0  WARN=115  stack-trace lines=0
+
+## backend :19200 WARN lines by logger : message (ids folded)
+   3  SpringDocAppInitializer : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it i
+   3  SpringDocAppInitializer : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable 
+
+## backend :19202 WARN lines by logger : message (ids folded)
+  33  GlobalExceptionHandler : GET /v1/feed/stream -> 503, database unavailable: Timed out while wait
+  28  StatusSweepUseCase : status sweep skipped: database unavailable: Timed out while waiting fo
+  26  HealthSweepUseCase : health sweep skipped: database unavailable: Timed out while waiting fo
+  17  GlobalExceptionHandler : GET /v1/feed -> 503, database unavailable: Timed out while waiting for
+   5  MongoCommunicationEventsAdapter : event log poll skipped: database unavailable: Timed out while waiting 
+   3  GlobalExceptionHandler : POST /v1/communications/{id}/retire -> 503, database unavailable: Time
+   1  SpringDocAppInitializer : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it i
+   1  SpringDocAppInitializer : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable 
+   1  GlobalExceptionHandler : POST /v1/communications -> 503, database unavailable: Timed out while 

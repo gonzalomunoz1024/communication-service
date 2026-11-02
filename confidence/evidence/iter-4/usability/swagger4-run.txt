@@ -1,0 +1,93 @@
+publishExample {"examples":["An incident customers see, with its ticket"],"body":"{ \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MAJOR\", \"title\": \"Checkout errors for some customers\", \"body\": \"Some payments fail. We are rolling back the last release; next update in 30 minutes.\", \"affectedServices\": [ \"checkout\", \"payments\" ], \"audience\": \"CUSTOMERS\", \"externalRef\": \"INC0012345\", \"ticket\": { \"system\": \"servicenow\", \"number\": \"INC0012345\" } }","code":"201","resp":"Response body Download { \"id\": \"38172919-0177-45b9-a779-140b1f42347f\", \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MAJOR\", \"title\": \"Checkout errors for some customer"}
+again {"code":"409","resp":"Error: Conflict Response body Download { \"error\": \"externalRef 'INC0012345' is already used by notice 38172919-0177-45b9-a779-140b1f42347f in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2, which is still free).\", \"suggestedExternalRef\": \"INC0012345-2\" } Response headers content-length: 324 content-type: "}
+{
+  "title": "Swagger UI",
+  "ops": 20,
+  "lockOnOps": 20,
+  "postDescription": "POST /v1/communications Publish (or draft) a new communication Parameters Try it out No parameters Request body application/json Examples: An incident customers see, with its ticket Example Value Schema { \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MAJOR\", \"title\": \"Checkout errors for some customers\", \"body\": \"Some payments fail. We are rolling back the last release; next update in 30 minutes.\", \"affectedServices\": [ \"checkout\", \"payments\" ], \"audience\": \"CUSTOMERS\", \"externalRef\": \"INC0012345\", \"ticket\": { \"system\": \"servicenow\", \"number\": \"INC0012345\" } } Example Description incident Responses Code Description Links 201 Published, or saved as a DRAFT when",
+  "postResponses": [
+    "201 Published, or saved as a DRAFT when draft is true Media type application/json Controls Accept header. Example Value Schema { \"id\": \"string\", \"tenantId\": \"string\", \"publisher\": \"string\", \"type\": \"INCIDENT\", \"severity\": \"INFO\", \"title\": \"string\", \"body\": \"st",
+    "400 The request cannot be accepted as sent: a malformed X-Client-Id, a body that is not JSON or has a field this route does not take, or a field or parameter that fails validation. The error names it and says what to send. Media type application/json Example V",
+    "401 No X-Client-Id header (or ?clientId= on the stream) Media type application/json Example Value Schema { \"error\": \"missing X-Client-Id header: identify the calling system by its repository name\" } No links",
+    "409 externalRef already used in this tenant. It is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value. The body names the notice that holds it, and suggestedExternalRef is the first follow-up value the te",
+    "503 The database is unreachable: nothing was read or changed; retry later (/actuator/health/readiness answers 503 meanwhile) Media type application/json Example Value Schema { \"error\": \"database unavailable\" } No links"
+  ],
+  "externalRefInSchema": "externalRefExpand allstring ticketExpand allobject Example Description incident Responses Code Description Links 201 Published, or saved as a DRAFT when draft is true Media type application/json Controls Accept header. Example Value Schema { \"id\": \"string\", \"tenantId\": \"string\", \"publisher\": \"string\", \"type\": \"INCIDENT\", \"severity\": \"INFO\", \"title\": \"string\", \"body\": \"string\", \"affectedServices\": [ \"string\" ], \"audience\": \"PUBL",
+  "expectedVersionInSchema": "expectedVersion Parameters Try it out Name Description id * string (path) Request body application/json Examples: Lower the severity and say what changed Example Value Schema UpdateCommunicationCommandCollapse allobject severityExpand allstring titlestring[0, 200] characters bodystring[0, 16384] characters affectedServicesExpand allarray<string>[0, 20] items audienceExpand",
+  "putResponses": [
+    "200 Updated: the notice as saved, with its new version Media type application/json Controls Accept header. Example Value Schema { \"id\": \"string\", \"tenantId\": \"string\", \"publisher\": \"string\", \"type\": \"",
+    "400 The request cannot be accepted as sent: a malformed X-Client-Id, a body that is not JSON or has a field this route does not take, or a field or parameter that fails validation. The error names it ",
+    "401 No X-Client-Id header (or ?clientId= on the stream) Media type application/json Example Value Schema { \"error\": \"missing X-Client-Id header: identify the calling system by its repository name\" } N",
+    "404 Nothing with this id: no communication, or no monitor on /v1/health routes Media type application/json Example Value Schema { \"error\": \"communication 3f0c2a1e-7d4b-4a4e-9c2b-5e1f0a6d8b21 not found",
+    "409 expectedVersion is not the current version (someone saved in between: re-read, re-apply, send the new version), or the communication is EXPIRED/RETIRED and can no longer be updated Media type appl",
+    "503 The database is unreachable: nothing was read or changed; retry later (/actuator/health/readiness answers 503 meanwhile) Media type application/json Example Value Schema { \"error\": \"database unava"
+  ],
+  "monitorPostMentionsUnknown": true,
+  "monitorResponses": [
+    "201 Registered: the monitor, before its first probe or report Media type application/json Controls Accept header. Example Value Schema { \"id\": \"string\", \"tenantId\": \"string\", \"service\": \"string\", \"url",
+    "400 The request cannot be accepted as sent: a malformed X-Client-Id, a body that is not JSON or has a field this route does not take, or a field or parameter that fails validation. The error names it ",
+    "401 No X-Client-Id header (or ?clientId= on the stream) Media type application/json Example Value Schema { \"error\": \"missing X-Client-Id header: identify the calling system by its repository name\" } N",
+    "409 This tenant already has a monitor for this service (a report registers one on first contact) Media type application/json Example Value Schema { \"error\": \"a monitor already exists for service 'chec",
+    "503 The database is unreachable: nothing was read or changed; retry later (/actuator/health/readiness answers 503 meanwhile) Media type application/json Example Value Schema { \"error\": \"database unava"
+  ],
+  "reportResponses": [
+    "202 Accepted and applied: the monitor it went to (registered on first contact), with its streaks and the notice it has open Media type application/json Controls Accept header. Example Value Schema { \"",
+    "400 The request cannot be accepted as sent: a malformed X-Client-Id, a body that is not JSON or has a field this route does not take, or a field or parameter that fails validation. The error names it ",
+    "401 No X-Client-Id header (or ?clientId= on the stream) Media type application/json Example Value Schema { \"error\": \"missing X-Client-Id header: identify the calling system by its repository name\" } N",
+    "503 The database is unreachable: nothing was read or changed; retry later (/actuator/health/readiness answers 503 meanwhile) Media type application/json Example Value Schema { \"error\": \"database unava"
+  ],
+  "tryBeforeAuthorize": "Code Details 401 Error: Unauthorized Response body Download { \"error\": \"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)\" } Response headers content-length: 140 content-type: application/json ",
+  "authorizeDialog": "Available authorizations X-Client-Id (apiKey) Click Authorize and paste the repository name of the system you are calling from (e.g. vmforge-tools). Required on every /v1 request; identification only, nothing is verified. EventSource clients send ?clientId= instead. Name: X-Client-Id In: header Value: Authorize Close",
+  "tryAfterAuthorize": "Code Details 200 Response body Download [ { \"tenantId\": \"acme\", \"counts\": { \"RETIRED\": 4 }, \"total\": 4 }, { \"tenantId\": \"ux4-none-free\", \"counts\": { \"ACTIVE\": 51 }, \"total\": 51 }, { \"tenantId\": \"ux4-p",
+  "publishExample": {
+    "examples": [
+      "An incident customers see, with its ticket"
+    ],
+    "body": "{ \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MAJOR\", \"title\": \"Checkout errors for some customers\", \"body\": \"Some payments fail. We are rolling back the last release; next update in 30 minutes.\", \"affectedServices\": [ \"checkout\", \"payments\" ], \"audience\": \"CUSTOMERS\", \"externalRef\": \"INC0012345\", \"ticket\": { \"system\": \"servicenow\", \"number\": \"INC0012345\" } }",
+    "code": "201",
+    "resp": "Response body Download { \"id\": \"38172919-0177-45b9-a779-140b1f42347f\", \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MAJOR\", \"title\": \"Checkout errors for some customer"
+  },
+  "publishExampleAgain": {
+    "code": "409",
+    "resp": "Error: Conflict Response body Download { \"error\": \"externalRef 'INC0012345' is already used by notice 38172919-0177-45b9-a779-140b1f42347f in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC0012345-2, which is still free).\", \"suggestedExternalRef\": \"INC0012345-2\" } Response headers content-length: 324 content-type: "
+  },
+  "putExample": {
+    "body": "{ \"severity\": \"MINOR\", \"body\": \"The rollback is done and errors are back to normal; we keep watching for 30 minutes.\", \"actor\": \"sre-team\", \"expectedVersion\": 0 }",
+    "code": "200",
+    "resp": "Response body Download { \"id\": \"38172919-0177-45b9-a779-140b1f42347f\", \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MINOR\", \"ti"
+  },
+  "retireExample": {
+    "body": "{ \"actor\": \"sre-team\", \"note\": \"Resolved: the rollback fixed checkout.\" }",
+    "code": "200",
+    "resp": "Response body Download { \"id\": \"38172919-0177-45b9-a779-140b1f42347f\", \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MINOR\", \"ti"
+  },
+  "adminRetireExample": {
+    "body": "{ \"actor\": \"ops-desk\", \"note\": \"Retired by the operations desk: a duplicate of another notice.\" }",
+    "code": "200",
+    "resp": "Response body Download { \"id\": \"28cb7c6c-00b5-4792-a94b-6cdb583805a0\", \"tenantId\": \"acme\", \"publisher\": \"sre-team\", \"type\": \"INCIDENT\", \"severity\": \"MAJOR\", \"ti"
+  },
+  "monitorExample0": {
+    "examples": [
+      "No url: the service pushes its reports",
+      "With url: probed every intervalSeconds"
+    ],
+    "body": "{ \"tenantId\": \"acme\", \"service\": \"payments\", \"publisher\": \"payments-team\", \"downSeverity\": \"MAJOR\", \"degradedSeverity\": \"MINOR\", \"audience\": \"CUSTOMERS\", \"staleAfterSeconds\": 120 }",
+    "code": "201",
+    "resp": "Response body Download { \"id\": \"3fa1ef06-4495-4d7a-be94-954b73eac233\", \"tenantId\": \"acme\", \"service\": \"payments\", \"policy\": { \"publisher\": \"payments-team\", \"intervalSeconds\": 30, \"timeoutMs\": 5000, \"f"
+  },
+  "monitorExample1": {
+    "body": "{ \"tenantId\": \"acme\", \"service\": \"checkout\", \"url\": \"http://checkout.acme.svc:8080/actuator/health\", \"intervalSeconds\": 30, \"timeoutMs\": 2000, \"failureThreshold\": 3, \"recoveryThreshold\": 2, \"downSeverity\": \"MAJOR\", \"degradedSeverity\": \"MINOR\", \"audience\": \"CUSTOMERS\" }",
+    "code": "201",
+    "resp": "Response body Download { \"id\": \"d1b71952-ed60-40c1-ab05-cb360c84cbad\", \"tenantId\": \"acme\", \"service\": \"checkout\", \"url\": \"http://checkout.acme.svc:8080/actuator/health\", \"policy\": { \"publisher\": \"heal"
+  },
+  "reportExample": {
+    "body": "{ \"tenantId\": \"acme\", \"service\": \"payments\", \"status\": \"DOWN\", \"components\": { \"db\": { \"status\": \"DOWN\", \"details\": { \"error\": \"connection refused\" } }, \"diskSpace\": { \"status\": \"UP\" } }, \"publisher\": \"payments-team\" }",
+    "code": "202",
+    "resp": "Response body Download { \"id\": \"3fa1ef06-4495-4d7a-be94-954b73eac233\", \"tenantId\": \"acme\", \"service\": \"payments\", \"policy\": { \"publisher\": \"payments-team\", \"intervalSeconds\": 30, \"timeoutMs\": 5000, \"failureThreshold\": 2, \"recoveryThreshold\": 2, \"downSeverity\":"
+  },
+  "cleanup": [
+    "checkout 204",
+    "payments 204"
+  ]
+}
+exit 0

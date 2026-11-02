@@ -1,0 +1,11 @@
+== 2026-11-02T10:50:20Z start: node v4b-replay-static.js (commit d10369b)
+PASS [F-64] the production bundle served same-origin behind a reverse proxy loads the feed and opens the stream (X-Client-Id on the fetch, ?clientId= on the stream) :: ["/v1/feed?tenantId=vf4-replay-mvz50xsg&type=OUTAGE&page=0&size=100","/v1/feed/stream?tenantId=vf4-replay-mvz50xsg&type=OUTAGE&clientId=communication-frontend","/v1/feed?tenantId=vf4-replay-mvz50xsg&page=0&size=100","/v1/feed/stream?tenantId=vf4-replay-mvz50xsg&clientId=communication-frontend"]
+PASS [F-61] (a) after the stream is cut the badge shows 'Reconnecting', the browser's own retry carries Last-Event-ID=<last id seen> (on the wire, CDP), and the badge returns to Live :: {"lastIdBefore":251,"wireHeaders":[{"at":1793616624516,"url":"/v1/feed/stream?tenantId=vf4-replay-mvz50xsg&clientId=communication-frontend","lastEventId":"251"}],"requests":[{"at":1793616624515,"q":null,"status":200}],"badges":["Reconnecting","Live"]}
+PASS [F-20] (a) the service replays the frame missed during the drop ('created', id > last id) with no snapshot frames, and the card appears :: {"lastIdBefore":251,"frames":["created#252 missed during drop 1"]}
+PASS [F-61] (b) a 502 to the browser's retry closes the EventSource; the client reopens with ?lastEventId=<last id> after ~1 s (badge 'Reconnecting (1)'), then Live :: {"lastIdBefore":252,"requests":[{"at":1793616628690,"q":null,"status":502},{"at":1793616629695,"q":"252","status":200}],"badges":["Reconnecting","Reconnecting (1)","Live"]}
+PASS [F-20] (b) ?lastEventId= replays the missed frame (created, id > last id) with no snapshot frames :: {"lastIdBefore":252,"frames":["created#253 missed during drop 2"]}
+PASS [F-61] after each recovery the list is reloaded exactly once and then stays quiet (no reload loop in the 4 s idle window) :: {"listLoadsTotal":4,"afterRecoveryA":1,"afterRecoveryB":1,"inIdleWindow":0}
+PASS [F-61] no page errors :: {"pageErrors":[]}
+
+== v4b-replay-static: 7 checks, 0 failed
+EXIT 0 (14 s)
