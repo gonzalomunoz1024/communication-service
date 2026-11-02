@@ -298,12 +298,15 @@ with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attac
 
 **How observations become communications**
 
-- Status vocabulary is Spring Actuator's: `UP`; `DOWN` / `OUT_OF_SERVICE` / `FATAL` → DOWN;
-  `UNKNOWN` carries no information; anything else (`WARN`, `DEGRADED`, …) → DEGRADED. A document
-  that is `UP` overall but has a `DOWN` component is treated as DEGRADED. Nested components
-  (composite indicators, legacy `details` nesting) are flattened to dotted names (`db.primary`);
-  a pushed Boot 2.0/2.1-style document whose components sit under a top-level `details` map is
-  read the same way as one with `components`.
+- Status vocabulary, for the overall status and every component, in any case (the health
+  sidecar reads the same words the same way):
+  `UP`, `OK`, `PASS`, `HEALTHY`, `GREEN`, `SERVING` → UP;
+  `DOWN`, `FAIL`, `FAILED`, `ERROR`, `UNHEALTHY`, `OUT_OF_SERVICE`, `FATAL`, `RED`, `NOT_SERVING` → DOWN;
+  `UNKNOWN` or no status carries no information; any other word (`WARN`, `DEGRADED`, …) → DEGRADED.
+  A document that is `UP` overall but has a component that is DOWN or DEGRADED is treated as
+  DEGRADED. Nested components (composite indicators, legacy `details` nesting) are flattened to
+  dotted names (`db.primary`); a pushed Boot 2.0/2.1-style document whose components sit under a
+  top-level `details` map is read the same way as one with `components`.
 - Probes read `/actuator/health`-style JSON when there is one (any version), otherwise judge by
   HTTP status (2xx up). Connection errors and timeouts are DOWN.
 - Debounced: `failureThreshold` consecutive observations of the same unhealthy status open a
