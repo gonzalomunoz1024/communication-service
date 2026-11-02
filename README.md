@@ -298,6 +298,9 @@ before the debounce sees it, so pods of one service never reset each other's str
 
 - a pod is live while heard from within `staleAfterSeconds` (auto-registered: 90 s) and has
   not sent `leaving: true`; pods still reporting `UNKNOWN` (starting) are live but not counted.
+  While every live pod is `UNKNOWN` the monitor's message carries the first one's own words
+  (`1 pod starting, none reporting yet (web-1: no health target found after 5m0s: …; set CS_PORT
+  and CS_PATH)`, cut at 160 characters).
   The window must stay well above the sidecar's heartbeat plus its retry cap (30 s + 30 s with the
   sidecar's defaults), so a short outage of the service itself never makes a healthy pod look
   silent; lower `instance-stale-after-seconds` only together with `CS_HEARTBEAT`;
