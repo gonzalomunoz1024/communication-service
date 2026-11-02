@@ -222,6 +222,7 @@ the one list of them is in the service's README under
 | `CS_LOG_LEVEL` | `info` | lowest level logged: `debug`, `info`, `warn` or `error`; `debug` adds a `reported` line for every report sent, heartbeats and repeats included (see [Debugging](#debugging-my-service-does-not-show-up)) |
 | `CS_CA_FILE` | empty | extra PEM CA bundle for the endpoint (an internal CA); the image carries the UBI bundle |
 | `CS_INSECURE_SKIP_VERIFY` | `false` | skip TLS verification to the endpoint (local experiments only): `true` or `false`, also `1`/`0`, `yes`/`no`, `on`/`off` in any case |
+| `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | unset | proxy for the reports, chosen as Go's `net/http` does (`HTTPS_PROXY` for an `https://` endpoint, `HTTP_PROXY` for `http://`, the lower-case names too; hosts listed in `NO_PROXY` are reached directly); the probes to the app never use a proxy. A cluster-wide proxy injected into the pod's environment carries the reports: add the endpoint's host to `NO_PROXY` when it must not |
 | `POD_NAME`, `POD_NAMESPACE`, `NODE_NAME`, `CS_VERSION`, `CS_INSTANCE_ID` | Downward API | instance identity |
 
 While the communication service cannot reach its own database, what a report gets depends on how
@@ -285,8 +286,9 @@ curl -s -H 'X-Client-Id: <your repo>' "$CS_ENDPOINT/v1/health/monitors/<monitorI
 
 The usual causes, in order:
 
-1. `sendError` is set: wrong `CS_ENDPOINT`, a Route that needs an internal CA (`CS_CA_FILE`), or an
-   egress policy; the app is unaffected, the sidecar retries with backoff.
+1. `sendError` is set: wrong `CS_ENDPOINT`, a Route that needs an internal CA (`CS_CA_FILE`), an
+   egress policy, or a proxy taken from the environment (`proxyconnect …` in `sendError`; see
+   `NO_PROXY` in the configuration table); the app is unaffected, the sidecar retries with backoff.
 2. Reports arrive but under another tenant: `CS_TENANT` differs from the one the consumers read.
 3. `upSeen` is false: the app has not answered UP yet; during `CS_STARTUP_GRACE` the service
    ignores the UNKNOWN reports (see the previous section). If `target` is empty after the grace,

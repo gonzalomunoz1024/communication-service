@@ -50,6 +50,40 @@ func TestEveryEnvironmentVariableIsDocumented(t *testing.T) {
 	}
 }
 
+// G-4-24 (GAP-sidecar3-4): the report client takes its proxy from the usual environment variables
+// (http.ProxyFromEnvironment) and the probes never use one. The configuration table says so, so a
+// cluster-wide proxy injected into the pod is a documented cause of failing sends. Both facts are
+// read from the source, as the variables above are from config.go.
+func TestProxyVariablesAreDocumented(t *testing.T) {
+	readme, err := os.ReadFile("../../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := ""
+	for _, line := range strings.Split(configurationSection(string(readme)), "\n") {
+		if strings.HasPrefix(line, "| ") && strings.Contains(line, "`NO_PROXY`") {
+			row = line
+		}
+	}
+	for _, want := range []string{"`HTTPS_PROXY`", "`HTTP_PROXY`", "`NO_PROXY`", "probes"} {
+		if !strings.Contains(row, want) {
+			t.Errorf("the README configuration table needs a row for the proxy variables the reports honour and the probes ignore; its row %q lacks %s", row, want)
+		}
+	}
+	for file, want := range map[string]*regexp.Regexp{
+		"../report/client.go": regexp.MustCompile(`Proxy:\s+http\.ProxyFromEnvironment`),
+		"../probe/probe.go":   regexp.MustCompile(`Proxy:\s+nil`),
+	} {
+		src, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !want.Match(src) {
+			t.Errorf("%s no longer matches %s, which the README's proxy row describes", file, want)
+		}
+	}
+}
+
 func configurationSection(readme string) string {
 	start := strings.Index(readme, "\n## Configuration")
 	if start < 0 {
