@@ -18,6 +18,7 @@ import com.atlas.communication.common.domain.CommunicationEvent;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Page;
 import com.atlas.communication.common.domain.Severity;
+import com.atlas.communication.config.GlobalExceptionHandler;
 import com.atlas.communication.feed.application.FeedUseCase;
 import com.atlas.communication.feed.domain.FeedItem;
 import com.atlas.communication.feed.domain.FeedQuery;
@@ -25,10 +26,12 @@ import com.atlas.communication.feed.domain.FeedQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1")
@@ -85,6 +88,15 @@ public class RestControllerFeedAdapter {
             // through comments alone until the graceful-shutdown timeout cuts it.
             Sinks.Empty<Void> ended = Sinks.empty();
             Flux<ServerSentEvent<CommunicationEvent>> data = useCase.stream(query, resumeAfter)
+                    // The answer is committed with the opening comment, before the snapshot or
+                    // the resume check reaches the database, so a lost database can no longer be
+                    // a 503: end the stream and let the client reconnect with its backoff.
+                    .onErrorResume(GlobalExceptionHandler::isDatabaseUnavailable, ex -> {
+                        log.warn("feed stream closed: {}: {}", GlobalExceptionHandler.DATABASE_UNAVAILABLE,
+                                ex.getMessage());
+                        log.debug("feed stream closed", ex);
+                        return Flux.empty();
+                    })
                     .map(e -> ServerSentEvent.<CommunicationEvent>builder()
                             .id(Long.toString(e.seq()))
                             .event(e.type().name().toLowerCase(Locale.ROOT))

@@ -54,7 +54,17 @@ import reactor.core.publisher.Mono;
 public class GlobalExceptionHandler {
 
     /** What a caller is told while the database cannot be reached; the detail goes to the log. */
-    static final String DATABASE_UNAVAILABLE = "database unavailable";
+    public static final String DATABASE_UNAVAILABLE = "database unavailable";
+
+    /**
+     * Whether {@code ex} says the database cannot be reached: the failures
+     * {@link #handleDatabaseUnavailable} answers with 503 (keep the two lists in step). A stream
+     * whose answer is already committed cannot be given a 503 and uses this to end itself instead.
+     */
+    public static boolean isDatabaseUnavailable(Throwable ex) {
+        return ex instanceof DataAccessResourceFailureException || ex instanceof MongoTimeoutException
+                || ex instanceof MongoSocketException;
+    }
 
     /**
      * The database cannot be reached (no server found within the selection timeout, connection

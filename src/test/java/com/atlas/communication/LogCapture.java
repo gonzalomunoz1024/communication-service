@@ -19,8 +19,8 @@ public final class LogCapture implements AutoCloseable {
     private final Level previous;
     private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
 
-    private LogCapture(Class<?> type) {
-        logger = (Logger) LoggerFactory.getLogger(type);
+    private LogCapture(String name) {
+        logger = (Logger) LoggerFactory.getLogger(name);
         previous = logger.getLevel();
         logger.setLevel(Level.DEBUG);
         appender.start();
@@ -28,7 +28,12 @@ public final class LogCapture implements AutoCloseable {
     }
 
     public static LogCapture of(Class<?> type) {
-        return new LogCapture(type);
+        return new LogCapture(type.getName());
+    }
+
+    /** For a logger whose class is not accessible from a test, such as one inside a library. */
+    public static LogCapture of(String loggerName) {
+        return new LogCapture(loggerName);
     }
 
     public List<ILoggingEvent> events() {

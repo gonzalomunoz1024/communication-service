@@ -102,6 +102,10 @@ that needs it answers `503 {"error":"database unavailable"}` within that timeout
 `DOWN` in the same time so the pod leaves the Service while liveness stays `UP`, open SSE streams
 stay up on keepalives, and each scheduler logs one WARN line per skipped run
 (`health sweep skipped: database unavailable: …`, `status sweep skipped: …`) without a stack trace.
+A stream opened during the outage has already answered `200` with its `: connected` comment when
+its snapshot (or resume) query gives up, so it cannot become a 503: it ends after that timeout with
+one WARN line (`feed stream closed: database unavailable: …`) and the client reconnects with its
+backoff.
 The driver's detail, which names the cluster's addresses, appears in the log only (one WARN line
 per answered call, the stack trace at DEBUG). Calls succeed again within one server selection of
 Mongo coming back. The waits are `communication.mongo.server-selection-timeout` (5 s),
