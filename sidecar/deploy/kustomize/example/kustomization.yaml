@@ -1,4 +1,5 @@
 # Example overlay: an existing app plus the sidecar component and the ConfigMap it reads.
+# For the native sidecar form (OpenShift 4.16+) point components at ../component-native instead.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 

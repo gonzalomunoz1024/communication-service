@@ -1,0 +1,15 @@
+# Kustomize component for the native sidecar form (OpenShift 4.16+ / Kubernetes 1.29+): the
+# health sidecar is added as an init container with restartPolicy: Always, so it starts before
+# the app, is stopped after it and never keeps a Job alive. Configuration is the same as the
+# classic component in ../component (the cs-health-sidecar ConfigMap).
+#
+#   # kustomization.yaml of the app
+#   components:
+#     - https://github.com/gonzalomunoz1024/communication-service/sidecar/deploy/kustomize/component-native?ref=main
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+patches:
+  - path: add-native-sidecar.yaml
+    target:
+      kind: (Deployment|StatefulSet)

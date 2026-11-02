@@ -33,8 +33,10 @@ Pick one. The team's own manifests do not change in the first two.
 
 On OpenShift 4.16+ (Kubernetes 1.29+) prefer the native sidecar form (an init container with
 `restartPolicy: Always`): it starts before the app, stops after it, and never keeps a Job
-alive. Both Kustomize and Helm offer it (`add-native-sidecar.yaml`,
-`cs-health-sidecar.initContainer`).
+alive. Both Kustomize and Helm offer it: the
+[`deploy/kustomize/component-native`](deploy/kustomize/component-native) component (a
+strategic-merge patch, so init containers the app already has are kept) and
+`cs-health-sidecar.initContainer`.
 
 A mutating admission webhook that injects the container on a single pod annotation is the
 planned next step; the container and its configuration stay the same.
