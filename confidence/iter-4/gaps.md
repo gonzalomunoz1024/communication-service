@@ -52,3 +52,14 @@ Orchestrator decisions:
   event, so a screen already showing that notice keeps it until it reloads; whether a pod that never became UP should count
   as DOWN after the grace (G-3-18 kept it UNKNOWN); the open questions of `00-inventory.md` §5.
 - Environmental limits stay "not verified" (no cluster, no UBI registry, no Actions run).
+
+## Gaps the iteration-3 audit proposed
+
+The audit (`confidence/iter-3/audit.md` §4.4 and §6) ran while this plan was written and did not read it. Its three findings
+that need a gap are already rows above, so no row is added:
+
+| Audit finding | Covered by |
+|---|---|
+| AUD-3-1: 4 HIGH entries in the Go 1.25.14 standard library of the sidecar binary (caps the sidecar and the E2E system at 80) | G-4-2 |
+| UX-53: the feed's load error is announced by nothing (no `role=alert`) | G-4-18 |
+| GAP-backend3-1: the on-demand probe loses to the sweep's claim save (regression of G-2-7) | G-4-4 |
