@@ -1,0 +1,51 @@
+# G-4-3 after: default base image gcr.io/distroless/java21-debian13:nonroot pinned by digest
+$ docker pull gcr.io/distroless/java21-debian13:nonroot; docker image inspect --format '{{json .RepoDigests}}' …
+["gcr.io/distroless/java21-debian13@sha256:b22857e939bd95abd69d9d747f0421a274f9f70855ecfc335f7d97f6eeef578d"]
+(the multi-arch index: linux/amd64 sha256:0749f5f7…, arm64/v8 sha256:f7ea4e65…, s390x, ppc64le)
+Dockerfile: ARG BASE_IMAGE=gcr.io/distroless/java21-debian13:nonroot@sha256:b22857e939bd95abd69d9d747f0421a274f9f70855ecfc335f7d97f6eeef578d
+
+$ docker build -t beu-backend:after .   (same jar; no --build-arg: the default is what is tested)
+$ docker run -d --name beu-backend --network beu-net -p 127.0.0.1:18305:8080 -e SPRING_MONGODB_URI=mongodb://beu-mongo:27017/fixbeu_image beu-backend:after
+$ docker inspect beu-backend --format '{{.Config.Image}} {{.Config.User}} {{.State.Status}}'
+beu-backend:after User=65532:65532 running
+$ docker top beu-backend -o uid,gid,pid,args
+UID                 GID                 PID                 COMMAND
+65532               65532               29157               java -jar /app/app.jar
+$ curl /actuator/health/liveness, /readiness, /actuator/health
+/actuator/health/liveness -> {"status":"UP"} 200
+/actuator/health/readiness -> {"status":"UP"} 200
+/actuator/health -> {"status":"UP","groups":["liveness","readiness"]} 200
+$ POST /v1/communications
+201
+$ docker logs beu-backend (start lines)
+Starting CommunicationServiceApplication v0.0.1-SNAPSHOT using Java 21.0.13 with PID 1 (/app/app.jar started by nonroot in /home/nonroot)
+Started CommunicationServiceApplication in 7.871 seconds (process running for 8.981)
+
+$ trivy image (same command and DB as before) beu-backend:after
+INFO	Detected OS	family="debian" version="13.7"
+INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=25
+ArtifactName=beu-backend:after findings=77 CRITICAL=0 HIGH=4 MEDIUM=50 LOW=20 UNKNOWN=3
+  HIGH     CVE-2026-76642       libuuid1@2.41.5-0+deb13u1  fixed: -
+  HIGH     CVE-2026-78408       libuuid1@2.41.5-0+deb13u1  fixed: -
+  HIGH     CVE-2026-78409       libuuid1@2.41.5-0+deb13u1  fixed: -
+  HIGH     CVE-2026-78410       libuuid1@2.41.5-0+deb13u1  fixed: -
+fixable findings: 0
+The 4 HIGH are util-linux CVEs (status 'affected', no Debian fix yet) about mount helpers and nsenter;
+the image carries only the libuuid1 library from util-linux, none of those binaries. Not fixable here.
+$ docker export beu-backend | tar -t | grep -E '(^|/)(mount|umount|nsenter|libuuid[^/]*|fdisk|losetup)$'
+usr/lib/x86_64-linux-gnu/libuuid.so.1
+usr/lib/x86_64-linux-gnu/libuuid.so.1.3.0
+$ docker export beu-backend | tar -t | grep -E '^(usr/)?s?bin/'   -> usr/bin/, usr/bin/java, usr/sbin/ (nothing else)
+
+## Again on the rebased branch (int4 67f0d77 + G-4-1, G-4-3, G-4-12, G-4-13; HEAD 4eff8f4)
+$ ./gradlew bootJar; docker build -t beu-backend:final .   (base resolved by the pinned digest sha256:b22857e9…)
+$ docker run --network host -e SERVER_PORT=18306 -e SPRING_MONGODB_URI=mongodb://localhost:18301/fixbeu_image beu-backend:final
+liveness 200 after ~7 s; readiness {"status":"UP"} 200; /actuator/health {"status":"UP","groups":["liveness","readiness"]} 200
+docker top: 65532 65532 java -jar /app/app.jar ("started by nonroot in /home/nonroot", Spring Boot v4.0.9)
+$ trivy image --pkg-types os --list-all-pkgs beu-backend:final
+debian 13.7, 25 packages, 77 findings: CRITICAL 0, HIGH 4 (libuuid1, no fix), MEDIUM 50, LOW 20, UNKNOWN 3; fixable 0
+$ trivy image --scanners vuln --pkg-types os --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 beu-backend:final
+Total: 0 (HIGH: 0, CRITICAL: 0)   exit=0
+$ trivy image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 beu-backend:final   (CI's command)
+exit=1: "[javadb] The first run cannot skip downloading Java DB" - the shared DB copy has no Java part and is
+not to be updated; the jar's libraries are covered by the SBOM scan (0 findings, 114 packages).

@@ -1,0 +1,5 @@
+G-4-7 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  WebClientHealthProbeAdapterTest > aConnectFailureThatArrivesAfterTheProbeTimedOutIsOneDebugLineNotAnErrorWithATrace()  (0.317 s)
+    java.lang.AssertionError: [nothing for a failure nobody waits for any more] 
+    Expecting empty but was: ["Operator called default onErrorDropped"]

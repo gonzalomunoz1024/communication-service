@@ -1,0 +1,35 @@
+G-4-20 BEFORE (fixer FE-4). Frontend at 7ff6306 (G-4-17..19 applied; G-4-20 not), with the test of the G-4-20 commit.
+cd frontend && npx vitest run src/test/OutageCard.test.tsx --reporter=verbose (exit 1)
+
+✓ src/test/OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation
+✓ src/test/OutageCard.test.tsx > OutageCard > offers Withdraw instead of Resolve for a notice that has not started
+✓ src/test/OutageCard.test.tsx > OutageCard > says who resolves and whose feed the notice leaves before asking to confirm
+✓ src/test/OutageCard.test.tsx > OutageCard > names the tenant in the withdraw confirmation too, and leaves the actor out when none is known
+✓ src/test/OutageCard.test.tsx > OutageCard > shows an upcoming notice as Scheduled, with its start once and in sentence case
+✓ src/test/OutageCard.test.tsx > OutageCard > labels an automated notice "Automatic" instead of showing its internal health: reference
+✓ src/test/OutageCard.test.tsx > OutageCard > still shows a reference a person chose, once, and not when it is the ticket number
+✓ src/test/OutageCard.test.tsx > OutageCard > hides the action when the page cannot resolve
+✓ src/test/OutageCard.test.tsx > OutageCard > moves keyboard focus into the confirmation, under its question, and back to the action on Cancel
+× src/test/OutageCard.test.tsx > OutageCard > cancels the confirmation on Escape as Cancel does, with focus back on the action, but not while the call runs
+✓ src/test/OutageCard.test.tsx > OutageCard > does the same for Withdraw, and gives focus back to the confirming button when the service refuses
+Test Files  1 failed (1)
+Tests  1 failed | 10 passed (11)
+--- each failure, up to its source line ---
+FAIL  src/test/OutageCard.test.tsx > OutageCard > cancels the confirmation on Escape as Cancel does, with focus back on the action, but not while the call runs
+    AssertionError: expected <div role="group" …(2)>…(2)</div> to be null
+    - Expected:
+    null
+    + Received:
+    <div
+    aria-labelledby="_r_a_-question"
+    class="flex flex-col gap-2 rounded-md bg-surface-secondary p-3"
+
+Real browser: Chromium via Playwright 1.63 (scratchpad/fe4/scripts/ui-checks.js), iteration-3 jar on :18320 with its own Mongo
+(fe4-mongo). Before = the frontend at 6c15715, no FE-4 fix (Vite :3301); after = c9923b5, all five fixes (Vite :3300).
+Resolve opened by keyboard on the new card, then Escape (from the note field, then from the group's Resolve button):
+[before] G-4-20 confirmation open, focus on <input type=text> "Resolution note (optional)"; pressing Escape
+[before] G-4-20 Escape from the note field: confirmation still open true; focus on <input type=text> "Resolution note (optional)"
+[before] G-4-20 confirmation open, focus on <button> "Resolve"; pressing Escape
+[before] G-4-20 Escape from the confirm button: confirmation still open true; focus on <button> "Resolve"
+[before] G-4-20 GET /v1/feed still lists "fe4 view in feed mvz0v2kr": true
+  -> Escape leaves the confirmation open.

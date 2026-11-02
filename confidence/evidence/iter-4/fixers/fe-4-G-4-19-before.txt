@@ -1,0 +1,25 @@
+G-4-19 BEFORE (fixer FE-4). Frontend at ef1a3b1 (G-4-17, G-4-18 applied; G-4-19 not), with the test of the G-4-19 commit.
+cd frontend && npx vitest run src/test/App.test.tsx --reporter=verbose (exit 1)
+
+✓ src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+× src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs
+✓ src/test/App.test.tsx > App > the header tenant field > loads the feed and opens the stream once for a tenant typed, not once per keystroke
+✓ src/test/App.test.tsx > App > the header tenant field > follows at once on Enter and when the field loses focus
+✓ src/test/App.test.tsx > App > the tenant the page opens on > is none on a first visit, with a prompt that goes once a tenant is typed and remembered
+✓ src/test/App.test.tsx > App > the tenant the page opens on > is the tenant used last in this browser
+✓ src/test/App.test.tsx > App > the tenant the page opens on > is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant
+Test Files  1 failed (1)
+Tests  1 failed | 6 passed (7)
+--- each failure, up to its source line ---
+FAIL  src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs
+    AssertionError: expected <body><div>…(1)</div></body> not to be <body><div>…(1)</div></body> // Object.is equality
+    ❯ src/test/App.test.tsx:113:40
+
+Real browser: Chromium via Playwright 1.63 (scratchpad/fe4/scripts/ui-checks.js), iteration-3 jar on :18320 with its own Mongo
+(fe4-mongo). Before = the frontend at 6c15715, no FE-4 fix (Vite :3301); after = c9923b5, all five fixes (Vite :3300).
+Publish a notice, then Enter on "View in feed":
+[before] G-4-19 focus before Enter: <button> "View in feed"
+[before] G-4-19 after Enter on "View in feed": focus on document.body (nothing focused); it holds the new card: false
+[before] G-4-19 the next Tab: focus on <input type=text> "Service"
+[before] G-4-19 clicking the Publish tab, then the Feed tab: focus on <button role=tab tabindex=0> "Feed3"
+  -> after "View in feed" nothing has focus.

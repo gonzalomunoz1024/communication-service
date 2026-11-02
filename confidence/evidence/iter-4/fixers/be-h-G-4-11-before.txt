@@ -1,0 +1,35 @@
+G-4-11 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  MongoCommunicationRepositoryAdapterIT > pastFiftyTakenFollowUpValuesTheConflictSaysSoAndSuggestsNone()  (0.666 s)
+    java.lang.AssertionError: expectation "expectErrorSatisfies" failed (assertion failed on exception <org.springframework.web.server.ResponseStatusException: 409 CONFLICT "externalRef 'INC9' is already used by notice c1 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to r
+    Expecting throwable message:
+      "409 CONFLICT "externalRef 'INC9' is already used by notice c1 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC9-2).""
+    to contain:
+      "(INC9-2 to INC9-51 are taken as well)"
+    but did not.
+    
+    
+    org.springframework.web.server.ResponseStatusException: 409 CONFLICT "externalRef 'INC9' is already used by notice c1 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC9-2)."
+    )
+FAILED  MongoCommunicationRepositoryAdapterIT > theConflictSuggestsTheFirstFollowUpValueTheTenantDoesNotHoldYet()  (0.092 s)
+    java.lang.AssertionError: expectation "expectErrorSatisfies" failed (assertion failed on exception <org.springframework.web.server.ResponseStatusException: 409 CONFLICT "externalRef 'INC1' is already used by notice c1 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to r
+    Expecting throwable message:
+      "409 CONFLICT "externalRef 'INC1' is already used by notice c1 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC1-2).""
+    to contain:
+      "(for example INC1-3, which is still free)"
+    but did not.
+    
+    
+    org.springframework.web.server.ResponseStatusException: 409 CONFLICT "externalRef 'INC1' is already used by notice c1 in tenant vmforge. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example INC1-2)."
+    )
+FAILED  GlobalExceptionHandlerTest > aStatusCarriesTheFieldsItWasGivenBesideTheError()  (0.042 s)
+    java.lang.AssertionError: 
+    Actual and expected should have same size but actual size is:
+      1
+    while expected size is:
+      2
+    Actual was:
+      {"error"="externalRef 'INC1' is already used by notice c1 in tenant vmforge"}
+    Expected was:
+      ["error"="externalRef 'INC1' is already used by notice c1 in tenant vmforge",
+        "suggestedExternalRef"="INC1-3"]

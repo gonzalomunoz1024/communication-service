@@ -1,0 +1,95 @@
+G-4-21 BEFORE (fixer FE-4). Frontend at 59db964 (G-4-17..20 applied; G-4-21 not), with the tests of the G-4-21 commit (c9923b5).
+cd frontend && npx vitest run src/test/api.test.ts src/test/errors.test.ts src/test/PublishOutageForm.test.tsx --reporter=verbose (exit 1)
+
+✓ src/test/errors.test.ts > explainError > says the service is unreachable for a failed connection or a proxy error
+✓ src/test/errors.test.ts > explainError > passes the service's own words through for a rejection
+✓ src/test/errors.test.ts > explainError > says the service failed, not that it rejected anything, for a 5xx
+✓ src/test/errors.test.ts > explainError > treats the service's own 503 as a failure it explained, not as the service being unreachable
+✓ src/test/errors.test.ts > explainPublishError > explains a bare duplicate-externalRef 409 in the form's terms: the key is permanent, so a follow-up needs a new reference
+✓ src/test/errors.test.ts > explainPublishError > explains a duplicate reference in the form's terms whatever the service's sentence says around it
+✓ src/test/errors.test.ts > explainPublishError > explains the service's current duplicate-reference sentence without its notice id or client-library terms
+✓ src/test/errors.test.ts > explainPublishError > names the External reference the person typed, and suggests the next follow-up number, from the request that was sent
+✓ src/test/errors.test.ts > explainPublishError > reads the reference and the tenant from the sentence when no request is at hand, with or without the holder
+✓ src/test/errors.test.ts > explainPublishError > falls back to the service's own words when it cannot tell which reference is taken
+× src/test/errors.test.ts > explainPublishError > prefers the follow-up value the service names, and counts on itself when the service names none
+× src/test/errors.test.ts > explainPublishError > suggests no value, and gives the service's words, when the service says the follow-up values it checked are all taken
+✓ src/test/errors.test.ts > explainPublishError > suggests the next follow-up number, and -2 for anything else
+✓ src/test/errors.test.ts > explainPublishError > leaves every other error to explainError
+✓ src/test/errors.test.ts > client with the service down > turns a failed connection into an ApiError with status 0
+✓ src/test/errors.test.ts > client with the service down > tells a 5xx with an empty body from one the service explained
+✓ src/test/errors.test.ts > client with the service down > keeps the reason of a 503 that carries the service's {"error"} body apart from a proxy's bare 503
+✓ src/test/api.test.ts > feedQuery > drops empty filters
+✓ src/test/api.test.ts > createCommunicationClient > posts JSON, says who is calling and returns the body
+✓ src/test/api.test.ts > createCommunicationClient > sends a custom client id on every call
+✓ src/test/api.test.ts > createCommunicationClient > surfaces the service error text
+× src/test/api.test.ts > createCommunicationClient > keeps the 409's suggestedExternalRef, the follow-up value the service says the tenant does not hold yet
+✓ src/test/api.test.ts > createCommunicationClient > stream > identifies itself in the query because EventSource cannot set headers
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > moves focus to the first invalid field and lists every problem next to the button
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > opens the timing card and focuses the end time a maintenance window lacks
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm validation > focuses the severity group when an outage is filed as Info
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service is unreachable instead of quoting a proxy status
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > quotes the service's reason for a rejection
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > calls a 5xx a failure of the service, not a rejection
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > says the service cannot reach its database for its own 503 and keeps the draft editable
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm server errors > moves focus to the banner and scrolls it into view, since it lands below the buttons
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > names the Type and Severity groups by their visible labels and keeps headings in order
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > promises a chip for the ServiceNow incident, and a link only when the service knows the instance
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > makes the whole Save-as-draft row the click target of its switch
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > moves focus to the outcome once published
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm accessibility > moves focus to the Title field on "Publish another"
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains a 409 for a reused incident number: the reference is permanent, a follow-up needs a new one
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > keeps the service's own words in a details element when its 409 explains the permanent key and names the notice
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > explains the service's current 409 sentence in the form's words, with that sentence one click away
+× src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > suggests the service's free value for a third notice on one incident, whose next number is taken too
+✓ src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > names the External reference that was typed and suggests the next follow-up number
+Test Files  3 failed (3)
+Tests  4 failed | 37 passed (41)
+--- each failure, up to its source line ---
+FAIL  src/test/PublishOutageForm.test.tsx > PublishOutageForm duplicate reference > suggests the service's free value for a third notice on one incident, whose next number is taken too
+    Error: expect(element).toHaveTextContent()
+    Expected element to have text content:
+    The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is re
+    Received:
+    The service rejected this. INC0012345 is already the reference of a notice in tenant acme (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is re
+    ❯ src/test/PublishOutageForm.test.tsx:268:19
+FAIL  src/test/api.test.ts > createCommunicationClient > keeps the 409's suggestedExternalRef, the follow-up value the service says the tenant does not hold yet
+    AssertionError: expected ApiError: externalRef 'INC0012345' is alr… { …(2) } to match object { status: 409, …(3) }
+    (1 matching property omitted from actual)
+    - Expected
+    + Received
+    - {
+    -   "body": {
+    -     "error": "externalRef 'INC0012345' is already used by notice n1 in tenant acme. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a ne
+    ❯ src/test/api.test.ts:46:118
+FAIL  src/test/errors.test.ts > explainPublishError > prefers the follow-up value the service names, and counts on itself when the service names none
+    AssertionError: expected 'INC0012345-2' to be 'INC0012345-3' // Object.is equality
+    Expected: "INC0012345-3"
+    Received: "INC0012345-2"
+    ❯ src/test/errors.test.ts:119:130
+FAIL  src/test/errors.test.ts > explainPublishError > suggests no value, and gives the service's words, when the service says the follow-up values it checked are all taken
+    AssertionError: expected { reference: 'INC9', …(4) } to match object { reference: 'INC9', …(3) }
+    (1 matching property omitted from actual)
+    - Expected
+    + Received
+    {
+    "fromTicket": true,
+    -   "next": undefined,
+    ❯ src/test/errors.test.ts:128:35
+
+The decisive values cut above (from the same log):
+  banner test   Expected: "... needs another External reference, such as INC0012345-3."
+                Received: "... needs another External reference, such as INC0012345-2.What the service said ..."
+  none-free     -   "next": undefined,
+                +   "next": "INC9-2",
+  -> the banner advises INC0012345-2, which the second notice holds (UX-52), although the 409 named INC0012345-3; and it advises
+     INC9-2 when the service's own sentence says INC9-2 to INC9-51 are taken.
+
+Real browser: Chromium via Playwright 1.63 (scratchpad/fe4/scripts/ui-checks.js), iteration-3 jar on :18320 with its own Mongo
+(fe4-mongo). Before = the frontend at 6c15715, no FE-4 fix (Vite :3301); after = c9923b5, all five fixes (Vite :3300).
+UX-52's setting: the tenant holds fe4ref-<run> and fe4ref-<run>-2; the form publishes a third notice with fe4ref-<run>.
+The -3 and none-free 409s are the jar's real 409 rewritten by page.route (G-4-11 is BE-H's and not in this jar).
+[before] G-4-21 iteration-3 jar's answer: 409 {"error":"externalRef 'fe4ref-mvz0v2kr' is already used by notice 30b93aca-6fd5-42f3-a1c4-fcdca20b880c in tenant fixfe4-ui-mvz0v2kr. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example fe4ref-mvz0v2kr-2)."}
+[before] G-4-21 banner: The service rejected this. fe4ref-mvz0v2kr is already the External reference of a notice in tenant fixfe4-ui-mvz0v2kr. […] needs another External reference, such as fe4ref-mvz0v2kr-2.
+[before] G-4-21 the same 409 with suggestedExternalRef "fe4ref-mvz0v2kr-3" added (page.route, G-4-11 simulated): banner: The service rejected this. fe4ref-mvz0v2kr is already the External reference of a notice in tenant fixfe4-ui-mvz0v2kr. […] needs another External reference, such as fe4ref-mvz0v2kr-2.
+[before] G-4-21 a 409 without the field whose sentence ends "(fe4ref-mvz0v2kr-2 to fe4ref-mvz0v2kr-51 are taken as well)" (page.route, G-4-11's none-free case simulated): banner: The service rejected this. fe4ref-mvz0v2kr is already the External reference of a notice in tenant fixfe4-ui-mvz0v2kr. […] needs another External reference, such as fe4ref-mvz0v2kr-2.
+[before] G-4-21 following the advice (External reference fe4ref-mvz0v2kr-2): answer 409 {"error":"externalRef 'fe4ref-mvz0v2kr-2' is already used by notice bf7d5b00-bbf3-4442-aa99-0e3625fc0f72 in tenant f; "View in feed" shown: false

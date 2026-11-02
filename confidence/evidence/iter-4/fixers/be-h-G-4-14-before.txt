@@ -1,0 +1,5 @@
+G-4-14 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  ReadmeExamplesTest > titlesAndBodiesInTheExamplesArePlainText()  (0.382 s)
+    java.lang.AssertionError: [Markdown in a plain-text field] 
+    Expecting empty but was: [""body":"We are investigating **elevated errors**.""]

@@ -1,0 +1,13 @@
+G-4-16 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  HealthStatusTest > aStatusIsTrimmedOfExactlyTheCharactersUpToUPlus0020LikeTheSidecar()  (0.021 s)
+    org.assertj.core.error.AssertJMultipleFailuresError: 
+    Multiple Failures (2 failures)
+    -- failure 1 --
+    [[U+0001]] 
+    expected: UNKNOWN
+     but was: DEGRADED
+    -- failure 2 --
+    [[U+2003]] 
+    expected: DEGRADED
+     but was: UNKNOWN

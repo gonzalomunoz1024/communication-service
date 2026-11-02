@@ -1,0 +1,3 @@
+G-4-14 after: worktree /home/claude/wt4-beh at fcfd473 (all eleven be-h fixes committed on 6c15715). Command: ./gradlew --max-workers=2 --no-daemon check, 2026-11-02: BUILD SUCCESSFUL; test 264 tests, 0 failures, 0 skipped; integrationTest 50 tests, 0 failures, 0 skipped; jacocoTestCoverageVerification passed (LINE 0.9699, minimum 0.92; BRANCH 0.8564, minimum 0.84); spotbugsMain passed.
+
+PASSED  ReadmeExamplesTest > titlesAndBodiesInTheExamplesArePlainText()  (0.22 s)

@@ -1,0 +1,47 @@
+G-4-29 before (docs only): what the e2e suite says about the sidecar's send policy at 6c15715, against the sidecar's
+documented policy and what the suite's own stack did in the before run of G-4-30 (2026-11-02 08:15Z, fresh stack,
+sidecar built from this checkout with go1.27.3, CS_INTERVAL=2s CS_RETRY_DELAY=500ms CS_HEARTBEAT=4s).
+
+$ git show 6c15715:e2e/README.md | sed -n '126,131p'
+- **Sidecar cadence** `CS_INTERVAL=2s`, `CS_RETRY_DELAY=500ms`, `CS_HEARTBEAT=4s` (defaults 15 s / 2 s / 30 s).
+  The service opens a notice after `failureThreshold` observations and the sidecar re-sends an
+  unchanged status only at the heartbeat, so with the defaults a DOWN app becomes an OUTAGE about
+  45 s after it fails. Here: a probe within 2 s, the second look 0.5 s later, the change report, the
+  next heartbeat at the first 2 s tick 4 s on, the backend's 500 ms fan-out poll: a card in the feed
+  within about 9 s (8.5 s measured), and recovery the same way (6.3 s measured). The tests allow 15 s.
+$ git show 6c15715:e2e/docker-compose.yml | sed -n '33,36p;78p'
+      # The debounce the suite's timing budget is written for: two matching observations open or retire a
+      # notice. These are the service's defaults, pinned so a changed default cannot silently stretch the
+      # budget. With the sidecar below probing every 2 s and re-sending every 4 s, a DOWN app is an OUTAGE
+      # in the feed within about 9 s, and a recovered one retires it as fast.
+      # a test cadence: probe every 2 s, second look at a non-UP answer after 0.5 s, re-send every 4 s
+$ git show 6c15715:e2e/tests/03-f91-sidecar-auto-notice.spec.ts | sed -n '36p'
+    // the tuned debounce: a probe within 2 s, a second look 0.5 s later, the report, the next heartbeat 4 s on
+
+== the policy since G-2-16/G-3-16 (sidecar/README.md 'What it reports and when'):
+  - while the service counts the report as DOWN or DEGRADED, it is sent after every probe: a
+    status other than UP and UNKNOWN (DOWN, a degraded status), or UP with a failing component,
+    nested ones included (DOWN, `OUT_OF_SERVICE` or another word such as `WARN`), which the
+    service classifies as DEGRADED. Its `failureThreshold` of consecutive observations is then
+    reached one probe interval after the first failure, not one heartbeat later;
+  - an UP report whose components are all UP (or UNKNOWN), and an UNKNOWN report, are repeated
+    only as a heartbeat every 30 s (`CS_HEARTBEAT`). The service ignores UNKNOWN, so a pod that
+    never becomes UP costs no more requests than a healthy one.
+
+  1,000 healthy pods, or 1,000 that never become UP, are about 33 requests/s; 1,000 failing
+
+== the suite's stack, test 03 (./stack.sh logs, cut): the first DOWN report is the change line; the OUTAGE opens with the
+   second DOWN report 2.85 s later (one 2 s probe + the 0.5 s second look), not at the 4 s heartbeat; the UP change report is
+   followed by the retirement 4.48 s later (the second UP waits for the heartbeat)
+e2e-sidecar | {"time":"2026-11-02T08:16:10.061277308Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+e2e-backend | 2026-11-02T08:16:12.911Z  INFO 1 --- [communication-service] [ntLoopGroup-3-7] c.a.c.h.a.HealthObservationUseCase       : monitor f111f6e3-62df-4299-8c77-b7a4e6130a00 opened OUTAGE e21ca9cc-4634-4
+e2e-sidecar | {"time":"2026-11-02T08:16:15.157511055Z","level":"INFO","msg":"reported","status":"UP","message":""}
+e2e-backend | 2026-11-02T08:16:19.637Z  INFO 1 --- [communication-service] [ntLoopGroup-3-6] c.a.c.h.a.HealthObservationUseCase       : retired notice e21ca9cc-4634-4f23-bbf7-0de6ca4d62a0: recovered: UP (1 of 1
+   08:16:10.061 -> 08:16:12.911 = 2.85 s; 08:16:15.157 -> 08:16:19.637 = 4.48 s
+F-91: the OUTAGE card appeared 6.0 s after the app went DOWN
+F-91: the card left 6.4 s after the app came back
+   (the README says the card comes within about 9 s, 8.5 s measured, on the heartbeat path; with the defaults it says
+    about 45 s, where the every-probe policy gives 19 to 34 s, 40 s at most with the probe's 20 % jitter)
+
+== the iteration-3 verifier's three suite runs (confidence/evidence/iter-3/e2e/04-stack-logs-excerpt.txt): change report ->
+   OUTAGE opened 2.7 / 2.8 / 2.7 s (06:51:12.371 -> 06:51:15.052, 06:53:44.877 -> 06:53:47.666, 06:55:48.063 -> 06:55:50.781)

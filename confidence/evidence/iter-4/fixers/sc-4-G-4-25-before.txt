@@ -1,0 +1,16 @@
+# sc-4 G-4-25 BEFORE: an accepted send after failures is logged at DEBUG unless the status changed (commit 32cd087 + the new test)
+# date: 2026-11-02T08:22:33Z
+
+$ go test -count=1 -run 'TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo' -v ./internal/agent/
+=== RUN   TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo
+=== RUN   TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/refused_twice,_then_accepted
+    agent_test.go:1048: log lines at INFO and above ["INFO reported" "WARN report failed; will retry" "WARN report failed; will retry"], want ["INFO reported" "WARN report failed; will retry" "WARN report failed; will retry" "INFO report delivered again"]
+=== RUN   TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/rejected_at_a_heartbeat,_accepted_at_the_next
+    agent_test.go:1048: log lines at INFO and above ["INFO reported" "ERROR report rejected"], want ["INFO reported" "ERROR report rejected" "INFO report delivered again"]
+--- FAIL: TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo (0.01s)
+    --- FAIL: TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/refused_twice,_then_accepted (0.01s)
+    --- FAIL: TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/rejected_at_a_heartbeat,_accepted_at_the_next (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.014s
+FAIL
+exit=1

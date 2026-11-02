@@ -1,0 +1,121 @@
+# sc-4 G-4-28 AFTER: commit 7a67abd: gofmt gate, CI=true go test -race, govulncheck@v1.9.0
+# date: 2026-11-02T08:28:32Z
+# Run the same way as the before file (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sc4/scripts/ci_sidecar_steps.py, same substitutions).
+
+## the job's steps now
+2:    name: Sidecar (vet, tests, manifests, govulncheck, image)
+6:      run:
+24:        run: |
+28:      # gofmt -l lists every file whose formatting differs from gofmt's; any listed file fails the job
+29:      - name: gofmt
+30:        run: |
+31:          unformatted=$(gofmt -l .)
+33:            echo "gofmt -l lists files that are not formatted:"
+37:      - run: go vet ./...
+39:      # missing; -race runs every test under the race detector
+40:      - run: CI=true go test -race ./...
+42:      - name: govulncheck
+43:        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+45:        run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
+$ python3 -c 'yaml.safe_load(ci.yml)'   -> parses; sidecar job steps:
+    0  | actions/checkout@v4
+    1  | actions/setup-go@v5
+    2  | imranismail/setup-kustomize@v2
+    3  | azure/setup-helm@v4
+    4 Install kubeconform | curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+    5 gofmt | unformatted=$(gofmt -l .)
+    6  | go vet ./...
+    7  | CI=true go test -race ./...
+    8 govulncheck | go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+    9 Build the image | docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
+
+## 1. the new job on the tree with the planted unformatted file: the gofmt step fails and names it
+--- step 4 'Install kubeconform': skipped here (see header)
+--- step 5 'gofmt': unformatted=$(gofmt -l .)
+if [ -n "$unformatted" ]; then
+  echo "gofmt -l lists files that are not formatted:"
+  echo "$unformatted"
+  exit 1
+fi
+    gofmt -l lists files that are not formatted:
+    internal/probe/zz_planted.go
+    exit=1
+JOB FAILED at this step; later steps do not run
+
+## 2. the new job on the clean tree (git archive HEAD): every step passes, tests under -race
+--- step 4 'Install kubeconform': skipped here (see header)
+--- step 5 'gofmt': unformatted=$(gofmt -l .)
+if [ -n "$unformatted" ]; then
+  echo "gofmt -l lists files that are not formatted:"
+  echo "$unformatted"
+  exit 1
+fi
+    exit=0
+--- step 6 '': go vet ./...
+    exit=0
+--- step 7 '': CI=true go test -race ./...
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	2.401s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	6.328s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.416s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	1.029s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	1.020s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	3.459s
+    ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	1.138s
+    exit=0
+--- step 8: sandbox substitution: -db https://storage.googleapis.com/go-vulndb
+--- step 8 'govulncheck': go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -db https://storage.googleapis.com/go-vulndb ./...
+    No vulnerabilities found.
+    exit=0
+--- step 9 'Build the image': skipped here (see header)
+JOB PASSED (every step run here exited 0)
+
+## 3. the pinned govulncheck step is a working gate: v1.9.0 (the binary of the CI step's version) in source mode
+##    on the same tree with go.mod back on 'go 1.25' and go1.25.14 (the iteration-3 toolchain), GOTOOLCHAIN=local
+Vulnerability #1: GO-2026-6809
+Vulnerability #2: GO-2026-6617
+Vulnerability #3: GO-2026-6613
+Vulnerability #4: GO-2026-6612
+Vulnerability #5: GO-2026-6611
+Vulnerability #6: GO-2026-6610
+Vulnerability #7: GO-2026-6608
+Vulnerability #8: GO-2026-6607
+Vulnerability #9: GO-2026-6605
+Vulnerability #10: GO-2026-6603
+Your code is affected by 10 vulnerabilities from the Go standard library.
+exit=3 (the step fails)
+
+## the runner (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sc4/scripts/ci_sidecar_steps.py)
+"""Run the run-steps of the sidecar job of a GitHub workflow file, in order, the way Actions runs
+them (bash -e -o pipefail, working-directory sidecar, CI=true, stop at the first failing step).
+Sandbox substitutions, printed when used: the kubeconform download step and the image build step
+are skipped (github.com release downloads and the UBI registry are blocked; the tools are on PATH
+and the image build is evidenced separately), and govulncheck gets -db pointing at the bucket
+behind vuln.go.dev, which the proxy blocks.
+usage: python3 -I ci_sidecar_steps.py <workflow.yml> <repo tree>"""
+import os, subprocess, sys, yaml
+
+workflow, tree = sys.argv[1], sys.argv[2]
+job = yaml.safe_load(open(workflow))["jobs"]["sidecar"]
+workdir = os.path.join(tree, job.get("defaults", {}).get("run", {}).get("working-directory", "."))
+env = dict(os.environ, CI="true")
+for i, step in enumerate(job["steps"]):
+    if "run" not in step:
+        continue
+    name, cmd = step.get("name", ""), step["run"]
+    if name in ("Install kubeconform", "Build the image"):
+        print(f"--- step {i} {name!r}: skipped here (see header)")
+        continue
+    if "govulncheck@" in cmd:
+        cmd = cmd.replace(" ./...", " -db https://storage.googleapis.com/go-vulndb ./...")
+        print(f"--- step {i}: sandbox substitution: -db https://storage.googleapis.com/go-vulndb")
+    print(f"--- step {i} {name!r}: {cmd.strip()}", flush=True)
+    r = subprocess.run(["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", cmd], cwd=workdir, env=env,
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    out = r.stdout.strip().splitlines()
+    for line in (out if len(out) <= 12 else out[:3] + ["  [...]"] + out[-8:]):
+        print("    " + line)
+    print(f"    exit={r.returncode}", flush=True)
+    if r.returncode != 0:
+        print("JOB FAILED at this step; later steps do not run")
+        sys.exit(1)
+print("JOB PASSED (every step run here exited 0)")

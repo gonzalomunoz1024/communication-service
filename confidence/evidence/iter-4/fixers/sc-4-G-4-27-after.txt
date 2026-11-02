@@ -1,0 +1,25 @@
+# sc-4 G-4-27 AFTER: the plain-YAML row names the ConfigMap and its keys; the manual file's header says which pieces are the sidecar's
+# date: 2026-11-02T08:26:03Z
+
+$ grep -n '^| \*\*Plain YAML' README.md
+32:| **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | applies the `cs-health-sidecar` ConfigMap at the top of that file in the app's namespace, with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER`, and pastes the container block into its Deployment |
+$ head -5 deploy/manual/deployment.yaml
+# Fallback for teams that manage plain YAML. Two pieces are the sidecar's: the cs-health-sidecar
+# ConfigMap below (CS_ENDPOINT, CS_TENANT and, optionally, CS_CLUSTER), applied in the app's
+# namespace, and the "health-sidecar" container, pasted into the pod spec; without the ConfigMap
+# the container cannot start (CreateContainerConfigError). The rest of the Deployment is the
+# team's own.
+$ grep -n -A2 '^4\. The sidecar never started' README.md
+311:4. The sidecar never started (no logs, the pod in `CreateContainerConfigError`): the
+312-   `cs-health-sidecar` ConfigMap is missing from the app's namespace (Kustomize and plain YAML);
+313-   `oc describe pod <pod>` names it.
+
+$ CI=true go test -count=1 -run 'TestEachAttachPathNamesTheConfigMapItsContainerReads|TestManualSnippetSharesTheContainerContract' -v ./deploy/
+=== RUN   TestManualSnippetSharesTheContainerContract
+    deploy_test.go:287: kubeconform 1.27.0: Summary: 2 resources found parsing stdin - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- PASS: TestManualSnippetSharesTheContainerContract (0.66s)
+=== RUN   TestEachAttachPathNamesTheConfigMapItsContainerReads
+--- PASS: TestEachAttachPathNamesTheConfigMapItsContainerReads (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.687s
+exit=0

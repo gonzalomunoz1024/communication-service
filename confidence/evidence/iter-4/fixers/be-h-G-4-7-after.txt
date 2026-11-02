@@ -1,0 +1,13 @@
+G-4-7 after: worktree /home/claude/wt4-beh at fcfd473 (all eleven be-h fixes committed on 6c15715). Command: ./gradlew --max-workers=2 --no-daemon check, 2026-11-02: BUILD SUCCESSFUL; test 264 tests, 0 failures, 0 skipped; integrationTest 50 tests, 0 failures, 0 skipped; jacocoTestCoverageVerification passed (LINE 0.9699, minimum 0.92; BRANCH 0.8564, minimum 0.84); spotbugsMain passed.
+
+PASSED  WebClientHealthProbeAdapterTest > connectionRefusedIsDownNotAnError()  (0.372 s)
+PASSED  WebClientHealthProbeAdapterTest > aConnectFailureThatArrivesAfterTheProbeTimedOutIsOneDebugLineNotAnErrorWithATrace()  (0.314 s)
+PASSED  WebClientHealthProbeAdapterTest > actuatorDocumentWinsOverHttpStatus()  (0.01 s)
+PASSED  WebClientHealthProbeAdapterTest > withoutAHealthDocumentTheHttpStatusDecides()  (0.003 s)
+PASSED  WebClientHealthProbeAdapterTest > probesALiveActuatorEndpoint()  (0.232 s)
+PASSED  WebClientHealthProbeAdapterTest > slowEndpointIsDownAfterTheTimeout()  (0.317 s)
+
+Exploration, not committed (scratchpad/beh/explore/LateFailureStressScratchTest.java, run once in the worktree and removed): 3000 probes per variant, each with a timeout drawn between 0.05 and 1.5 ms, against a port that refuses connections, through the iteration-3 chain and through the fixed adapter; Reactor's dropped-error lines counted:
+STRESS old-chain: timeouts=1812 refused=1188 adapterDebugLines=0 operatorsWarnOrError=193
+STRESS adapter: timeouts=1083 refused=1917 adapterDebugLines=185 operatorsWarnOrError=0
+STRESS old-chain DROPPED: ERROR Operator called default onErrorDropped / org.springframework.web.reactive.function.client.WebClientRequestException: finishConnect(..) failed with error(-111): Connection refused: /127.0.0.1:37475

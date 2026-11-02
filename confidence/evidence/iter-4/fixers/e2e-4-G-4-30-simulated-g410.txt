@@ -1,0 +1,28 @@
+G-4-30, supporting run (not the after evidence): the same spec with one addition that is NOT committed: while the database
+is stopped, the late page's stream requests are held 5 s and answered 503 {"error":"database unavailable"} before any byte, as
+G-4-10 specifies for the backend (page.route on /v1/feed/stream; route.continue() once stack.sh start-mongo has returned).
+Code otherwise the iteration-3 code (jar, frontend bundle). Fresh stack 2026-11-02 ~08:21Z, ./stack.sh down after.
+The added lines (diff against the committed spec):
+    let dbDown = true
+    await late.route(STREAM, async (route) => {
+      if (!dbDown) return route.continue()
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+      return route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"database unavailable"}' })
+    })
+    ... await stack('start-mongo'); dbDown = false
+
+$ npx playwright test tests/zz-sim-g410.spec.ts
+Running 1 test using 1 worker
+F-92: GET /v1/feed answered 503 in 5.0 s with the database stopped
+F-57: the late page showed the error state 10.5 s into the outage
+F-92: the late page while the database was down (3 stream requests, 1 list loads): +0.0 s (no badge), +0.2 s Connecting, +5.2 s Reconnecting (1), +5.3 s Reconnecting (1) | Couldn't load the feed (database unavailable), +11.3 s Reconnecting (2) | Couldn't load the feed (database unavailable)
+F-92: the backend was ready again 28.8 s after the database stopped
+F-92: the late page showed the feed 11.9 s after the backend was ready, then: +18.3 s Reconnecting (3) | Couldn't load the feed (database unavailable), +27.3 s Reconnecting (4) | Couldn't load the feed (database unavailable), +35.3 s Live
+F-92: the open page showed a new notice 12.5 s after the backend was ready
+  ✓  1 tests/zz-sim-g410.spec.ts:49:5 › SIM-G-4-10 F-92 F-57 the database goes away → 503 "database unavailable" → a page opened meanwhile says why, offers Try again and never says Live, the open page keeps its stream → the database is back → both recover by themselves (44.9s)
+  1 passed (47.1s)
+
+-> with a stream that cannot open during the outage, the new assertions hold on the iteration-3 frontend: the badge goes
+   Connecting -> Reconnecting (1) -> (2) and never says Live, the database message stays from +5.3 s on, the list is loaded
+   once; after the database is back the page reaches Live and the list by itself (here 11.9 s after readiness: its 8 s backoff
+   step). The real after run (G-4-10 + G-4-17 merged) is the orchestrator's.

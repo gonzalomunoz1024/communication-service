@@ -1,0 +1,12 @@
+G-4-8 before: worktree /home/claude/wt4-beh at 6c15715 (main code unchanged) with the new regression tests added. Command: ./gradlew --max-workers=2 --no-daemon --continue test --tests <10 classes> integrationTest --tests <3 classes>, 2026-11-02.
+
+FAILED  ClientIdWebFilterEdgeCasesTest > withTheCheckSwitchedOffEveryRequestIsStillLoggedUnidentifiedOnesAsADash()  (0.393 s)
+    java.lang.AssertionError: 
+    Expected size: 3 but was: 0 in:
+    []
+
+Live: iteration-3 jar on :18319 with --communication.client-id.required=false, three /v1 requests (script clientid_off.sh):
+iter3: no id -> 200
+iter3: X-Client-Id fixbeh-tools -> 200
+iter3: X-Client-Id 'not a repo!' -> 200
+iter3: ClientIdWebFilter lines in the backend log: 0

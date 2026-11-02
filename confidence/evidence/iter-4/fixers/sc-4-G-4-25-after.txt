@@ -1,0 +1,44 @@
+# sc-4 G-4-25 AFTER: the first accepted report after failed or rejected sends logs INFO 'report delivered again' (failedAttempts, failingFor)
+# date: 2026-11-02T08:23:19Z
+
+$ go test -count=1 -run 'TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo|TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug|TestSendFailuresBackOffAndKeepLatest|TestRejectedDownReportKeepsTheHeartbeatCadence' -v ./internal/agent/
+=== RUN   TestSendFailuresBackOffAndKeepLatest
+--- PASS: TestSendFailuresBackOffAndKeepLatest (0.00s)
+=== RUN   TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug
+--- PASS: TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug (0.00s)
+=== RUN   TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo
+=== RUN   TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/refused_twice,_then_accepted
+=== RUN   TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/rejected_at_a_heartbeat,_accepted_at_the_next
+--- PASS: TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo (0.01s)
+    --- PASS: TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/refused_twice,_then_accepted (0.00s)
+    --- PASS: TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo/rejected_at_a_heartbeat,_accepted_at_the_next (0.00s)
+=== RUN   TestRejectedDownReportKeepsTheHeartbeatCadence
+--- PASS: TestRejectedDownReportKeepsTheHeartbeatCadence (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.024s
+exit=0
+
+$ go test -count=20 -race -run 'TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo|TestRetriesAreNeverFurtherApartThanTheBackoffCap' ./internal/agent/
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	2.957s
+exit=0
+
+## live, at the default level (INFO): the final image health-sidecar:sc4-final in an emulated pod
+## (sc4-app from fakeapp:ci, sc4-sidecar --network container:sc4-app --user 1000660000:0 --read-only --cap-drop ALL
+## --security-opt no-new-privileges, CS_INTERVAL=2s CS_HEARTBEAT=4s CS_RETRY_DELAY=500ms) reporting to a private backend
+## (scratchpad/communication-service-iter3.jar on :18330, database fixsc4_x). The backend was stopped at 08:31:28.965
+## (SIGTERM), started again at 08:31:47.261 and ready at 08:31:54.620. docker logs sc4-sidecar, every line (error text cut):
+08:31:08.281 INFO health sidecar starting {"version": "1.0.0-sc4", "service": "fake-app", "tenant": "fixsc4", "instance": "fake-app-7f9c6d5b4-sc4aa", "endpoint": "http://172.17.0.1:18330", "probe": "auto"}
+08:31:08.284 INFO health target found {"target": "http://127.0.0.1:8080/actuator/health", "status": "UP"}
+08:31:08.956 INFO reported {"status": "UP", "message": ""}
+08:31:30.827 WARN report failed; will retry {"error": "post http://172.17.0.1:18330/v1/health/reports: Post \"http://172.17.0.1:18330/v1/health/reports\": di", "in": "1s"}
+08:31:33.059 WARN report failed; will retry {"error": "post http://172.17.0.1:18330/v1/health/reports: Post \"http://172.17.0.1:18330/v1/health/reports\": di", "in": "2s"}
+08:31:35.105 WARN report failed; will retry {"error": "post http://172.17.0.1:18330/v1/health/reports: Post \"http://172.17.0.1:18330/v1/health/reports\": di", "in": "4s"}
+08:31:39.598 WARN report failed; will retry {"error": "post http://172.17.0.1:18330/v1/health/reports: Post \"http://172.17.0.1:18330/v1/health/reports\": di", "in": "8s"}
+08:31:48.659 WARN report failed; will retry {"error": "post http://172.17.0.1:18330/v1/health/reports: Post \"http://172.17.0.1:18330/v1/health/reports\": di", "in": "16s"}
+08:32:02.732 INFO report delivered again {"status": "UP", "failedAttempts": 5, "failingFor": "31.389s"}
+GET /status: lastReport.status=UP reportsSent=8 sendError=None lastSendAt=2026-11-02T08:32:11.777422315Z
+(after the INFO line the heartbeats every 4 s are DEBUG only: no further line at INFO until the SIGTERM below)
+08:32:26.212 INFO leaving report sent
+08:32:26.212 INFO health sidecar stopped
+docker stop (SIGTERM) -> exit 0
+service side (GET /v1/health/monitors?tenantId=fixsc4 on :18330): fake-app lastStatus UP, healthyStreak 11, lastSummary 'UNKNOWN (no live pod reports)' after the leaving report

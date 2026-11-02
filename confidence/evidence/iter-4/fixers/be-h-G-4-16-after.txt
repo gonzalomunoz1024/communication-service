@@ -1,0 +1,6 @@
+G-4-16 after: worktree /home/claude/wt4-beh at fcfd473 (all eleven be-h fixes committed on 6c15715). Command: ./gradlew --max-workers=2 --no-daemon check, 2026-11-02: BUILD SUCCESSFUL; test 264 tests, 0 failures, 0 skipped; integrationTest 50 tests, 0 failures, 0 skipped; jacocoTestCoverageVerification passed (LINE 0.9699, minimum 0.92; BRANCH 0.8564, minimum 0.84); spotbugsMain passed.
+
+PASSED  HealthStatusTest > componentsInTheSidecarsWordsAreHealthyOrFailingAsTheyMean()  (0.001 s)
+PASSED  HealthStatusTest > everyWordOfBothVocabulariesMeansTheSameHereAsInTheSidecar()  (0.535 s)
+PASSED  HealthStatusTest > anyOtherWordIsDegraded()  (0.003 s)
+PASSED  HealthStatusTest > aStatusIsTrimmedOfExactlyTheCharactersUpToUPlus0020LikeTheSidecar()  (0.003 s)

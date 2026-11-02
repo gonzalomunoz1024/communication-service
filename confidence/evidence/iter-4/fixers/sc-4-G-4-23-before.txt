@@ -1,0 +1,21 @@
+# sc-4 G-4-23 BEFORE: README configuration row says the service's 503 always arrives before the 10 s report timeout (commit 0a9497e + the rewritten test)
+# date: 2026-11-02T08:20:38Z
+
+## README.md line that the gap disproves
+218:| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included. The report timeout is longer than the service's own 5 s database timeout, so while the service cannot reach its database its 503 `database unavailable` arrives before the sidecar gives up and `sendError` names that cause, not a timeout |
+
+## the test as it was (hard-coded figure), from git show HEAD:sidecar/internal/config/config_test.go
+145:	const serviceDatabaseTimeout = 5 * time.Second
+146:	if cfg.ReportTimeout != 10*time.Second || cfg.ReportTimeout <= serviceDatabaseTimeout {
+147:		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s: longer than the service's %v database timeout", cfg.ReportTimeout, serviceDatabaseTimeout)
+
+$ go test -count=1 -run 'TestReportTimeoutDefault' -v ./internal/config/   (the rewritten test reads server-selection-timeout and read-timeout from src/main/resources/application.yml)
+=== RUN   TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts
+    config_test.go:178: the README's configuration section should say what a report gets while the service's database refuses connections and while it hangs, with "5 s `server-selection-timeout`"
+    config_test.go:178: the README's configuration section should say what a report gets while the service's database refuses connections and while it hangs, with "15 s `read-timeout`"
+    config_test.go:178: the README's configuration section should say what a report gets while the service's database refuses connections and while it hangs, with "context deadline exceeded"
+--- FAIL: TestReportTimeoutDefaultAgainstTheServiceDatabaseTimeouts (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.003s
+FAIL
+exit=1

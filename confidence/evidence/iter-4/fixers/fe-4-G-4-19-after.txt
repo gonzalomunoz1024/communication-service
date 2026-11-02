@@ -1,0 +1,22 @@
+G-4-19 AFTER (fixer FE-4). OutageFeed autoFocus puts focus on the results wrapper; App passes it only after "View in feed".
+cd frontend && npx vitest run src/test/App.test.tsx --reporter=verbose (exit 0)
+
+✓ src/test/App.test.tsx > App > "View in feed" opens the feed of the tenant that was published to, filtered to that type
+✓ src/test/App.test.tsx > App > "View in feed" puts keyboard focus on the feed's list, while switching tabs leaves it on the tabs
+✓ src/test/App.test.tsx > App > the header tenant field > loads the feed and opens the stream once for a tenant typed, not once per keystroke
+✓ src/test/App.test.tsx > App > the header tenant field > follows at once on Enter and when the field loses focus
+✓ src/test/App.test.tsx > App > the tenant the page opens on > is none on a first visit, with a prompt that goes once a tenant is typed and remembered
+✓ src/test/App.test.tsx > App > the tenant the page opens on > is the tenant used last in this browser
+✓ src/test/App.test.tsx > App > the tenant the page opens on > is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant
+Test Files  1 passed (1)
+Tests  7 passed (7)
+
+Real browser: Chromium via Playwright 1.63 (scratchpad/fe4/scripts/ui-checks.js), iteration-3 jar on :18320 with its own Mongo
+(fe4-mongo). Before = the frontend at 6c15715, no FE-4 fix (Vite :3301); after = c9923b5, all five fixes (Vite :3300).
+Publish a notice, then Enter on "View in feed":
+[after] G-4-19 focus before Enter: <button> "View in feed"
+[after] G-4-19 after Enter on "View in feed": focus on <div tabindex=-1> "Active now3ActiveMajorOutageUpdated just nowfe4 vi"; it holds the new card: true
+[after] G-4-19 the next Tab: focus on <button> "Resolve"
+[after] G-4-19 clicking the Publish tab, then the Feed tab: focus on <button role=tab tabindex=0> "Feed3"
+  -> focus on the results wrapper (tabindex=-1) that holds the new card; the next Tab reaches its Resolve button; switching tabs
+     by hand leaves focus on the tab.

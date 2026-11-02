@@ -1,0 +1,143 @@
+# G-4-1 after: Spring Boot 4.0.9 (Spring Framework 7.0.10, Netty 4.2.19.Final, Jackson 3.1.7 and the
+# Jackson 2 BOM 2.21.7, springdoc-openapi 3.0.3, flapdoodle spring4x 4.33.0; Gradle 8.14.3 unchanged)
+
+## Gate: Trivy 0.58.1 SBOM scan of build/reports/cyclonedx/bom.json (same DB copy and flags)
+ArtifactName=build/reports/cyclonedx/bom.json findings=0 CRITICAL=0 HIGH=0 MEDIUM=0 LOW=0 UNKNOWN=0
+  (Trivy read 114 packages from it: 'Detected SBOM format cyclonedx-json', '[jar] Detecting vulnerabilities')
+  now in the SBOM: spring-webflux 7.0.10, netty-handler/codec-http 4.2.19.Final, tools.jackson.core 3.1.7,
+  com.fasterxml.jackson.core 2.21.7 (swagger-core still uses Jackson 2), commons-lang3 3.19.0, log4j-api 2.25.5
+  (Spring Boot 4 names the SBOM application.cdx.json; build.gradle.kts keeps bom.json, the path CI scans)
+
+## ./gradlew check: BUILD SUCCESSFUL (-Werror compile, unit + IT, SpotBugs, JaCoCo, SBOM scope)
+test: tests=253 failures=0 errors=0 skipped=0
+integrationTest: tests=47 failures=0 errors=0 skipped=0
+every one of the 297 baseline test cases passes; 3 new: JsonWireFormatTest x2,
+OperationsEndpointsIT.overallHealthWritesStatusBeforeGroups
+JaCoCo LINE 1412/1463 = 0.9651 (gate 0.92), BRANCH 746/882 = 0.8458 (gate 0.84); SpotBugs main: 0 bugs
+SBOM scope: 113 components, none of them a build or test tool
+
+## The same guards as in the before file, with the shipped settings
+JsonWireFormatTest: tests=2 failures=0 errors=0
+OperationsEndpointsIT: tests=8 failures=0 errors=0
+
+## Wire: the same ~110 requests (wire.py) against the 3.5 jar (:18300) and this jar (:18302), each on a
+## fresh database in the private Mongo beu-mongo; diff of the normalised answers:
+1c1
+< # wire capture against :18300
+---
+> # wire capture against :18302
+140c140
+< < {"error": "unknown field 'x'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId
+---
+> < {"error": "Failed to read HTTP message"}
+220a221,222
+> < frame id:9 | event:updated | data:{"seq": 9, "type": "UPDATED", "at": "<ts>", "communication": {"id": "<uuid>", "tenantId": "beu-wire", "publisher": "sre-te
+> < frame id:10 | event:updated | data:{"seq": 10, "type": "UPDATED", "at": "<ts>", "communication": {"id": "<uuid>", "tenantId": "beu-wire", "publisher": "sre-
+-> line 140: a body nested 600 deep. Jackson 3's default nesting limit is 500 (Jackson 2: 1000); past the
+   limit both versions answer the same 400 {"error":"Failed to read HTTP message"}:
+   depth 499/500: both 'unknown field x'; depth 501 and 1000: 3.5 'unknown field x', 4.0 'Failed to read HTTP
+   message'; depth 1002: both 'Failed to read HTTP message'. Kept: no legitimate body is deeper than 4.
+-> lines 221-222: updated frames the plain (no Last-Event-ID) stream's tail repeats after its snapshot; which
+   ones depends on timing: the first run showed them on the 3.5 jar only, the second on both jars in
+   different places, this run on the Boot 4 jar only. Every Last-Event-ID / lastEventId resume is identical.
+Identical: every {"error"} body, unknown fields rejected on publish/update/retire/ticket and accepted on
+health reports, ISO dates, nulls omitted, emoji as \uD83D\uDD25, null/missing draft accepted, content after
+the body ignored, ':connected', 'id:', event names, ':keepalive' after 15 s, Content-Type
+text/event-stream;charset=UTF-8, /actuator/health {"status":"UP","groups":["liveness","readiness"]},
+liveness/readiness {"status":"UP"}, /actuator/sbom 404 (only health exposed), access-log lines.
+
+## /v3/api-docs from both running jars
+identical apart from servers[0].url: True
+openapi 3.1.0 -> 3.1.0 | 16 paths, 20 operations, 20 schemas | servers http://localhost:18300 -> http://localhost:18302 (the port each jar ran on)
+
+## Readiness with the private Mongo stopped (outage.py; 3.5 jar :18300, Boot 4 jar :18302 with the README's
+## SPRING_DATA_MONGODB_URI env var, Boot 4 jar :18303 with the shared actuator mapper)
+== :18300 before the outage
+  publish (201, '{"id":…)
+  publish (201, '{"id":…)
+  feed 200
+  stream Last-Event-ID: 1 -> HTTP/1.1 200 OK [':connected', 'id:14', 'event:created', 'id:15', 'event:created']
+  health report (202, '{"id":…)
+  readiness (200, '{"status":"UP"}')
+== :18302 before the outage
+  publish (201, '{"id":…)
+  publish (201, '{"id":…)
+  feed 200
+  stream Last-Event-ID: 1 -> HTTP/1.1 200 OK [':connected', 'id:14', 'event:created', 'id:15', 'event:created']
+  health report (202, '{"id":…)
+  readiness (200, '{"status":"UP"}')
+== :18303 before the outage
+  publish (201, '{"id":…)
+  publish (201, '{"id":…)
+  feed 200
+  stream Last-Event-ID: 1 -> HTTP/1.1 200 OK [':connected', 'id:2', 'event:created']
+  health report (202, '{"id":…)
+  readiness (200, '{"status":"UP"}')
+== docker stop beu-mongo
+  stopped in 0.3s
+  seconds until readiness 503 (after the stop returned): {18300: 1.01, 18302: 2.02, 18303: 3.02}
+  (one poll round: each DOWN answer takes the 1 s readiness timeout and the ports are polled in turn)
+  (:18302 ran the jar before the actuator-mapper setting, hence its key order; :18303 = the shipped setting)
+== :18300 during the outage
+  liveness (200, '{"status":"UP"}')
+  readiness (503, '{"status":"DOWN"}')
+  health (503, '{"status":"DOWN","groups":["liveness","readiness"]}')
+  publish (503, '{"error":"database unavailable"}') 5.0s
+  feed (503, '{"error":"database unavailable"}') 5.0s
+  health report (503, '{"error":"database unavailable"}') 5.0s
+== :18302 during the outage
+  liveness (200, '{"status":"UP"}')
+  readiness (503, '{"status":"DOWN"}')
+  health (503, '{"groups":["liveness","readiness"],"status":"DOWN"}')
+  publish (503, '{"error":"database unavailable"}') 5.0s
+  feed (503, '{"error":"database unavailable"}') 5.0s
+  health report (503, '{"error":"database unavailable"}') 5.0s
+== :18303 during the outage
+  liveness (200, '{"status":"UP"}')
+  readiness (503, '{"status":"DOWN"}')
+  health (503, '{"status":"DOWN","groups":["liveness","readiness"]}')
+  publish (503, '{"error":"database unavailable"}') 5.0s
+  feed (503, '{"error":"database unavailable"}') 5.0s
+  health report (503, '{"error":"database unavailable"}') 5.0s
+== docker start beu-mongo
+  seconds until readiness 200 (after the start returned): {18302: 1.71, 18303: 1.73, 18300: 1.99}
+  publish (201, '{"id":…)
+  readiness (200, '{"status":"UP"}')
+  publish (201, '{"id":…)
+  readiness (200, '{"status":"UP"}')
+  publish (201, '{"id":…)
+  readiness (200, '{"status":"UP"}')
+
+## Again on the rebased branch: int4 67f0d77 (BE-H's work) + b70c458 G-4-1, a45e04c G-4-3, eefec53 G-4-12,
+## 4eff8f4 G-4-13 (HEAD 4eff8f4)
+./gradlew --max-workers=2 --no-daemon check: BUILD SUCCESSFUL
+test: tests=270 failures=0 errors=0 skipped=0; integrationTest: tests=55 failures=0 errors=0 skipped=0
+JaCoCo LINE 1545/1590 = 0.9717, BRANCH 825/954 = 0.8648; SpotBugs main: 0 bugs; SBOM scope: 113 components
+Trivy sbom build/reports/cyclonedx/bom.json: findings=0 CRITICAL=0 HIGH=0 MEDIUM=0 LOW=0 (114 packages;
+  spring-boot 4.0.9, spring-webflux 7.0.10, netty-handler 4.2.19.Final, jackson-databind 3.1.7 and 2.21.7)
+BE-H's tests that needed the migration (in b70c458): MongoOutageReadinessTest's kubelet-timeout case
+  (Boot 4 class and spring.mongodb.uri) and ForcedProbeWhileTheSchedulerProbesIT (@AutoConfigureWebTestClient).
+
+## Live smoke of BE-H's behaviours under Boot 4: boot jar of 4eff8f4, :18304 (check on) and :18305
+## (communication.client-id.required=false), private Mongo beu-mongo, databases fixbeu_smoke*
+== 1. 409 for a reused externalRef (:18304, tenant beu-smoke-1793612637)
+  publish     -> 201 application/json id=59dcf9ef
+  reuse       -> 409 application/json {"error": "externalRef 'INC-beu-smoke' is already used by notice 59dcf9ef-90a5-4c39-921e-1c2aef484326 in tenant beu-smoke-1793612637. externalRef is a permanent idempotency key: … (for example INC-beu-smoke-2, which is still free).", "suggestedExternalRef": "INC-beu-smoke-2"}
+  publish -2  -> 201 application/json id=86aa4af3
+  reuse again -> 409 application/json {"error": "externalRef 'INC-beu-smoke' is already used by notice 59dcf9ef-90a5-4c39-921e-1c2aef484326 in tenant beu-smoke-1793612637. externalRef is a permanent idempotency key: … (for example INC-beu-smoke-3, which is still free).", "suggestedExternalRef": "INC-beu-smoke-3"}
+== 3. client-id check off (:18305): one log line per request
+  no id      -> 200
+  valid id   -> 200
+  invalid id -> 200
+  log: ClientIdWebFilter: client=- GET /v1/feed -> 200 (49 ms)
+  log: ClientIdWebFilter: client=beu-smoke-client GET /v1/feed -> 200 (20 ms)
+  log: ClientIdWebFilter: client=- GET /v1/feed -> 200 (13 ms)
+== 4. stream while the database is down (:18304)
+  before the stop: ('HTTP/1.1 200 OK', 'Content-Type: text/event-stream;charset=UTF-8', 'c | :connected\n\n | ', 0.020404795999638736)
+  docker stop beu-mongo: 0.3s
+  stream -> HTTP/1.1 503 Service Unavailable | Content-Type: application/json | {"error":"database unavailable"} | first byte after 5.01s
+  readiness -> 503
+  docker start beu-mongo: ready again after 2.0s
+  after the start: ('HTTP/1.1 200 OK', 'Content-Type: text/event-stream;charset=UTF-8', 'c | :connected\n\n | ', 0.01042764700105181)
+  log during the outage: one WARN "GET /v1/feed/stream -> 503, database unavailable: …" from
+  GlobalExceptionHandler, one "event log poll skipped", one "readiness DOWN"; no ERROR, no stack trace.

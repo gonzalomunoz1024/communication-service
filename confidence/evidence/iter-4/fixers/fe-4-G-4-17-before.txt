@@ -1,0 +1,102 @@
+G-4-17 BEFORE (fixer FE-4). Frontend code at 6c15715 (fix not applied), with the tests of the fix commit.
+Unit: cd frontend && npx vitest run src/test/stream.test.ts src/test/useOutageFeed.test.tsx src/test/OutageFeed.test.tsx --reporter=verbose (exit 1)
+
+✓ src/test/stream.test.ts > reconnectDelay > doubles from one second and caps at ten, which bounds how long a restart goes unnoticed
+✓ src/test/stream.test.ts > stream liveness > reports open and the browser-side reconnects without reopening anything itself
+✓ src/test/stream.test.ts > stream liveness > reopens with backoff and the last sequence number once the browser has given up
+✓ src/test/stream.test.ts > stream liveness > starts the backoff again from one second once a reopened stream works
+✓ src/test/stream.test.ts > stream liveness > keeps asking for the replay on every attempt while the service is away
+✓ src/test/stream.test.ts > stream liveness > keeps resuming while a resumed connection does open
+✓ src/test/stream.test.ts > stream liveness > starts from a fresh snapshot when no frame was ever received
+× src/test/stream.test.ts > stream liveness > counts a stream as working once it has delivered a frame, or stayed open STREAM_SETTLE_MS without one
+× src/test/stream.test.ts > stream liveness > treats a stream the service ends within seconds of opening as a failed attempt: growing delays, no reset, never open
+✓ src/test/stream.test.ts > stream liveness > retries a stream the service refuses before any byte (its 503 while the database is away) with the same growing delays
+× src/test/stream.test.ts > stream liveness > leaves a working stream that drops to the browser's own retry, and takes over with the backoff when that retry ends early
+✓ src/test/stream.test.ts > stream liveness > stops reopening once unsubscribed
+✓ src/test/stream.test.ts > stream liveness > delivers parsed frames and skips malformed ones
+✓ src/test/useOutageFeed.test.tsx > useOutageFeed > loads the page, then follows the stream state
+✓ src/test/useOutageFeed.test.tsx > useOutageFeed > reloads the list once the stream is back after being down
+× src/test/useOutageFeed.test.tsx > useOutageFeed > never says Live, reloads nothing and keeps its error while each stream it opens is ended within seconds
+× src/test/useOutageFeed.test.tsx > useOutageFeed > does not report Live while the last load failed, and keeps that error while the same list reloads
+✓ src/test/useOutageFeed.test.tsx > useOutageFeed > refresh reopens the stream right away while it is down, and only then
+✓ src/test/OutageFeed.test.tsx > OutageFeed > shows the connection state, including the reopen attempt
+✓ src/test/OutageFeed.test.tsx > OutageFeed > announces the connection state in a live region of its own, which never repeats the resolve announcement
+✓ src/test/OutageFeed.test.tsx > OutageFeed > says it is waiting for a tenant rather than paused when none is entered, and paused only when switched off
+✓ src/test/OutageFeed.test.tsx > OutageFeed > makes the whole Live-updates row the click target of its switch, at least 24 px tall like the form
+✓ src/test/useOutageFeed.test.tsx > useOutageFeed > retires a card at its expiry and starts a scheduled one on time, without a frame
+✓ src/test/useOutageFeed.test.tsx > useOutageFeed > reports when the service has more than the first page
+✓ src/test/useOutageFeed.test.tsx > useOutageFeed > applies frames, surfaces load errors and clears everything for a blank tenant
+✓ src/test/OutageFeed.test.tsx > OutageFeed > names the filters, announces a resolve and keeps focus on the list
+✓ src/test/OutageFeed.test.tsx > OutageFeed > keeps keyboard focus on the page after resolving the only notice
+✓ src/test/OutageFeed.test.tsx > OutageFeed > resolves from the keyboard alone: focus follows the confirmation and lands on the list when the card leaves
+✓ src/test/OutageFeed.test.tsx > OutageFeed > says when the service has more than the first page
+✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an empty feed in terms of what the feed lists
+✓ src/test/OutageFeed.test.tsx > OutageFeed > explains an unreachable service instead of showing the status line
+× src/test/OutageFeed.test.tsx > OutageFeed > says the service cannot reach its database for its own 503, and the badge does not say Live beside it
+× src/test/OutageFeed.test.tsx > OutageFeed > keeps the error on screen through the reload after the stream comes back, then lists the notices and says Live
+Test Files  3 failed (3)
+Tests  7 failed | 26 passed (33)
+--- each failure, up to its source line ---
+FAIL  src/test/OutageFeed.test.tsx > OutageFeed > says the service cannot reach its database for its own 503, and the badge does not say Live beside it
+    Error: expect(element).toHaveTextContent()
+    Expected element to have text content:
+    /^Service degraded$/
+    Received:
+    Live
+    ❯ src/test/OutageFeed.test.tsx:205:21
+FAIL  src/test/OutageFeed.test.tsx > OutageFeed > keeps the error on screen through the reload after the stream comes back, then lists the notices and says Live
+    TestingLibraryElementError: Unable to find an element with the text: /cannot reach its database/. This could be because the text is broken up by multiple elements. In this case, you can provide a func
+FAIL  src/test/stream.test.ts > stream liveness > counts a stream as working once it has delivered a frame, or stayed open STREAM_SETTLE_MS without one
+    AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+    Received:
+    1st vi.fn() call:
+    Array [
+    true,
+    ]
+    Number of calls: 1
+    ❯ src/test/stream.test.ts:188:30
+FAIL  src/test/stream.test.ts > stream liveness > treats a stream the service ends within seconds of opening as a failed attempt: growing delays, no reset, never open
+    AssertionError: attempt 1: expected "vi.fn()" to not be called with arguments: [ true ]
+    Received:
+    1st vi.fn() call:
+    Compared values have no visual difference.
+    2nd vi.fn() call:
+    [
+    -   true,
+    ❯ src/test/stream.test.ts:217:48
+FAIL  src/test/stream.test.ts > stream liveness > leaves a working stream that drops to the browser's own retry, and takes over with the backoff when that retry ends early
+    AssertionError: expected [ [ true ], [ true ] ] to have a length of 1 but got 2
+    - Expected
+    + Received
+    - 1
+    + 2
+    ❯ src/test/stream.test.ts:258:62
+FAIL  src/test/useOutageFeed.test.tsx > useOutageFeed > never says Live, reloads nothing and keeps its error while each stream it opens is ended within seconds
+    AssertionError: attempt 1, 5 s after it opened: expected 'live' not to be 'live' // Object.is equality
+    ❯ src/test/useOutageFeed.test.tsx:133:84
+FAIL  src/test/useOutageFeed.test.tsx > useOutageFeed > does not report Live while the last load failed, and keeps that error while the same list reloads
+    AssertionError: expected 'live' to be 'degraded' // Object.is equality
+    Expected: "degraded"
+    Received: "live"
+    ❯ src/test/useOutageFeed.test.tsx:157:39
+
+Real browser, same code: Playwright 1.63 + headless Chromium 153; the iteration-3 jar (communication-service-iter3.jar) on :18320
+against Mongo container fe4-mongo (:18321, db fixfe4_x); Vite dev server :3300 (COMM_BACKEND=http://127.0.0.1:18320) on this worktree.
+A notice is published, 'docker stop fe4-mongo', then a feed page is opened on that tenant and watched 30 s (badge live region via a
+MutationObserver, /v1/feed requests and answers, each EventSource's open/error/close, one sample per second), then 'docker start'.
+Script: scratchpad/fe4/scripts/g17-outage-page.js before-dev. Times are seconds after the page was opened (two GETs at 0.3 s: StrictMode, dev only).
++0.2s POST /v1/communications -> 201 (tenant fixfe4-late-mvyzkzwf)
++0.5s docker stop fe4-mongo
++0.8s feed page opened during the outage
++30.5s 30 s with the database down: 4 stream requests at [0.3,8.4,16.4,24.4] s; 5 GET /v1/feed at [0.3,0.3,8.4,16.5,24.5] s
++30.5s answers: ["stream 200 @0.3s","GET 503 @5.4s","stream 200 @8.4s","GET 503 @10.4s","GET 503 @15.4s","stream 200 @16.4s","GET 503 @21.5s","stream 200 @24.5s","GET 503 @29.5s"]
++30.5s badge texts (8 changes after the first): ["0.3s Connecting","0.3s Live","5.4s Reconnecting","8.4s Live","13.4s Reconnecting","16.5s Live","21.4s Reconnecting","24.5s Live","29.5s Reconnecting"]
++30.5s badge said "Live" 4 times
++30.5s per-second samples: error state visible 5/30, inside role=alert 0/30, skeleton 25/30, badge Live 20/30
++30.5s EventSource lifetimes (ms after page start): [{"created":289,"ev":["close:291"],"openToError":null},{"created":292,"ev":["open:327","error:5384:CONNECTING","open:8415","error:13420:CONNECTING","open:16445","error:21441:CONNECTING","open:24451","error:29454:CONNECTING"],"openToError":5057}]
++30.8s docker start fe4-mongo
++33.2s recovery without a click: card listed 2365 ms and badge Live 2376 ms after docker start
++43.2s 10 s after recovery: badge changes []; error state gone true; page errors 0
+
+Wire timing of the same service with curl (Mongo stopped, 6 samples): 200 after 4-11 ms, stream ended 5.007-5.020 s after the request;
+in Chromium the end arrives 4996-5057 ms after 'open' (the four streams above), so a 5000 ms settle timer would race the end.

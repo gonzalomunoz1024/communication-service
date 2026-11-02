@@ -1,0 +1,26 @@
+G-4-20 AFTER (fixer FE-4). OutageCard: Escape inside the confirmation group calls confirm(false), as Cancel does, unless the call runs.
+cd frontend && npx vitest run src/test/OutageCard.test.tsx --reporter=verbose (exit 0)
+
+✓ src/test/OutageCard.test.tsx > OutageCard > renders the notice and resolves it with a note after confirmation
+✓ src/test/OutageCard.test.tsx > OutageCard > offers Withdraw instead of Resolve for a notice that has not started
+✓ src/test/OutageCard.test.tsx > OutageCard > says who resolves and whose feed the notice leaves before asking to confirm
+✓ src/test/OutageCard.test.tsx > OutageCard > names the tenant in the withdraw confirmation too, and leaves the actor out when none is known
+✓ src/test/OutageCard.test.tsx > OutageCard > shows an upcoming notice as Scheduled, with its start once and in sentence case
+✓ src/test/OutageCard.test.tsx > OutageCard > labels an automated notice "Automatic" instead of showing its internal health: reference
+✓ src/test/OutageCard.test.tsx > OutageCard > still shows a reference a person chose, once, and not when it is the ticket number
+✓ src/test/OutageCard.test.tsx > OutageCard > hides the action when the page cannot resolve
+✓ src/test/OutageCard.test.tsx > OutageCard > moves keyboard focus into the confirmation, under its question, and back to the action on Cancel
+✓ src/test/OutageCard.test.tsx > OutageCard > cancels the confirmation on Escape as Cancel does, with focus back on the action, but not while the call runs
+✓ src/test/OutageCard.test.tsx > OutageCard > does the same for Withdraw, and gives focus back to the confirming button when the service refuses
+Test Files  1 passed (1)
+Tests  11 passed (11)
+
+Real browser: Chromium via Playwright 1.63 (scratchpad/fe4/scripts/ui-checks.js), iteration-3 jar on :18320 with its own Mongo
+(fe4-mongo). Before = the frontend at 6c15715, no FE-4 fix (Vite :3301); after = c9923b5, all five fixes (Vite :3300).
+Resolve opened by keyboard on the new card, then Escape (from the note field, then from the group's Resolve button):
+[after] G-4-20 confirmation open, focus on <input type=text> "Resolution note (optional)"; pressing Escape
+[after] G-4-20 Escape from the note field: confirmation still open false; focus on <button> "Resolve"
+[after] G-4-20 confirmation open, focus on <button> "Resolve"; pressing Escape
+[after] G-4-20 Escape from the confirm button: confirmation still open false; focus on <button> "Resolve"
+[after] G-4-20 GET /v1/feed still lists "fe4 view in feed mvz0wimf": true
+  -> Escape closes it and puts focus back on the card's Resolve button; nothing is resolved.

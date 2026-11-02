@@ -1,0 +1,15 @@
+# sc-4 G-4-16 (Go half) BEFORE: probe.Normalize trims with strings.TrimSpace (commit 080765b + the new test)
+# date: 2026-11-02T08:17:55Z
+
+$ go test -count=1 -run 'TestStatusWordsAreTrimmedLikeTheService|TestNormalize$' -v ./internal/probe/
+=== RUN   TestNormalize
+--- PASS: TestNormalize (0.00s)
+=== RUN   TestStatusWordsAreTrimmedLikeTheService
+    probe_test.go:182: U+0001, a control character: Normalize("pass\x01") = "PASS\x01", failing as a component true; want UP and not failing, as on the service
+    probe_test.go:185: U+00A0, no-break space: Normalize("pass\u00a0") = "UP", failing as a component false; want an unknown word, failing, as the service's DEGRADED
+    probe_test.go:185: U+2003, em space: Normalize("pass\u2003") = "UP", failing as a component false; want an unknown word, failing, as the service's DEGRADED
+--- FAIL: TestStatusWordsAreTrimmedLikeTheService (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	0.006s
+FAIL
+exit=1

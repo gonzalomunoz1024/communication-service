@@ -1,0 +1,84 @@
+# sc-4 G-4-2 BEFORE: worktree wt4-sc at 6c15715 (sidecar/go.mod 'go 1.25', Dockerfile GO_IMAGE ubi9/go-toolset:1.25)
+# date: 2026-11-02T08:14:06Z
+
+## 1. regression test (updated first): go test -count=1 -run 'TestGoModAndDockerfileAgreeOnTheGoLine' -v ./deploy/
+=== RUN   TestGoModAndDockerfileAgreeOnTheGoLine
+    dockerfile_test.go:26: go.mod says go 1.25, want 1.27.3
+    dockerfile_test.go:31: Dockerfile default GO_IMAGE = "registry.access.redhat.com/ubi9/go-toolset:1.25", want a go-toolset:1.27 tag
+    dockerfile_test.go:39: the README's Build section should name Go 1.27.3
+    dockerfile_test.go:39: the README's Build section should name `go 1.27.3`
+    dockerfile_test.go:39: the README's Build section should name go-toolset:1.27
+--- FAIL: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+FAIL
+FAIL	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.003s
+FAIL
+exit=1
+
+## 2. the image the shared stack runs: health-sidecar:ci (built with GO_IMAGE=local/go-toolset:1.25, environment.md)
+id=sha256:9490ca6a33e947e4c0d10a7193bd5a109a39be2cbe880662dcef7abcf0d5eb75 version=ci-iter3 revision=6079180
+$ go version -m <binary copied out of health-sidecar:ci> | head -1
+health-sidecar-before: go1.25.14
+
+## 3. trivy 0.58.1 (mirror.gcr.io, shared DB copy, --skip-db-update) image --scanners vuln health-sidecar:ci
+Total: 4 (UNKNOWN: 4, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+usr/local/bin/health-sidecar (gobinary)
+Total: 14 (UNKNOWN: 0, LOW: 1, MEDIUM: 9, HIGH: 4, CRITICAL: 0)
+stdlib v1.25.14 rows (vulnerability, severity; fixed in 1.26.9/1.26.10 and 1.27.2/1.27.3):
+  CVE-2026-111943 HIGH
+  CVE-2026-78667 HIGH
+  CVE-2026-78669 HIGH
+  CVE-2026-97031 HIGH
+  CVE-2026-56866 MEDIUM
+  CVE-2026-78659 MEDIUM
+  CVE-2026-78660 MEDIUM
+  CVE-2026-78663 MEDIUM
+  CVE-2026-94439 MEDIUM
+  CVE-2026-94440 MEDIUM
+  CVE-2026-94448 MEDIUM
+  CVE-2026-97030 MEDIUM
+  CVE-2026-97032 MEDIUM
+  CVE-2026-56857 LOW
+(full table: 4 HIGH + 9 MEDIUM + 1 LOW in stdlib v1.25.14; the 4 UNKNOWN Debian rows belong to the distroless stand-in base, not to the sidecar)
+
+## 4. govulncheck v1.9.0 -db https://storage.googleapis.com/go-vulndb (the bucket behind vuln.go.dev, which the proxy blocks) -mode=binary <that binary>
+Vulnerability #1: GO-2026-6809
+    Found in: crypto/x509@go1.25.14
+    Fixed in: crypto/x509@go1.26.10
+Vulnerability #2: GO-2026-6617
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #3: GO-2026-6613
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #4: GO-2026-6612
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #5: GO-2026-6611
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #6: GO-2026-6610
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #7: GO-2026-6609
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #8: GO-2026-6608
+    Found in: net/textproto@go1.25.14
+    Fixed in: net/textproto@go1.26.9
+Vulnerability #9: GO-2026-6607
+    Found in: crypto/tls@go1.25.14
+    Fixed in: crypto/tls@go1.26.9
+Vulnerability #10: GO-2026-6605
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #11: GO-2026-6603
+    Found in: net/http@go1.25.14
+    Fixed in: net/http@go1.26.9
+Vulnerability #12: GO-2026-6600
+    Found in: html/template@go1.25.14
+    Fixed in: html/template@go1.26.9
+Vulnerability #13: GO-2026-6599
+    Found in: html/template@go1.25.14
+    Fixed in: html/template@go1.26.9
+Your code is affected by 13 vulnerabilities from the Go standard library.
+exit=3

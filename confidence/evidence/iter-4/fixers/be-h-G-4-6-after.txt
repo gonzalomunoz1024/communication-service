@@ -1,0 +1,24 @@
+G-4-6 after: worktree /home/claude/wt4-beh at fcfd473 (all eleven be-h fixes committed on 6c15715). Command: ./gradlew --max-workers=2 --no-daemon check, 2026-11-02: BUILD SUCCESSFUL; test 264 tests, 0 failures, 0 skipped; integrationTest 50 tests, 0 failures, 0 skipped; jacocoTestCoverageVerification passed (LINE 0.9699, minimum 0.92; BRANCH 0.8564, minimum 0.84); spotbugsMain passed.
+
+PASSED  MongoOutageReadinessTest > readinessWhileMongoIsUnreachableAnswersDownQuicklyAndLogsOneLineWithoutAStackTrace()  (5.759 s)
+PASSED  MongoOutageReadinessTest > readinessWhileMongoIsUnreachableAnswersWithinAKubeletsDefaultProbeTimeout()  (4.647 s)
+
+Live runs below used scratchpad/beh/communication-service-beh.jar; its BOOT-INF/classes are byte-identical to the class files the check compiled from fcfd473 (diff -r, only application.yml extra, and that equals build/resources/main/application.yml).
+Live: fixed jar on :18315 against a private mongo:7.0 (container beh-mongo, 127.0.0.1:18310), then 'docker stop beh-mongo' and 12 readiness probes 0.5 s apart (curl time_total; script g46_readiness.sh):
+beh: readiness before the outage: {"status":"UP"} 200
+beh: beh-mongo stopped at 08:51:36
+beh probe 1: HTTP 503 in 0.811444 s
+beh probe 2: HTTP 503 in 0.812628 s
+beh probe 3: HTTP 503 in 0.827646 s
+beh probe 4: HTTP 503 in 0.811569 s
+beh probe 5: HTTP 503 in 0.807759 s
+beh probe 6: HTTP 503 in 0.808509 s
+beh probe 7: HTTP 503 in 0.816688 s
+beh probe 8: HTTP 503 in 0.807888 s
+beh probe 9: HTTP 503 in 0.807612 s
+beh probe 10: HTTP 503 in 0.814689 s
+beh probe 11: HTTP 503 in 0.806656 s
+beh probe 12: HTTP 503 in 0.808314 s
+beh: backend on :18315 stopped
+
+Before (iteration-3 jar, same script): every 503 took 1.007 to 1.013 s.
