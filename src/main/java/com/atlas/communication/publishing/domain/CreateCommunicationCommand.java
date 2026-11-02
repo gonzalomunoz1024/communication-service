@@ -8,6 +8,7 @@ import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.CommunicationType;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.domain.Ticket;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 
@@ -24,8 +25,10 @@ import jakarta.validation.constraints.Size;
  * ties the communication to the tracker ticket (ServiceNow incident) behind it; when given,
  * {@code externalRef} defaults to its number. {@code externalRef} is a permanent idempotency key:
  * usable once per tenant, for good. Every {@code affectedServices} entry names a service: a JSON
- * null is a binding error that names its position, a blank entry fails validation.
+ * null is a binding error that names its position, a blank entry fails validation. A field this
+ * record does not know is a 400 that names it, not ignored.
  */
+@JsonIgnoreProperties(ignoreUnknown = false)
 public record CreateCommunicationCommand(
         @NotBlank String tenantId,
         @NotBlank String publisher,

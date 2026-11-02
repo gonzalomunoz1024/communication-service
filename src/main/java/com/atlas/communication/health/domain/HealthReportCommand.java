@@ -19,7 +19,8 @@ import jakarta.validation.constraints.NotBlank;
  *
  * <p>A report that names its {@code instance} (a pod, as the health sidecar does) is recorded
  * per instance and rolled up into one service status before the monitor evaluates it; a
- * report without one is evaluated as is.
+ * report without one is evaluated as is. Keys it does not know are ignored on purpose: a
+ * forwarded document carries Actuator's {@code groups} and whatever its producer adds.
  */
 public record HealthReportCommand(
         @NotBlank String tenantId,

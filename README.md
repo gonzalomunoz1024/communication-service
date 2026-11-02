@@ -194,6 +194,10 @@ switches the check off for local experiments.
 failing field at once (`publisher: must not be blank; title: must not be blank`).
 `affectedServices` takes up to 20 service names: a JSON `null` entry answers
 `affectedServices[1]: must not be null`, an empty or blank one `affectedServices[1]: must not be blank`.
+A field the publishing endpoints do not know (publish, update, retire, and inside `ticket`) is a
+400 too, `unknown field 'sevrity'; known fields: …`, so a misspelled optional field cannot change
+what is published without a word. Health reports keep accepting keys they do not know: a
+forwarded Actuator document carries `groups` and whatever its producer adds.
 
 ### Consumer feed
 

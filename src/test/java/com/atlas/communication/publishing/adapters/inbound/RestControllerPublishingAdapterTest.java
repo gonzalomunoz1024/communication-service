@@ -20,6 +20,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.atlas.communication.common.domain.Communication;
+import com.atlas.communication.common.domain.CommunicationType;
+import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.domain.Ticket;
 import com.atlas.communication.config.ClientIdWebFilter;
 import com.atlas.communication.publishing.application.PublishingUseCase;
@@ -194,6 +196,53 @@ class RestControllerPublishingAdapterTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 .jsonPath("$.error").isEqualTo("affectedServices[0]: must not be blank");
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
+    void aMisspelledFieldIs400NamingItAndListingTheKnownOnes() {
+        // a typo in an optional field must not silently change what gets published
+        // every call would succeed if it got through, so only the binding can turn it into a 400
+        Communication stored = outageFrom(new CreateCommunicationCommand("vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "down", null, List.of(), null, false, null, null, null, null, null));
+        when(useCase.create(any())).thenAnswer(inv -> Mono.just(outageFrom(inv.getArgument(0))));
+        when(useCase.update(any(), any())).thenReturn(Mono.just(stored));
+        when(useCase.retire(any(), any())).thenReturn(Mono.just(stored));
+
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "down", "sevrity", "MINOR"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown field 'sevrity'; known fields: affectedServices, audience, "
+                        + "body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, "
+                        + "ticket, title, type");
+        client.put().uri("/v1/communications/c1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("expiryAt", "2026-11-01T14:00:00Z", "expectedVersion", 0))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown field 'expiryAt'; known fields: actor, affectedServices, "
+                        + "audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, ticket, title");
+        client.post().uri("/v1/communications/c1/retire")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("actor", "sre", "reason", "resolved"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown field 'reason'; known fields: actor, note");
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "down",
+                        "ticket", Map.of("number", "INC0012345", "ulr", "https://acme.service-now.com/x")))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown field 'ticket.ulr'; known fields: number, system, url");
         verifyNoInteractions(useCase);
     }
 

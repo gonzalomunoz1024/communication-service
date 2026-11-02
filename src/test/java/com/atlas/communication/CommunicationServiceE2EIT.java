@@ -347,6 +347,29 @@ class CommunicationServiceE2EIT {
     }
 
     @Test
+    void publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem() {
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("tenantId", "vmforge", "publisher", "vmforge-sre", "type", "OUTAGE",
+                        "severity", "MAJOR", "title", "typo", "expiryAt", "2026-11-01T14:00:00Z"))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").value(msg -> assertThat((String) msg)
+                        .startsWith("unknown field 'expiryAt'; known fields: ").contains("expiresAt"));
+
+        // the service's own Actuator document forwarded as is, plus tenant and service
+        client.post().uri("/v1/health/reports")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"tenantId":"vmforge-forwarded","service":"vm-api","status":"UP",
+                         "groups":["liveness","readiness"],"components":{"ping":{"status":"UP"}}}
+                        """)
+                .exchange()
+                .expectStatus().isAccepted();
+    }
+
+    @Test
     void openApiSpecIsServed() {
         client.get().uri("/v3/api-docs")
                 .exchange()

@@ -7,6 +7,7 @@ import com.atlas.communication.common.domain.Audience;
 import com.atlas.communication.common.domain.Communication;
 import com.atlas.communication.common.domain.Severity;
 import com.atlas.communication.common.domain.Ticket;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 
@@ -20,8 +21,10 @@ import jakarta.validation.constraints.Size;
  * Partial content update: null fields are left unchanged. {@code expectedVersion} makes the
  * client's read-modify-write explicit — a mismatch is a 409, never a silent lost update.
  * {@code ticket} attaches or replaces the tracker ticket (a ticket can be attached to a draft
- * before it is published; it cannot be removed).
+ * before it is published; it cannot be removed). A field this record does not know is a 400 that
+ * names it, not ignored.
  */
+@JsonIgnoreProperties(ignoreUnknown = false)
 public record UpdateCommunicationCommand(
         Severity severity,
         @Size(max = Communication.TITLE_MAX) String title,

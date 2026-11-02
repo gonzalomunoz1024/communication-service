@@ -174,8 +174,11 @@ public class GlobalExceptionHandler {
                         + "' is not " + expected(ife.getTargetType());
             }
             if (t instanceof UnrecognizedPropertyException upe) {
+                // the dotted path, so a typo inside a nested object reads "ticket.ulr"
+                String name = upe.getPath().isEmpty() ? upe.getPropertyName()
+                        : field(upe.getPath(), null);
                 Collection<Object> known = upe.getKnownPropertyIds();
-                return "unknown field '" + upe.getPropertyName() + "'"
+                return "unknown field '" + name + "'"
                         + (known == null || known.isEmpty() ? "" : "; known fields: " + known.stream()
                                 .map(Object::toString).sorted().collect(Collectors.joining(", ")));
             }

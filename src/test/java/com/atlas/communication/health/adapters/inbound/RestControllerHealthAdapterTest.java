@@ -133,6 +133,29 @@ class RestControllerHealthAdapterTest {
     }
 
     @Test
+    void aReportMayCarryKeysTheServiceDoesNotKnow() {
+        // a forwarded /actuator/health document lists its groups at the top level, and producers
+        // add keys of their own: publishing commands reject unknown fields, reports must not
+        when(useCase.report(any())).thenReturn(Mono.just(monitor()));
+
+        client.post().uri("/v1/health/reports")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"tenantId":"vmforge","service":"vm-api","status":"UP","groups":["liveness","readiness"],
+                         "components":{"ping":{"status":"UP","since":"boot"}},
+                         "instance":{"id":"vm-api-7f9c6d5b4-x2k4q","zone":"eu-west-1a"},
+                         "sentBy":"a forwarder"}
+                        """)
+                .exchange()
+                .expectStatus().isAccepted();
+
+        ArgumentCaptor<HealthReportCommand> cmd = ArgumentCaptor.forClass(HealthReportCommand.class);
+        verify(useCase).report(cmd.capture());
+        assertThat(cmd.getValue().instance().id()).isEqualTo("vm-api-7f9c6d5b4-x2k4q");
+        assertThat(cmd.getValue().components()).containsKey("ping");
+    }
+
+    @Test
     void reportAcceptsALegacyDocumentThatNestsComponentsUnderDetails() {
         when(useCase.report(any())).thenReturn(Mono.just(monitor()));
 

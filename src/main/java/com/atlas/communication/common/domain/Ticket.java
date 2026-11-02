@@ -1,5 +1,7 @@
 package com.atlas.communication.common.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -10,7 +12,9 @@ import jakarta.validation.constraints.Size;
  * ({@code INC0012345}), {@code url} is a link straight to it, filled in by the service when it
  * knows the ServiceNow instance. Nothing here talks to ServiceNow: the ticket is a reference the
  * publisher owns, which later phases of the integration can enrich with the ticket's status.
+ * Inside a publish or update request, a field it does not know is a 400, not ignored.
  */
+@JsonIgnoreProperties(ignoreUnknown = false)
 public record Ticket(
         @Size(max = 32) String system,
         @NotBlank @Size(max = 64) String number,
