@@ -174,12 +174,15 @@ curl -s localhost:9465/status | jq .
 
 | Field | Meaning |
 | --- | --- |
-| `target` | where the app is probed; empty while discovery is still running |
-| `lastTarget` | the last target probed; set while `target` is empty because the app stopped listening |
+| `version`, `service`, `tenant`, `instance` | what this sidecar is: its build version and the service, tenant and pod name it reports under; the first check when reports land under the wrong name |
+| `target` | where the app is probed; absent while discovery is still running |
+| `lastTarget` | the last target probed; kept while `target` is absent because the app stopped listening |
 | `upSeen` | whether the app has answered UP since the sidecar started (before that, reports are UNKNOWN) |
 | `lastReport` | the last report composed (status, components, message, instance) |
-| `lastSendAt`, `reportsSent` | when and how often a report reached the service |
-| `sendError` | why the last send failed (`connection refused`, TLS, 401, 400 …) |
+| `lastSendAt`, `reportsSent` | when and how often a report reached the service (`lastSendAt` appears with the first accepted report) |
+| `sendError` | why the last send failed (`connection refused`, TLS, 401, 400 …); absent while sends succeed |
+
+These names are pinned by `TestStatusJSONMatchesTheDocumentedContract` in `internal/agent`.
 
 On the service side, with the same tenant:
 
@@ -213,8 +216,13 @@ podman build -t registry.example.com/platform/health-sidecar:1.0.0 \
 
 No dependencies outside the Go standard library. The module needs Go 1.25 (`go.mod`), the line
 the default builder image `ubi9/go-toolset:1.25` ships; `go test ./...` on a laptop with an older
-Go downloads that toolchain through the module proxy. To try it on a laptop against a local
-communication service and a local app on port 8080:
+Go downloads that toolchain through the module proxy.
+
+The tests under `deploy/` render the Kustomize snippets with `kustomize` and validate every form
+with `kubeconform`. Without the two tools on `PATH` they skip on a laptop; when `CI` is set (as
+GitHub Actions does) a missing tool fails the test naming it, so the CI image must install both.
+
+To try it on a laptop against a local communication service and a local app on port 8080:
 
 ```bash
 CS_ENDPOINT=http://localhost:8081 CS_TENANT=retail CS_SERVICE=demo CS_PORT=8080 ./health-sidecar

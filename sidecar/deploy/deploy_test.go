@@ -1,6 +1,8 @@
-// Package deploy holds tests for the Kustomize snippets under deploy/kustomize. They need the
-// kustomize binary (and use kubeconform when it is installed) and skip otherwise, so
-// `go test ./...` stays green on a plain checkout and runs the checks wherever the tools exist.
+// Package deploy holds tests for the Kustomize snippets under deploy/kustomize and for the image
+// build files. The manifest tests need the kustomize binary and use kubeconform for schema
+// validation. On a laptop a missing tool skips the check, so `go test ./...` stays green on a
+// plain checkout; when CI is set (GitHub Actions sets CI=true) a missing tool fails the test
+// naming it, so a CI image without the tools cannot pass these checks vacuously.
 package deploy
 
 import (
@@ -12,11 +14,26 @@ import (
 	"testing"
 )
 
-// kustomizeBuild renders a kustomization directory, skipping the test when kustomize is absent.
+// requireTool finds a tool the test needs. Missing on a laptop it reports false so the caller
+// can skip; missing when CI is set it fails the test, naming the tool to install.
+func requireTool(t *testing.T, name string) (string, bool) {
+	t.Helper()
+	bin, err := exec.LookPath(name)
+	if err == nil {
+		return bin, true
+	}
+	if os.Getenv("CI") != "" {
+		t.Fatalf("%s is not on PATH and CI is set: install %s in the CI image, the manifest tests must not skip there", name, name)
+	}
+	return "", false
+}
+
+// kustomizeBuild renders a kustomization directory, skipping the test when kustomize is absent
+// (failing instead when CI is set, see requireTool).
 func kustomizeBuild(t *testing.T, dir string) string {
 	t.Helper()
-	bin, err := exec.LookPath("kustomize")
-	if err != nil {
+	bin, ok := requireTool(t, "kustomize")
+	if !ok {
 		t.Skip("kustomize not on PATH")
 	}
 	var out, errb bytes.Buffer
@@ -28,12 +45,13 @@ func kustomizeBuild(t *testing.T, dir string) string {
 	return out.String()
 }
 
-// kubeconform validates rendered manifests against the given Kubernetes version when the tool
-// is installed; a missing tool only logs, because the structural assertions already ran.
+// kubeconform validates rendered manifests against the given Kubernetes version. On a laptop a
+// missing tool only logs, because the structural assertions already ran; when CI is set it
+// fails the test (see requireTool).
 func kubeconform(t *testing.T, manifests, version string) {
 	t.Helper()
-	bin, err := exec.LookPath("kubeconform")
-	if err != nil {
+	bin, ok := requireTool(t, "kubeconform")
+	if !ok {
 		t.Log("kubeconform not on PATH; schema validation skipped")
 		return
 	}

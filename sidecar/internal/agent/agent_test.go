@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -446,4 +448,114 @@ func TestHandler(t *testing.T) {
 			t.Errorf("%s: %v %v", path, err, resp)
 		}
 	}
+}
+
+// G-2-15: /status is the first thing an operator reads when a service does not show up, so its
+// JSON is a contract: exactly the fields the README's Debugging table documents, serialised
+// under those names. Served in-process and decoded, after one accepted report and one failed
+// send so that every field has a value.
+func TestStatusJSONMatchesTheDocumentedContract(t *testing.T) {
+	app := newFakeApp(t, "UP")
+	h := newHarness(t, baseConfig(), app.port)
+	ctx := context.Background()
+	h.agent.Tick(ctx) // accepted: target, lastReport, lastSendAt, reportsSent
+	sentAt := h.clock
+	h.sender.fail = errors.New("dial tcp 10.0.0.1:443: connection refused")
+	h.advance(30 * time.Second)
+	h.agent.Tick(ctx) // the heartbeat fails: sendError
+
+	srv := httptest.NewServer(h.agent.Handler())
+	defer srv.Close()
+	resp, err := http.Get(srv.URL + "/status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 || resp.Header.Get("Content-Type") != "application/json" {
+		t.Fatalf("GET /status: %d %s %s", resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(body, &raw); err != nil {
+		t.Fatalf("/status is not a JSON object: %v\n%s", err, body)
+	}
+	documented := documentedStatusFields(t)
+	for name := range documented {
+		if _, ok := raw[name]; !ok {
+			t.Errorf("the README documents /status field %q but the body has no such key:\n%s", name, body)
+		}
+	}
+	for name := range raw {
+		if !documented[name] {
+			t.Errorf("/status key %q is not in the README's /status table", name)
+		}
+	}
+
+	var s struct {
+		Version     string         `json:"version"`
+		Service     string         `json:"service"`
+		Tenant      string         `json:"tenant"`
+		Instance    string         `json:"instance"`
+		Target      string         `json:"target"`
+		LastTarget  string         `json:"lastTarget"`
+		UpSeen      bool           `json:"upSeen"`
+		LastReport  *report.Report `json:"lastReport"`
+		LastSendAt  time.Time      `json:"lastSendAt"`
+		ReportsSent int            `json:"reportsSent"`
+		SendError   string         `json:"sendError"`
+	}
+	if err := json.Unmarshal(body, &s); err != nil {
+		t.Fatalf("decode /status: %v\n%s", err, body)
+	}
+	target := "http://127.0.0.1:" + strconv.Itoa(app.port) + probe.ActuatorPath
+	if s.Version != "test" || s.Service != "payments-api" || s.Tenant != "retail" || s.Instance != "payments-api-7f9c6d5b4-x2k4q" {
+		t.Errorf("identity fields: %+v", s)
+	}
+	if s.Target != target || s.LastTarget != target || !s.UpSeen {
+		t.Errorf("target fields: target=%q lastTarget=%q upSeen=%v, want %q", s.Target, s.LastTarget, s.UpSeen, target)
+	}
+	if s.LastReport == nil || s.LastReport.Status != "UP" || s.LastReport.Instance == nil || s.LastReport.Instance.ID != s.Instance {
+		t.Errorf("lastReport: %+v", s.LastReport)
+	}
+	if !s.LastSendAt.Equal(sentAt) || s.ReportsSent != 1 {
+		t.Errorf("lastSendAt=%v reportsSent=%d, want %v and 1 (the failed heartbeat does not count)", s.LastSendAt, s.ReportsSent, sentAt)
+	}
+	if !strings.Contains(s.SendError, "connection refused") {
+		t.Errorf("sendError = %q, want the failed send's error", s.SendError)
+	}
+}
+
+// documentedStatusFields reads the field names of the README's "`/status` answers with:" table.
+func documentedStatusFields(t *testing.T) map[string]bool {
+	t.Helper()
+	readme, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, table, found := strings.Cut(string(readme), "`/status` answers with:")
+	if !found {
+		t.Fatal("README.md has no '`/status` answers with:' table")
+	}
+	fields := map[string]bool{}
+	rows := 0
+	for _, line := range strings.Split(table, "\n") {
+		if !strings.HasPrefix(line, "|") {
+			if rows > 0 {
+				break // the table ended
+			}
+			continue // text before it
+		}
+		rows++
+		if rows <= 2 {
+			continue // header and separator
+		}
+		first := strings.SplitN(line, "|", 3)[1]
+		for _, m := range regexp.MustCompile("`([A-Za-z]+)`").FindAllStringSubmatch(first, -1) {
+			fields[m[1]] = true
+		}
+	}
+	if len(fields) < 7 {
+		t.Fatalf("expected the README /status table to document at least 7 fields, found %v", fields)
+	}
+	return fields
 }
