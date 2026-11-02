@@ -70,7 +70,8 @@ public class RestControllerFeedAdapter {
 
     @GetMapping(value = "/feed/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "SSE: snapshot of visible items, then live lifecycle events; "
-            + "send Last-Event-ID (or ?lastEventId=) to resume where you left off instead")
+            + "send Last-Event-ID (or ?lastEventId=) to resume where you left off instead; "
+            + "with both, it resumes after the larger id")
     public Flux<ServerSentEvent<CommunicationEvent>> stream(
             @RequestParam String tenantId,
             @RequestParam(required = false) String service,
@@ -81,7 +82,7 @@ public class RestControllerFeedAdapter {
             @RequestHeader(name = "Last-Event-ID", required = false) String lastEventIdHeader) {
         FeedQuery query = new FeedQuery(tenantId, service, type, severity, audience,
                 null, true, 0, Page.MAX_SIZE);
-        Long resumeAfter = lastEventId != null ? lastEventId : parseEventId(lastEventIdHeader);
+        Long resumeAfter = later(lastEventId, parseEventId(lastEventIdHeader));
         return Flux.defer(() -> {
             // The keepalive must stop with the data: when the event source completes (this
             // instance is shutting down) the response has to end too, or it would live on
@@ -112,6 +113,18 @@ public class RestControllerFeedAdapter {
             // browser would sit in "connecting" for that long: open with a comment frame instead.
             return Flux.merge(data, keepalive).startWith(CONNECTED);
         });
+    }
+
+    /**
+     * Both ids can arrive at once: a page reopened with {@code ?lastEventId=} keeps that URL, and
+     * the browser's own retry adds the last id it received as {@code Last-Event-ID}, which is never
+     * older. Resuming after the smaller one would replay frames the client already has.
+     */
+    private static Long later(Long queryId, Long headerId) {
+        if (queryId == null || headerId == null) {
+            return queryId == null ? headerId : queryId;
+        }
+        return Math.max(queryId, headerId);
     }
 
     /** Browsers echo the last {@code id:} verbatim; anything that is not one of ours means a fresh start. */

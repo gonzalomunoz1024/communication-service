@@ -3,6 +3,8 @@ package com.atlas.communication.feed.adapters.inbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
@@ -12,6 +14,7 @@ import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.core.ParameterizedTypeReference;
@@ -32,7 +35,10 @@ import com.atlas.communication.feed.application.FeedUseCase;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-/** HTTP shape of the SSE stream around its lifetime: it ends when the event source ends. */
+/**
+ * HTTP shape of the SSE stream around its lifetime: it ends when the event source ends, and it
+ * resumes after the later of the two ids a reconnect can carry.
+ */
 @WebFluxTest(RestControllerFeedAdapter.class)
 class RestControllerFeedAdapterTest {
 
@@ -73,6 +79,31 @@ class RestControllerFeedAdapterTest {
                 .expectNextMatches(e -> e.seq() == 7 && e.communication().id().equals("c1"))
                 .expectComplete()
                 .verify(Duration.ofSeconds(5));
+    }
+
+    @Test
+    void withBothAQueryIdAndALastEventIdHeaderTheStreamResumesAfterTheLaterOne() {
+        // a page reopened with ?lastEventId=80 keeps that URL; the browser's own retry adds the last
+        // id it received as Last-Event-ID, never older: resuming after 80 would replay 81-85 twice
+        when(useCase.stream(any(), any())).thenReturn(Flux.empty());
+        String[][] queryAndHeader = { { "80", "85" }, { "85", "80" }, { "80", "not-one-of-ours" } };
+        for (String[] ids : queryAndHeader) {
+            FluxExchangeResult<String> result = client.get()
+                    .uri("/v1/feed/stream?tenantId=vmforge&lastEventId={id}", ids[0])
+                    .header("Last-Event-ID", ids[1])
+                    .accept(MediaType.TEXT_EVENT_STREAM)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .returnResult(String.class);
+            StepVerifier.create(result.getResponseBody())
+                    .thenConsumeWhile(frame -> true)
+                    .expectComplete()
+                    .verify(Duration.ofSeconds(5));
+        }
+
+        ArgumentCaptor<Long> resumeAfter = ArgumentCaptor.forClass(Long.class);
+        verify(useCase, times(3)).stream(any(), resumeAfter.capture());
+        assertThat(resumeAfter.getAllValues()).containsExactly(85L, 85L, 80L);
     }
 
     @Test
