@@ -21,22 +21,20 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ContentTooLargeException;
 import org.springframework.web.server.MethodNotAllowedException;
-import org.springframework.web.server.PayloadTooLargeException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import reactor.core.publisher.Mono;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * What the handler answers on its less travelled branches. A body Jackson rejects is answered
@@ -66,15 +64,15 @@ class GlobalExceptionHandlerMessagesTest {
     }
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
-    private final ObjectMapper json = new ObjectMapper().registerModule(new JavaTimeModule());
+    /** Jackson with the defaults these messages were written against: an unknown field fails. */
+    private final ObjectMapper json = JsonMapper.builderWithJackson2Defaults().build();
 
     /** A handler method's parameter; {@code named} is what WebFlux does before it resolves arguments. */
     private static MethodParameter parameter(String method, Class<?> type, boolean named) {
         try {
             MethodParameter parameter = new MethodParameter(Endpoints.class.getDeclaredMethod(method, type), 0);
-            if (named) {
-                parameter.initParameterNameDiscovery(new DefaultParameterNameDiscoverer());
-            }
+            // Spring 7 discovers the name by default; without discovery the parameter has none
+            parameter.initParameterNameDiscovery(named ? new DefaultParameterNameDiscoverer() : null);
             return parameter;
         } catch (NoSuchMethodException e) {
             throw new IllegalStateException(e);
@@ -102,7 +100,7 @@ class GlobalExceptionHandlerMessagesTest {
     private String unreadableBody(String body) {
         try {
             json.readValue(body, Command.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return inputError(unreadable(e, parameter("create", Command.class, true)));
         }
         throw new AssertionError("Jackson accepted " + body);
@@ -141,14 +139,14 @@ class GlobalExceptionHandlerMessagesTest {
         assertThat(inputError(unreadable(noPath, parameter("create", Command.class, false)))).isEqualTo(expected);
 
         InvalidFormatException namelessPath = new InvalidFormatException((JsonParser) null, "bad value", "tomorrow", Instant.class);
-        namelessPath.prependPath(new JsonMappingException.Reference(Command.class));
+        namelessPath.prependPath(new JacksonException.Reference(Command.class));
         assertThat(inputError(unreadable(namelessPath, parameter("create", Command.class, true)))).isEqualTo(expected);
     }
 
     @Test
     void aValueOfUnknownTypeIsAskedForAsAValidValue() {
         InvalidFormatException untyped = new InvalidFormatException((JsonParser) null, "bad value", "soon", null);
-        untyped.prependPath(new JsonMappingException.Reference(Command.class, "startsAt"));
+        untyped.prependPath(new JacksonException.Reference(Command.class, "startsAt"));
 
         assertThat(inputError(unreadable(untyped, parameter("create", Command.class, true))))
                 .isEqualTo("startsAt: 'soon' is not a valid value");
@@ -156,10 +154,16 @@ class GlobalExceptionHandlerMessagesTest {
 
     @Test
     void malformedJsonWithoutALocationStillSaysWhatIsWrong() {
-        JsonParseException noLocation = new JsonParseException((JsonParser) null, "Unexpected end-of-input");
+        StreamReadException noLocation = new StreamReadException((JsonParser) null, "Unexpected end-of-input");
 
         assertThat(inputError(unreadable(noLocation, parameter("create", Command.class, true))))
                 .isEqualTo("malformed JSON: Unexpected end-of-input");
+    }
+
+    @Test
+    void aNumberTooLargeForItsFieldIsNotCalledMalformedJson() {
+        // Jackson 3 reports it as a StreamReadException, the type that also carries malformed JSON
+        assertThat(unreadableBody("{\"count\":12345678901234567890}")).doesNotStartWith("malformed JSON");
     }
 
     @Test
@@ -167,7 +171,7 @@ class GlobalExceptionHandlerMessagesTest {
         try {
             json.readValue("{\"title\":\"Checkout down\",\"sevrity\":\"MAJOR\"}", Notice.class);
             throw new AssertionError("Jackson accepted an unknown field");
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             assertThat(inputError(unreadable(e, parameter("create", Command.class, true))))
                     .isEqualTo("unknown field 'sevrity'; known fields: severity, title");
         }
@@ -211,15 +215,15 @@ class GlobalExceptionHandlerMessagesTest {
     void anOversizedBodyNamesTheLimitWhenTheCauseCarriesIt() {
         String unnamed = "request body exceeds the limit (spring.codec.max-in-memory-size)";
 
-        assertThat(error(handler.handleTooLarge(new PayloadTooLargeException(
-                new DataBufferLimitException("Exceeded limit on max bytes to buffer : 262144"))), HttpStatus.PAYLOAD_TOO_LARGE))
+        assertThat(error(handler.handleTooLarge(new ContentTooLargeException(
+                new DataBufferLimitException("Exceeded limit on max bytes to buffer : 262144"))), HttpStatus.CONTENT_TOO_LARGE))
                 .isEqualTo("request body exceeds the limit of 256 KB (spring.codec.max-in-memory-size)");
-        assertThat(error(handler.handleTooLarge(new PayloadTooLargeException(null)), HttpStatus.PAYLOAD_TOO_LARGE))
+        assertThat(error(handler.handleTooLarge(new ContentTooLargeException(null)), HttpStatus.CONTENT_TOO_LARGE))
                 .isEqualTo(unnamed);
-        assertThat(error(handler.handleTooLarge(new PayloadTooLargeException(new DataBufferLimitException(null))),
-                HttpStatus.PAYLOAD_TOO_LARGE)).isEqualTo(unnamed);
-        assertThat(error(handler.handleTooLarge(new PayloadTooLargeException(
-                new DataBufferLimitException("Exceeded limit on max bytes to buffer"))), HttpStatus.PAYLOAD_TOO_LARGE))
+        assertThat(error(handler.handleTooLarge(new ContentTooLargeException(new DataBufferLimitException(null))),
+                HttpStatus.CONTENT_TOO_LARGE)).isEqualTo(unnamed);
+        assertThat(error(handler.handleTooLarge(new ContentTooLargeException(
+                new DataBufferLimitException("Exceeded limit on max bytes to buffer"))), HttpStatus.CONTENT_TOO_LARGE))
                 .isEqualTo(unnamed);
     }
 

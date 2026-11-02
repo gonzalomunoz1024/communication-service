@@ -16,14 +16,15 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.health.HealthEndpointGroup;
-import org.springframework.boot.actuate.health.HealthEndpointGroups;
-import org.springframework.boot.actuate.health.ReactiveHealthContributorRegistry;
-import org.springframework.boot.actuate.health.ReactiveHealthIndicator;
-import org.springframework.boot.actuate.health.Status;
-import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpointGroup;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpointGroups;
+import org.springframework.boot.health.contributor.ReactiveHealthIndicator;
+import org.springframework.boot.health.contributor.Status;
+import org.springframework.boot.health.registry.ReactiveHealthContributorRegistry;
+import org.springframework.boot.mongodb.autoconfigure.MongoClientSettingsBuilderCustomizer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -59,6 +60,7 @@ import reactor.core.publisher.Mono;
  * do once server selection gives up.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class OperationsEndpointsIT {
 
     @Autowired
@@ -98,6 +100,14 @@ class OperationsEndpointsIT {
                 .jsonPath("$.status").isEqualTo("UP")
                 .jsonPath("$.components").doesNotExist()
                 .jsonPath("$.details").doesNotExist();
+    }
+
+    @Test
+    void overallHealthWritesStatusBeforeGroups() {
+        // as before Spring Boot 4: its own mapper for actuator bodies would sort the keys (application.yml)
+        client.get().uri("/actuator/health").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"status\":\"UP\",\"groups\":[\"liveness\",\"readiness\"]}");
     }
 
     @Test

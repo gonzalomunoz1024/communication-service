@@ -13,17 +13,17 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.actuate.autoconfigure.data.mongo.MongoReactiveHealthContributorAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.ReactiveHealthContributor;
-import org.springframework.boot.actuate.health.ReactiveHealthIndicator;
-import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.data.mongodb.autoconfigure.DataMongoReactiveAutoConfiguration;
 import org.springframework.boot.env.YamlPropertySourceLoader;
+import org.springframework.boot.health.autoconfigure.contributor.HealthContributorAutoConfiguration;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.ReactiveHealthContributor;
+import org.springframework.boot.health.contributor.ReactiveHealthIndicator;
+import org.springframework.boot.health.contributor.Status;
+import org.springframework.boot.mongodb.autoconfigure.MongoReactiveAutoConfiguration;
+import org.springframework.boot.mongodb.autoconfigure.health.MongoReactiveHealthContributorAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.PropertySource;
@@ -60,10 +60,10 @@ class MongoOutageReadinessTest {
     void readinessWhileMongoIsUnreachableAnswersDownQuicklyAndLogsOneLineWithoutAStackTrace() throws IOException {
         ApplicationContextRunner runner = new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(MongoReactiveAutoConfiguration.class,
-                        MongoReactiveDataAutoConfiguration.class, HealthContributorAutoConfiguration.class,
+                        DataMongoReactiveAutoConfiguration.class, HealthContributorAutoConfiguration.class,
                         MongoReactiveHealthContributorAutoConfiguration.class))
                 .withUserConfiguration(Timeouts.class, MongoClientConfig.class)
-                .withPropertyValues("spring.data.mongodb.uri=mongodb://127.0.0.1:" + closedPort() + "/readiness");
+                .withPropertyValues("spring.mongodb.uri=mongodb://127.0.0.1:" + closedPort() + "/readiness");
 
         Map<String, Level> shipped = shippedLogLevels();
         Map<Logger, Level> previous = new LinkedHashMap<>();
@@ -99,6 +99,8 @@ class MongoOutageReadinessTest {
         List<ILoggingEvent> visible = console.list.stream()
                 .filter(e -> e.getLevel().isGreaterOrEqual(Level.INFO))
                 .filter(e -> e.getLoggerName().startsWith("org.mongodb") || e.getLoggerName().startsWith("org.springframework.boot.actuate")
+                        || e.getLoggerName().startsWith("org.springframework.boot.health")
+                        || e.getLoggerName().startsWith("org.springframework.boot.mongodb")
                         || e.getLoggerName().startsWith("com.atlas.communication"))
                 .toList();
         assertThat(visible).as("no stack trace above DEBUG (probes answered in %s): %s", answeredIn, describe(visible))
@@ -116,11 +118,11 @@ class MongoOutageReadinessTest {
         // the shipped communication.mongo.* settings, so the timeout that ships is the one measured
         ApplicationContextRunner runner = new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(MongoReactiveAutoConfiguration.class,
-                        MongoReactiveDataAutoConfiguration.class, HealthContributorAutoConfiguration.class,
+                        DataMongoReactiveAutoConfiguration.class, HealthContributorAutoConfiguration.class,
                         MongoReactiveHealthContributorAutoConfiguration.class))
                 .withUserConfiguration(Timeouts.class, MongoClientConfig.class)
                 .withPropertyValues(shippedProperties("communication.mongo."))
-                .withPropertyValues("spring.data.mongodb.uri=mongodb://127.0.0.1:" + closedPort() + "/readiness");
+                .withPropertyValues("spring.mongodb.uri=mongodb://127.0.0.1:" + closedPort() + "/readiness");
 
         List<Duration> answeredIn = new ArrayList<>();
         runner.run(context -> {

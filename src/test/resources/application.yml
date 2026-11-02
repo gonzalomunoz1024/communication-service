@@ -5,12 +5,26 @@ de:
         version: 7.0.14
 
 spring:
+  # this file shadows the shipped application.yml: the same Jackson 3 settings keep the wire format
+  # the tests were written for (see src/main/resources/application.yml)
+  jackson:
+    mapper:
+      sort-properties-alphabetically: false
+    deserialization:
+      fail-on-null-for-primitives: false
+      fail-on-trailing-tokens: false
+    json:
+      write:
+        combine-unicode-surrogates-in-utf8: false
   data:
     mongodb:
       auto-index-creation: true
 
 management:
   endpoints:
+    jackson:
+      # as in src/main/resources/application.yml: actuator bodies use the application's JSON settings
+      isolated-json-mapper: false
     web:
       exposure:
         include: health

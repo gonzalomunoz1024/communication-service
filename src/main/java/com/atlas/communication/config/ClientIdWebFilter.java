@@ -18,12 +18,11 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Every {@code /v1/**} request must say who is calling: {@value #HEADER} carrying the caller's
@@ -131,7 +130,7 @@ public class ClientIdWebFilter implements WebFilter {
     private byte[] errorBody(String message) {
         try {
             return mapper.writeValueAsBytes(Map.of("error", message));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return "{\"error\":\"client id required\"}".getBytes(StandardCharsets.UTF_8);
         }
     }

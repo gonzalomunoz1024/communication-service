@@ -21,25 +21,26 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.reactive.resource.NoResourceFoundException;
+import org.springframework.web.server.ContentTooLargeException;
 import org.springframework.web.server.MethodNotAllowedException;
-import org.springframework.web.server.PayloadTooLargeException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.databind.exc.InvalidNullException;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.mongodb.MongoSocketException;
 import com.mongodb.MongoTimeoutException;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.TokenStreamLocation;
+import tools.jackson.core.exc.InputCoercionException;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.InvalidNullException;
+import tools.jackson.databind.exc.MismatchedInputException;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
 
 /**
  * Central error mapping: IllegalArgumentException -> 400, binding/input errors -> 400,
@@ -113,8 +114,8 @@ public class GlobalExceptionHandler {
         return Mono.just(ResponseEntity.badRequest().body(Map.of("error", describeInput(ex))));
     }
 
-    @ExceptionHandler(PayloadTooLargeException.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleTooLarge(PayloadTooLargeException ex) {
+    @ExceptionHandler(ContentTooLargeException.class)
+    public Mono<ResponseEntity<Map<String, String>>> handleTooLarge(ContentTooLargeException ex) {
         String limit = "";
         if (ex.getCause() instanceof DataBufferLimitException cause && cause.getMessage() != null) {
             // "Exceeded limit on max bytes to buffer : 262144"
@@ -123,7 +124,7 @@ public class GlobalExceptionHandler {
                 limit = " of " + (Long.parseLong(digits) / 1024) + " KB";
             }
         }
-        return Mono.just(ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of("error",
+        return Mono.just(ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(Map.of("error",
                 "request body exceeds the limit" + limit + " (spring.codec.max-in-memory-size)")));
     }
 
@@ -207,9 +208,12 @@ public class GlobalExceptionHandler {
                 return field(mie.getPath(), ex.getMethodParameter()) + ": expected "
                         + expected(mie.getTargetType());
             }
-            if (t instanceof JsonParseException jpe) {
-                JsonLocation at = jpe.getLocation();
-                String where = at == null ? "" : " at line " + at.getLineNr() + ", column " + at.getColumnNr();
+            // what Jackson 2 called a JsonParseException; a number too large for its field is not one
+            if (t instanceof StreamReadException jpe && !(t instanceof InputCoercionException)) {
+                TokenStreamLocation at = jpe.getLocation();
+                // a location Jackson does not know is TokenStreamLocation.NA, line -1
+                String where = at == null || at.getLineNr() < 1 ? ""
+                        : " at line " + at.getLineNr() + ", column " + at.getColumnNr();
                 return "malformed JSON" + where + ": " + jpe.getOriginalMessage();
             }
             if (t instanceof TypeMismatchException tme) {
@@ -223,17 +227,17 @@ public class GlobalExceptionHandler {
         return safe(ex.getReason());
     }
 
-    private static String field(List<JsonMappingException.Reference> path, MethodParameter parameter) {
+    private static String field(List<JacksonException.Reference> path, MethodParameter parameter) {
         if (path == null || path.isEmpty()) {
             return parameter != null && parameter.getParameterName() != null ? parameter.getParameterName() : "body";
         }
         StringBuilder out = new StringBuilder();
-        for (JsonMappingException.Reference ref : path) {
-            if (ref.getFieldName() != null) {
+        for (JacksonException.Reference ref : path) {
+            if (ref.getPropertyName() != null) {
                 if (!out.isEmpty()) {
                     out.append('.');
                 }
-                out.append(ref.getFieldName());
+                out.append(ref.getPropertyName());
             } else if (ref.getIndex() >= 0) {
                 out.append('[').append(ref.getIndex()).append(']');
             }

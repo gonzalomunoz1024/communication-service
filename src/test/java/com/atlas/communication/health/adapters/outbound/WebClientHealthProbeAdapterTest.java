@@ -21,7 +21,6 @@ import com.atlas.communication.health.domain.ComponentHealth;
 import com.atlas.communication.health.domain.HealthReport;
 import com.atlas.communication.health.domain.HealthSource;
 import com.atlas.communication.health.domain.HealthStatus;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -30,6 +29,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
+import tools.jackson.databind.ObjectMapper;
 
 class WebClientHealthProbeAdapterTest {
 

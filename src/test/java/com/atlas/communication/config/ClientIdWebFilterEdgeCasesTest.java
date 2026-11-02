@@ -2,7 +2,6 @@ package com.atlas.communication.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.Closeable;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -13,14 +12,15 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 
 import com.atlas.communication.LogCapture;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * The filter's less common outcomes. A request that ends before anything set a status is logged
@@ -116,8 +116,8 @@ class ClientIdWebFilterEdgeCasesTest {
     void anErrorBodyThatCannotBeSerialisedFallsBackToAFixedJsonError() {
         ObjectMapper broken = new ObjectMapper() {
             @Override
-            public byte[] writeValueAsBytes(Object value) throws JsonProcessingException {
-                throw new JsonMappingException((Closeable) null, "no serializer available");
+            public byte[] writeValueAsBytes(Object value) throws JacksonException {
+                throw DatabindException.from((JsonGenerator) null, "no serializer available");
             }
         };
         MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/v1/communications"));

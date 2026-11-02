@@ -5,7 +5,7 @@ plugins {
     java
     // line coverage of the unit and integration runs together: ./gradlew jacocoTestReport -> build/reports/jacoco/
     jacoco
-    id("org.springframework.boot") version "3.5.16"
+    id("org.springframework.boot") version "4.0.9"
     id("io.spring.dependency-management") version "1.1.7"
     // software bill of materials for a dependency scanner: ./gradlew cyclonedxBom -> build/reports/cyclonedx/
     id("org.cyclonedx.bom") version "3.5.1"
@@ -27,23 +27,26 @@ repositories {
     mavenCentral()
 }
 
-val springdocVersion = "2.8.17"
-val flapdoodleVersion = "4.20.0"
+val springdocVersion = "3.0.3"
+val flapdoodleVersion = "4.33.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    // the WebClient.Builder the health probes use (its auto-configuration has its own module since Boot 4)
+    implementation("org.springframework.boot:spring-boot-starter-webclient")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:$springdocVersion")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive-test")
     testImplementation("io.projectreactor:reactor-test")
-    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:$flapdoodleVersion")
+    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring4x:$flapdoodleVersion")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -157,6 +160,11 @@ tasks.jacocoTestCoverageVerification {
 // cyclonedxBom (the file CI scans) aggregates this project's cyclonedxDirectBom.
 tasks.named<org.cyclonedx.gradle.CyclonedxDirectTask>("cyclonedxDirectBom") {
     includeConfigs = listOf("runtimeClasspath")
+}
+// Spring Boot 4 names the aggregate application.cdx.json (and copies it into the jar under META-INF/sbom/);
+// keep the file name CI scans and the README gives.
+tasks.named<org.cyclonedx.gradle.CyclonedxAggregateTask>("cyclonedxBom") {
+    jsonOutput = layout.buildDirectory.file("reports/cyclonedx/bom.json")
 }
 
 // Reads the BOM CI scans and fails when a build or test tool is listed in it.

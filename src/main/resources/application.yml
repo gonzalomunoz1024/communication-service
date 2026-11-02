@@ -3,11 +3,27 @@ spring:
     name: communication-service
   jackson:
     default-property-inclusion: non_null
-    serialization:
-      write-dates-as-timestamps: false
+    datatype:
+      datetime:
+        write-dates-as-timestamps: false
+    # Jackson 3 changed defaults that show on the wire; these keep it as Jackson 2 wrote and read it:
+    # properties in declaration order (not sorted), a JSON null for a boolean or number field means
+    # its default (not a 400), content after the body's JSON value is ignored, and a character
+    # outside the Basic Multilingual Plane (an emoji) is written as an escaped surrogate pair
+    mapper:
+      sort-properties-alphabetically: false
+    deserialization:
+      fail-on-null-for-primitives: false
+      fail-on-trailing-tokens: false
+    json:
+      write:
+        combine-unicode-surrogates-in-utf8: false
+  mongodb:
+    # Spring Boot 4 reads the connection from spring.mongodb.uri (SPRING_MONGODB_URI); the name it
+    # had before, spring.data.mongodb.uri (SPRING_DATA_MONGODB_URI), is still honoured here
+    uri: ${spring.data.mongodb.uri:mongodb://localhost:27017/communication}
   data:
     mongodb:
-      uri: mongodb://localhost:27017/communication
       auto-index-creation: true
 
 server:
@@ -18,6 +34,10 @@ server:
 # receiving traffic without being restarted. Details stay hidden: the endpoint is unauthenticated.
 management:
   endpoints:
+    jackson:
+      # actuator bodies use the application's JSON settings above: the mapper Spring Boot 4 keeps for them
+      # sorts keys ({"groups":…,"status":…}); with this /actuator/health stays {"status":…,"groups":[…]}
+      isolated-json-mapper: false
     web:
       exposure:
         include: health

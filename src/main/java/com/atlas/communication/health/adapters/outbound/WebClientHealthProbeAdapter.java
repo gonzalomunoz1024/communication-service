@@ -16,11 +16,11 @@ import com.atlas.communication.health.domain.HealthReport;
 import com.atlas.communication.health.domain.HealthSource;
 import com.atlas.communication.health.domain.HealthStatus;
 import com.atlas.communication.health.ports.outbound.HealthProbePort;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * HTTP GET probe. A JSON body with a top-level {@code status} (Spring Actuator's

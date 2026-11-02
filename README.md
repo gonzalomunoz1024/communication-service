@@ -18,7 +18,8 @@ Either way, a dependent system subscribes to `/v1/feed/stream?tenantId=…&servi
 
 ## Stack
 
-- Java 21 · Spring Boot 3.5 · WebFlux (Reactor/Netty) · Reactive MongoDB · Gradle (Kotlin DSL)
+- Java 21 · Spring Boot 4.0 (Spring Framework 7, Jackson 3) · WebFlux (Reactor/Netty) · Reactive MongoDB ·
+  Gradle (Kotlin DSL)
 - Vertical-slice hexagonal architecture: each slice has `adapters/{inbound,outbound}`,
   `application`, `domain`, `ports/{inbound,outbound}`
 - CQRS flavor: structural read/write separation — `publishing` (commands), `feed` (queries + SSE),
@@ -47,9 +48,12 @@ MongoDB stays outside the image: point the container at it.
 ./gradlew bootJar
 docker build -t communication-service:local .
 docker run --rm -p 8080:8080 \
-  -e SPRING_DATA_MONGODB_URI=mongodb://host.docker.internal:27017/communication communication-service:local
+  -e SPRING_MONGODB_URI=mongodb://host.docker.internal:27017/communication communication-service:local
 # on Linux add --add-host=host.docker.internal:host-gateway, or a Docker network with Mongo on it
 ```
+
+`SPRING_MONGODB_URI` is the name Spring Boot 4 reads; `SPRING_DATA_MONGODB_URI` (and
+`--spring.data.mongodb.uri`), the name before Spring Boot 4, still works.
 
 Any `application.yml` setting can be passed the same way as an environment variable
 (`COMMUNICATION_HEALTH_DEFAULTS_FAILURETHRESHOLD=…`). The end-to-end suite under

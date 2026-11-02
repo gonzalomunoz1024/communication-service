@@ -1,19 +1,18 @@
 package com.atlas.communication.config;
 
-import java.io.IOException;
-
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.deser.DeserializationProblemHandler;
+import tools.jackson.databind.exc.UnrecognizedPropertyException;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
- * Unknown JSON fields are ignored service-wide (Spring Boot leaves
+ * Unknown JSON fields are ignored service-wide (Jackson 3 leaves
  * {@code FAIL_ON_UNKNOWN_PROPERTIES} off), which health reports rely on: a forwarded Actuator
  * document carries keys of its own ({@code groups}, whatever a producer adds). A type that declares
  * {@code @JsonIgnoreProperties(ignoreUnknown = false)} gets the opposite: a field it does not know
@@ -21,7 +20,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
  * ({@code sevrity}, {@code expiryAt}) cannot silently change what is published. Jackson alone reads
  * that declaration as "defer to the global setting", hence this handler. Any
  * {@code @JsonIgnoreProperties} without {@code ignoreUnknown = true} counts as the declaration.
- * Boot registers every {@link com.fasterxml.jackson.databind.Module} bean with its ObjectMapper.
+ * Boot registers every {@link tools.jackson.databind.JacksonModule} bean with its JsonMapper.
  */
 @Component
 public class RejectUnknownFieldsModule extends SimpleModule {
@@ -35,7 +34,7 @@ public class RejectUnknownFieldsModule extends SimpleModule {
     @Override
     public void setupModule(SetupContext context) {
         super.setupModule(context);
-        context.addDeserializationProblemHandler(new RejectDeclaredUnknownFields());
+        context.addHandler(new RejectDeclaredUnknownFields());
     }
 
     /** Throws what Jackson throws with FAIL_ON_UNKNOWN_PROPERTIES on, for the declaring types only. */
@@ -43,7 +42,7 @@ public class RejectUnknownFieldsModule extends SimpleModule {
 
         @Override
         public boolean handleUnknownProperty(DeserializationContext ctxt, JsonParser p,
-                JsonDeserializer<?> deserializer, Object beanOrClass, String propertyName) throws IOException {
+                ValueDeserializer<?> deserializer, Object beanOrClass, String propertyName) {
             Class<?> type = beanOrClass instanceof Class<?> declared ? declared : beanOrClass.getClass();
             JsonIgnoreProperties ignorals = type.getAnnotation(JsonIgnoreProperties.class);
             if (ignorals != null && !ignorals.ignoreUnknown()) {
