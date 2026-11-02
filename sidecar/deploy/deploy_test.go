@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -285,6 +286,54 @@ func TestManualSnippetSharesTheContainerContract(t *testing.T) {
 	}
 	kubeconform(t, manual, "1.27.0")
 }
+
+// G-4-27 (UX-64): a container that reads a ConfigMap through envFrom does not start without it
+// (the kubelet answers CreateContainerConfigError), so the README row of every attach path whose
+// snippet reads one names it and the keys the sidecar needs from it, and the plain-YAML file's
+// header says the ConfigMap is the sidecar's, not part of the team's own Deployment. The
+// plain-YAML row used to say only "pastes the container block".
+func TestEachAttachPathNamesTheConfigMapItsContainerReads(t *testing.T) {
+	readme := readFile(t, filepath.Join("..", "README.md"))
+	for _, tc := range []struct{ row, snippet string }{
+		{"| **Kustomize**", filepath.Join("kustomize", "component", "add-sidecar.yaml")},
+		{"| **Kustomize**", filepath.Join("kustomize", "component-native", "add-native-sidecar.yaml")},
+		{"| **Plain YAML**", filepath.Join("manual", "deployment.yaml")},
+	} {
+		row := ""
+		for _, line := range strings.Split(readme, "\n") {
+			if strings.HasPrefix(line, tc.row) {
+				row = line
+				break
+			}
+		}
+		refs := configMapRef.FindAllStringSubmatch(readFile(t, tc.snippet), -1)
+		if row == "" || len(refs) == 0 {
+			t.Fatalf("README row %q: %d characters; ConfigMaps read by %s: %d", tc.row, len(row), tc.snippet, len(refs))
+		}
+		for _, ref := range refs {
+			for _, want := range []string{"`" + ref[1] + "`", "`CS_ENDPOINT`", "`CS_TENANT`"} {
+				if !strings.Contains(row, want) {
+					t.Errorf("%s reads the ConfigMap %s, so the README row starting %q should name %s", tc.snippet, ref[1], tc.row, want)
+				}
+			}
+		}
+	}
+	var header strings.Builder
+	for _, line := range strings.Split(readFile(t, filepath.Join("manual", "deployment.yaml")), "\n") {
+		if !strings.HasPrefix(line, "#") {
+			break
+		}
+		header.WriteString(line + "\n")
+	}
+	for _, want := range []string{"cs-health-sidecar", "CS_ENDPOINT", "CS_TENANT"} {
+		if !strings.Contains(header.String(), want) {
+			t.Errorf("the header comment of deploy/manual/deployment.yaml should say which ConfigMap the sidecar needs and with which keys; it lacks %s:\n%s", want, header.String())
+		}
+	}
+}
+
+// configMapRef matches an envFrom entry's ConfigMap name.
+var configMapRef = regexp.MustCompile(`configMapRef:\s*\n\s*name:\s*(\S+)`)
 
 // containerContract is what every form of the sidecar container must carry.
 var containerContract = []string{

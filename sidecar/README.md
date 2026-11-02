@@ -29,7 +29,7 @@ Pick one. The team's own manifests do not change in the first two.
 | --- | --- |
 | **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap in the app's namespace with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER` ([example](deploy/kustomize/example)) |
 | **Helm** ([deploy/helm/cs-health-sidecar](deploy/helm/cs-health-sidecar)) | adds the library chart as a dependency, one `include` line under `containers` and `csHealthSidecar.endpoint` / `.tenant` in values (the three pieces below the table) |
-| **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | pastes the container block |
+| **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | applies the `cs-health-sidecar` ConfigMap at the top of that file in the app's namespace, with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER`, and pastes the container block into its Deployment |
 
 With Helm the consuming chart gets these three pieces, the same as the comment in the chart's
 [`_container.tpl`](deploy/helm/cs-health-sidecar/templates/_container.tpl):
@@ -308,6 +308,9 @@ The usual causes, in order:
 3. `upSeen` is false: the app has not answered UP yet; during `CS_STARTUP_GRACE` the service
    ignores the UNKNOWN reports (see the previous section). If `target` is empty after the grace,
    nothing in the pod answered any health path: set `CS_PORT` (and `CS_PATH`).
+4. The sidecar never started (no logs, the pod in `CreateContainerConfigError`): the
+   `cs-health-sidecar` ConfigMap is missing from the app's namespace (Kustomize and plain YAML);
+   `oc describe pod <pod>` names it.
 
 ## Build
 

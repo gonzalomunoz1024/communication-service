@@ -1,5 +1,8 @@
-# Fallback for teams that manage plain YAML: the same container pasted into the pod spec.
-# Everything above the "health-sidecar" container is the team's own Deployment.
+# Fallback for teams that manage plain YAML. Two pieces are the sidecar's: the cs-health-sidecar
+# ConfigMap below (CS_ENDPOINT, CS_TENANT and, optionally, CS_CLUSTER), applied in the app's
+# namespace, and the "health-sidecar" container, pasted into the pod spec; without the ConfigMap
+# the container cannot start (CreateContainerConfigError). The rest of the Deployment is the
+# team's own.
 apiVersion: v1
 kind: ConfigMap
 metadata:
