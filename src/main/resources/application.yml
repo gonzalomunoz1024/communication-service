@@ -57,11 +57,11 @@ communication:
     server-selection-timeout: PT5S
     connect-timeout: PT5S
     read-timeout: PT15S
-    # how long readiness waits for the database to answer a ping before reporting DOWN: no longer
-    # than a kubelet waits for a probe by default (1 s), so the probe gets the 503 instead of a
-    # timeout. Readiness logs one WARN line when the database stops answering, one INFO line when
-    # it answers again.
-    readiness-timeout: PT1S
+    # how long readiness waits for the database to answer a ping before reporting DOWN: short
+    # enough that the whole answer reaches a kubelet within its default probe timeout (1 s), so
+    # the probe gets the 503 instead of a timeout (with 1 s here the 503 took 1.01 s). Readiness
+    # logs one WARN line when the database stops answering, one INFO line when it answers again.
+    readiness-timeout: PT0.8S
   events:
     # shared event log (communication_events): every instance appends to it and tails it, so SSE
     # subscribers on any node see every event; a client reconnecting with Last-Event-ID gets what

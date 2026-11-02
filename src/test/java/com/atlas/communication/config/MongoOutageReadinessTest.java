@@ -49,6 +49,8 @@ class MongoOutageReadinessTest {
     private static final String LEVEL_PREFIX = "logging.level.";
     /** communication.mongo.server-selection-timeout: what a call waits for an unreachable database. */
     private static final Duration SERVER_SELECTION = Duration.ofSeconds(5);
+    /** A kubelet's default probe timeout (timeoutSeconds: 1): an answer that takes longer is a timeout, not a 503. */
+    private static final Duration KUBELET_PROBE_TIMEOUT = Duration.ofSeconds(1);
 
     @EnableConfigurationProperties(MongoTimeoutProperties.class)
     static class Timeouts {
@@ -107,6 +109,51 @@ class MongoOutageReadinessTest {
                 .hasSize(1);
         assertThat(answeredIn).as("each probe answers before the server-selection timeout")
                 .allSatisfy(took -> assertThat(took).isLessThan(SERVER_SELECTION));
+    }
+
+    @Test
+    void readinessWhileMongoIsUnreachableAnswersWithinAKubeletsDefaultProbeTimeout() throws IOException {
+        // the shipped communication.mongo.* settings, so the timeout that ships is the one measured
+        ApplicationContextRunner runner = new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(MongoReactiveAutoConfiguration.class,
+                        MongoReactiveDataAutoConfiguration.class, HealthContributorAutoConfiguration.class,
+                        MongoReactiveHealthContributorAutoConfiguration.class))
+                .withUserConfiguration(Timeouts.class, MongoClientConfig.class)
+                .withPropertyValues(shippedProperties("communication.mongo."))
+                .withPropertyValues("spring.data.mongodb.uri=mongodb://127.0.0.1:" + closedPort() + "/readiness");
+
+        List<Duration> answeredIn = new ArrayList<>();
+        runner.run(context -> {
+            ReactiveHealthIndicator readiness = (ReactiveHealthIndicator) context
+                    .getBeansOfType(ReactiveHealthContributor.class).values().iterator().next();
+            for (int probe = 0; probe < 3; probe++) {
+                long started = System.nanoTime();
+                Health health = readiness.health().block(Duration.ofSeconds(30));
+                answeredIn.add(Duration.ofNanos(System.nanoTime() - started));
+                assertThat(health).isNotNull();
+                assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+            }
+        });
+        assertThat(answeredIn).as("each DOWN answers within a kubelet's default probe timeout, leaving room"
+                + " for the HTTP answer: %s", answeredIn)
+                .allSatisfy(took -> assertThat(took).isLessThan(KUBELET_PROBE_TIMEOUT));
+    }
+
+    /** The entries of the shipped application.yml under {@code prefix}, as {@code name=value}. */
+    private static String[] shippedProperties(String prefix) throws IOException {
+        List<String> properties = new ArrayList<>();
+        for (PropertySource<?> source : new YamlPropertySourceLoader().load("shipped",
+                new FileSystemResource(APPLICATION_YML))) {
+            if (source instanceof EnumerablePropertySource<?> enumerable) {
+                for (String name : enumerable.getPropertyNames()) {
+                    if (name.startsWith(prefix)) {
+                        properties.add(name + "=" + enumerable.getProperty(name));
+                    }
+                }
+            }
+        }
+        assertThat(properties).as("shipped %s* settings", prefix).isNotEmpty();
+        return properties.toArray(String[]::new);
     }
 
     /** The logging.level.* entries of the shipped application.yml. */

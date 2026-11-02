@@ -111,7 +111,7 @@ Only the health endpoint is exposed, and it sits outside `/v1`, so probes need n
 | Probe | Path | Meaning |
 |---|---|---|
 | liveness | `GET /actuator/health/liveness` | the process is alive; `DOWN` only when the application context is broken, so a failing database never restarts the pod |
-| readiness | `GET /actuator/health/readiness` | ready for traffic: the context is up **and** MongoDB answers a ping within `communication.mongo.readiness-timeout` (1 s); `503 {"status":"DOWN"}` while Mongo is unreachable, so a Service stops routing to the pod until it recovers |
+| readiness | `GET /actuator/health/readiness` | ready for traffic: the context is up **and** MongoDB answers a ping within `communication.mongo.readiness-timeout` (0.8 s); `503 {"status":"DOWN"}` while Mongo is unreachable, so a Service stops routing to the pod until it recovers |
 | overall | `GET /actuator/health` | the same two plus every indicator, without details (the endpoint is unauthenticated) |
 
 Nothing else under `/actuator` is served (404).
@@ -121,8 +121,9 @@ when Mongo cannot be reached it gives up after `communication.mongo.server-selec
 5 s, exits, and the pod is restarted until it can). Once running it survives losing the database: every call
 that needs it answers `503 {"error":"database unavailable"}` after that timeout (about 20 s for a database
 that hangs instead, see the end of this paragraph), readiness reports
-`DOWN` within `communication.mongo.readiness-timeout` (1 s, a kubelet's default probe timeout) so
-the pod leaves the Service while liveness stays `UP`, open SSE streams stay up on keepalives, and
+`DOWN` within a kubelet's default probe timeout (1 s; it waits
+`communication.mongo.readiness-timeout`, 0.8 s, for a ping) so the pod leaves the Service while
+liveness stays `UP`, open SSE streams stay up on keepalives, and
 each scheduler logs one WARN line per skipped run (`health sweep skipped: database unavailable: …`,
 `status sweep skipped: …`) without a stack trace. However often it is probed, readiness logs two
 lines per outage: `WARN readiness DOWN: MongoDB did not answer a ping: …` when it starts and
