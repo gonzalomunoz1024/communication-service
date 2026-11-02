@@ -250,7 +250,7 @@ report, and the last send error, which is the first place to look when a service
 The image has no shell or curl, so read the sidecar from outside the pod:
 
 ```bash
-oc logs <pod> -c health-sidecar                 # JSON lines: target found, reported (each change), report failed
+oc logs <pod> -c health-sidecar                 # JSON lines: target found, reported (each change), report failed, report delivered again
 oc port-forward <pod> 9465:9465 &
 curl -s localhost:9465/status | jq .
 ```
@@ -262,6 +262,11 @@ probe while the report is DOWN or degraded) are logged at DEBUG: set `CS_LOG_LEV
 every send. With Kustomize or the plain YAML add it to the `cs-health-sidecar` ConfigMap, with
 Helm to `csHealthSidecar.extraEnv`; the container reads it when it starts, so restart the pods
 (`oc rollout restart deployment/<name>`).
+
+When sends fail (`report failed; will retry` at WARN, the next step in `in`) or are rejected
+(`report rejected` at ERROR), the first report the service accepts again is logged at INFO as
+`report delivered again`, whatever its status, with the `status`, the number of `failedAttempts`
+and how long they lasted (`failingFor`), so the log shows when an outage of the service is over.
 
 `/status` answers with:
 

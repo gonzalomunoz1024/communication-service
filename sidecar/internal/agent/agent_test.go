@@ -994,6 +994,66 @@ func TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug(t *testing.T) {
 	}
 }
 
+// G-4-25 (GAP-e2e3-2): after sends that did not get through, the first report the service accepts
+// again is logged at INFO, once, with how many attempts failed and for how long, whatever its
+// status. An UP report that had not changed was logged at DEBUG only, so at the default level the
+// log of an outage of the service ended on "report failed; will retry". A rejection (4xx) is a
+// send that did not get through too. Driven by Tick on the harness clock: 15 s probes, 30 s
+// heartbeat, the app UP throughout.
+func TestDeliveryAgainAfterFailedSendsIsLoggedOnceAtInfo(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		answers []error // what the service answers on the ticks after the first accepted report
+		want    []string
+		attempt int    // failedAttempts on the INFO line
+		for_    string // failingFor on the INFO line
+	}{
+		{"refused twice, then accepted", []error{errors.New("post http://communication.test/v1/health/reports: HTTP 500"), errors.New("post http://communication.test/v1/health/reports: HTTP 500"), nil, nil},
+			[]string{"INFO reported", "WARN report failed; will retry", "WARN report failed; will retry", "INFO report delivered again"}, 2, "30s"},
+		{"rejected at a heartbeat, accepted at the next", []error{&report.PermanentError{Status: 400, Body: "bad"}, nil, nil, nil},
+			[]string{"INFO reported", "ERROR report rejected", "INFO report delivered again"}, 1, "30s"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := newFakeApp(t, "UP")
+			h := newHarness(t, baseConfig(), app.port)
+			var logs bytes.Buffer
+			h.agent.log = slog.New(slog.NewJSONHandler(&logs, nil)) // the default level, INFO
+			ctx := context.Background()
+			h.agent.Tick(ctx) // UP, accepted
+			h.advance(30 * time.Second)
+			for _, answer := range tc.answers {
+				h.sender.fail = answer
+				h.agent.Tick(ctx)
+				h.advance(15 * time.Second)
+			}
+			h.advance(15 * time.Second)
+			h.agent.Tick(ctx) // the next heartbeat, accepted: nothing more at INFO
+
+			var got []string
+			var again []map[string]any
+			for _, raw := range strings.Split(strings.TrimSpace(logs.String()), "\n") {
+				var l map[string]any
+				if err := json.Unmarshal([]byte(raw), &l); err != nil {
+					t.Fatalf("log line is not JSON: %q", raw)
+				}
+				if l["msg"] == "health target found" {
+					continue
+				}
+				got = append(got, fmt.Sprint(l["level"], " ", l["msg"]))
+				if l["msg"] == "report delivered again" {
+					again = append(again, l)
+				}
+			}
+			if !slices.Equal(got, tc.want) {
+				t.Errorf("log lines at INFO and above %q, want %q", got, tc.want)
+			}
+			if len(again) == 1 && (again[0]["status"] != "UP" || again[0]["failedAttempts"] != float64(tc.attempt) || again[0]["failingFor"] != tc.for_) {
+				t.Errorf("report delivered again: %v, want status UP, failedAttempts %d, failingFor %s", again[0], tc.attempt, tc.for_)
+			}
+		})
+	}
+}
+
 // A report the service rejected (4xx) is not re-sent every probe just because the status is
 // DOWN: the same body cannot do better sooner, so it waits for a change or the heartbeat, and
 // once a body is accepted again the every-probe cadence resumes.

@@ -84,6 +84,11 @@ type Agent struct {
 	failedAt time.Time
 	nextSend time.Time
 	sent     int
+	// failed counts the sends since the last accepted one that did not get through (failed, or
+	// rejected) and failingSince is the tick of the first of them: the first report accepted after
+	// them is logged at INFO whatever its status, so the log never ends on a failure that is over.
+	failed       int
+	failingSince time.Time
 }
 
 // New wires an Agent.
@@ -333,7 +338,8 @@ func (a *Agent) instance(leaving bool) *report.Instance {
 // UP does not post after every probe forever. A failed send is retried at the first tick after a
 // step of 1, 2, 4, 8, 16 and then 30 s (maxBackoff), less up to a fifth at random, and never more
 // than maxBackoff after it (see wait), keeping only the latest report. A change is logged at
-// INFO, the sends in between at DEBUG.
+// INFO, the sends in between at DEBUG; the first report accepted after one or more that did not
+// get through is logged at INFO too, as "report delivered again".
 func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 	a.mu.Lock()
 	sig := signature(rep)
@@ -353,23 +359,29 @@ func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 	defer a.mu.Unlock()
 	switch {
 	case err == nil:
+		if a.failed > 0 {
+			a.log.Info("report delivered again", "status", rep.Status, "failedAttempts", a.failed,
+				"failingFor", now.Sub(a.failingSince).Round(time.Millisecond).String())
+		}
 		if changed {
 			a.log.Info("reported", "status", rep.Status, "message", rep.Message)
 		} else {
 			a.log.Debug("reported", "status", rep.Status, "message", rep.Message)
 		}
 		a.lastSig, a.lastMessage, a.lastSend, a.sendErr = sig, rep.Message, now, ""
-		a.dirty, a.backoff, a.rejected = false, 0, false
+		a.dirty, a.backoff, a.rejected, a.failed = false, 0, false, 0
 		a.sent++
 	case report.IsPermanent(err):
 		// The body is wrong for this service; say so, and try again at the heartbeat cadence or
 		// on a change, whatever the status: the same body cannot do better sooner.
 		a.log.Error("report rejected", "error", err)
+		a.notDelivered(now)
 		a.lastSig, a.lastMessage, a.lastSend, a.sendErr = sig, rep.Message, now, err.Error()
 		a.dirty, a.backoff, a.rejected = false, 0, true
 	case ctx.Err() != nil:
 		// Shutting down mid-tick: the leaving report follows and says everything needed.
 	default:
+		a.notDelivered(now)
 		if a.backoff == 0 {
 			a.backoff = minBackoff
 		} else {
@@ -381,6 +393,14 @@ func (a *Agent) send(ctx context.Context, rep report.Report, now time.Time) {
 		a.nextSend = now.Add(a.backoff - time.Duration(rand.Float64()*jitter*float64(a.backoff)))
 		a.log.Warn("report failed; will retry", "error", err, "in", a.backoff.String())
 	}
+}
+
+// notDelivered counts a send that did not get through; the first of a run starts its clock.
+func (a *Agent) notDelivered(now time.Time) {
+	if a.failed == 0 {
+		a.failingSince = now
+	}
+	a.failed++
 }
 
 func (a *Agent) leave() {
