@@ -12,9 +12,22 @@ export function isUnreachable(e: unknown): boolean {
   return e instanceof TypeError // what fetch rejects with when the connection fails
 }
 
-/** The text to show a person for a failed call: the service's own words for a rejection, plain words otherwise. */
+/** True for a 4xx: the service understood the request and refused it, so its text is about the input. */
+export function isRejection(e: unknown): boolean {
+  return e instanceof ApiError && e.status >= 400 && e.status < 500
+}
+
+/**
+ * The text to show a person for a failed call: the service's own words for a rejection, a
+ * failure of the service named as such for a 5xx, plain words otherwise.
+ */
 export function explainError(e: unknown): string {
   if (isUnreachable(e)) return UNREACHABLE_MESSAGE
+  if (e instanceof ApiError && e.status >= 500) {
+    // a fault in the service, not in the input: the status line alone would read like a verdict
+    const reason = e.fromService ? `: ${e.message.trim().replace(/\.$/, '')}` : ''
+    return `The service failed (HTTP ${e.status})${reason}. Try again; if it keeps happening, tell the service owners.`
+  }
   if (e instanceof Error) return e.message
   return String(e)
 }

@@ -7,6 +7,8 @@ type Tab = 'feed' | 'publish'
 const APP_TITLE = 'Outage Notifications'
 const TENANT_KEY = 'comm-tenant'
 const PUBLISHER_KEY = 'comm-publisher'
+/** Shown while no tenant is set: on a first visit, or after the field was cleared. */
+const TENANT_PROMPT = 'Enter the tenant your consumers read; the service owners assign it.'
 
 function readStored(key: string, fallback: string): string {
   try {
@@ -14,6 +16,11 @@ function readStored(key: string, fallback: string): string {
   } catch {
     return fallback
   }
+}
+
+/** The tenant the page opens on: the build's default, else the one used last in this browser, else none. */
+function initialTenant(): string {
+  return import.meta.env.VITE_DEFAULT_TENANT?.trim() || readStored(TENANT_KEY, '')
 }
 
 function tabFromHash(): Tab {
@@ -25,7 +32,7 @@ export default function App() {
   const { mode, cycle } = useTheme()
   const client = useMemo(() => createCommunicationClient(import.meta.env.VITE_API_BASE ?? '', { clientId: import.meta.env.VITE_CLIENT_ID }), [])
   const [tab, setTab] = useState<Tab>(tabFromHash)
-  const [tenantId, setTenantId] = useState(() => readStored(TENANT_KEY, 'acme'))
+  const [tenantId, setTenantId] = useState(initialTenant)
   const [publisher, setPublisher] = useState(() => readStored(PUBLISHER_KEY, ''))
   // the feed's type filter when the tab opens; "View in feed" points it at what was just published
   const [feedType, setFeedType] = useState<CommunicationType | ''>('OUTAGE')
@@ -80,6 +87,7 @@ export default function App() {
               className="w-28 sm:w-40"
               value={tenantId}
               placeholder="acme"
+              title={TENANT_PROMPT}
               onChange={(e) => setTenantId(e.target.value)}
             />
           </label>
@@ -88,6 +96,12 @@ export default function App() {
       />
 
       <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+        {!tenantId.trim() && (
+          <p className="mb-5 flex items-center gap-2.5 rounded-md border border-stroke-light bg-surface px-4 py-3 text-sm text-secondary">
+            <Icon name="info" size={16} className="shrink-0 text-accent" />
+            {TENANT_PROMPT}
+          </p>
+        )}
         <Tabs<Tab> ariaLabel="Sections" tabs={tabs} value={tab} onChange={go} className="mb-5" />
         {tab === 'feed' ? (
           <OutageFeed client={client} tenantId={tenantId} actor={publisher || undefined} defaultType={feedType} onCount={setActiveCount} />

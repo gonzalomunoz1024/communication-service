@@ -49,6 +49,30 @@ describe('OutageCard', () => {
     expect(onRetire).toHaveBeenCalledWith(scheduled, '')
   })
 
+  it('says who resolves and whose feed the notice leaves before asking to confirm', async () => {
+    render(<OutageCard item={item} onRetire={vi.fn(async () => {})} actor="web-oncall" />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Resolve' }))
+    expect(screen.getByText("Resolve as web-oncall? It leaves tenant acme's feed at once and cannot be reopened.")).toBeInTheDocument()
+  })
+
+  it('names the tenant in the withdraw confirmation too, and leaves the actor out when none is known', async () => {
+    const scheduled: FeedItem = { ...item, status: 'SCHEDULED', type: 'MAINTENANCE', startsAt: new Date(Date.now() + 3_600_000).toISOString() }
+    render(<OutageCard item={scheduled} onRetire={vi.fn(async () => {})} />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Withdraw' }))
+    expect(screen.getByText("Withdraw? Withdrawing retires it before it starts: tenant acme's consumers never see it and it cannot be reopened.")).toBeInTheDocument()
+  })
+
+  it('shows an upcoming notice as Scheduled, with its start once and in sentence case', () => {
+    const scheduled: FeedItem = { ...item, status: 'SCHEDULED', type: 'MAINTENANCE', startsAt: new Date(Date.now() + 59 * 60_000).toISOString() }
+    render(<OutageCard item={scheduled} />)
+    const tag = screen.getByText('Scheduled')
+    expect(tag).toHaveClass('text-state-queued-fg')
+    expect(tag).not.toHaveClass('capitalize')
+    expect(screen.getAllByText(/Starts in 59m/)).toHaveLength(1)
+  })
+
   it('hides the action when the page cannot resolve', () => {
     render(<OutageCard item={item} />)
     expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError, createCommunicationClient, isApiError } from '../outages/api'
-import { UNREACHABLE_MESSAGE, explainError, explainPublishError, isUnreachable } from '../outages/errors'
+import { UNREACHABLE_MESSAGE, explainError, explainPublishError, isRejection, isUnreachable } from '../outages/errors'
 
 describe('explainError', () => {
   it('says the service is unreachable for a failed connection or a proxy error', () => {
@@ -24,6 +24,21 @@ describe('explainError', () => {
     expect(isUnreachable(new ApiError(500, 'unexpected error'))).toBe(false)
     expect(explainError(new Error('boom'))).toBe('boom')
     expect(explainError('odd')).toBe('odd')
+  })
+
+  it('says the service failed, not that it rejected anything, for a 5xx', () => {
+    // an empty body: the status line would read like a verdict on the input
+    expect(explainError(new ApiError(500, '500 Internal Server Error'))).toBe('The service failed (HTTP 500). Try again; if it keeps happening, tell the service owners.')
+    // the service gave a reason: quote it, still as a failure of the service
+    expect(explainError(new ApiError(500, 'state unavailable.', true))).toBe(
+      'The service failed (HTTP 500): state unavailable. Try again; if it keeps happening, tell the service owners.',
+    )
+    expect(isRejection(new ApiError(500, '500 Internal Server Error'))).toBe(false)
+    // 4xx keep the service's words and count as a rejection of the request
+    expect(explainError(new ApiError(400, 'title must not be blank', true))).toBe('title must not be blank')
+    expect(isRejection(new ApiError(400, 'title must not be blank', true))).toBe(true)
+    expect(isRejection(new ApiError(0, 'Failed to fetch'))).toBe(false)
+    expect(isRejection(new ApiError(503, '503 Service Unavailable'))).toBe(false)
   })
 })
 
@@ -54,5 +69,20 @@ describe('client with the service down', () => {
     expect(isApiError(err) && err.status === 0 && err.message === 'fetch failed').toBe(true)
     expect(isUnreachable(err)).toBe(true)
     expect(explainError(err)).toBe(UNREACHABLE_MESSAGE)
+  })
+
+  it('tells a 5xx with an empty body from one the service explained', async () => {
+    const answer = (res: Response) => createCommunicationClient('http://svc', { fetchImpl: () => Promise.resolve(res) })
+    const bare: unknown = await answer(new Response('', { status: 500, statusText: 'Internal Server Error' }))
+      .feed({ tenantId: 'acme' })
+      .catch((e: unknown) => e)
+    expect(isApiError(bare) && bare.status === 500 && !bare.fromService).toBe(true)
+    expect(explainError(bare)).toBe('The service failed (HTTP 500). Try again; if it keeps happening, tell the service owners.')
+
+    const explained: unknown = await answer(new Response(JSON.stringify({ error: 'event log unavailable' }), { status: 500 }))
+      .feed({ tenantId: 'acme' })
+      .catch((e: unknown) => e)
+    expect(isApiError(explained) && explained.fromService && explained.message === 'event log unavailable').toBe(true)
+    expect(explainError(explained)).toBe('The service failed (HTTP 500): event log unavailable. Try again; if it keeps happening, tell the service owners.')
   })
 })

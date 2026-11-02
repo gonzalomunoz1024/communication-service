@@ -98,6 +98,14 @@ describe('PublishOutageForm server errors', () => {
     expect(await publish(c)).toHaveTextContent('The service rejected this. title must not be blank')
   })
 
+  it('calls a 5xx a failure of the service, not a rejection', async () => {
+    const c = client()
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(500, '500 Internal Server Error'))
+    const alert = await publish(c)
+    expect(alert).toHaveTextContent('The service failed (HTTP 500). Try again; if it keeps happening, tell the service owners.')
+    expect(alert).not.toHaveTextContent('rejected')
+  })
+
   it('moves focus to the banner and scrolls it into view, since it lands below the buttons', async () => {
     // jsdom has no layout and no scrollIntoView; the component must tolerate that and call it when present
     const scrollIntoView = vi.fn()
@@ -122,6 +130,27 @@ describe('PublishOutageForm accessibility', () => {
     expect(screen.getByRole('radiogroup', { name: 'Severity' })).toBeInTheDocument()
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(["What's happening", 'Who and where', 'Timing'])
     expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+  })
+
+  it('promises a chip for the ServiceNow incident, and a link only when the service knows the instance', () => {
+    render(<PublishOutageForm client={client()} tenantId="acme" publisher="oncall" />)
+    expect(screen.getByLabelText(/^ServiceNow incident/)).toHaveAccessibleDescription(
+      'Optional. The INC tracking this; consumers see it as a chip on the notice, linked when the service knows your ServiceNow instance.',
+    )
+  })
+
+  it('makes the whole Save-as-draft row the click target of its switch', async () => {
+    const user = userEvent.setup()
+    render(<PublishOutageForm client={client()} tenantId="acme" publisher="oncall" />)
+    const toggle = screen.getByRole('switch', { name: 'Save as draft' })
+    const row = toggle.closest('label')!
+    expect(row).toHaveTextContent('Save as draft (not visible to consumers)')
+    // the switch itself is 30x18 px; the labelled row is at least 24 px tall and reads as clickable
+    expect(row).toHaveClass('min-h-6', 'cursor-pointer')
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await user.click(screen.getByText('Save as draft (not visible to consumers)'))
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeInTheDocument()
   })
 
   it('moves focus to the outcome once published', async () => {

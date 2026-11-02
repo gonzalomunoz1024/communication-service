@@ -10,14 +10,18 @@ import type {
 
 /**
  * A failed call: a non-2xx answer (`message` is the service's {"error": "..."} text when it sent
- * one), or `status` 0 when the connection itself failed and there was no answer at all.
+ * one, else the status line), or `status` 0 when the connection itself failed and there was no
+ * answer at all.
  */
 export class ApiError extends Error {
   readonly status: number
-  constructor(status: number, message: string) {
+  /** true when `message` is the service's own {"error"} text, false for a status line or a failed connection */
+  readonly fromService: boolean
+  constructor(status: number, message: string, fromService = false) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.fromService = fromService
   }
 }
 
@@ -70,14 +74,15 @@ export function feedQuery(filter: FeedFilter, extra: Record<string, string | num
   return q.toString()
 }
 
-async function errorMessage(res: Response): Promise<string> {
+/** The service's {"error"} text when it sent one (true), else the status line (false). */
+async function errorMessage(res: Response): Promise<[string, boolean]> {
   try {
     const body = (await res.json()) as { error?: string }
-    if (body?.error) return body.error
+    if (body?.error) return [body.error, true]
   } catch {
     /* not JSON */
   }
-  return `${res.status} ${res.statusText}`.trim()
+  return [`${res.status} ${res.statusText}`.trim(), false]
 }
 
 /** Sent as `X-Client-Id` on every request; the service rejects calls that carry none. */
@@ -115,7 +120,10 @@ export function createCommunicationClient(
       // the connection failed (service down, DNS, CORS): there is no status to show
       throw new ApiError(0, e instanceof Error ? e.message : String(e))
     }
-    if (!res.ok) throw new ApiError(res.status, await errorMessage(res))
+    if (!res.ok) {
+      const [text, fromService] = await errorMessage(res)
+      throw new ApiError(res.status, text, fromService)
+    }
     return (await res.json()) as T
   }
 

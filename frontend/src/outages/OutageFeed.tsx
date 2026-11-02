@@ -162,12 +162,12 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
           <div className="flex flex-col gap-5">
             <Section title="Active now" count={active.length} tone="critical">
               {active.map((i) => (
-                <OutageCard key={i.id} item={i} onRetire={resolve} />
+                <OutageCard key={i.id} item={i} onRetire={resolve} actor={actor} />
               ))}
             </Section>
             <Section title="Upcoming" count={upcoming.length} tone="accent">
               {upcoming.map((i) => (
-                <OutageCard key={i.id} item={i} onRetire={resolve} />
+                <OutageCard key={i.id} item={i} onRetire={resolve} actor={actor} />
               ))}
             </Section>
             {feed.truncated && (

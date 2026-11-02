@@ -9,6 +9,8 @@ export interface OutageCardProps {
   item: FeedItem
   /** shown as "Resolve"; omit to hide the action */
   onRetire?: (item: FeedItem, note: string) => Promise<void>
+  /** who the resolve is recorded as; named in the confirmation */
+  actor?: string
 }
 
 const SEVERITY_BAR: Record<FeedItem['severity'], string> = {
@@ -19,7 +21,7 @@ const SEVERITY_BAR: Record<FeedItem['severity'], string> = {
 }
 
 /** One feed item: severity rail, status, title, body, services and timing. */
-export function OutageCard({ item, onRetire }: OutageCardProps) {
+export function OutageCard({ item, onRetire, actor }: OutageCardProps) {
   const [confirming, setConfirming] = useState(false)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -45,7 +47,7 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
       <span aria-hidden="true" className={cx('absolute inset-y-0 left-0 w-1', SEVERITY_BAR[item.severity])} />
       <div className="flex flex-col gap-3 py-4 pl-6 pr-5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <StateTag status={active ? 'failing' : 'queued'}>{active ? 'Active' : `Starts ${relativeTime(item.startsAt)}`}</StateTag>
+          <StateTag status={active ? 'failing' : 'queued'}>{active ? 'Active' : 'Scheduled'}</StateTag>
           <Tag tone={SEVERITY_TONE[item.severity]}>{titleCase(item.severity)}</Tag>
           <Tag outline>{titleCase(item.type)}</Tag>
           {item.audience !== 'CUSTOMERS' && <Tag outline>{titleCase(item.audience)}</Tag>}
@@ -101,8 +103,8 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
           <div className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
             <p className="text-caption text-secondary">
               {active
-                ? "Resolving retires it: it leaves every consumer's feed and cannot be reopened."
-                : 'Withdrawing retires it before it starts: consumers never see it and it cannot be reopened.'}
+                ? `Resolve${actor ? ` as ${actor}` : ''}? It leaves tenant ${item.tenantId}'s feed at once and cannot be reopened.`
+                : `Withdraw${actor ? ` as ${actor}` : ''}? Withdrawing retires it before it starts: tenant ${item.tenantId}'s consumers never see it and it cannot be reopened.`}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Input

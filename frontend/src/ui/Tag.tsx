@@ -86,20 +86,26 @@ export interface StateTagProps {
   className?: string
 }
 
-/** Status capsule with a leading dot; running pulses. */
+/** "in-progress" → "In progress": the status word as a sentence, when no display text is given. */
+function sentence(status: string): string {
+  const words = status.replace(/-/g, ' ').toLowerCase()
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/** Status capsule with a leading dot; running pulses. Text is shown as given (sentence case). */
 export function StateTag({ status, children, size = 'md', className }: StateTagProps) {
   const state = jobState(status)
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium capitalize',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-medium',
         size === 'sm' ? 'px-1.5 py-px text-caption2' : 'px-2 py-0.5 text-caption',
         STATE_CLASS[state],
         className,
       )}
     >
       <span className={cx('h-1.5 w-1.5 shrink-0 rounded-full', STATE_DOT[state], state === 'running' && 'animate-pulse-subtle')} />
-      {children ?? status.replace(/-/g, ' ')}
+      {children ?? sentence(status)}
     </span>
   )
 }

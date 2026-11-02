@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
 import type { CommunicationClient } from './api'
 import { SEVERITY_TONE, TYPE_HINT, titleCase } from './display'
-import { explainPublishError, isUnreachable } from './errors'
+import { explainPublishError, isRejection } from './errors'
 import { TicketTag } from './TicketTag'
 import { AUDIENCES, COMMUNICATION_TYPES, SEVERITIES, type Communication, type CommunicationType, type Severity, type Audience } from './types'
 import { TITLE_MAX, emptyDraft, parseServices, toRequest, validate, type DraftErrors, type OutageDraft } from './validation'
@@ -46,7 +46,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
   const [draft, setDraft] = useState<OutageDraft>(() => emptyDraft(tenantId, publisher))
   const [errors, setErrors] = useState<DraftErrors>({})
   const [submitting, setSubmitting] = useState(false)
-  /** why the last publish failed: the service's words for a rejection, or that it could not be reached */
+  /** why the last publish failed: the service's words for a rejection (4xx), or that it failed or could not be reached */
   const [serverError, setServerError] = useState<{ text: string; rejected: boolean } | null>(null)
   const [published, setPublished] = useState<Communication | null>(null)
   const [showTiming, setShowTiming] = useState(false)
@@ -93,7 +93,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
       setPublished(saved)
       onPublished?.(saved)
     } catch (err) {
-      setServerError({ text: explainPublishError(err), rejected: !isUnreachable(err) })
+      setServerError({ text: explainPublishError(err), rejected: isRejection(err) })
     } finally {
       setSubmitting(false)
     }
@@ -208,7 +208,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
             )}
           </Field>
 
-          <Field label="ServiceNow incident" htmlFor={f('ticket')} error={errors.ticket} hint="Optional. The INC tracking this; consumers get a link to it.">
+          <Field label="ServiceNow incident" htmlFor={f('ticket')} error={errors.ticket} hint="Optional. The INC tracking this; consumers see it as a chip on the notice, linked when the service knows your ServiceNow instance.">
             <Input id={f('ticket')} aria-describedby={note('ticket')} mono value={draft.ticket} invalid={!!errors.ticket} placeholder="INC0012345" onChange={(e) => set('ticket', e.target.value)} />
           </Field>
         </div>
@@ -303,7 +303,8 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2.5 text-sm text-secondary">
+        {/* the switch is 30x18 px; the labelled row is the click target, at least 24 px tall */}
+        <label className="flex min-h-6 cursor-pointer items-center gap-2.5 py-1 text-sm text-secondary">
           <Switch size="sm" label="Save as draft" checked={draft.draft} onChange={(v) => set('draft', v)} />
           Save as draft (not visible to consumers)
         </label>

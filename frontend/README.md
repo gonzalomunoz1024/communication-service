@@ -26,6 +26,11 @@ Every request carries `X-Client-Id: communication-frontend`, which the service r
 caller; set `VITE_CLIENT_ID` at build time to identify a host app by its repository name instead.
 The live stream passes the same id as `?clientId=`, because `EventSource` cannot set headers.
 
+The page opens on the tenant named by `VITE_DEFAULT_TENANT` at build time; when that is unset
+(the default) on the tenant used last in that browser (`localStorage`, saved on every change);
+and on a first visit on none, with a prompt to enter the tenant the consumers read, which the
+service owners assign.
+
 The browser keeps the stream open by itself and retries a dropped socket with `Last-Event-ID`,
 but it gives up for good once a retry is answered with anything other than 200 (a restart or a
 proxy error). When that happens the client reopens the stream itself, with exponential backoff
@@ -63,10 +68,11 @@ both retire it.
 
 The form enforces the same invariants as `Communication#validateInvariants` before sending
 (severity floor for OUTAGE/INCIDENT, `endsAt` for MAINTENANCE, time ordering, length caps), and
-shows the service's `{"error": …}` text when it rejects a request anyway. When the service cannot
-be reached at all (connection refused, or a 502/503/504 from a proxy in front of it) both tabs say
-that it is unreachable instead of quoting the status line, and the feed's **Try again** reopens
-the live stream as well as reloading the list.
+shows the service's `{"error": …}` text when it rejects a request anyway. A 5xx is reported as a
+failure of the service (with its reason when it gave one), not as a rejection. When the service
+cannot be reached at all (connection refused, or a 502/503/504 from a proxy in front of it) both
+tabs say that it is unreachable instead of quoting the status line, and the feed's **Try again**
+reopens the live stream as well as reloading the list.
 
 An optional **ServiceNow incident** field ties a notice to the ticket behind it (`ticket.number`,
 `INC0012345`). The service upper-cases the number and, when it knows the instance, adds a link;

@@ -55,11 +55,15 @@ describe('App', () => {
     localStorage.clear()
     window.location.hash = ''
   })
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
 
   it('"View in feed" opens the feed of the tenant that was published to, filtered to that type', async () => {
     const svc = stubService()
     vi.stubGlobal('fetch', svc.fetchMock)
+    localStorage.setItem('comm-tenant', 'acme') // the tenant this browser used last
     const user = userEvent.setup()
     render(<App />)
     expect(screen.getByRole('heading', { level: 1, name: 'Outage Notifications' })).toBeInTheDocument()
@@ -83,5 +87,38 @@ describe('App', () => {
     expect(await screen.findByText('New checkout flow')).toBeInTheDocument()
     await waitFor(() => expect(svc.calls.some((c) => /GET \/v1\/feed\?tenantId=other&type=CHANGE/.test(c))).toBe(true))
     expect(window.location.hash).toBe('#/feed')
+  })
+
+  describe('the tenant the page opens on', () => {
+    const prompt = 'Enter the tenant your consumers read; the service owners assign it.'
+
+    it('is none on a first visit, with a prompt that goes once a tenant is typed and remembered', async () => {
+      vi.stubGlobal('fetch', stubService().fetchMock)
+      const user = userEvent.setup()
+      render(<App />)
+      const tenant = screen.getByRole('textbox', { name: 'Tenant' })
+      expect(tenant).toHaveValue('')
+      expect(screen.getByText(prompt)).toBeInTheDocument()
+      expect(screen.getByText('Choose a tenant')).toBeInTheDocument()
+      await user.type(tenant, 'acme')
+      expect(localStorage.getItem('comm-tenant')).toBe('acme')
+      expect(screen.queryByText(prompt)).toBeNull()
+    })
+
+    it('is the tenant used last in this browser', () => {
+      vi.stubGlobal('fetch', stubService().fetchMock)
+      localStorage.setItem('comm-tenant', 'other')
+      render(<App />)
+      expect(screen.getByRole('textbox', { name: 'Tenant' })).toHaveValue('other')
+      expect(screen.queryByText(prompt)).toBeNull()
+    })
+
+    it('is VITE_DEFAULT_TENANT when the build sets one, ahead of the remembered tenant', () => {
+      vi.stubGlobal('fetch', stubService().fetchMock)
+      vi.stubEnv('VITE_DEFAULT_TENANT', 'acme')
+      localStorage.setItem('comm-tenant', 'other')
+      render(<App />)
+      expect(screen.getByRole('textbox', { name: 'Tenant' })).toHaveValue('acme')
+    })
   })
 })
