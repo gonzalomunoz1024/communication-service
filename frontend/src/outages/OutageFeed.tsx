@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'rea
 import { Button, EmptyState, Field, Icon, Input, Select, StatusDot, Switch, cx } from '../ui'
 import type { CommunicationClient } from './api'
 import { titleCase } from './display'
+import { UPCOMING_WINDOW_MS } from './feed-state'
 import { OutageCard } from './OutageCard'
 import { COMMUNICATION_TYPES, SEVERITIES, type CommunicationType, type FeedFilter, type FeedItem, type Severity } from './types'
 import { useOutageFeed, type Connection } from './useOutageFeed'
@@ -23,6 +24,19 @@ const CONNECTION: Record<Connection, { label: string; kind: 'healthy' | 'warning
   connecting: { label: 'Connecting', kind: 'warning', pulse: true },
   live: { label: 'Live', kind: 'healthy', pulse: true },
   reconnecting: { label: 'Reconnecting', kind: 'warning', pulse: true },
+}
+
+const UPCOMING_DAYS = Math.round(UPCOMING_WINDOW_MS / 86_400_000)
+
+/** Why the feed is empty, in terms of what it lists: live notices, plus maintenance planned within the window. */
+function emptyMessage(type: CommunicationType | '', tenantId: string, service: string): string {
+  const where = `${tenantId}${service ? ` on ${service}` : ''}`
+  if (type === 'MAINTENANCE') return `No maintenance is active or planned within ${UPCOMING_DAYS} days for ${where}.`
+  if (type) {
+    const word = titleCase(type).toLowerCase()
+    return `No ${word} is active for ${where}. A scheduled ${word} appears here when it starts.`
+  }
+  return `Nothing is active for ${where}, and no maintenance is planned within ${UPCOMING_DAYS} days. Other scheduled notices appear when they start.`
 }
 
 /** The consumer view: what is active or upcoming for a tenant, kept live over SSE. */
@@ -59,7 +73,9 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
     ? async (item: FeedItem, note: string) => {
         await client.retire(item.id, actor, note)
         feed.remove(item.id)
-        setResolved(item.title)
+        setResolved(
+          item.status === 'ACTIVE' ? `Resolved “${item.title}”. It has left every consumer's feed.` : `Withdrew “${item.title}”. Consumers will not see it.`,
+        )
         // the card leaves with the button that had focus: keep keyboard focus on the list
         list.current?.focus({ preventScroll: true })
       }
@@ -106,7 +122,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
         {resolved && (
           <>
             <Icon name="check" size={12} className="text-healthy-fg" />
-            Resolved “{resolved}”. It has left every consumer's feed.
+            {resolved}
           </>
         )}
       </p>
@@ -136,7 +152,7 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
           icon="check"
           iconClassName="text-healthy-fg"
           title="All clear"
-          message={`Nothing ${type ? titleCase(type).toLowerCase() + ' ' : ''}is active or upcoming for ${tenantId}${service.trim() ? ` on ${service.trim()}` : ''}.`}
+          message={emptyMessage(type, tenantId, service.trim())}
         />
       ) : (
         <div ref={list} tabIndex={-1} className="flex flex-col gap-5 outline-none">
@@ -150,6 +166,11 @@ export function OutageFeed({ client, tenantId, actor, allowResolve = true, defau
               <OutageCard key={i.id} item={i} onRetire={resolve} />
             ))}
           </Section>
+          {feed.truncated && (
+            <p className="text-caption text-tertiary">
+              Showing the first {feed.items.length} of {feed.total} notices. Narrow the filters to see the rest.
+            </p>
+          )}
         </div>
       )}
     </div>

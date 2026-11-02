@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import { Button, Card, Field, Icon, Input, Segmented, Select, Switch, Tag, Textarea, cx, inputClass, relativeTime } from '../ui'
 import type { CommunicationClient } from './api'
 import { SEVERITY_TONE, TYPE_HINT, titleCase } from './display'
-import { explainError, isUnreachable } from './errors'
+import { explainPublishError, isUnreachable } from './errors'
 import { TicketTag } from './TicketTag'
 import { AUDIENCES, COMMUNICATION_TYPES, SEVERITIES, type Communication, type CommunicationType, type Severity, type Audience } from './types'
 import { TITLE_MAX, emptyDraft, parseServices, toRequest, validate, type DraftErrors, type OutageDraft } from './validation'
@@ -93,7 +93,7 @@ export function PublishOutageForm({ client, tenantId = '', lockTenant, publisher
       setPublished(saved)
       onPublished?.(saved)
     } catch (err) {
-      setServerError({ text: explainError(err), rejected: !isUnreachable(err) })
+      setServerError({ text: explainPublishError(err), rejected: !isUnreachable(err) })
     } finally {
       setSubmitting(false)
     }

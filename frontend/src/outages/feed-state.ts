@@ -84,6 +84,37 @@ export function reconcile(local: FeedItem[], page: FeedItem[], since: number, te
   return [...page, ...fresh]
 }
 
+/**
+ * Re-projects every item's status at `now` (a start reached, an expiry passed) and drops what has
+ * left the feed, so a card goes on time even when no stream frame says so (the service's sweeper
+ * runs on an interval). Returns the same array when nothing changed.
+ */
+export function revise(items: FeedItem[], now: number): FeedItem[] {
+  let changed = false
+  const out: FeedItem[] = []
+  for (const it of items) {
+    const status = effectiveStatus(it, now)
+    const next = status === it.status ? it : { ...it, status }
+    if (next !== it) changed = true
+    if (inFeed(next, now)) out.push(next)
+    else changed = true
+  }
+  return changed ? out : items
+}
+
+/** When revise() would next change something: the earliest future start or expiry among the items, if any. */
+export function nextChange(items: FeedItem[], now: number): number | undefined {
+  let next: number | undefined
+  for (const it of items) {
+    for (const t of [it.startsAt, it.expiresAt]) {
+      if (!t) continue
+      const at = Date.parse(t)
+      if (at > now && (next === undefined || at < next)) next = at
+    }
+  }
+  return next
+}
+
 const STATUS_ORDER: Record<CommunicationStatus, number> = { ACTIVE: 0, SCHEDULED: 1, DRAFT: 2, EXPIRED: 3, RETIRED: 4 }
 
 /** Active before scheduled, then most severe, then most recently started. */

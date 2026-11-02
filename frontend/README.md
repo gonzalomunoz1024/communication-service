@@ -47,7 +47,11 @@ in case the replay did not cover the gap. **Try again** in the error state reope
 The feed lists what is live plus scheduled maintenance starting within the next 7 days
 (`communication.feed.upcoming-window`); a scheduled outage, incident or change appears when it
 starts. Stream frames are filtered by the same rule (`inFeed` in `feed-state.ts`), so the live
-list never shows something a reload would not.
+list never shows something a reload would not. Cards also move on their own at `startsAt` and
+`expiresAt` (an upcoming maintenance turns active, an expired notice leaves) rather than waiting
+for the service's sweeper frame. The list is the first page of 100; when the service has more it
+says so under the list. A notice that has not started offers **Withdraw** instead of **Resolve**;
+both retire it.
 
 The form enforces the same invariants as `Communication#validateInvariants` before sending
 (severity floor for OUTAGE/INCIDENT, `endsAt` for MAINTENANCE, time ordering, length caps), and

@@ -18,3 +18,20 @@ export function explainError(e: unknown): string {
   if (e instanceof Error) return e.message
   return String(e)
 }
+
+const DUPLICATE_REF = /duplicate externalRef '([^']*)' for tenant '([^']*)'/
+
+/**
+ * explainError for a publish: the service's 409 for a reused externalRef is put in the form's
+ * terms, because the field people filled in is the ServiceNow incident number, which doubles as
+ * the reference.
+ */
+export function explainPublishError(e: unknown): string {
+  if (e instanceof ApiError && e.status === 409) {
+    const m = DUPLICATE_REF.exec(e.message)
+    if (m) {
+      return `A notice with the reference ${m[1]} already exists for tenant ${m[2]} (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.`
+    }
+  }
+  return explainError(e)
+}

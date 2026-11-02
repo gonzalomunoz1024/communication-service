@@ -118,3 +118,18 @@ describe('PublishOutageForm accessibility', () => {
     expect(heading).toHaveFocus()
   })
 })
+
+describe('PublishOutageForm duplicate reference', () => {
+  it('explains a 409 for a reused incident number', async () => {
+    const user = userEvent.setup()
+    const c = client()
+    vi.mocked(c.publish).mockRejectedValue(new ApiError(409, "duplicate externalRef 'INC0012345' for tenant 'acme'"))
+    render(<PublishOutageForm client={c} tenantId="acme" publisher="oncall" />)
+    await user.type(screen.getByLabelText(/^Title/), 'Payments API returning 503s')
+    await user.type(screen.getByLabelText(/^ServiceNow incident/), 'INC0012345')
+    await user.click(screen.getByRole('button', { name: 'Publish outage' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The service rejected this. A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.',
+    )
+  })
+})

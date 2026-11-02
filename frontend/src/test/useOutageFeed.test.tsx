@@ -99,6 +99,29 @@ describe('useOutageFeed', () => {
     expect(result.current.reconnectAttempt).toBe(0)
   })
 
+  it('retires a card at its expiry and starts a scheduled one on time, without a frame', async () => {
+    const t0 = Date.now()
+    const f = fakeClient([
+      item('a', { expiresAt: new Date(t0 + 250).toISOString() }),
+      item('b', { type: 'MAINTENANCE', severity: 'INFO', status: 'SCHEDULED', startsAt: new Date(t0 + 450).toISOString() }),
+    ])
+    const { result } = renderHook(() => useOutageFeed(f.client, { tenantId: 'acme' }, false))
+    const shown = () => result.current.items.map((i) => [i.id, i.status])
+    await waitFor(() => expect(shown()).toEqual([['a', 'ACTIVE'], ['b', 'SCHEDULED']]))
+    await waitFor(() => expect(shown()).toEqual([['b', 'SCHEDULED']]))
+    await waitFor(() => expect(shown()).toEqual([['b', 'ACTIVE']]))
+    expect(f.client.feed).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports when the service has more than the first page', async () => {
+    const f = fakeClient()
+    vi.mocked(f.client.feed).mockResolvedValue({ items: [item('a')], page: 0, size: 100, totalElements: 240, hasNext: true })
+    const { result } = renderHook(() => useOutageFeed(f.client, { tenantId: 'acme' }, false))
+    expect(result.current.truncated).toBe(false)
+    await waitFor(() => expect(result.current.truncated).toBe(true))
+    expect(result.current.total).toBe(240)
+  })
+
   it('applies frames, surfaces load errors and clears everything for a blank tenant', async () => {
     const f = fakeClient([item('a')])
     const { result, rerender } = renderHook(({ tenant }: { tenant: string }) => useOutageFeed(f.client, { tenantId: tenant }, true), {

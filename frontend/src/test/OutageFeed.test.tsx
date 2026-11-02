@@ -76,6 +76,18 @@ describe('OutageFeed', () => {
     expect(document.activeElement?.contains(screen.getByText('Notice b'))).toBe(true)
   })
 
+  it('says when the service has more than the first page', async () => {
+    const f = fakeClient([item('a')], { totalElements: 240, hasNext: true })
+    render(<OutageFeed client={f.client} tenantId="acme" />)
+    expect(await screen.findByText('Showing the first 1 of 240 notices. Narrow the filters to see the rest.')).toBeInTheDocument()
+  })
+
+  it('explains an empty feed in terms of what the feed lists', async () => {
+    const f = fakeClient([])
+    render(<OutageFeed client={f.client} tenantId="acme" />)
+    expect(await screen.findByText('No outage is active for acme. A scheduled outage appears here when it starts.')).toBeInTheDocument()
+  })
+
   it('explains an unreachable service instead of showing the status line', async () => {
     const f = fakeClient()
     vi.mocked(f.client.feed).mockRejectedValue(new ApiError(503, '503 Service Unavailable'))

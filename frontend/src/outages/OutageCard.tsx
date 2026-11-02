@@ -25,6 +25,8 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const active = item.status === 'ACTIVE'
+  // a notice that has not started is withdrawn rather than resolved; both retire it
+  const verb = active ? 'Resolve' : 'Withdraw'
 
   const retire = async () => {
     if (!onRetire) return
@@ -89,22 +91,32 @@ export function OutageCard({ item, onRetire }: OutageCardProps) {
             {item.publisher}
           </span>
           {onRetire && !confirming && (
-            <Button size="sm" variant="capsule" icon="check" className="ml-auto" onClick={() => setConfirming(true)}>
-              Resolve
+            <Button size="sm" variant="capsule" icon={active ? 'check' : 'close'} className="ml-auto" onClick={() => setConfirming(true)}>
+              {verb}
             </Button>
           )}
         </div>
 
         {confirming && (
           <div className="flex flex-col gap-2 rounded-md bg-surface-secondary p-3">
-            <p className="text-caption text-secondary">Resolving retires it: it leaves every consumer's feed and cannot be reopened.</p>
+            <p className="text-caption text-secondary">
+              {active
+                ? "Resolving retires it: it leaves every consumer's feed and cannot be reopened."
+                : 'Withdrawing retires it before it starts: consumers never see it and it cannot be reopened.'}
+            </p>
             <div className="flex flex-wrap items-center gap-2">
-              <Input size="sm" className="min-w-48 flex-1" placeholder="Resolution note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+              <Input
+                size="sm"
+                className="min-w-48 flex-1"
+                placeholder={active ? 'Resolution note (optional)' : 'Reason (optional)'}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
               <Button size="sm" variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>
                 Cancel
               </Button>
               <Button size="sm" variant="primary" loading={busy} onClick={retire}>
-                Resolve
+                {verb}
               </Button>
             </div>
             {error && <p className="text-caption text-critical-fg" role="alert">{error}</p>}

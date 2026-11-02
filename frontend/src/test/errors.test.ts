@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError, createCommunicationClient, isApiError } from '../outages/api'
-import { UNREACHABLE_MESSAGE, explainError, isUnreachable } from '../outages/errors'
+import { UNREACHABLE_MESSAGE, explainError, explainPublishError, isUnreachable } from '../outages/errors'
 
 describe('explainError', () => {
   it('says the service is unreachable for a failed connection or a proxy error', () => {
@@ -24,6 +24,19 @@ describe('explainError', () => {
     expect(isUnreachable(new ApiError(500, 'unexpected error'))).toBe(false)
     expect(explainError(new Error('boom'))).toBe('boom')
     expect(explainError('odd')).toBe('odd')
+  })
+})
+
+describe('explainPublishError', () => {
+  it("puts the duplicate-externalRef 409 in the form's terms", () => {
+    const e = new ApiError(409, "duplicate externalRef 'INC0012345' for tenant 'acme'")
+    expect(explainPublishError(e)).toBe(
+      'A notice with the reference INC0012345 already exists for tenant acme (the ServiceNow incident number doubles as the reference). Retire that notice first, or set another external reference.',
+    )
+  })
+  it('leaves every other error to explainError', () => {
+    expect(explainPublishError(new ApiError(409, 'communication c1 was modified concurrently; reload and retry'))).toBe('communication c1 was modified concurrently; reload and retry')
+    expect(explainPublishError(new ApiError(503, '503 Service Unavailable'))).toBe(UNREACHABLE_MESSAGE)
   })
 })
 

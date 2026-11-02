@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CommunicationClient } from './api'
 import { explainError } from './errors'
-import { applyEvent, reconcile, removeItem, sortFeed } from './feed-state'
+import { applyEvent, nextChange, reconcile, removeItem, revise, sortFeed } from './feed-state'
 import type { FeedFilter, FeedItem } from './types'
 
 export type Connection = 'off' | 'connecting' | 'live' | 'reconnecting'
@@ -13,6 +13,10 @@ export interface OutageFeed {
   connection: Connection
   /** how many times the page has reopened the stream itself since it was last live (0 otherwise) */
   reconnectAttempt: number
+  /** how many items the service has for the filter (the page's totalElements), once loaded */
+  total?: number
+  /** the list is only the first page (100 items) and the service has more */
+  truncated: boolean
   /** reload the list; while the stream is down this also reopens it right away instead of waiting out the backoff */
   refresh: () => void
   /** drop an item locally (after a retire from this page) */
@@ -24,6 +28,8 @@ interface Loaded {
   requestId: string
   items: FeedItem[]
   error: string | null
+  total?: number
+  hasNext?: boolean
 }
 
 /** What the stream last reported, tagged with the subscription it belongs to. */
@@ -54,6 +60,8 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
   const streamKey = `${key}#${streamNonce}`
   const [loaded, setLoaded] = useState<Loaded>(EMPTY)
   const [stream, setStream] = useState<StreamState | null>(null)
+  // the instant statuses are projected at; moved forward by the boundary timer below
+  const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
     if (blank) return
@@ -63,11 +71,17 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
       .feed(stableFilter)
       .then((page) => {
         if (cancelled) return
-        setLoaded((prev) => ({ requestId, items: reconcile(prev.items, page.items, since, stableFilter.tenantId), error: null }))
+        setLoaded((prev) => ({
+          requestId,
+          items: reconcile(prev.items, page.items, since, stableFilter.tenantId),
+          error: null,
+          total: page.totalElements,
+          hasNext: page.hasNext,
+        }))
       })
       .catch((e: unknown) => {
         if (cancelled) return
-        setLoaded((prev) => ({ requestId, items: prev.items, error: explainError(e) }))
+        setLoaded((prev) => ({ ...prev, requestId, error: explainError(e) }))
       })
     return () => {
       cancelled = true
@@ -96,6 +110,15 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
     })
   }, [client, stableFilter, canStream, streamKey])
 
+  // a card must leave at its expiry (and an upcoming one turn active at its start) even when no
+  // frame says so yet: wake up at the next boundary and project the statuses again
+  useEffect(() => {
+    const at = nextChange(loaded.items, now)
+    if (at === undefined) return
+    const t = setTimeout(() => setNow(Date.now()), Math.min(Math.max(at - Date.now(), 0) + 50, 2_147_483_647))
+    return () => clearTimeout(t)
+  }, [loaded.items, now])
+
   const current = stream?.streamKey === streamKey ? stream : null
   const connection: Connection = !canStream ? 'off' : (current?.phase ?? 'connecting')
   const reconnectAttempt = current?.phase === 'reconnecting' ? current.attempt : 0
@@ -109,11 +132,13 @@ export function useOutageFeed(client: CommunicationClient, filter: FeedFilter, l
 
   const settled = loaded.requestId === requestId
   return {
-    items: blank ? [] : sortFeed(loaded.items),
+    items: blank ? [] : sortFeed(revise(loaded.items, now)),
     loading: !blank && !settled,
     error: settled ? loaded.error : null,
     connection,
     reconnectAttempt,
+    total: settled && !blank ? loaded.total : undefined,
+    truncated: settled && !blank && !!loaded.hasNext,
     refresh,
     remove,
   }

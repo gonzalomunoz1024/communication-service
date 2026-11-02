@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { UPCOMING_WINDOW_MS, applyEvent, effectiveStatus, inFeed, reconcile, sortFeed, toFeedItem } from '../outages/feed-state'
+import { UPCOMING_WINDOW_MS, applyEvent, effectiveStatus, inFeed, nextChange, reconcile, revise, sortFeed, toFeedItem } from '../outages/feed-state'
 import type { Communication, CommunicationEvent, FeedItem } from '../outages/types'
 
 const now = Date.parse('2026-11-01T21:00:00Z')
@@ -108,6 +108,28 @@ describe('reconcile', () => {
   it('never carries another tenant over', () => {
     const local = [toFeedItem(comm({ id: 'x', tenantId: 'other', updatedAt: '2026-11-01T21:00:01Z' }), now)]
     expect(reconcile(local, page, since, 'acme').map((i) => i.id)).toEqual(['p1'])
+  })
+})
+
+describe('revise and nextChange', () => {
+  it('moves statuses across start and expiry boundaries and drops what left the feed', () => {
+    const items = [
+      toFeedItem(comm({ id: 'live', expiresAt: '2026-11-01T21:30:00Z' }), now),
+      toFeedItem(comm({ id: 'soon', type: 'MAINTENANCE', severity: 'INFO', status: 'SCHEDULED', startsAt: '2026-11-01T22:00:00Z' }), now),
+    ]
+    expect(items.map((i) => i.status)).toEqual(['ACTIVE', 'SCHEDULED'])
+    expect(revise(items, now)).toBe(items) // nothing due: the same array, so nothing re-renders
+    expect(nextChange(items, now)).toBe(Date.parse('2026-11-01T21:30:00Z'))
+
+    const expiry = Date.parse('2026-11-01T21:30:00Z')
+    const afterExpiry = revise(items, expiry)
+    expect(afterExpiry.map((i) => [i.id, i.status])).toEqual([['soon', 'SCHEDULED']])
+    expect(nextChange(afterExpiry, expiry)).toBe(Date.parse('2026-11-01T22:00:00Z'))
+
+    const start = Date.parse('2026-11-01T22:00:00Z')
+    const afterStart = revise(afterExpiry, start)
+    expect(afterStart.map((i) => [i.id, i.status])).toEqual([['soon', 'ACTIVE']])
+    expect(nextChange(afterStart, start)).toBeUndefined()
   })
 })
 

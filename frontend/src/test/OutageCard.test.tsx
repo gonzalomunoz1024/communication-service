@@ -36,6 +36,19 @@ describe('OutageCard', () => {
     expect(onRetire).toHaveBeenCalledWith(item, 'fixed')
   })
 
+  it('offers Withdraw instead of Resolve for a notice that has not started', async () => {
+    const onRetire = vi.fn(async () => {})
+    const scheduled: FeedItem = { ...item, status: 'SCHEDULED', type: 'MAINTENANCE', startsAt: new Date(Date.now() + 3_600_000).toISOString() }
+    render(<OutageCard item={scheduled} onRetire={onRetire} />)
+    expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument()
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Withdraw' }))
+    expect(screen.getByText(/Withdrawing retires it before it starts/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Withdraw' }))
+    expect(onRetire).toHaveBeenCalledWith(scheduled, '')
+  })
+
   it('hides the action when the page cannot resolve', () => {
     render(<OutageCard item={item} />)
     expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument()
