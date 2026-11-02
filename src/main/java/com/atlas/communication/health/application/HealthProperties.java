@@ -14,13 +14,16 @@ import com.atlas.communication.health.domain.HealthMonitor;
  * <p>The safety valve keeps our own trouble from looking like everyone's outage: silent
  * services are not declared DOWN for {@code staleGraceAfterStartMs} after this service starts,
  * nor while more than {@code stalePauseFraction} of the monitors that can go stale are stale
- * at the same time.
+ * at the same time. Fewer than {@code stalePauseMinSilent} silent services never trip the
+ * valve (one service out of three is 33 %, not "everyone"), and services scaled to zero
+ * (every pod left cleanly) are not counted on either side.
  */
 @ConfigurationProperties(prefix = "communication.health")
 public record HealthProperties(
         @DefaultValue("5000") long sweepIntervalMs,
         @DefaultValue("300000") long staleGraceAfterStartMs,
         @DefaultValue("0.3") double stalePauseFraction,
+        @DefaultValue("2") int stalePauseMinSilent,
         @DefaultValue Defaults defaults) {
 
     public record Defaults(

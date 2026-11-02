@@ -2,6 +2,7 @@ package com.atlas.communication.health.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,7 +41,7 @@ class HealthSweepUseCaseTest {
     private static final HealthProperties.Defaults DEFAULTS = new HealthProperties.Defaults(
             "health-monitor", 30, 5000, 2, 2, Severity.MAJOR, Severity.MINOR, Audience.CUSTOMERS, 50, 90);
     /** No startup grace, so the existing staleness tests see the sweep at work right away. */
-    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 0, 0.3, DEFAULTS);
+    private static final HealthProperties PROPERTIES = new HealthProperties(5000, 0, 0.3, 2, DEFAULTS);
 
     @Mock
     private HealthMonitorRepositoryPort monitors;
@@ -136,7 +137,7 @@ class HealthSweepUseCaseTest {
     @Test
     void silenceIsNotTrustedDuringTheStartupGrace() {
         HealthSweepUseCase justStarted = new HealthSweepUseCase(monitors, instances, observation,
-                new HealthProperties(5000, 300_000, 0.3, DEFAULTS), Clock.fixed(NOW, ZoneOffset.UTC));
+                new HealthProperties(5000, 300_000, 0.3, 2, DEFAULTS), Clock.fixed(NOW, ZoneOffset.UTC));
         HealthMonitor due = probed("due", null);
         when(monitors.findAll(null)).thenReturn(Flux.just(silent("silent"), due));
         when(observation.probe(eq(due), any())).thenReturn(Mono.just(due)); // probes are not affected
@@ -156,6 +157,8 @@ class HealthSweepUseCaseTest {
     void silenceIsNotTrustedWhenMostMonitorsGoSilentTogether() {
         HealthMonitor fresh = HealthMonitor.create("fresh", "vmforge", "fresh", null, policy(60), NOW);
         when(monitors.findAll(null)).thenReturn(Flux.just(silent("a"), silent("b"), silent("c"), fresh));
+        // the sweep first asks whether a silent service merely scaled to zero
+        when(instances.findByMonitor(anyString())).thenReturn(Flux.empty());
 
         StepVerifier.create(useCase.sweep(NOW)).expectNext(0L).verifyComplete();
         verify(observation, never()).observe(any(), any(), any());
@@ -172,6 +175,48 @@ class HealthSweepUseCaseTest {
         when(observation.observe(eq(silent), any(), eq(NOW))).thenReturn(Mono.just(silent));
 
         StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+    }
+
+    @Test
+    void aScaledToZeroServiceDoesNotCountAsSilentForTheSafetyValve() {
+        // two services really silent, one scaled to zero (every pod left) and six healthy ones:
+        // 2 of 8 that can go stale is below the 30% pause; counting the scaled one would make it
+        // 3 of 9 and pause staleness for everyone
+        HealthMonitor a = silent("a");
+        HealthMonitor b = silent("b");
+        HealthMonitor scaled = silent("scaled");
+        List<HealthMonitor> all = new java.util.ArrayList<>(List.of(a, b, scaled));
+        for (int i = 1; i <= 6; i++) {
+            all.add(HealthMonitor.create("f" + i, "vmforge", "f" + i, null, policy(60), NOW));
+        }
+        when(monitors.findAll(null)).thenReturn(Flux.fromIterable(all));
+        when(instances.findByMonitor("a")).thenReturn(Flux.empty());
+        when(instances.findByMonitor("b")).thenReturn(Flux.empty());
+        when(instances.findByMonitor("scaled")).thenReturn(Flux.just(
+                instance("scaled", "pod-a", true, NOW.minusSeconds(100)),
+                instance("scaled", "pod-b", true, NOW.minusSeconds(110))));
+        when(observation.observe(any(), any(), eq(NOW))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(2L).verifyComplete();
+        verify(observation).observe(eq(a), any(), eq(NOW));
+        verify(observation).observe(eq(b), any(), eq(NOW));
+        verify(observation, never()).observe(eq(scaled), any(), any());
+    }
+
+    @Test
+    void oneSilentMonitorOfThreeIsStillDeclaredDown() {
+        // 1 of 3 is 33%, above the share, but a single silent service is never "everyone"
+        HealthMonitor silent = silent("silent");
+        HealthMonitor fresh1 = HealthMonitor.create("f1", "vmforge", "f1", null, policy(60), NOW);
+        HealthMonitor fresh2 = HealthMonitor.create("f2", "vmforge", "f2", null, policy(60), NOW);
+        when(monitors.findAll(null)).thenReturn(Flux.just(silent, fresh1, fresh2));
+        when(instances.findByMonitor("silent")).thenReturn(Flux.empty());
+        when(observation.observe(eq(silent), any(), eq(NOW))).thenReturn(Mono.just(silent));
+
+        StepVerifier.create(useCase.sweep(NOW)).expectNext(1L).verifyComplete();
+        ArgumentCaptor<HealthReport> report = ArgumentCaptor.forClass(HealthReport.class);
+        verify(observation).observe(eq(silent), report.capture(), eq(NOW));
+        assertThat(report.getValue().status()).isEqualTo(HealthStatus.DOWN);
     }
 
     @Test

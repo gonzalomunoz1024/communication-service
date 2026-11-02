@@ -168,9 +168,11 @@ before the debounce sees it, so pods of one service never reset each other's str
 
 Two pods reporting in the same instant collide on the monitor's version check; the service
 retries the report a couple of times before answering 409. The sweep also refuses to trust
-silence for 5 minutes after it starts and while more than 30% of silence-capable monitors
-are silent together (`communication.health.stale-grace-after-start-ms`, `stale-pause-fraction`),
-so our own restart or an egress problem never reads as everyone's outage.
+silence for 5 minutes after it starts and while more than 30% of silence-capable monitors, and
+at least two of them, are silent together (`communication.health.stale-grace-after-start-ms`,
+`stale-pause-fraction`, `stale-pause-min-silent`; services scaled to zero count on neither
+side), so our own restart or an egress problem never reads as everyone's outage while one
+silent service out of three is still declared DOWN.
 
 [`sidecar/`](sidecar/README.md) holds the OpenShift sidecar that produces these reports
 with no change to the app, plus Kustomize, Helm and plain-YAML snippets to attach it.

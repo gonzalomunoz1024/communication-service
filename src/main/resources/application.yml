@@ -67,7 +67,11 @@ communication:
     # restart must not read as everyone's outage)...
     stale-grace-after-start-ms: 300000
     # ...nor while more than this share of the monitors that can go stale are silent at once
+    # (services scaled to zero, whose pods all said goodbye, count on neither side)...
     stale-pause-fraction: 0.3
+    # ...provided at least this many are silent: one silent service out of three is 33%, not
+    # "everyone", and is declared DOWN
+    stale-pause-min-silent: 2
     # policy a monitor inherits for anything not set at registration
     defaults:
       publisher: health-monitor
