@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -319,12 +320,36 @@ class HealthMonitorUseCaseTest {
         when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
                 Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently")));
 
-        StepVerifier.create(useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
+        // virtual time: the pauses between attempts add up to seconds of real time otherwise
+        StepVerifier.withVirtualTime(() -> useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
                         null, null, null, null, null)))
+                .expectSubscription()
+                .thenAwait(Duration.ofMinutes(1))
                 .expectErrorSatisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(HttpStatus.CONFLICT))
                 .verify();
         verify(observation, times(HealthMonitorUseCase.REPORT_ATTEMPTS)).observe(eq(monitor), any(), eq(NOW));
+    }
+
+    @Test
+    void conflictingReportsAreRetriedMoreThanThreeTimesWithAPauseInBetween() {
+        HealthMonitor monitor = existing();
+        when(monitors.findByTenantAndService("vmforge", "billing")).thenReturn(Mono.just(monitor));
+        Mono<HealthMonitor> conflict = Mono.error(
+                new ResponseStatusException(HttpStatus.CONFLICT, "modified concurrently"));
+        // four pods got there first: the fifth attempt goes through
+        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
+                conflict, conflict, conflict, conflict, Mono.just(monitor));
+
+        StepVerifier.withVirtualTime(() -> useCase.report(new HealthReportCommand("vmforge", "billing", "UP",
+                        null, null, null, null, null)))
+                .expectSubscription()
+                // the first retry is not immediate: a herd of pods must spread out
+                .expectNoEvent(Duration.ofMillis(5))
+                .thenAwait(Duration.ofMinutes(1))
+                .expectNext(monitor)
+                .verifyComplete();
+        verify(observation, times(5)).observe(eq(monitor), any(), eq(NOW));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.atlas.communication.health.application;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -28,9 +29,10 @@ import reactor.util.retry.Retry;
  *
  * <p>A report that names its instance (one pod of a service) is stored per instance and the
  * service's status is rolled up from every live instance before the monitor's state machine
- * sees it; see {@link HealthRollup}. Pods of one service report independently, so two of them
- * can collide on the monitor's version check: a report is retried a couple of times on a
- * conflict before the caller hears about it.
+ * sees it; see {@link HealthRollup}. Pods of one service report independently, so a fleet of
+ * them can collide on the monitor's version check (a rolling restart has every pod reporting
+ * in the same second): a conflicting report is re-applied after a short, growing, randomised
+ * pause, so the herd spreads out, before the caller hears about it.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,7 +40,11 @@ import reactor.util.retry.Retry;
 public class HealthMonitorUseCase implements HealthInboundPort {
 
     /** How many times one report is applied before a persistent conflict is returned. */
-    static final int REPORT_ATTEMPTS = 3;
+    static final int REPORT_ATTEMPTS = 8;
+    /** First pause before a conflicting report is re-applied; doubles each time (±75 % jitter). */
+    static final Duration REPORT_RETRY_FIRST_BACKOFF = Duration.ofMillis(25);
+    /** Longest pause between two attempts. */
+    static final Duration REPORT_RETRY_MAX_BACKOFF = Duration.ofSeconds(1);
 
     private final HealthMonitorRepositoryPort monitors;
     private final HealthInstanceRepositoryPort instances;
@@ -89,10 +95,12 @@ public class HealthMonitorUseCase implements HealthInboundPort {
                     .flatMap(monitor -> cmd.instance() == null
                             ? observation.observe(monitor, cmd.toReport(now), now)
                             : observeInstance(monitor, cmd, now));
-        }).retryWhen(Retry.max(REPORT_ATTEMPTS - 1L)
+        }).retryWhen(Retry.backoff(REPORT_ATTEMPTS - 1L, REPORT_RETRY_FIRST_BACKOFF)
+                .maxBackoff(REPORT_RETRY_MAX_BACKOFF)
+                .jitter(0.75)
                 .filter(HealthMonitorUseCase::concurrentModification)
-                .doBeforeRetry(signal -> log.debug("report for {}/{} hit a concurrent update; retrying",
-                        cmd.tenantId(), cmd.service()))
+                .doBeforeRetry(signal -> log.debug("report for {}/{} hit a concurrent update; retrying ({})",
+                        cmd.tenantId(), cmd.service(), signal.totalRetries() + 1))
                 .onRetryExhaustedThrow((spec, signal) -> signal.failure()));
     }
 

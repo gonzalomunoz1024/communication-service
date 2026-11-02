@@ -2,6 +2,8 @@ package com.atlas.communication.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -11,10 +13,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.atlas.communication.config.ClientIdWebFilter;
 import com.atlas.communication.health.domain.HealthMonitor;
 import com.atlas.communication.health.domain.HealthStatus;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Flow 2 end to end against embedded Mongo: a probed service goes down and comes back, and a
@@ -221,6 +227,43 @@ class HealthMonitoringE2EIT {
                 .exchange()
                 .expectBody()
                 .jsonPath("$.status").isEqualTo("RETIRED");
+    }
+
+    @Test
+    void aFleetOfPodsReportingInTheSameInstantIsAccepted() {
+        // twenty sidecars of one service push at once (a rolling restart): every pod collides on
+        // the monitor's version check, and every report must still be accepted and counted
+        WebClient web = WebClient.create("http://localhost:" + port);
+        List<Integer> statuses = Flux.range(0, 20)
+                .flatMap(i -> web.post().uri("/v1/health/reports")
+                        .header(ClientIdWebFilter.HEADER, "communication-service-tests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(Map.of("tenantId", "vmforge", "service", "fleet-e2e", "status", "UP",
+                                "instance", Map.of("id", "fleet-e2e-" + i, "namespace", "retail")))
+                        .exchangeToMono(response -> response.releaseBody()
+                                .thenReturn(response.statusCode().value())), 20)
+                .collectList()
+                .block(Duration.ofSeconds(60));
+        assertThat(statuses).isNotNull().hasSize(20);
+        long accepted = statuses.stream().filter(status -> status == 202).count();
+        assertThat(accepted).as("202s out of 20 simultaneous reports: " + statuses).isGreaterThanOrEqualTo(19);
+
+        HealthMonitor monitor = client.get().uri("/v1/health/monitors?tenantId=vmforge")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(HealthMonitor.class)
+                .returnResult().getResponseBody().stream()
+                .filter(m -> m.service().equals("fleet-e2e"))
+                .findFirst().orElseThrow();
+        assertThat(monitor.state().lastStatus()).isEqualTo(HealthStatus.UP);
+        assertThat(monitor.state().lastSummary()).isEqualTo("UP (20 of 20 pods UP)");
+        client.get().uri("/v1/health/monitors/{id}/instances", monitor.id())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.length()").isEqualTo(20);
+
+        client.delete().uri("/v1/health/monitors/{id}", monitor.id())
+                .exchange().expectStatus().isNoContent();
     }
 
     @Test

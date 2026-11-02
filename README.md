@@ -167,7 +167,8 @@ before the debounce sees it, so pods of one service never reset each other's str
   whose pods went silent is DOWN after the window, naming them.
 
 Two pods reporting in the same instant collide on the monitor's version check; the service
-retries the report a couple of times before answering 409. The sweep also refuses to trust
+re-applies the report after short, growing, randomised pauses (up to eight attempts over a few
+seconds) before answering 409, so a whole fleet reporting at once is still accepted. The sweep also refuses to trust
 silence for 5 minutes after it starts and while more than 30% of silence-capable monitors, and
 at least two of them, are silent together (`communication.health.stale-grace-after-start-ms`,
 `stale-pause-fraction`, `stale-pause-min-silent`; services scaled to zero count on neither
