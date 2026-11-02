@@ -1,0 +1,59 @@
+# G-2-1 before: javac lint gate (-Xlint:deprecation -Xlint:removal -Xlint:unchecked) on the unfixed code at 3b18b1d
+# Command: ./gradlew --max-workers=2 --no-daemon compileJava compileTestJava
+
+## Run 1: gate without -Werror, to list every warning (4x [removal] ensureIndex, 3x [unchecked], 2x [deprecation])
+> Task :compileJava
+src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapter.java:61: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        template.indexOps(CommunicationDocument.class).ensureIndex(externalRefIndex).block();
+                                                      ^
+src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:191: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        return template.indexOps(CommunicationEventDocument.class).ensureIndex(ttl)
+                                                                  ^
+2 warnings
+> Task :processResources
+> Task :classes
+> Task :compileTestJava
+src/test/java/com/atlas/communication/health/application/HealthMonitorUseCaseTest.java:151: warning: [unchecked] unchecked generic array creation for varargs parameter of type Mono<HealthMonitor>[]
+                .thenReturn(Mono.empty(), Mono.just(winner));
+                           ^
+src/test/java/com/atlas/communication/health/application/HealthMonitorUseCaseTest.java:305: warning: [unchecked] unchecked generic array creation for varargs parameter of type Mono<HealthMonitor>[]
+        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
+                                                                         ^
+src/test/java/com/atlas/communication/health/application/HealthMonitorUseCaseTest.java:341: warning: [unchecked] unchecked generic array creation for varargs parameter of type Mono<HealthMonitor>[]
+        when(observation.observe(eq(monitor), any(), eq(NOW))).thenReturn(
+                                                                         ^
+src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthMonitorRepositoryAdapterIT.java:44: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        template.indexOps(HealthMonitorDocument.class).ensureIndex(new CompoundIndexDefinition(
+                                                      ^
+src/test/java/com/atlas/communication/health/adapters/outbound/MongoHealthInstanceRepositoryAdapterIT.java:37: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        template.indexOps(HealthInstanceDocument.class).ensureIndex(new Index()
+                                                       ^
+src/test/java/com/atlas/communication/OpenApiContractIT.java:51: warning: [deprecation] fields() in JsonNode has been deprecated
+        paths.fields().forEachRemaining(path -> path.getValue().fields().forEachRemaining(op -> {
+             ^
+src/test/java/com/atlas/communication/OpenApiContractIT.java:51: warning: [deprecation] fields() in JsonNode has been deprecated
+        paths.fields().forEachRemaining(path -> path.getValue().fields().forEachRemaining(op -> {
+                                                               ^
+7 warnings
+BUILD SUCCESSFUL in 20s
+3 actionable tasks: 3 executed
+RC=0
+
+## Run 2: gate with -Werror (the committed configuration): compileJava fails on the two main-code [removal] warnings
+> Task :compileJava
+src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationRepositoryAdapter.java:61: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        template.indexOps(CommunicationDocument.class).ensureIndex(externalRefIndex).block();
+                                                      ^
+error: warnings found and -Werror specified
+src/main/java/com/atlas/communication/common/adapters/outbound/MongoCommunicationEventsAdapter.java:191: warning: [removal] ensureIndex(IndexDefinition) in ReactiveIndexOperations has been deprecated and marked for removal
+        return template.indexOps(CommunicationEventDocument.class).ensureIndex(ttl)
+                                                                  ^
+1 error
+2 warnings
+> Task :compileJava FAILED
+FAILURE: Build failed with an exception.
+* What went wrong:
+Execution failed for task ':compileJava'.
+...
+BUILD FAILED in 21s
+RC=1

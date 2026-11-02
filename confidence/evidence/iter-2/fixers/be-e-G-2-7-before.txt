@@ -1,0 +1,9 @@
+# G-2-7 before: ./gradlew --max-workers=2 --no-daemon --continue test --tests '*HealthMonitorUseCaseTest' at 0293a50 + the two new tests and the PROBE_ATTEMPTS constant only (probeNow unchanged)
+
+23:HealthMonitorUseCaseTest > anOnDemandProbeThatLosesTheRaceWithTheSchedulerIsAppliedAgainToTheFreshMonitor() FAILED
+24:    java.lang.AssertionError: expectation "expectNext(HealthMonitor[id=m3, tenantId=vmforge, service=vm-api, url=http://vm-api/actuator/health, policy=Policy[publisher=health-monitor, intervalSeconds=30, timeoutMs=5000, failureThreshold=
+47:HealthMonitorUseCaseTest > anOnDemandProbeThatKeepsLosingTheRaceIs409OnceTheRetriesAreUsedUp() FAILED
+53:    Wanted 3 times:
+60:19 tests completed, 2 failed
+62:> Task :test FAILED
+75:BUILD FAILED in 15s

@@ -45,3 +45,14 @@ health sweep 1 s, stale grace 0), Vite `:3501` → A, emulated pod `e2e1-netns` 
 `CS_INTERVAL=3s CS_HEARTBEAT=10s CS_RETRY_DELAY=1s CS_STARTUP_GRACE=30s`, `POD_NAME=e2e1-app-6d4f8b7c9-ab12c`).
 Temporary: `e2e1-pod2/app2/sidecar2` (19611–19613), `e2e1-sidecar3` (capture) and a stub on `:19620`. Scripts and
 outputs: `confidence/evidence/iter-1/e2e/`.
+
+## Iteration 2 stack (from 2026-11-02 03:52Z)
+Code at `908598a` (24 iteration-2 fix commits merged). Backend jar rebuilt from the merged branch and started on :8080
+(copy `/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/communication-service-iter2.jar`,
+log `.../scratchpad/logs/backend-iter2.log`); frontend `npm ci` on the merged `frontend/` (minimatch override) and the dev
+server restarted on :3000 (log `.../logs/frontend-dev-iter2.log`); sidecar image `health-sidecar:ci` rebuilt
+(`version=ci-iter2`, `revision=6fd1088`, built with `GO_IMAGE=local/go-toolset:1.25` because the sidecar now needs Go 1.25);
+pod `app` (+ host port 127.0.0.1:19465 → the sidecar's :9465) and `sidecar` recreated with the same env as before.
+New in the repository: `Dockerfile` (backend image from the prebuilt jar), `e2e/` (docker compose project `e2e` on ports
+28030/28080/28090/28091 and a Playwright 1.63 suite), `.github/workflows/{ci,e2e}.yml`. The host `go` is 1.24.7; `go.mod`
+selects go1.25 through the module proxy automatically.

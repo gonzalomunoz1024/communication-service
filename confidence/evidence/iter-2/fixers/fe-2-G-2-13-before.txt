@@ -1,0 +1,36 @@
+# G-2-13, before: coverage of src/ui and npm audit, with the G-2-9..G-2-12 commits applied but before the kit tests and the minimatch override
+# cwd frontend/: npm run test:coverage (summary and the src/ui rows), then npm audit
+ Test Files  13 passed (13)
+      Tests  97 passed (97)
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+All files          |   75.94 |    68.71 |   78.85 |   78.19 |                   
+ src               |   97.56 |      100 |     100 |   97.29 |                   
+ src/ui            |   43.32 |    51.17 |   56.75 |   47.78 |                   
+  Badge.tsx        |     100 |     87.5 |     100 |     100 | 30                
+  Button.tsx       |     100 |     91.3 |     100 |     100 | 99-100            
+  Card.tsx         |      40 |    65.62 |      50 |      40 | 56-65             
+  EmptyState.tsx   |     100 |    83.33 |     100 |     100 | 21                
+  Field.tsx        |   73.33 |    70.27 |   71.42 |   71.42 | 134-145           
+  Icon.tsx         |     100 |     62.5 |     100 |     100 | 144-147           
+  PageHeader.tsx   |       0 |        0 |       0 |       0 | 21                
+  Segmented.tsx    |   27.77 |    35.48 |      50 |   35.71 | 36-45             
+  Select.tsx       |   66.66 |    72.72 |   66.66 |   66.66 | 38                
+  StatusDot.tsx    |      80 |    66.66 |     100 |     100 | 28,30-35          
+  Tabs.tsx         |   29.41 |       60 |      50 |   38.46 | 25-32             
+  Tag.tsx          |     100 |       84 |     100 |     100 | 51-56,102         
+  ThemeToggle.tsx  |     100 |    66.66 |     100 |     100 | 10,14             
+  format.ts        |   21.62 |    12.93 |      25 |   23.25 | 32-131,152-169    
+  job-state.ts     |    37.5 |     53.7 |      50 |   42.85 | 19-30             
+  useTheme.ts      |   60.78 |       64 |   55.55 |   60.86 | ...86,109-117,121 
+Statements   : 75.94% ( 584/769 )
+Branches     : 68.71% ( 593/863 )
+Functions    : 78.85% ( 179/227 )
+Lines        : 78.19% ( 495/633 )
+## npm audit
+minimatch  <11.0.1
+minimatch has potential denial of service via globparts amplification - https://github.com/advisories/GHSA-g3hv-75wg-m249
+fix available via `npm audit fix --force`
+node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch
+node_modules/minimatch
+12 moderate severity vulnerabilities
+a different dependency.

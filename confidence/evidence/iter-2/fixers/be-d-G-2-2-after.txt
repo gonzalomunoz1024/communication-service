@@ -1,0 +1,41 @@
+# G-2-2 after: the complete `./gradlew --max-workers=2 --no-daemon check` on the fixed code, trimmed to the task list, test counts, coverage and exit code
+
+> Task :clean
+> Task :cyclonedxDirectBom
+> Task :cyclonedxBom
+> Task :compileJava
+> Task :processResources
+> Task :classes
+> Task :compileTestJava
+> Task :processTestResources
+> Task :testClasses
+> Task :test
+> Task :integrationTest
+> Task :jacocoTestCoverageVerification
+> Task :jacocoTestReport
+> Task :spotbugsTest SKIPPED
+> Task :spotbugsMain
+> Task :check
+BUILD SUCCESSFUL in 1m 32s
+12 actionable tasks: 12 executed
+RC=0
+
+## Test counts (build/test-results)
+build/test-results/test: tests=191 failures=0 errors=0 skipped=0
+build/test-results/integrationTest: tests=39 failures=0 errors=0 skipped=0
+
+## SpotBugs (build/reports/spotbugs/main.xml)
+SpotBugs 4.10.5: 0 findings with config/spotbugs/exclude.xml applied
+
+## JaCoCo (build/reports/jacoco/test/jacocoTestReport.xml, test + integrationTest exec data, config/** and *Application* excluded)
+INSTRUCTION: missed=416 covered=7636 ratio=0.9483
+BRANCH: missed=125 covered=569 ratio=0.8199
+LINE: missed=53 covered=1152 ratio=0.9560
+COMPLEXITY: missed=132 covered=609 ratio=0.8219
+METHOD: missed=18 covered=371 ratio=0.9537
+CLASS: missed=0 covered=63 ratio=1.0000
+gate: LINE COVEREDRATIO minimum 0.92
+
+## SBOM
+build/reports/cyclonedx/bom.json: 398354 bytes
+build/reports/cyclonedx/bom.xml: 349850 bytes

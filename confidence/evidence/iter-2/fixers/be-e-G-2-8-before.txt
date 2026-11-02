@@ -1,0 +1,8 @@
+# G-2-8 before: ./gradlew --max-workers=2 --no-daemon --continue test --tests '*FeedUseCaseTest' --tests '*MongoCommunicationEventsAdapterTest' at 3f11fec + head() on the port/adapter and the new tests only (FeedUseCase still stamps the fan-out cursor, stubbed at 42 while head() is 43)
+
+25:FeedUseCaseTest > theSnapshotIsStampedWithTheLogHeadReadBeforeItIsQueried() FAILED
+27:    expected: 43L
+28:     but was: 42L
+59:21 tests completed, 1 failed
+61:> Task :test FAILED
+74:BUILD FAILED in 16s

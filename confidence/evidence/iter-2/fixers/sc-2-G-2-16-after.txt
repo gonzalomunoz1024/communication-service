@@ -1,0 +1,65 @@
+# G-2-16 after: commit 6d1f7c3 "Fix G-2-16: send every probe while the app is not UP, log transitions at INFO, one "not listening" message"
+
+## (1) cadence
+$ cd sidecar && go test -count=1 -v -run TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat ./internal/agent/
+=== RUN   TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat
+--- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat (0.60s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe (0.30s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_nothing_before_the_heartbeat (0.30s)
+PASS
+exit=0        (DOWN: between 3 and 20 reports in 300 ms; UP: exactly 1 before the 10 s heartbeat)
+
+## (2) transition log lines and the first DOWN message
+$ go test -count=1 -v -run TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug ./internal/agent/
+--- PASS: TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug (0.01s)
+exit=0        (sent UP DOWN DOWN DOWN UP; every DOWN says "app is not listening (last target …)";
+               INFO "reported" lines: UP, DOWN with that message, UP; DEBUG "reported" lines: the two repeated DOWN sends)
+
+## (3) the strengthened dead-app test
+$ go test -count=1 -v -run TestAppThatStopsListeningStaysDownUntilItIsBack ./internal/agent/
+--- PASS: TestAppThatStopsListeningStaysDownUntilItIsBack (0.00s)
+exit=0
+
+## (4) the rejected-body cadence pin
+$ go test -count=1 -v -run TestRejectedDownReportKeepsTheHeartbeatCadence ./internal/agent/
+--- PASS: TestRejectedDownReportKeepsTheHeartbeatCadence (0.00s)
+exit=0
+
+## whole module, formatting, vet, race
+$ gofmt -l . ; go vet ./... ; go test -count=1 ./...
+(no files) (clean)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	0.030s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.005s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.670s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.005s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.004s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.433s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.017s
+$ go test -count=1 -race ./internal/agent/ ./cmd/health-sidecar/
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	1.808s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.173s
+
+## (5) live, with the image built from 6d1f7c3: emulated pod against a private backend (:18130, db fixsc2_live, iteration-1 jar,
+##     backend defaults failureThreshold 2 / recoveryThreshold 2). Script: <scratchpad>/sc2/live/live.sh, full output live-run1.txt.
+##     Pod = netns holder + fakeapp:ci + health-sidecar:fix-sc2 (--user 1000660000:0 --read-only --cap-drop ALL
+##     --security-opt no-new-privileges), CS_INTERVAL=3s CS_HEARTBEAT=30s CS_RETRY_DELAY=1s.
+[03:05:35] STEP A: +1s status=UP target=http://127.0.0.1:8080/actuator/health sent=1; backend monitor sc2-app, instance UP, feed 0
+[03:05:41.860] STEP B: docker stop -t 1 sc2-app
+  +1.7s status=DOWN target=None lastTarget=http://127.0.0.1:8080/actuator/health msg='app is not listening (last target http://127.0.0.1:8080/actuator/health)' sent=2 feed=0
+  +5.8s status=DOWN ... sent=3 feed=1
+  first DOWN in /status after 1.7 s; OUTAGE in the feed after 5.8 s since the stop (the heartbeat is 30 s)
+    feed: {"type":"OUTAGE","status":"ACTIVE","severity":"MAJOR","title":"sc2-app is down","startsAt":"2026-11-02T03:05:47.294Z","publisher":"health-sidecar"}
+    instance: status DOWN, message "app is not listening (last target http://127.0.0.1:8080/actuator/health)"
+  sidecar log since the stop (default level):
+    {"level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+    {"level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+  10 s more while DOWN: reportsSent 3 -> 5 (one send per probe), 'reported' lines in the log still 2 (UP, DOWN)
+[03:05:58.144] STEP C: docker start sc2-app
+  +1.7s status=UP sent=6 feed=1; +34.4s sent=7 feed=0 (the notice retires after the backend's second UP observation, which is the
+  30 s heartbeat: UP keeps the change-or-heartbeat cadence by design)
+  log: "health target found" UP, "reported" UP — one INFO line for the recovery
+STEP D: SIGTERM -> exit 0, "leaving report sent", "health sidecar stopped"
+  log histogram of the run: 3 INFO reported (UP, DOWN, UP), 2 health target found, 1 health target gone, 1 starting, 1 leaving
+  report sent, 1 stopped; 0 WARN/ERROR, 0 non-JSON lines. Containers sc2-pod/sc2-app/sc2-sidecar removed afterwards.
+  (iteration 1, same scenario at CS_INTERVAL=3s: first DOWN +4 s with "connection refused", OUTAGE +12 s only because that run
+   used CS_HEARTBEAT=5s; with the default 30 s heartbeat the OUTAGE would have followed the first DOWN by 30 s.)

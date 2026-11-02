@@ -1,0 +1,43 @@
+# G-2-9 before: ./gradlew --max-workers=2 --no-daemon --continue integrationTest --tests '*MongoCommunicationRepositoryAdapterIT' --tests '*OpenApiContractIT' --tests '*CommunicationServiceE2EIT' at 391ad73 + the changed/new tests only (409 wording, OpenAPI descriptions and README unchanged)
+
+28: CommunicationServiceE2EIT > validationAndConflictContracts() FAILED
+29:     java.lang.AssertionError: 
+30:     Expecting actual:
+31:       "duplicate externalRef 'INC-e2e-dup' for tenant 'vmforge'"
+32:     to contain:
+33:       "permanent" 
+38: OpenApiContractIT > theIdempotencyKeyAndTheVersionCheckExplainThemselves() FAILED
+39:     java.lang.AssertionError: [externalRef is described as permanent] 
+40:     Expecting actual:
+41:       ""
+42:     to contain:
+43:       "permanent" 
+46: MongoCommunicationRepositoryAdapterIT > duplicateExternalRefWithinTenantIsConflict() FAILED
+47:     java.lang.AssertionError: expectation "expectErrorSatisfies" failed (assertion failed on exception <org.springframework.web.server.ResponseStatusException: 409 CONFLICT "duplicate externalRef 
+48:     Expecting throwable message:
+49:       "409 CONFLICT "duplicate externalRef 'INC1' for tenant 'vmforge'""
+50:     to contain:
+51:       "externalRef 'INC1' is already used by notice c1 in tenant vmforge"
+52:     but did not.
+54:     Throwable that failed the check:
+56:     org.springframework.web.server.ResponseStatusException: 409 CONFLICT "duplicate externalRef 'INC1' for tenant 'vmforge'"
+272: MongoCommunicationRepositoryAdapterIT > theExternalRefStaysTakenAfterItsHolderIsRetired() FAILED
+273:     java.lang.AssertionError: expectation "expectErrorSatisfies" failed (assertion failed on exception <org.springframework.web.server.ResponseStatusException: 409 CONFLICT "duplicate externalRef
+274:     Expecting throwable message:
+275:       "409 CONFLICT "duplicate externalRef 'INC1' for tenant 'vmforge'""
+276:     to contain:
+277:       "already used by notice c1"
+278:     but did not.
+280:     Throwable that failed the check:
+282:     org.springframework.web.server.ResponseStatusException: 409 CONFLICT "duplicate externalRef 'INC1' for tenant 'vmforge'"
+656: > Task :integrationTest FAILED
+669: BUILD FAILED in 29s
+671: exit=1
+
+21:> Task :integrationTest
+26:> Task :integrationTest
+652:> Task :integrationTest
+654:18 tests completed, 4 failed
+656:> Task :integrationTest FAILED
+669:BUILD FAILED in 29s
+671:exit=1

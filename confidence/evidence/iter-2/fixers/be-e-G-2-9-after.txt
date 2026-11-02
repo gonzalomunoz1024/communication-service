@@ -1,0 +1,6 @@
+# G-2-9 after: same command with the new 409 wording, the @Schema/@ApiResponse descriptions and the README; exit 0
+
+15:> Task :integrationTest
+174:BUILD SUCCESSFUL in 27s
+176:exit=0
+JUnit XML: CommunicationServiceE2EIT tests="6" skipped="0" failures="0" errors="0"; OpenApiContractIT tests="3" skipped="0" failures="0" errors="0"; MongoCommunicationRepositoryAdapterIT tests="9" skipped="0" failures="0" errors="0"

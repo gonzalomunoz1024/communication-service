@@ -1,0 +1,4 @@
+# G-2-6 after: same command with the fix in HealthMonitor.withClosedByOperator(); exit 0
+
+102:BUILD SUCCESSFUL in 28s
+JUnit XML: HealthObservationUseCaseTest tests=14 failures=0; HealthMonitorTest tests=14 failures=0; HealthMonitoringE2EIT tests=6 failures=0

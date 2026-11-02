@@ -1,0 +1,25 @@
+# G-2-6 before: ./gradlew --max-workers=2 --no-daemon --continue test --tests '*HealthObservationUseCaseTest' --tests '*HealthMonitorTest' integrationTest --tests '*HealthMonitoringE2EIT' at 5ffc0bc + tests changed to expect the threshold-th observation (HealthMonitor.withClosedByOperator unchanged)
+
+15:HealthObservationUseCaseTest > operatorRetiredNoticeIsRespectedAndStateCleared() FAILED
+17:    expected: 1
+18:     but was: 0
+39:HealthObservationUseCaseTest > operatorRetiredNoticeIsNoticedEvenWhenTheFailingSetIsUnchanged() FAILED
+41:    expected: 1
+42:     but was: 0
+45:HealthObservationUseCaseTest > afterAnOperatorsRetireTheNoticeReopensOnTheThresholdthFailingObservation() FAILED
+47:    expected: 1
+48:     but was: 0
+51:HealthMonitorTest > claimAndCloseBookkeeping() FAILED
+53:    expected: 1
+54:     but was: 0
+57:HealthMonitorTest > anOperatorsRetireStartsTheCountAgainWithTheObservationThatNoticedIt() FAILED
+59:    expected: 1
+60:     but was: 0
+63:28 tests completed, 5 failed
+65:> Task :test FAILED
+74:HealthMonitoringE2EIT > anOperatorRetiringTheAutoNoticeMakesTheMonitorCountAgain() FAILED
+76:    expected: 1
+77:     but was: 0
+167:6 tests completed, 1 failed
+169:> Task :integrationTest FAILED
+193:BUILD FAILED in 30s

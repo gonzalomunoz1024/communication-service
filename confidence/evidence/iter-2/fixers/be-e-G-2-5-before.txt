@@ -1,0 +1,9 @@
+# G-2-5 before: code at a1e8724 (G-2-4 applied, valve unbounded); ./gradlew test --tests '*HealthSweepUseCaseTest' with the three new valve tests: 14 monitors silent for 2 days + 1 silent for 2 minutes pause the valve (0 observed instead of 1); a monitor silent 3 days among 3 healthy ones is observed/declared DOWN (1 instead of 0)
+
+15:HealthSweepUseCaseTest > aForgottenMonitorIsLeftAloneEvenWhenSilenceIsTrusted() FAILED
+16:    java.lang.AssertionError: expectation "expectNext(0)" failed (expected value: 0; actual value: 1)
+78:HealthSweepUseCaseTest > monitorsSilentForDaysDoNotKeepTheValvePausedForEveryoneElse() FAILED
+79:    java.lang.AssertionError: expectation "expectNext(1)" failed (expected value: 1; actual value: 0)
+141:16 tests completed, 2 failed
+143:> Task :test FAILED
+154:BUILD FAILED in 14s

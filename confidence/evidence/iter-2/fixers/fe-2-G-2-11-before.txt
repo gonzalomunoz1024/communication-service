@@ -1,0 +1,63 @@
+# G-2-11, before the fix: stream.test.ts with the new and changed assertions against the iteration-1 api.ts (30 s cap, lastSeq dropped after a failed resume)
+# cwd frontend/: npx vitest run src/test/stream.test.ts
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a8066b44d275a8a34/frontend
+ ❯ src/test/stream.test.ts (9 tests | 3 failed) 35ms
+   ❯ reconnectDelay (1)
+     × doubles from one second and caps at ten, which bounds how long a restart goes unnoticed 10ms
+   ❯ stream liveness (8)
+     × reopens with backoff and the last sequence number once the browser has given up 5ms
+     × keeps asking for the replay on every attempt while the service is away 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/test/stream.test.ts > reconnectDelay > doubles from one second and caps at ten, which bounds how long a restart goes unnoticed
+AssertionError: expected [ 1000, 2000, 4000, 8000, 16000, …(3) ] to deeply equal [ 1000, 2000, 4000, 8000, 10000, …(3) ]
+- Expected
++ Received
+  [
+    1000,
+    2000,
+    4000,
+    8000,
+-   10000,
+-   10000,
+-   10000,
++   16000,
++   30000,
++   30000,
+    30000,
+  ]
+ ❯ src/test/stream.test.ts:50:59
+     48| describe('reconnectDelay', () => {
+     49|   it('doubles from one second and caps at ten, which bounds how long a…
+     50|     expect([1, 2, 3, 4, 5, 6, 7, 20].map(reconnectDelay)).toEqual([1_0…
+       |                                                           ^
+     51|     expect(RECONNECT_MAX_MS).toBe(10_000)
+     52|   })
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+ FAIL  src/test/stream.test.ts > stream liveness > reopens with backoff and the last sequence number once the browser has given up
+AssertionError: expected 'http://svc/v1/feed/stream?tenantId=ac…' to be 'http://svc/v1/feed/stream?tenantId=ac…' // Object.is equality
+Expected: "http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=12"
+Received: "http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web"
+ ❯ src/test/stream.test.ts:105:26
+    103|     expect(onRetry).toHaveBeenLastCalledWith(2, 2_000)
+    104|     vi.advanceTimersByTime(2_000)
+    105|     expect(latest().url).toBe('http://svc/v1/feed/stream?tenantId=acme…
+       |                          ^
+    106|     latest().giveUp()
+    107|     expect(onRetry).toHaveBeenLastCalledWith(3, 4_000)
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+ FAIL  src/test/stream.test.ts > stream liveness > keeps asking for the replay on every attempt while the service is away
+AssertionError: attempt 3: expected 'http://svc/v1/feed/stream?tenantId=ac…' to be 'http://svc/v1/feed/stream?tenantId=ac…' // Object.is equality
+Expected: "http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web&lastEventId=98"
+Received: "http://svc/v1/feed/stream?tenantId=acme&clientId=checkout-web"
+ ❯ src/test/stream.test.ts:148:48
+    146|       latest().giveUp()
+    147|       vi.advanceTimersByTime(reconnectDelay(i))
+    148|       expect(latest().url, `attempt ${i + 1}`).toBe('http://svc/v1/fee…
+       |                                                ^
+    149|     }
+    150|     // the first attempt that reaches the service is a resume, and wha…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+ Test Files  1 failed (1)
+      Tests  3 failed | 6 passed (9)
+   Start at  02:50:52
+   Duration  412ms (setup 47%, transform 35%, tests 14%, import 2%, worker 2%)

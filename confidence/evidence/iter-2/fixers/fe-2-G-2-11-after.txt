@@ -1,0 +1,36 @@
+# G-2-11, after the fix (api.ts: 10 s cap, lastSeq kept across failed attempts)
+# cwd frontend/: npx vitest run src/test/stream.test.ts
+ RUN  v5.0.5 /home/claude/communication-service/.claude/worktrees/agent-a8066b44d275a8a34/frontend
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  02:55:40
+   Duration  290ms (setup 64%, transform 16%, tests 14%, import 4%, worker 2%)
+
+# How the shared backend (:8080, iteration-1 jar) answers ?lastEventId= on a populated tenant (ux1-many, 103 notices): a retained id is replayed (created frames after it), an id it never issued or cannot resume from is answered with 200 and snapshot frames (FeedUseCase.canResumeAfter -> snapshotThenLive), never with an error; only a non-numeric id, which the client never sends, is a 400. So the client keeps its lastSeq and has no refusal to detect.
+## curl -sS -N --max-time 2 -i 'http://localhost:8080/v1/feed/stream?tenantId=ux1-many&clientId=fixfe2-probe&lastEventId=1' | grep -E '^(HTTP|id|event|\{)' | head -7
+HTTP/1.1 200 OK
+id:977
+event:created
+id:978
+event:created
+id:979
+event:created
+## curl -sS -N --max-time 2 -i 'http://localhost:8080/v1/feed/stream?tenantId=ux1-many&clientId=fixfe2-probe&lastEventId=999999999' | grep -E '^(HTTP|id|event|\{)' | head -7
+HTTP/1.1 200 OK
+id:1311
+event:snapshot
+id:1311
+event:snapshot
+id:1311
+event:snapshot
+## curl -sS -N --max-time 2 -i 'http://localhost:8080/v1/feed/stream?tenantId=ux1-many&clientId=fixfe2-probe&lastEventId=-5' | grep -E '^(HTTP|id|event|\{)' | head -7
+HTTP/1.1 200 OK
+id:1311
+event:snapshot
+id:1311
+event:snapshot
+id:1311
+event:snapshot
+## curl -sS -N --max-time 2 -i 'http://localhost:8080/v1/feed/stream?tenantId=ux1-many&clientId=fixfe2-probe&lastEventId=abc' | grep -E '^(HTTP|id|event|\{)' | head -7
+HTTP/1.1 400 Bad Request
+{"error":"lastEventId: 'abc' is not a number"}

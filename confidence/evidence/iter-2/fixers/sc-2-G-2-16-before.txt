@@ -1,0 +1,39 @@
+# G-2-16 before: worktree at e558b80 (G-2-14, G-2-15 applied) plus the new/strengthened tests; agent.go and the README untouched
+
+## (1) cadence: Run for 300 ms, interval 50 ms, heartbeat 10 s, startup grace 0
+$ cd sidecar && go test -count=1 -v -run TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat ./internal/agent/
+=== RUN   TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe
+    agent_test.go:607: 1 reports in 300 ms at a 50 ms interval, want between 3 and 20
+=== RUN   TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_nothing_before_the_heartbeat
+--- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat (0.61s)
+    --- FAIL: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/DOWN_app:_one_report_per_probe (0.30s)
+    --- PASS: TestNotUpIsSentEveryProbeAndUpOnlyAtTheHeartbeat/UP_app:_the_first_report,_then_nothing_before_the_heartbeat (0.31s)
+FAIL
+exit=1        <- a DOWN app re-sends only at the heartbeat: 1 report in 300 ms
+
+## (2) transition log lines and the first DOWN message (ticks at 15 s: UP, app dies, 3 probes, app back)
+$ go test -count=1 -v -run TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug ./internal/agent/
+=== RUN   TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug
+    agent_test.go:649: sent "UP DOWN DOWN UP", want every DOWN probe sent: "UP DOWN DOWN DOWN UP"
+    agent_test.go:653: DOWN report 1 says "GET http://127.0.0.1:33273/actuator/health: connection refused", want "app is not listening (last target http://127.0.0.1:33273/actuator/health)"
+    agent_test.go:678: INFO 'reported' lines ["UP: " "DOWN: GET http://127.0.0.1:33273/actuator/health: connection refused" "UP: "], want the transitions only: ["UP: " "DOWN: app is not listening (last target http://127.0.0.1:33273/actuator/health)" "UP: "]
+    agent_test.go:681: DEBUG 'reported' lines [], want the repeated DOWN sends: ["DOWN: app is not listening (last target http://127.0.0.1:33273/actuator/health)" "DOWN: app is not listening (last target http://127.0.0.1:33273/actuator/health)"]
+--- FAIL: TestTransitionsAreLoggedAtInfoAndRepeatedSendsAtDebug (0.00s)
+FAIL
+exit=1        <- the second DOWN is the 30 s heartbeat; the first DOWN carries the probe's own error; nothing logged between
+
+## (3) the existing dead-app test with the first-message assertion added
+$ go test -count=1 -v -run TestAppThatStopsListeningStaysDownUntilItIsBack ./internal/agent/
+=== RUN   TestAppThatStopsListeningStaysDownUntilItIsBack
+    agent_test.go:366: the probe that finds the port gone should already say the app is not listening, got &{TenantID:retail Service:payments-api Status:DOWN Components:map[] Message:GET http://127.0.0.1:33015/actuator/health: connection refused ObservedAt:2026-11-01 12:00:15 +0000 UTC Publisher:health-sidecar Instance:0xc000163340}
+--- FAIL: TestAppThatStopsListeningStaysDownUntilItIsBack (0.00s)
+FAIL
+exit=1
+
+## (4) the rejected-body cadence pin, run against the committed agent.go (file swapped back for this run, then restored)
+$ go test -count=1 -v -run TestRejectedDownReportKeepsTheHeartbeatCadence ./internal/agent/
+=== RUN   TestRejectedDownReportKeepsTheHeartbeatCadence
+    agent_test.go:707: after the heartbeat is accepted every DOWN probe is sent again, got 1 sends
+--- FAIL: TestRejectedDownReportKeepsTheHeartbeatCadence (0.00s)
+FAIL
+exit=1        <- before, an accepted DOWN after a rejection still waited for the next heartbeat

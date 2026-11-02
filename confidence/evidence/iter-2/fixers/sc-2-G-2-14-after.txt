@@ -1,0 +1,59 @@
+# G-2-14 after: commit e4dbeba "Fix G-2-14: build with Go 1.25 and label the image with version and revision"
+
+## the lines the gap names
+$ grep -n "^go " sidecar/go.mod
+3:go 1.25
+$ grep -n "GO_IMAGE=\|ARG VERSION\|ARG REVISION\|org.opencontainers" sidecar/Dockerfile
+9:ARG GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.25
+12:ARG VERSION=dev
+22:ARG VERSION=dev
+23:ARG REVISION=unknown
+24:LABEL org.opencontainers.image.title="health-sidecar" \
+25:      org.opencontainers.image.description="Probes the app in its pod and reports health to the communication service" \
+26:      org.opencontainers.image.version="${VERSION}" \
+27:      org.opencontainers.image.revision="${REVISION}" \
+28:      org.opencontainers.image.source="https://github.com/gonzalomunoz1024/communication-service"
+
+## the guard test (host go1.24.7 + GOTOOLCHAIN=auto, so the go line selects go1.25.0 from the module proxy)
+$ cd sidecar && go version && go test -count=1 -v ./deploy/
+go version go1.25.0 linux/amd64
+--- SKIP: TestNativeComponentKeepsExistingInitContainers (0.00s)      (kustomize not on PATH for this run; see G-2-15)
+--- SKIP: TestClassicComponentAppendsTheContainer (0.00s)
+--- SKIP: TestBothComponentsShareTheContainerContract (0.00s)
+--- PASS: TestManualSnippetSharesTheContainerContract (0.00s)
+=== RUN   TestGoModAndDockerfileAgreeOnTheGoLine
+--- PASS: TestGoModAndDockerfileAgreeOnTheGoLine (0.00s)
+=== RUN   TestImageCarriesVersionAndRevisionLabels
+--- PASS: TestImageCarriesVersionAndRevisionLabels (0.00s)
+PASS
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.003s
+exit=0
+
+$ gofmt -l . ; go vet ./... ; go test -count=1 ./...
+(gofmt: no files) (vet: clean)
+?   	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	[no test files]
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	0.003s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.061s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.005s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	0.004s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.422s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	0.016s
+
+## the image, built from the repo Dockerfile with the two sandbox substitutions (UBI registry blocked here)
+$ docker build -t health-sidecar:fix-sc2 --build-arg GO_IMAGE=local/go-toolset:1.25 \
+    --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:latest \
+    --build-arg VERSION=1.0.0-fixsc2 --build-arg REVISION=e4dbeba8270ab438cab1d38c00a3e16b5082d2a8 sidecar/
+#6 [build 1/6] FROM docker.io/local/go-toolset:1.25        (golang:1.25 via mirror.gcr.io + UBI CA bundle path; go1.25.14)
+#13 [build 6/6] RUN go build -ldflags="-s -w -X main.version=1.0.0-fixsc2" -o /tmp/health-sidecar ./cmd/health-sidecar
+build exit=0
+$ docker inspect --format '{{json .Config.Labels}}' health-sidecar:fix-sc2
+{"org.opencontainers.image.description":"Probes the app in its pod and reports health to the communication service","org.opencontainers.image.revision":"e4dbeba8270ab438cab1d38c00a3e16b5082d2a8","org.opencontainers.image.source":"https://github.com/gonzalomunoz1024/communication-service","org.opencontainers.image.title":"health-sidecar","org.opencontainers.image.version":"1.0.0-fixsc2"}
+$ docker inspect --format 'User={{.Config.User}} Size={{.Size}}' health-sidecar:fix-sc2
+User=1001 Size=16319091
+$ go version <binary copied out of the image>
+health-sidecar-fixsc2.bin: go1.25.14
+
+## not verifiable here
+registry.access.redhat.com is blocked (HTTP 403), so the default builder tag ubi9/go-toolset:1.25 and the ubi-micro base
+were not pulled; the build above used the stand-in builder with the same Go minor. The module proxy lists go1.26.10 and
+go1.27.3 as well: 1.25 is the line the brief asked for, not the newest.
