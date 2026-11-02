@@ -111,12 +111,20 @@ func FromEnv(get func(string) string) (Config, error) {
 		}
 		return n
 	}
-	boolean := func(key string) bool {
-		switch strings.ToLower(strings.TrimSpace(get(key))) {
+	// boolean takes true/false, 1/0, yes/no and on/off in any case; anything else is an error
+	// rather than a guess, so a typo stops the sidecar like every other unusable value.
+	boolean := func(key string, def bool) bool {
+		v := strings.TrimSpace(get(key))
+		switch strings.ToLower(v) {
+		case "":
+			return def
 		case "1", "true", "yes", "on":
 			return true
+		case "0", "false", "no", "off":
+			return false
 		}
-		return false
+		errs = append(errs, fmt.Errorf("%s must be true or false (got %q)", key, v))
+		return def
 	}
 
 	podName := str("POD_NAME", "")
@@ -144,7 +152,7 @@ func FromEnv(get func(string) string) (Config, error) {
 		RetryDelay:         dur("CS_RETRY_DELAY", 2*time.Second),
 		Listen:             str("CS_LISTEN", ":9465"),
 		CAFile:             str("CS_CA_FILE", ""),
-		InsecureSkipVerify: boolean("CS_INSECURE_SKIP_VERIFY"),
+		InsecureSkipVerify: boolean("CS_INSECURE_SKIP_VERIFY", false),
 		Instance: Instance{
 			ID:        str("CS_INSTANCE_ID", podName),
 			Namespace: str("POD_NAMESPACE", ""),

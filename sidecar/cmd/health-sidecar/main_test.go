@@ -84,6 +84,42 @@ func TestRunRejectsMissingEndpointWithAClearError(t *testing.T) {
 	}
 }
 
+// A value the sidecar cannot use stops it before it runs: exit 2 and one ERROR line naming the
+// variable and the value, never a sidecar running on a guess (G-3-17: a boolean typo used to
+// start it with the default).
+func TestRunRejectsAnUnusableValueWithExit2(t *testing.T) {
+	for _, tc := range []struct{ key, value, want string }{
+		{"CS_INSECURE_SKIP_VERIFY", "maybe", `CS_INSECURE_SKIP_VERIFY must be true or false (got "maybe")`},
+	} {
+		t.Run(tc.key, func(t *testing.T) {
+			// Bounded, local and blind: should the value be accepted, run stops after 2 s and
+			// returns 0 instead of hanging, without probing this host's ports or the network.
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			var out logBuffer
+			code := run(ctx, env(map[string]string{
+				"CS_ENDPOINT":     "http://127.0.0.1:1",
+				"CS_TENANT":       "retail",
+				"POD_NAME":        "payments-api-7f9c6d5b4-x2k4q",
+				"CS_LISTEN":       "127.0.0.1:0",
+				"CS_IGNORE_PORTS": "1-65535",
+				tc.key:            tc.value,
+			}), &out)
+			if code != 2 {
+				t.Fatalf("%s=%s: exit code %d, want 2", tc.key, tc.value, code)
+			}
+			lines := out.lines(t)
+			line := find(lines, "invalid configuration")
+			if line == nil || line["level"] != "ERROR" || len(lines) != 1 {
+				t.Fatalf("expected exactly one ERROR line 'invalid configuration', got %v", lines)
+			}
+			if errText, _ := line["error"].(string); !strings.Contains(errText, tc.want) {
+				t.Errorf("the error should say %q, got %q", tc.want, errText)
+			}
+		})
+	}
+}
+
 // A CA file that cannot be read is the other way the process stops before running: exit 2 with
 // the cause, not a running sidecar that fails every send.
 func TestRunRejectsAnUnreadableCAFile(t *testing.T) {

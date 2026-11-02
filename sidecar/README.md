@@ -167,8 +167,13 @@ The report body is Actuator's vocabulary plus the instance:
 | `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |
 | `CS_LISTEN` | `:9465` | the sidecar's own `/healthz` and `/status` |
 | `CS_CA_FILE` | empty | extra PEM CA bundle for the endpoint (an internal CA); the image carries the UBI bundle |
-| `CS_INSECURE_SKIP_VERIFY` | `false` | skip TLS verification to the endpoint (local experiments only) |
+| `CS_INSECURE_SKIP_VERIFY` | `false` | skip TLS verification to the endpoint (local experiments only): `true` or `false`, also `1`/`0`, `yes`/`no`, `on`/`off` in any case |
 | `POD_NAME`, `POD_NAMESPACE`, `NODE_NAME`, `CS_VERSION`, `CS_INSTANCE_ID` | Downward API | instance identity |
+
+A value the sidecar cannot use (a required variable missing, an unknown mode or scheme, a
+duration, port or boolean it cannot read) stops it at start with exit code 2 and one ERROR line,
+`invalid configuration`, that names every such variable at once; a `CS_CA_FILE` it cannot read
+stops it the same way, as `cannot build report client`.
 
 `GET :9465/status` shows the discovered target, the last probe result, the last report sent and
 the last send error, which is the first place to look when a service does not show up.

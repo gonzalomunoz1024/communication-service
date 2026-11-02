@@ -95,6 +95,38 @@ func TestFromEnvOverridesAndValidation(t *testing.T) {
 	}
 }
 
+// G-3-17: CS_INSECURE_SKIP_VERIFY takes the documented spellings of true and false in any case,
+// empty keeps the default (false), and anything else is a named error joined with the others,
+// so the process exits 2 instead of starting with verification on after a typo.
+func TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly(t *testing.T) {
+	for value, want := range map[string]bool{
+		"": false, "1": true, "true": true, "TRUE": true, "Yes": true, "on": true, " true ": true,
+		"0": false, "false": false, "False": false, "no": false, "OFF": false,
+	} {
+		cfg, err := FromEnv(env(map[string]string{
+			"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+			"POD_NAME": "payments-api-7f9c6d5b4-x2k4q", "CS_INSECURE_SKIP_VERIFY": value,
+		}))
+		if err != nil {
+			t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: unexpected error %v", value, err)
+		} else if cfg.InsecureSkipVerify != want {
+			t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: got %v, want %v", value, cfg.InsecureSkipVerify, want)
+		}
+	}
+	for _, value := range []string{"maybe", "2", "t", "enabled"} {
+		_, err := FromEnv(env(map[string]string{"CS_INSECURE_SKIP_VERIFY": value})) // CS_ENDPOINT and CS_TENANT missing too
+		if err == nil {
+			t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: expected an error", value)
+			continue
+		}
+		for _, want := range []string{`CS_INSECURE_SKIP_VERIFY must be true or false (got "` + value + `")`, "CS_ENDPOINT is required", "CS_TENANT is required"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("CS_INSECURE_SKIP_VERIFY=%q: error %q should contain %q", value, err, want)
+			}
+		}
+	}
+}
+
 func TestParsePortRanges(t *testing.T) {
 	ranges, err := ParsePortRanges("80, 8000-8099")
 	if err != nil || len(ranges) != 2 || !ranges[1].Contains(8050) || ranges[1].Contains(8100) {
