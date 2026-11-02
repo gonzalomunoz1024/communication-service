@@ -13,8 +13,13 @@
 # below makes a builder with an older Go stop the build ("go.mod requires go >= 1.27.3") instead of
 # building a vulnerable binary or downloading another toolchain. deploy/dockerfile_test.go keeps
 # go.mod, this tag, GOTOOLCHAIN and the README in step.
+#
+# BASE_IMAGE is UBI micro on the newest RHEL 9 minor. Red Hat stops rebuilding a minor's tag once
+# the next minor ships, so later fixes never reach it: 9.5, the default until 2026-11-02, failed CI's
+# image scan with eight HIGH findings in libacl, libcap and pcre2 that 9.8 fixes. Move the tag when
+# RHEL 9.9 ships; deploy/dockerfile_test.go keeps it and the README in step.
 ARG GO_IMAGE=docker.io/library/golang:1.27
-ARG BASE_IMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.5
+ARG BASE_IMAGE=registry.access.redhat.com/ubi9/ubi-micro:9.8
 
 FROM ${GO_IMAGE} AS build
 ARG VERSION=dev

@@ -43,6 +43,20 @@ func TestGoModAndDockerfileAgreeOnTheGoLine(t *testing.T) {
 	}
 }
 
+// The image runs on UBI micro by default, and the README's Build section names the exact base the
+// Dockerfile uses. Red Hat stops rebuilding a RHEL minor's tag once the next minor ships (9.5 failed
+// CI's image scan on 2026-11-02 with fixes only in 9.8), so moving the tag is one change to both.
+func TestReadmeNamesTheBaseImage(t *testing.T) {
+	base := parseDockerfile(t, filepath.Join("..", "Dockerfile")).args["BASE_IMAGE"]
+	if !strings.HasPrefix(base, "registry.access.redhat.com/ubi9/ubi-micro") {
+		t.Fatalf("Dockerfile default BASE_IMAGE = %q, want registry.access.redhat.com/ubi9/ubi-micro", base)
+	}
+	build := section(readFile(t, filepath.Join("..", "README.md")), "## Build")
+	if !strings.Contains(build, "`"+base+"`") {
+		t.Errorf("the README's Build section should name the base image %s", base)
+	}
+}
+
 // G-2-14: the final stage labels the image with what it is and which build it is, so registry
 // UIs and scanners can tell builds apart. The version and revision come from build args that
 // the stage itself declares with a default: an ARG the stage does not declare expands to "".

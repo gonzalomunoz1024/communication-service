@@ -340,6 +340,12 @@ micro. Once Red Hat ships Go 1.27.3 or later,
 `--build-arg GO_IMAGE=registry.access.redhat.com/ubi9/go-toolset:1.27` builds with it unchanged: the
 build stage takes the CA bundle from Debian's path or UBI's, whichever the builder has.
 
+The image runs on `registry.access.redhat.com/ubi9/ubi-micro:9.8`, UBI micro on the newest RHEL 9
+minor. Red Hat stops rebuilding a minor's tag once the next minor ships, so the tag has to move with
+the releases: `9.5`, the default until 2026-11-02, failed CI's image scan with eight HIGH findings in
+`libacl`, `libcap` and `pcre2` that 9.8 fixes. When RHEL 9.9 ships, change the tag here and in the
+`Dockerfile`, or pass `--build-arg BASE_IMAGE=…` to try it first.
+
 The tests under `deploy/` render the Kustomize snippets with `kustomize`, render the Helm `include`
 lines this README prints, pasted into a consuming chart, with `helm`, and validate every form with
 `kubeconform`. Without these tools on `PATH` they skip on a laptop; when `CI` is set (as GitHub
