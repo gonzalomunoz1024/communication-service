@@ -27,9 +27,19 @@ Pick one. The team's own manifests do not change in the first two.
 
 | Path | What the team does |
 | --- | --- |
-| **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap with `CS_ENDPOINT`, `CS_TENANT`, `CS_CLUSTER` |
+| **Kustomize** ([deploy/kustomize](deploy/kustomize)) | adds `components: [<component path>]` to its kustomization and a `cs-health-sidecar` ConfigMap in the app's namespace with `CS_ENDPOINT`, `CS_TENANT` and, optionally, `CS_CLUSTER` ([example](deploy/kustomize/example)) |
 | **Helm** ([deploy/helm/cs-health-sidecar](deploy/helm/cs-health-sidecar)) | adds the library chart as a dependency, `{{ include "cs-health-sidecar.container" . }}` under `containers`, and `csHealthSidecar.endpoint` / `.tenant` in values |
 | **Plain YAML** ([deploy/manual/deployment.yaml](deploy/manual/deployment.yaml)) | pastes the container block |
+
+Whichever path, the two values every team needs are `CS_ENDPOINT` (the communication service's
+Route, e.g. `https://communication.apps.example.com`) and `CS_TENANT`: the tenant id the service
+groups notices under, the same value the dependent systems pass as `/v1/feed?tenantId=`. Tenants
+are assigned by the communication-service owners when a team is onboarded; ask them for yours
+rather than inventing one, because a notice under an unknown tenant reaches nobody.
+
+The chart is a Helm *library* chart: `helm template` on it alone fails by design ("library
+charts are not installable"). Render it through the consuming chart (`helm template my-app ./my-app`
+after adding the dependency and the `include`), which is also where `helm lint` runs.
 
 On OpenShift 4.16+ (Kubernetes 1.29+) prefer the native sidecar form (an init container with
 `restartPolicy: Always`): it starts before the app, stops after it, and never keeps a Job
@@ -40,6 +50,31 @@ strategic-merge patch, so init containers the app already has are kept) and
 
 A mutating admission webhook that injects the container on a single pod annotation is the
 planned next step; the container and its configuration stay the same.
+
+## Image
+
+`registry.example.com/platform/health-sidecar:1.0.0` in the snippets is a placeholder: there is no
+public image. The platform team builds it once from this directory (see [Build](#build)) and pushes
+it to the organisation's registry, and every team points the snippet at that image:
+
+```yaml
+# Kustomize: in the app's kustomization.yaml, next to components:
+images:
+  - name: registry.example.com/platform/health-sidecar
+    newName: registry.apps.example.com/platform/health-sidecar
+    newTag: "1.0.0"
+```
+
+```yaml
+# Helm: in the consuming chart's values.yaml
+csHealthSidecar:
+  image:
+    repository: registry.apps.example.com/platform/health-sidecar
+    tag: "1.0.0"
+```
+
+For plain YAML, edit the `image:` line of the pasted container block. Pin a tag; the snippets use
+`imagePullPolicy: IfNotPresent`.
 
 ## How it finds the app
 
@@ -73,8 +108,13 @@ management.endpoint.health.show-details: always
   heartbeat every 30 s (`CS_HEARTBEAT`) otherwise. 1,000 pods are about 33 requests/s.
 - Until the app has answered UP once, and for at most 5 minutes (`CS_STARTUP_GRACE`), it
   reports UNKNOWN, which the service ignores: slow starts and rolling deploys never open notices.
-  A pinned target (`CS_PORT`) that never answers UP stays UNKNOWN after that, with a message
-  pointing at the configuration, because a wrong port is far more likely than an outage.
+  The same applies to a service that boots unhealthy (its endpoint answers but never UP): it is
+  invisible for the whole grace, then its real status flows. A pinned target (`CS_PORT`) that
+  never answers UP stays UNKNOWN after that, with a message pointing at the configuration,
+  because a wrong port is far more likely than an outage.
+- Once the app has been UP, an app that stops listening (crashed, crash-looping, killed by its
+  liveness probe) is DOWN, reported as `app is not listening (last target …)` on every probe
+  until it listens again; it is then rediscovered and reported UP.
 - On SIGTERM it sends one last report with `instance.leaving: true`, so the pod drops out of
   the service's rollup at once instead of looking dead for the staleness window (90 s).
 - If the communication service is unreachable it keeps only the latest status and retries
@@ -98,11 +138,12 @@ The report body is Actuator's vocabulary plus the instance:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `CS_ENDPOINT` | required | communication service base URL |
-| `CS_TENANT` | required | tenant the service belongs to |
-| `CS_SERVICE` | `app.kubernetes.io/name` label (set by the snippets), else derived from the pod name | service name in reports |
+| `CS_ENDPOINT` | required | communication service base URL (the Route), `http://` or `https://` |
+| `CS_TENANT` | required | tenant id the notices are published under: the value dependent systems use on `/v1/feed?tenantId=`, assigned by the communication-service owners |
+| `CS_SERVICE` | `app.kubernetes.io/name` label (set by the snippets), else derived from the pod name | service name in reports; one monitor per (tenant, service) |
 | `CS_CLIENT_ID` | `CS_SERVICE` | `X-Client-Id` header (the repository name) |
-| `CS_CLUSTER` | empty | cluster name in the instance |
+| `CS_PUBLISHER` | `health-sidecar` | publisher name the auto-registered monitor and its notices carry |
+| `CS_CLUSTER` | empty | cluster name in the instance (optional) |
 | `CS_PROBE` | `auto` | `auto`, `actuator`, `http` or `tcp` |
 | `CS_PORT`, `CS_PATH`, `CS_SCHEME` | discovered | pin the target; `CS_PORT` is required for a non-auto mode |
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
@@ -118,6 +159,43 @@ The report body is Actuator's vocabulary plus the instance:
 
 `GET :9465/status` shows the discovered target, the last probe result, the last report sent and
 the last send error, which is the first place to look when a service does not show up.
+
+## Debugging: "my service does not show up"
+
+The image has no shell or curl, so read the sidecar from outside the pod:
+
+```bash
+oc logs <pod> -c health-sidecar                 # JSON lines: target found, reported, report failed
+oc port-forward <pod> 9465:9465 &
+curl -s localhost:9465/status | jq .
+```
+
+`/status` answers with:
+
+| Field | Meaning |
+| --- | --- |
+| `target` | where the app is probed; empty while discovery is still running |
+| `lastTarget` | the last target probed; set while `target` is empty because the app stopped listening |
+| `upSeen` | whether the app has answered UP since the sidecar started (before that, reports are UNKNOWN) |
+| `lastReport` | the last report composed (status, components, message, instance) |
+| `lastSendAt`, `reportsSent` | when and how often a report reached the service |
+| `sendError` | why the last send failed (`connection refused`, TLS, 401, 400 …) |
+
+On the service side, with the same tenant:
+
+```bash
+curl -s -H 'X-Client-Id: <your repo>' "$CS_ENDPOINT/v1/health/monitors?tenantId=<tenant>"   # the monitor, streaks, open notice
+curl -s -H 'X-Client-Id: <your repo>' "$CS_ENDPOINT/v1/health/monitors/<monitorId>/instances" # every pod that reported
+```
+
+The usual causes, in order:
+
+1. `sendError` is set: wrong `CS_ENDPOINT`, a Route that needs an internal CA (`CS_CA_FILE`), or an
+   egress policy; the app is unaffected, the sidecar retries with backoff.
+2. Reports arrive but under another tenant: `CS_TENANT` differs from the one the consumers read.
+3. `upSeen` is false: the app has not answered UP yet; during `CS_STARTUP_GRACE` the service
+   ignores the UNKNOWN reports (see the previous section). If `target` is empty after the grace,
+   nothing in the pod answered any health path: set `CS_PORT` (and `CS_PATH`).
 
 ## Build
 

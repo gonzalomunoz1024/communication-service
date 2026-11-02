@@ -70,8 +70,9 @@ func workload(t *testing.T, stream, kind, name string) string {
 	return ""
 }
 
-// item is one entry of a container list in the rendered YAML (kustomize indents list items at
-// the key's own indentation and sorts keys, so "name:" is not the first line of an item).
+// item is one entry of a container list in a YAML document. kustomize renders list items at the
+// key's own indentation with sorted keys (so "name:" is not the first line of an item); the
+// hand-written snippets indent items two spaces deeper, and both shapes are accepted.
 type item struct {
 	name string
 	body string
@@ -81,7 +82,7 @@ type item struct {
 func listItems(doc, key string) []item {
 	lines := strings.Split(doc, "\n")
 	var items []item
-	keyIndent := -1
+	keyIndent, itemIndent := -1, -1
 	var current *strings.Builder
 	flush := func() {
 		if current != nil {
@@ -99,16 +100,25 @@ func listItems(doc, key string) []item {
 			}
 			continue
 		}
-		switch {
-		case strings.TrimSpace(line) == "":
+		if strings.TrimSpace(line) == "" {
 			continue
-		case indent == keyIndent && strings.HasPrefix(trimmed, "- "):
+		}
+		if itemIndent < 0 {
+			if indent < keyIndent || !strings.HasPrefix(trimmed, "- ") {
+				return items // not a block list (empty, or a scalar)
+			}
+			itemIndent = indent
+		}
+		switch {
+		case indent == itemIndent && strings.HasPrefix(trimmed, "- "):
 			flush()
 			current = &strings.Builder{}
-			current.WriteString(strings.Repeat(" ", keyIndent+2) + trimmed[2:] + "\n")
-		case indent > keyIndent && current != nil:
+			current.WriteString(strings.Repeat(" ", itemIndent+2) + trimmed[2:] + "\n")
+		case indent > itemIndent && current != nil:
 			current.WriteString(line + "\n")
-		default: // back at or above the key's level: the list ended
+		case indent >= itemIndent && strings.HasPrefix(trimmed, "#"):
+			continue // a comment between items
+		default: // back at or above the items' level: the list ended
 			flush()
 			return items
 		}
@@ -212,11 +222,7 @@ func TestBothComponentsShareTheContainerContract(t *testing.T) {
 	if sidecar == nil || container == nil {
 		t.Fatal("health-sidecar missing from a rendered form")
 	}
-	for _, want := range []string{
-		"allowPrivilegeEscalation: false", "readOnlyRootFilesystem: true", "runAsNonRoot: true",
-		"- ALL", "type: RuntimeDefault", "path: /healthz", "memory: 16Mi", "memory: 32Mi",
-		"name: cs-health-sidecar", "fieldPath: metadata.labels['app.kubernetes.io/name']",
-	} {
+	for _, want := range containerContract {
 		if !strings.Contains(sidecar.body, want) {
 			t.Errorf("native sidecar lacks %q", want)
 		}
@@ -224,10 +230,52 @@ func TestBothComponentsShareTheContainerContract(t *testing.T) {
 			t.Errorf("classic sidecar lacks %q", want)
 		}
 	}
+	if !dropsAllCapabilities(sidecar.body) || !dropsAllCapabilities(container.body) {
+		t.Error("both forms must drop ALL capabilities")
+	}
 	if strings.Contains(sidecar.body, "runAsUser") || strings.Contains(container.body, "runAsUser") {
 		t.Error("snippets must not pin runAsUser: restricted-v2 assigns an arbitrary UID")
 	}
 	if _, err := os.Stat(filepath.Join("kustomize", "component", "add-native-sidecar.yaml")); err == nil {
 		t.Error("the JSON-patch native form must stay removed: it replaced existing init containers")
 	}
+}
+
+// G-1-19: the plain-YAML snippet is "the same container block" as the components, so it must
+// carry the same image policy, port and security settings.
+func TestManualSnippetSharesTheContainerContract(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("manual", "deployment.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	manual := string(raw)
+	sidecar := find(listItems(workload(t, manual, "Deployment", "payments-api"), "containers"), "health-sidecar")
+	if sidecar == nil {
+		t.Fatal("health-sidecar missing from deploy/manual/deployment.yaml")
+	}
+	for _, want := range append([]string{"imagePullPolicy: IfNotPresent", "protocol: TCP", "containerPort: 9465"}, containerContract...) {
+		if !strings.Contains(sidecar.body, want) {
+			t.Errorf("manual snippet lacks %q", want)
+		}
+	}
+	if !dropsAllCapabilities(sidecar.body) {
+		t.Error("the manual snippet must drop ALL capabilities")
+	}
+	if strings.Contains(sidecar.body, "runAsUser") {
+		t.Error("the manual snippet must not pin runAsUser: restricted-v2 assigns an arbitrary UID")
+	}
+	kubeconform(t, manual, "1.27.0")
+}
+
+// containerContract is what every form of the sidecar container must carry.
+var containerContract = []string{
+	"allowPrivilegeEscalation: false", "readOnlyRootFilesystem: true", "runAsNonRoot: true",
+	"type: RuntimeDefault", "path: /healthz", "memory: 16Mi", "memory: 32Mi",
+	"name: cs-health-sidecar", "fieldPath: metadata.labels['app.kubernetes.io/name']",
+}
+
+// dropsAllCapabilities accepts the block form kustomize renders and the flow form of the
+// hand-written snippet.
+func dropsAllCapabilities(body string) bool {
+	return strings.Contains(body, "- ALL") || strings.Contains(body, `drop: ["ALL"]`) || strings.Contains(body, "drop: [ALL]")
 }

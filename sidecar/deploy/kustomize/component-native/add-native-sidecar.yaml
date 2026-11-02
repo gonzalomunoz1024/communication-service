@@ -1,6 +1,7 @@
 # Strategic-merge patch that adds the health sidecar as a native sidecar (an init container with
 # restartPolicy: Always). initContainers merge by name, so init containers the app already
-# declares (migrations, config fetchers, ...) are kept and the sidecar is appended after them.
+# declares (migrations, config fetchers, ...) are kept; kustomize currently renders the sidecar
+# first, so it starts before the app's own init containers and keeps running alongside the app.
 # kind and metadata.name below are placeholders: kustomize replaces them with each target's own.
 apiVersion: apps/v1
 kind: Deployment
