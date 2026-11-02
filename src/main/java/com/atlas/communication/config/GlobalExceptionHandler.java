@@ -3,10 +3,12 @@ package com.atlas.communication.config;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.TypeMismatchException;
@@ -28,6 +30,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
+import com.atlas.communication.config.RejectUnknownFieldsModule.UnknownFieldsException;
 import com.mongodb.MongoSocketException;
 import com.mongodb.MongoTimeoutException;
 
@@ -191,14 +194,16 @@ public class GlobalExceptionHandler {
                 return field(ife.getPath(), ex.getMethodParameter()) + ": '" + ife.getValue()
                         + "' is not " + expected(ife.getTargetType());
             }
+            if (t instanceof UnknownFieldsException all) {
+                return unknownFields(all.names(), all.knownFields());
+            }
             if (t instanceof UnrecognizedPropertyException upe) {
                 // the dotted path, so a typo inside a nested object reads "ticket.ulr"
                 String name = upe.getPath().isEmpty() ? upe.getPropertyName()
                         : field(upe.getPath(), null);
                 Collection<Object> known = upe.getKnownPropertyIds();
-                return "unknown field '" + name + "'"
-                        + (known == null || known.isEmpty() ? "" : "; known fields: " + known.stream()
-                                .map(Object::toString).sorted().collect(Collectors.joining(", ")));
+                return unknownFields(Collections.singletonList(name),
+                        Collections.singletonMap("", known == null ? List.of() : known));
             }
             if (t instanceof InvalidNullException ine) {
                 // a JSON null where the type takes none, e.g. an entry of affectedServices
@@ -225,6 +230,24 @@ public class GlobalExceptionHandler {
             }
         }
         return safe(ex.getReason());
+    }
+
+    /**
+     * "unknown field 'sevrity'; known fields: …", or every unknown field of the body, sorted, with
+     * the known fields of each object holding one: "unknown fields 'sevrity', 'ticket.ulr'; known
+     * fields: …; known fields of ticket: number, system, url".
+     */
+    private static String unknownFields(List<String> names, Map<String, ? extends Collection<Object>> knownFields) {
+        StringBuilder out = new StringBuilder(names.size() == 1 ? "unknown field " : "unknown fields ")
+                .append(names.stream().map(name -> "'" + name + "'").collect(Collectors.joining(", ")));
+        new TreeMap<>(knownFields).forEach((object, known) -> {
+            if (!known.isEmpty()) {
+                out.append(object.isEmpty() || knownFields.size() == 1 ? "; known fields: "
+                        : "; known fields of " + object + ": ")
+                        .append(known.stream().map(Object::toString).sorted().collect(Collectors.joining(", ")));
+            }
+        });
+        return out.toString();
     }
 
     private static String field(List<JacksonException.Reference> path, MethodParameter parameter) {

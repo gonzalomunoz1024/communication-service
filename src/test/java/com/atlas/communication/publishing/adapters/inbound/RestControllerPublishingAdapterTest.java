@@ -270,6 +270,62 @@ class RestControllerPublishingAdapterTest {
     }
 
     @Test
+    void everyUnknownFieldOfABodyIsNamedInOneAnswerSorted() {
+        // a client that sends back a whole document learns in one answer what to leave out
+        Communication stored = outageFrom(new CreateCommunicationCommand("vmforge", "sre", CommunicationType.OUTAGE,
+                Severity.MAJOR, "down", null, List.of(), null, false, null, null, null, null, null));
+        when(useCase.create(any())).thenAnswer(inv -> Mono.just(outageFrom(inv.getArgument(0))));
+        when(useCase.update(any(), any())).thenReturn(Mono.just(stored));
+        when(useCase.retire(any(), any())).thenReturn(Mono.just(stored));
+        String publishFields = "affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, "
+                + "severity, startsAt, tenantId, ticket, title, type";
+
+        client.post().uri("/v1/communications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"tenantId":"vmforge","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"down",
+                         "sevrity":"MINOR","expiryAt":"2026-11-01T14:00:00Z"}""")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown fields 'expiryAt', 'sevrity'; known fields: " + publishFields);
+        // a nested one by its path, wherever it comes in the body, with the fields of the object holding it
+        for (String body : List.of("""
+                {"ticket":{"number":"INC0012345","ulr":"https://acme.service-now.com/x"},"sevrity":"MINOR",
+                 "tenantId":"vmforge","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"down"}""", """
+                {"tenantId":"vmforge","publisher":"sre","type":"OUTAGE","severity":"MAJOR","title":"down",
+                 "sevrity":"MINOR","ticket":{"ulr":"https://acme.service-now.com/x","number":"INC0012345"}}""")) {
+            client.post().uri("/v1/communications")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(body)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.error").isEqualTo("unknown fields 'sevrity', 'ticket.ulr'; known fields: "
+                            + publishFields + "; known fields of ticket: number, system, url");
+        }
+        client.put().uri("/v1/communications/c1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"id":"c1","status":"ACTIVE","title":"down","version":3,"expectedVersion":3}""")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown fields 'id', 'status', 'version'; known fields: actor, "
+                        + "affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, "
+                        + "ticket, title");
+        client.post().uri("/v1/communications/c1/retire")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"reason":"resolved","actor":"sre","by":"sre"}""")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown fields 'by', 'reason'; known fields: actor, note");
+        verifyNoInteractions(useCase);
+    }
+
+    @Test
     void malformedJsonSaysWhere() {
         client.post().uri("/v1/communications")
                 .contentType(MediaType.APPLICATION_JSON)

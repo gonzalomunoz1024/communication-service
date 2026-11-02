@@ -27,6 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import reactor.core.publisher.Mono;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
@@ -55,6 +57,13 @@ class GlobalExceptionHandlerMessagesTest {
 
     record Notice(String title, Severity severity) { }
 
+    /** Records that refuse a field they do not know, as the request bodies do. */
+    @JsonIgnoreProperties(ignoreUnknown = false)
+    record Slot(Instant from, Instant to) { }
+
+    @JsonIgnoreProperties(ignoreUnknown = false)
+    record Plan(String title, Severity severity, Slot first, List<Slot> slots) { }
+
     /** Stand-ins for handler methods: WebFlux hands the failing method parameter to the exception. */
     static final class Endpoints {
 
@@ -66,6 +75,8 @@ class GlobalExceptionHandlerMessagesTest {
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
     /** Jackson with the defaults these messages were written against: an unknown field fails. */
     private final ObjectMapper json = JsonMapper.builderWithJackson2Defaults().build();
+    /** Jackson as the service sets it up: unknown fields ignored, except by the types that refuse them. */
+    private final ObjectMapper serviceJson = JsonMapper.builder().addModule(new RejectUnknownFieldsModule()).build();
 
     /** A handler method's parameter; {@code named} is what WebFlux does before it resolves arguments. */
     private static MethodParameter parameter(String method, Class<?> type, boolean named) {
@@ -183,6 +194,44 @@ class GlobalExceptionHandlerMessagesTest {
                     .as("known fields %s", known)
                     .isEqualTo("unknown field 'sevrity'");
         }
+    }
+
+    private String unreadablePlan(String body) {
+        try {
+            serviceJson.readValue(body, Plan.class);
+        } catch (JacksonException e) {
+            return inputError(unreadable(e, null));
+        }
+        throw new AssertionError("Jackson accepted " + body);
+    }
+
+    @Test
+    void everyUnknownFieldOfABodyIsNamedSortedWithTheFieldsOfEachObjectHoldingOne() {
+        String plan = "first, severity, slots, title";
+
+        assertThat(unreadablePlan("{\"titel\":\"Checkout down\",\"sevrity\":\"MAJOR\",\"severity\":\"MAJOR\"}"))
+                .isEqualTo("unknown fields 'sevrity', 'titel'; known fields: " + plan);
+        // nested ones by their path (list entries by index), in whatever order the body has them
+        String everywhere = "unknown fields 'first.ot', 'slots[1].form', 'titel'; known fields: " + plan
+                + "; known fields of first: from, to; known fields of slots[1]: from, to";
+        assertThat(unreadablePlan("{\"titel\":\"x\",\"first\":{\"ot\":\"y\"},\"slots\":[{},{\"form\":\"z\"}]}"))
+                .isEqualTo(everywhere);
+        assertThat(unreadablePlan("{\"slots\":[{},{\"form\":\"z\"}],\"first\":{\"ot\":\"y\"},\"titel\":\"x\"}"))
+                .isEqualTo(everywhere);
+        // all in one object: its own fields are the hint, as for a single unknown field
+        assertThat(unreadablePlan("{\"first\":{\"ot\":\"y\",\"form\":\"z\",\"ot\":\"again\"}}"))
+                .isEqualTo("unknown fields 'first.form', 'first.ot'; known fields: from, to");
+        assertThat(unreadablePlan("{\"first\":{\"ot\":\"y\"}}")).isEqualTo("unknown field 'first.ot'; known fields: from, to");
+    }
+
+    @Test
+    void theAnswerAboutUnknownFieldsComesOnceTheRestOfTheBodyBindsSoItNamesThemAll() {
+        // a value that does not bind is answered first, whether it comes before or after the unknown fields
+        assertThat(unreadablePlan("{\"first\":{\"ot\":\"y\"},\"sevrity\":\"MAJOR\",\"severity\":\"HUGE\"}"))
+                .isEqualTo("severity: 'HUGE' is not one of [MINOR, MAJOR]");
+        assertThat(unreadablePlan("{\"first\":{\"ot\":\"y\"},\"sevrity\":\"MAJOR\",\"severity\":\"MINOR\"}"))
+                .isEqualTo("unknown fields 'first.ot', 'sevrity'; known fields: first, severity, slots, title; "
+                        + "known fields of first: from, to");
     }
 
     @Test

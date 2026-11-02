@@ -254,7 +254,10 @@ not send is the publish time: `expiresAt 2026-10-01T09:00:00Z must be after star
 A field the publishing endpoints or monitor registration do not know (publish, update, retire,
 inside `ticket`, and `POST /v1/health/monitors`) is a 400 too, `unknown field 'sevrity'; known
 fields: …`, so a misspelled optional field cannot change what is published, or how a monitor
-judges, without a word. Health reports keep accepting keys they do not know: a
+judges, without a word. The one answer names every unknown field of the body, sorted, a nested one
+by its path (`unknown fields 'sevrity', 'ticket.ulr'; known fields: …; known fields of ticket: number, system, url`),
+so a GET document sent back whole learns at once what to leave out; a value that does not bind is
+answered before them. Health reports keep accepting keys they do not know: a
 forwarded Actuator document carries `groups` and whatever its producer adds.
 
 ### Consumer feed

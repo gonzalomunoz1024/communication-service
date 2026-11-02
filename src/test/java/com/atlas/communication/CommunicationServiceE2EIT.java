@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpStatus;
@@ -391,6 +394,44 @@ class CommunicationServiceE2EIT {
                         """)
                 .exchange()
                 .expectStatus().isAccepted();
+    }
+
+    @Test
+    void aNoticePutBackWholeNamesEveryFieldAnUpdateDoesNotTakeInOneAnswer() {
+        // read-modify-write as a client first tries it: GET the notice, change the body, PUT the document back
+        String id = publishOutage("INC-e2e-put-back").id();
+        Map<String, Object> document = new LinkedHashMap<>(client.get().uri("/v1/communications/{id}", id)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(new ParameterizedTypeReference<Map<String, Object>>() { })
+                .returnResult().getResponseBody());
+        document.put("body", "Mitigation in progress.");
+        List<String> readOnly = List.of("createdAt", "externalRef", "history", "id", "publisher", "status",
+                "tenantId", "type", "updatedAt", "version");
+
+        client.put().uri("/v1/communications/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(document)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.error").isEqualTo("unknown fields 'createdAt', 'externalRef', 'history', 'id', "
+                        + "'publisher', 'status', 'tenantId', 'type', 'updatedAt', 'version'; known fields: actor, "
+                        + "affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, "
+                        + "ticket, title");
+
+        // one answer was enough: without the fields it named, and with the version it read, the update saves
+        Object version = document.get("version");
+        document.keySet().removeAll(readOnly);
+        document.put("expectedVersion", version);
+        client.put().uri("/v1/communications/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(document)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.body").isEqualTo("Mitigation in progress.")
+                .jsonPath("$.version").isEqualTo(1);
     }
 
     @Test
