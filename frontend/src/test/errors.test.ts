@@ -106,6 +106,12 @@ describe('explainPublishError', () => {
     expect(duplicateReference(new ApiError(400, 'externalRef: size must be between 0 and 128', true))).toBeNull()
     expect(explainPublishError(new ApiError(400, 'externalRef: size must be between 0 and 128', true))).toBe('externalRef: size must be between 0 and 128')
   })
+  it("falls back to the service's own words when it cannot tell which reference is taken", () => {
+    // a wording the form cannot read and no request at hand: the service's sentence rather than a guess
+    const e = new ApiError(409, 'externalRef already taken', true)
+    expect(duplicateReference(e)).toBeNull()
+    expect(explainPublishError(e)).toBe('externalRef already taken')
+  })
   it('suggests the next follow-up number, and -2 for anything else', () => {
     expect(['INC0012345', 'INC0012345-1', 'INC0012345-2', 'INC0012345-9', 'payments-2026-11-01', 'payments-2026-11-12', 'v2'].map(nextReference)).toEqual([
       'INC0012345-2',
