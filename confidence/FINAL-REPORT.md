@@ -365,7 +365,7 @@ These are limits of the sandbox, not defects found. Each needs a person with the
 | What | Why not here | Who can close it |
 |---|---|---|
 | The sidecar on OpenShift: restricted-v2 SCC admission, the Kustomize component applied to a cluster, server-side manifest validation (F-80, F-82, F-86 partial) | `kind` cannot run in the sandbox (nested runc fails); no cluster access | someone with an OpenShift 4.16+ namespace |
-| The UBI base image (`ubi9/ubi-micro:9.5`) and a scan of the sidecar image built on it. (The builder `ubi9/go-toolset:1.27` turned out not to exist: PR #9's first CI run got "not found", and the builder is now upstream `golang:1.27`.) | `registry.access.redhat.com` and `quay.io` are blocked; the loop built the sidecar on `local/go-toolset:1.27` (golang 1.27.3 + the CA bundle) and distroless | CI on PR #9, or anyone who can pull from the Red Hat registry |
+| The UBI base image (`ubi9/ubi-micro:9.5`) and a scan of the sidecar image built on it. (Answered after the loop by PR #9's CI: the builder `ubi9/go-toolset:1.27` does not exist, so the builder is now upstream `golang:1.27`; the scan failed on 9.5 with 8 fixable HIGH findings, so the base is now `ubi-micro:9.8`, which scans clean here through Red Hat's Docker Hub copy, `evidence/after-loop/sidecar-base-scan.txt`.) | `registry.access.redhat.com` and `quay.io` are blocked; the loop built the sidecar on `local/go-toolset:1.27` (golang 1.27.3 + the CA bundle) and distroless | CI on PR #9, or anyone who can pull from the Red Hat registry |
 | The GitHub Actions workflows (`ci.yml`, `e2e.yml`), including the new image-scan and govulncheck steps | no Actions runner; every step's command was run locally instead | the pull request's own CI run |
 | Trivy's Java database (`trivy image` reading the jar inside the backend image) | about 1 GB compressed, more than the sandbox's disk allows; the libraries were scanned through the SBOM instead (0 findings) | CI (`ci.yml` runs `trivy sbom` and `trivy image`) |
 | A real screen reader, and browsers other than Chromium | only headless Chromium (Playwright) is available; accessibility was checked with axe-core, the accessibility tree and keyboard-only scripts | a manual pass with VoiceOver or NVDA |
@@ -405,7 +405,7 @@ iterations 1 to 3 and the iteration-4 verifiers. The iteration-4 audit did not g
 | D4 | `communication.servicenow.instance-url` is set in production so ticket links work | assumed | not confirmed |
 | D5 | An admin hard delete (`DELETE /v1/admin/communications/{id}`) writes no event, so screens that show the notice keep it until they reload | left as is | **open product question** |
 | D6 | A pod that never became UP stays UNKNOWN after the start-up grace instead of counting as DOWN (G-3-18) | left as is | **open product question** |
-| D7 | The UBI images: `ubi9/go-toolset:1.27` (builder) and `ubi9/ubi-micro:9.5` (base) exist and scan clean; CI's new sidecar image scan runs on that base | not verifiable here (registry blocked); both are tags, not digests | **answered in part by PR #9's first CI run (2026-11-02 12:58Z): `ubi9/go-toolset:1.27` does not exist ("not found"), so the sidecar now builds on upstream `golang:1.27` and still runs on UBI micro (commit `1fa210b`; Gonzalo to confirm). `ubi9/ubi-micro:9.5` and digest pinning stay open** |
+| D7 | The UBI images: `ubi9/go-toolset:1.27` (builder) and `ubi9/ubi-micro:9.5` (base) exist and scan clean; CI's new sidecar image scan runs on that base | not verifiable here (registry blocked); both are tags, not digests | **answered by PR #9's CI (2026-11-02): `ubi9/go-toolset:1.27` does not exist ("not found"), so the sidecar builds on upstream `golang:1.27` (commit `1fa210b`); the image scan then failed on `ubi-micro:9.5` with 8 HIGH findings fixed only in RHEL 9.8 (Red Hat stopped rebuilding the 9.5 tag in May 2025), so the base is now `ubi-micro:9.8` (commit `7eeff6e`, `evidence/after-loop/sidecar-base-scan.txt`). Gonzalo to confirm both. Open: the minor tag goes stale again after RHEL 9.9 ships; bump it by hand, float on `latest`, or pin a digest that a bot moves** |
 | D8 | HIGH entries with no fix released (4 in the backend image's `libuuid1`) are acceptable under CI's `--ignore-unfixed` rule | applied as the rule is written | **not ruled**: the backend verifier applied CI's rule; the audit stopped before ruling. Read literally, the gate would cap the backend and E2E at 80 (§1) |
 
 ## 8. How to reproduce from a clean checkout
@@ -428,14 +428,15 @@ trivy image --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-cod
 # Sidecar (Go 1.27.3)
 ( cd sidecar && test -z "$(gofmt -l .)" && go vet ./... && CI=true go test -race ./... \
   && go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./... )
-docker build -t health-sidecar:local sidecar/        # UBI builder and base by default; see sidecar/README.md
+docker build -t health-sidecar:local sidecar/        # upstream Go builder, UBI micro base; see sidecar/README.md
 
 # End-to-end suite (Docker compose + Playwright), as e2e/README.md describes
 ( cd e2e && npm ci && npm run lint && npm run typecheck && ./stack.sh up && npx playwright test; ./stack.sh down )
 ```
 
-Where the UBI registry is unreachable, `e2e/README.md` shows the `local/go-toolset:1.27` stand-in and
-`BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot`, which is how this loop built the sidecar. In this sandbox the
+Where Red Hat's registry is unreachable, `e2e/README.md` shows `BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot`;
+the loop built the sidecar on distroless and on a `local/go-toolset:1.27` stand-in (golang 1.27.3 plus a CA bundle),
+before the builder became upstream `golang:1.27`. In this sandbox the
 integration tests ran against a `mongod` copied from the `mongo:7.0` image into flapdoodle's cache, Trivy came from
 `mirror.gcr.io` and govulncheck used `-db https://storage.googleapis.com/go-vulndb`.
 
