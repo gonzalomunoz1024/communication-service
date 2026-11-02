@@ -33,7 +33,10 @@ proxy error). When that happens the client reopens the stream itself, with expon
 the service replays what was missed; after it is back, the list is reloaded once from `/v1/feed`
 in case the replay did not cover the gap. **Try again** in the error state reopens it at once.
 
-`npm test` runs the unit tests (validation, feed state, client); `npm run typecheck` type-checks.
+`npm test` runs the unit and component tests (vitest; pure modules in Node, components in
+jsdom with Testing Library), `npm run test:coverage` adds a V8 coverage report (`coverage/`),
+`npm run typecheck` type-checks and `npm run lint` runs ESLint with the React Compiler-era hooks
+rules. `npm run build` type-checks and bundles to `dist/`.
 
 ## What it calls
 
