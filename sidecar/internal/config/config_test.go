@@ -127,6 +127,30 @@ func TestInsecureSkipVerifyAcceptsTheDocumentedSpellingsOnly(t *testing.T) {
 	}
 }
 
+// G-3-15: a report waits longer than the service's own database timeout (5 s,
+// communication.mongo.server-selection-timeout in its application.yml): while the service
+// cannot reach its database it answers 503 "database unavailable" after those 5 s, and that
+// answer must arrive before the sidecar gives up, so /status.sendError names the real cause
+// instead of "context deadline exceeded". An explicit CS_REPORT_TIMEOUT still wins.
+func TestReportTimeoutDefaultOutlastsTheServiceDatabaseTimeout(t *testing.T) {
+	vars := map[string]string{
+		"CS_ENDPOINT": "https://communication.apps.example.com", "CS_TENANT": "retail",
+		"POD_NAME": "payments-api-7f9c6d5b4-x2k4q",
+	}
+	cfg, err := FromEnv(env(vars))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	const serviceDatabaseTimeout = 5 * time.Second
+	if cfg.ReportTimeout != 10*time.Second || cfg.ReportTimeout <= serviceDatabaseTimeout {
+		t.Errorf("CS_REPORT_TIMEOUT default = %v, want 10s: longer than the service's %v database timeout", cfg.ReportTimeout, serviceDatabaseTimeout)
+	}
+	vars["CS_REPORT_TIMEOUT"] = "3s"
+	if cfg, err := FromEnv(env(vars)); err != nil || cfg.ReportTimeout != 3*time.Second {
+		t.Errorf("an explicit CS_REPORT_TIMEOUT should win: %v %v", cfg.ReportTimeout, err)
+	}
+}
+
 func TestParsePortRanges(t *testing.T) {
 	ranges, err := ParsePortRanges("80, 8000-8099")
 	if err != nil || len(ranges) != 2 || !ranges[1].Contains(8050) || ranges[1].Contains(8100) {

@@ -162,7 +162,7 @@ The report body is Actuator's vocabulary plus the instance:
 | `CS_HOST` | `127.0.0.1,::1` | addresses tried for the app |
 | `CS_IGNORE_PORTS` | `15000-15099` | ports discovery skips, e.g. `15000-15099,9090` |
 | `CS_INTERVAL` / `CS_HEARTBEAT` | `15s` / `30s` | probe cadence / resend cadence while nothing changes and the report is UP with no failing component, or UNKNOWN (a DOWN or degraded report is sent every probe, see [What it reports and when](#what-it-reports-and-when)) |
-| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `5s` | per probe / per report |
+| `CS_PROBE_TIMEOUT` / `CS_REPORT_TIMEOUT` | `3s` / `10s` | per probe / per report, the leaving report on SIGTERM included. The report timeout is longer than the service's own 5 s database timeout, so while the service cannot reach its database its 503 `database unavailable` arrives before the sidecar gives up and `sendError` names that cause, not a timeout |
 | `CS_STARTUP_GRACE` | `5m` | UNKNOWN until the first UP, at most this long |
 | `CS_RETRY_DELAY` | `2s` | second probe before a non-UP answer counts |
 | `CS_LISTEN` | `:9465` | the sidecar's own `/healthz` and `/status` |

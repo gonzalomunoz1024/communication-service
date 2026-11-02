@@ -147,7 +147,7 @@ func FromEnv(get func(string) string) (Config, error) {
 		Interval:           dur("CS_INTERVAL", 15*time.Second),
 		Heartbeat:          dur("CS_HEARTBEAT", 30*time.Second),
 		ProbeTimeout:       dur("CS_PROBE_TIMEOUT", 3*time.Second),
-		ReportTimeout:      dur("CS_REPORT_TIMEOUT", 5*time.Second),
+		ReportTimeout:      dur("CS_REPORT_TIMEOUT", 10*time.Second),
 		StartupGrace:       dur("CS_STARTUP_GRACE", 5*time.Minute),
 		RetryDelay:         dur("CS_RETRY_DELAY", 2*time.Second),
 		Listen:             str("CS_LISTEN", ":9465"),
