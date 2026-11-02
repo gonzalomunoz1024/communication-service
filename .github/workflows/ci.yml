@@ -82,16 +82,21 @@ jobs:
           go-version-file: sidecar/go.mod
           # the module has no third-party dependencies, so there is no go.sum to key a cache on
           cache: false
-      # the manifest tests render the Kustomize snippets and the Helm library and validate them
+      # the manifest tests render the Kustomize snippets and the Helm library and validate them;
+      # pinned to the versions the tests were last run with (kustomize 5.5.0, helm 3.16.3)
       - uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.5.0"
       - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
       - name: Install kubeconform
         run: |
           curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
             | sudo tar -xz -C /usr/local/bin kubeconform
           kubeconform -v
       - run: go vet ./...
-      # CI=true makes deploy_test.go fail instead of skip when kustomize or kubeconform is missing
+      # CI=true makes the deploy tests fail instead of skip when kustomize, helm or kubeconform is missing
       - run: CI=true go test ./...
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
