@@ -334,6 +334,108 @@ func TestRediscoversWhenPortDisappears(t *testing.T) {
 	}
 }
 
+// G-1-2: an app that was UP and then stopped listening (crashed, crash-looping) must stay DOWN
+// on every later tick, not drop to UNKNOWN (which the service ignores) because discovery finds
+// nothing; when it listens again it is rediscovered and UP.
+func TestAppThatStopsListeningStaysDownUntilItIsBack(t *testing.T) {
+	app := newFakeApp(t, "UP")
+	cfg := baseConfig()
+	cfg.RetryDelay = 2 * time.Second
+	h := newHarness(t, cfg, app.port)
+	var slept []time.Duration
+	h.agent.Sleep = func(_ context.Context, d time.Duration) { slept = append(slept, d) }
+	ctx := context.Background()
+
+	h.agent.Tick(ctx)
+	if last := h.sender.last(); last.Status != "UP" {
+		t.Fatalf("the app should be UP first: %+v", last)
+	}
+	target := h.agent.Status().Target
+
+	// the app dies: its port is gone and stays gone
+	app.srv.Close()
+	h.agent.ProcRoot = procRoot(t)
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx) // notices the port vanished and drops the target (see the test above)
+	for i := 1; i <= 3; i++ {
+		h.advance(15 * time.Second)
+		h.agent.Tick(ctx)
+		last := h.agent.Status().Last
+		if last == nil || last.Status != "DOWN" {
+			t.Fatalf("tick %d after the app died: a dead app is DOWN, got %+v", i, last)
+		}
+		if !strings.Contains(last.Message, "not listening") || !strings.Contains(last.Message, target) {
+			t.Errorf("tick %d: the DOWN report should name the vanished target, got %q", i, last.Message)
+		}
+	}
+	if sent := h.sender.last(); sent.Status != "DOWN" {
+		t.Errorf("the heartbeat while the app is dead should carry DOWN: %+v", sent)
+	}
+	if s := h.agent.Status(); s.Target != "" || s.LastTarget != target {
+		t.Errorf("status while the app is dead should keep naming the last target: %+v", s)
+	}
+	// every miss after the first UP gets the same second look a non-UP answer gets
+	if len(slept) != 4 {
+		t.Errorf("expected one retry sleep per tick since the app died, got %v", slept)
+	}
+	for _, d := range slept {
+		if d != cfg.RetryDelay {
+			t.Errorf("slept %v, want the retry delay %v", d, cfg.RetryDelay)
+		}
+	}
+
+	// the app comes back on another port: rediscovered and UP at once
+	again := newFakeApp(t, "UP")
+	h.agent.ProcRoot = procRoot(t, again.port)
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx)
+	if last := h.sender.last(); last.Status != "UP" {
+		t.Fatalf("a restarted app is UP again: %+v", last)
+	}
+	if s := h.agent.Status(); !strings.Contains(s.Target, strconv.Itoa(again.port)) || s.LastTarget != s.Target {
+		t.Errorf("status after the restart should show the new target: %+v", s)
+	}
+}
+
+// Before the first UP a missing app is still "starting" (UNKNOWN), exactly as before.
+func TestAppNeverSeenUpIsUnknownWhileNothingListens(t *testing.T) {
+	cfg := baseConfig()
+	cfg.RetryDelay = 2 * time.Second
+	h := newHarness(t, cfg) // nothing listens
+	slept := 0
+	h.agent.Sleep = func(context.Context, time.Duration) { slept++ }
+	ctx := context.Background()
+	for i := 0; i < 3; i++ {
+		h.advance(15 * time.Second)
+		h.agent.Tick(ctx)
+		if last := h.sender.last(); last.Status != "UNKNOWN" || !strings.Contains(last.Message, "starting") {
+			t.Fatalf("tick %d: no app yet should be UNKNOWN: %+v", i, last)
+		}
+	}
+	if slept != 0 {
+		t.Errorf("no retry delay is spent before the app was ever UP, slept %d times", slept)
+	}
+}
+
+// When the port table itself cannot be read nothing can be said, so the report is UNKNOWN
+// rather than a false DOWN, even after the app has been UP.
+func TestUnreadablePortTableIsUnknownNotDown(t *testing.T) {
+	app := newFakeApp(t, "UP")
+	h := newHarness(t, baseConfig(), app.port)
+	ctx := context.Background()
+	h.agent.Tick(ctx)
+	app.srv.Close()
+	h.agent.ProcRoot = procRoot(t)
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx)              // target dropped
+	h.agent.ProcRoot = t.TempDir() // no net/tcp at all
+	h.advance(15 * time.Second)
+	h.agent.Tick(ctx)
+	if last := h.agent.Status().Last; last == nil || last.Status != "UNKNOWN" || !strings.Contains(last.Message, "listening ports") {
+		t.Errorf("an unreadable port table should give UNKNOWN with the reason: %+v", last)
+	}
+}
+
 func TestHandler(t *testing.T) {
 	h := newHarness(t, baseConfig())
 	srv := httptest.NewServer(h.agent.Handler())

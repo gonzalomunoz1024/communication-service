@@ -49,15 +49,18 @@ type Agent struct {
 	mu        sync.Mutex
 	startedAt time.Time
 	target    *probe.Target
-	upSeen    bool
-	last      report.Report
-	lastSig   string
-	lastSend  time.Time
-	sendErr   string
-	dirty     bool
-	backoff   time.Duration
-	nextSend  time.Time
-	sent      int
+	// lastTarget is the target most recently probed; it is kept when target is dropped for
+	// rediscovery so a vanished app can be named in its DOWN report and on /status.
+	lastTarget *probe.Target
+	upSeen     bool
+	last       report.Report
+	lastSig    string
+	lastSend   time.Time
+	sendErr    string
+	dirty      bool
+	backoff    time.Duration
+	nextSend   time.Time
+	sent       int
 }
 
 // New wires an Agent.
@@ -81,7 +84,7 @@ func New(cfg config.Config, prober *probe.Prober, sender Sender, log *slog.Logge
 	}
 	if cfg.Fixed() {
 		t := fixedTarget(cfg)
-		a.target = &t
+		a.target, a.lastTarget = &t, &t
 	}
 	return a
 }
@@ -150,15 +153,7 @@ func (a *Agent) observe(ctx context.Context) (probe.Result, *probe.Target) {
 	a.mu.Unlock()
 
 	if target == nil {
-		t, res, ok := a.detect(ctx)
-		if !ok {
-			return probe.Result{Status: probe.UNKNOWN, Message: "no health target found yet"}, nil
-		}
-		a.log.Info("health target found", "target", t.String(), "status", res.Status)
-		a.mu.Lock()
-		a.target = &t
-		a.mu.Unlock()
-		return res, &t
+		return a.discover(ctx)
 	}
 
 	res := a.prober.Probe(ctx, *target)
@@ -179,13 +174,51 @@ func (a *Agent) observe(ctx context.Context) (probe.Result, *probe.Target) {
 	return res, target
 }
 
-func (a *Agent) detect(ctx context.Context) (probe.Target, probe.Result, bool) {
+// discover looks for the app when no target is known. Before the app has ever answered UP a
+// miss means "still starting" (UNKNOWN, which the service ignores). After it has, a miss means
+// the app stopped listening: that is DOWN, named after the target that vanished, so a crashed or
+// crash-looping app opens an outage instead of looking like a pod that is still starting.
+func (a *Agent) discover(ctx context.Context) (probe.Result, *probe.Target) {
+	t, res, found, err := a.detect(ctx)
+	if err != nil {
+		return probe.Result{Status: probe.UNKNOWN, Message: "cannot list listening ports: " + err.Error()}, nil
+	}
+	a.mu.Lock()
+	upSeen, last := a.upSeen, a.lastTarget
+	a.mu.Unlock()
+	if !found && upSeen && a.cfg.RetryDelay > 0 {
+		a.Sleep(ctx, a.cfg.RetryDelay) // the same second look a non-UP answer gets
+		if t, res, found, err = a.detect(ctx); err != nil {
+			return probe.Result{Status: probe.UNKNOWN, Message: "cannot list listening ports: " + err.Error()}, nil
+		}
+	}
+	if !found {
+		if !upSeen {
+			return probe.Result{Status: probe.UNKNOWN, Message: "no health target found yet"}, nil
+		}
+		msg := "app is not listening"
+		if last != nil {
+			msg += " (last target " + last.String() + ")"
+		}
+		return probe.Result{Status: probe.DOWN, Message: msg, Unreachable: true}, nil
+	}
+	a.log.Info("health target found", "target", t.String(), "status", res.Status)
+	a.mu.Lock()
+	a.target, a.lastTarget = &t, &t
+	a.mu.Unlock()
+	return res, &t
+}
+
+// detect runs discovery over the pod's listening ports. found is false when no port answered;
+// err is set when the port table itself could not be read, in which case nothing can be said.
+func (a *Agent) detect(ctx context.Context) (probe.Target, probe.Result, bool, error) {
 	ports, err := a.ports()
 	if err != nil {
 		a.log.Warn("cannot list listening ports", "error", err)
-		return probe.Target{}, probe.Result{}, false
+		return probe.Target{}, probe.Result{}, false, err
 	}
-	return a.prober.Detect(ctx, ports, a.cfg.Hosts, a.cfg.Scheme)
+	t, res, ok := a.prober.Detect(ctx, ports, a.cfg.Hosts, a.cfg.Scheme)
+	return t, res, ok, nil
 }
 
 func (a *Agent) ports() ([]int, error) {
@@ -196,7 +229,9 @@ func (a *Agent) ports() ([]int, error) {
 // compose turns an observation into the report to send, applying the startup rule: until the
 // app has answered UP once, and while the grace period runs, the instance is UNKNOWN, which
 // the service ignores. A pinned target that never answers UP stays UNKNOWN after the grace,
-// because that is far more often a wrong port than an outage.
+// because that is far more often a wrong port than an outage. Once UP has been seen the
+// observation passes through unchanged, including the DOWN discover() reports for an app that
+// stopped listening.
 func (a *Agent) compose(res probe.Result, target *probe.Target, now time.Time) report.Report {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -312,11 +347,14 @@ func (a *Agent) leave() {
 
 // Snapshot is what /status returns.
 type Snapshot struct {
-	Version     string         `json:"version"`
-	Service     string         `json:"service"`
-	Tenant      string         `json:"tenant"`
-	Instance    string         `json:"instance"`
-	Target      string         `json:"target,omitempty"`
+	Version  string `json:"version"`
+	Service  string `json:"service"`
+	Tenant   string `json:"tenant"`
+	Instance string `json:"instance"`
+	Target   string `json:"target,omitempty"`
+	// LastTarget is the target last probed; it stays set while Target is empty because the app
+	// stopped listening and discovery is running again.
+	LastTarget  string         `json:"lastTarget,omitempty"`
 	UpSeen      bool           `json:"upSeen"`
 	Last        *report.Report `json:"lastReport,omitempty"`
 	LastSendAt  *time.Time     `json:"lastSendAt,omitempty"`
@@ -334,6 +372,9 @@ func (a *Agent) Status() Snapshot {
 	}
 	if a.target != nil {
 		s.Target = a.target.String()
+	}
+	if a.lastTarget != nil {
+		s.LastTarget = a.lastTarget.String()
 	}
 	if a.last.Service != "" {
 		last := a.last
