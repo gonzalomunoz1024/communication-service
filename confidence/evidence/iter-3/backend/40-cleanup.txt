@@ -1,0 +1,8 @@
+# 40 - cleanup (2026-11-02T07:38:21Z)
+
+DELETE /v1/health/monitors/{id} for 98 vb3* monitors on :8080 -> {204: 98}
+vb3* monitors left on :8080: 0
+Private backends stopped with SIGTERM: :19100 :19101 :19105 :19110 :19120 :19190 :19195 (:19121, :19141 and :19150 had already ended); stub :19160 stopped. All gone after 8 s.
+docker rm -f vb3-mongo -> removed; no vb3- container left. mongo7, app, sidecar untouched (Up), shared :8080 readiness 200 afterwards.
+Kept on purpose: databases on mongo7 vb3_cookbook, vb3_dropped, vb3_eff, vb3_gaps, vb3_image, vb3_iter2ab, vb3_pair, vb3_sigterm (evidence can be re-read; drop with db.dropDatabase() when the loop ends); communications of my vb3-* tenants in the shared 'communication' database; images vb3-backend:test and mirror.gcr.io/aquasec/trivy:0.58.1 (+ its DB cache in the scratchpad, reusable by the other verifiers).
+Later (2026-11-02T07:41:35Z): for 26d I started the stub :19160 and :19125 (iteration-3 jar, db vb3_g27d) + :19126 (iteration-2 jar, db vb3_g27d2) again, default configuration; all three stopped with SIGTERM after the run (databases vb3_g27d, vb3_g27d2 kept).

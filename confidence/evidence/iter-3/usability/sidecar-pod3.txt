@@ -1,0 +1,86 @@
+
+### [07:08:43.606] P1 the sidecar alone in the pod (no app yet)
+started
+/status after 6 s:
+{'version': 'ci-iter3', 'service': 'payments-api', 'tenant': 'ux3-sidecar', 'instance': 'payments-api-7f9c6d5b4-ux3aa', 'target': None, 'lastTarget': None, 'upSeen': False, 'sendError': None, 'reportsSent': 1, 'lastSendAt': '2026-11-02T07:08:44.354237921Z'}
+  lastReport: UNKNOWN 'starting: waiting for the app to listen' components: None
+
+### [07:08:50.399] P2 README service-side checks while nothing answers
+[{"id":"11c708cc-e2fb-40d5-90c0-f4637bd57b18","tenantId":"ux3-sidecar","service":"payments-api","policy":{"publisher":"health-sidecar","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":90,"minHealthyPercent":50},"state":{"lastStatus":"UNKNOWN","lastReportAt":"2026-11-02T07:08:44.365Z","lastSummary":"UNKNOWN (1 pod starting, none reporting yet)","unhealthyStreak":0,"healthyS
+/status after the 20 s grace:
+{'version': 'ci-iter3', 'service': 'payments-api', 'tenant': 'ux3-sidecar', 'instance': 'payments-api-7f9c6d5b4-ux3aa', 'target': None, 'lastTarget': None, 'upSeen': False, 'sendError': None, 'reportsSent': 2, 'lastSendAt': '2026-11-02T07:08:57.451856664Z'}
+  lastReport: UNKNOWN 'starting: waiting for the app to listen' components: None
+
+### [07:09:07.449] P3 the app starts in the same namespace
+app started at 07:09:07.638
+upSeen after ~4 s
+{'version': 'ci-iter3', 'service': 'payments-api', 'tenant': 'ux3-sidecar', 'instance': 'payments-api-7f9c6d5b4-ux3aa', 'target': 'http://127.0.0.1:8080/actuator/health', 'lastTarget': 'http://127.0.0.1:8080/actuator/health', 'upSeen': True, 'sendError': None, 'reportsSent': 3, 'lastSendAt': '2026-11-02T07:09:07.687817292Z'}
+  lastReport: UP None components: {'db': {'details': {'database': 'PostgreSQL'}, 'status': 'UP'}, 'ping': {'status': 'UP'}}
+
+### [07:09:09.735] P4 README curls: monitor, instances, and the consumers' tenant misspelled (cause 2)
+[{"id":"11c708cc-e2fb-40d5-90c0-f4637bd57b18","tenantId":"ux3-sidecar","service":"payments-api","policy":{"publisher":"health-sidecar","intervalSeconds":30,"timeoutMs":5000,"failureThreshold":2,"recoveryThreshold":2,"downSeverity":"MAJOR","degradedSeverity":"MINOR","audience":"CUSTOMERS","staleAfterSeconds":90,"minHealthyPercent":50},"state":{"lastStatus":"UP","lastReportAt":"2026-11-02T07:09:07.693Z","lastSummary":"UP (1 of 1 pod UP)","unhealthyStreak":0,"healthyStreak":1,"incidents":0},"createdAt":"2026-11-02T07:08:44.374Z","updatedAt":"2026-11-02T07:09:07.693Z","version":3}]
+
+monitorId=11c708cc-e2fb-40d5-90c0-f4637bd57b18
+[{"monitorId":"11c708cc-e2fb-40d5-90c0-f4637bd57b18","instanceId":"payments-api-7f9c6d5b4-ux3aa","status":"UP","components":[],"namespace":"ux3-ns","node":"worker-1","cluster":"sandbox","version":"1.4.2","sidecar":"ci-iter3","left":false,"lastSeenAt":"2026-11-02T07:09:07.693Z"}]
+under another tenant:
+[]
+
+### [07:09:09.844] P5 the app stops listening (docker stop ux3-app)
+stopped at 07:09:09.942
+OUTAGE in the feed after 7.4 s
+  feed item: OUTAGE MAJOR 'payments-api is down' | body: 'payments-api is DOWN as of 2026-11-02 07:09:16 UTC.\nReported by its pods: 0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux3aa).\n\nThis notice is managed automatically and is retired once the service reports healthy again.' | publisher: health-sidecar | externalRef: health:11c708cc-e2fb-40d5-90c0-f4637bd57b18:1
+/status while down:
+{'version': 'ci-iter3', 'service': 'payments-api', 'tenant': 'ux3-sidecar', 'instance': 'payments-api-7f9c6d5b4-ux3aa', 'target': None, 'lastTarget': 'http://127.0.0.1:8080/actuator/health', 'upSeen': True, 'sendError': None, 'reportsSent': 5, 'lastSendAt': '2026-11-02T07:09:15.649848785Z'}
+  lastReport: DOWN 'app is not listening (last target http://127.0.0.1:8080/actuator/health)' components: None
+sidecar log since the stop:
+{"time":"2026-11-02T07:09:12.122437091Z","level":"INFO","msg":"health target gone; will rediscover","target":"http://127.0.0.1:8080/actuator/health"}
+{"time":"2026-11-02T07:09:12.157086808Z","level":"INFO","msg":"reported","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+
+### [07:09:17.345] P6 the SRE's view of that automated notice
+{"label":"desktop","cards":1,"text":"Active Major Outage Automatic Updated just now payments-api is down payments-api is DOWN as of 2026-11-02 07:09:16 UTC. Reported by its pods: 0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux3aa). This notice is managed automatically and is retired once the service reports healthy again. payments-api Started just now health-sidecar Resolve","automaticChip":1,"chipTitle":1,"healthRefShown":false,"scrollWidth":1280}
+{"label":"phone","cards":1,"text":"Active Major Outage Automatic Updated just now payments-api is down payments-api is DOWN as of 2026-11-02 07:09:16 UTC. Reported by its pods: 0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux3aa). This notice is managed automatically and is retired once the service reports healthy again. payments-api Started just now health-sidecar Resolve","automaticChip":1,"chipTitle":1,"healthRefShown":false,"scrollWidth":390}
+
+### [07:09:26.891] P7 the app comes back (docker start ux3-app)
+started at 07:09:27.168
+notice gone from the feed after 12.9 s
+the notice's history (who published, updated, retired):
+  publisher: health-sidecar | status: RETIRED
+   health-sidecar | created (ACTIVE)
+   health-sidecar | ACTIVE -> RETIRED: recovered: UP (1 of 1 pod UP)
+/status after recovery:
+{'version': 'ci-iter3', 'service': 'payments-api', 'tenant': 'ux3-sidecar', 'instance': 'payments-api-7f9c6d5b4-ux3aa', 'target': 'http://127.0.0.1:8080/actuator/health', 'lastTarget': 'http://127.0.0.1:8080/actuator/health', 'upSeen': True, 'sendError': None, 'reportsSent': 9, 'lastSendAt': '2026-11-02T07:09:38.993503659Z'}
+  lastReport: UP None components: {'db': {'details': {'database': 'PostgreSQL'}, 'status': 'UP'}, 'ping': {'status': 'UP'}}
+
+### [07:09:39.934] P7b the app answers DOWN with a failing component (POST /__set?status=DOWN&db=DOWN)
+flip 200
+notice in the feed after 8.4 s
+  feed item: OUTAGE MAJOR 'payments-api is down' | body: 'payments-api is DOWN as of 2026-11-02 07:09:47 UTC.\nReported by its pods: 0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux3aa).\n\nFailing components:\ndb: DOWN (database=PostgreSQL)\n\nThis notice is managed automatically and is retired once the service reports healthy again.' | publisher: health-sidecar | externalRef: health:11c708cc-e2fb-40d5-90c0-f4637bd57b18:2
+{"label":"desktop","cards":1,"text":"Active Major Outage Automatic Updated just now payments-api is down payments-api is DOWN as of 2026-11-02 07:09:47 UTC. Reported by its pods: 0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux3aa). Failing components: db: DOWN (database=PostgreSQL) This notice is managed automatically and is retired once the service reports healthy again. payments-api Started just now health-sidecar Resolve","automaticChip":1,"chipTitle":1,"healthRefShown":false,"scrollWidth":1280}
+{"label":"phone","cards":1,"text":"Active Major Outage Automatic Updated just now payments-api is down payments-api is DOWN as of 2026-11-02 07:09:47 UTC. Reported by its pods: 0 of 1 pod UP (DOWN: payments-api-7f9c6d5b4-ux3aa). Failing components: db: DOWN (database=PostgreSQL) This notice is managed automatically and is retired once the service reports healthy again. payments-api Started just now health-sidecar Resolve","automaticChip":1,"chipTitle":1,"healthRefShown":false,"scrollWidth":390}
+flip back 200
+notice gone after ~13 s
+
+### [07:10:10.212] P8 the whole sidecar log at the default level
+levels: {'INFO': 10}
+  ('INFO', 'reported') 6
+  ('INFO', 'health target found') 2
+  ('INFO', 'health sidecar starting') 1
+  ('INFO', 'health target gone; will rediscover') 1
+
+### [07:10:10.286] P9 README: set CS_LOG_LEVEL=debug and restart the pod's sidecar; watch 25 s
+levels: {'INFO': 4, 'DEBUG': 1}
+  ('INFO', 'reported') 2 | e.g. {"time":"2026-11-02T07:10:11.135780394Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+  ('INFO', 'health sidecar starting') 1 | e.g. {"time":"2026-11-02T07:10:11.112383953Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"payments-api","tenant":"ux3-sidecar","instance":"payments-api-7f9c6d5b4-ux3aa","endpoint":"http://172.17.0.1:19600","probe":"auto"}
+  ('INFO', 'health target found') 1 | e.g. {"time":"2026-11-02T07:10:14.308234719Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+  ('DEBUG', 'reported') 1 | e.g. {"time":"2026-11-02T07:10:27.318321566Z","level":"DEBUG","msg":"reported","status":"UP","message":""}
+
+### [07:10:36.369] P10 SIGTERM: the leaving report
+[{"monitorId":"11c708cc-e2fb-40d5-90c0-f4637bd57b18","instanceId":"payments-api-7f9c6d5b4-ux3aa","status":"UP","components":[],"message":"instance shutting down","namespace":"ux3-ns","node":"worker-1","cluster":"sandbox","version":"1.4.2","sidecar":"ci-iter3","left":true,"lastSeenAt":"2026-11-02T07:10:36.432Z"}]
+{"time":"2026-11-02T07:10:36.444962477Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T07:10:36.445222984Z","level":"INFO","msg":"health sidecar stopped"}
+
+### [07:10:37.878] P11 README cause 1: a wrong CS_ENDPOINT, read from outside
+{'sendError': 'post http://127.0.0.1:9/v1/health/reports: Post "http://127.0.0.1:9/v1/health/reports": dial tcp 127.0.0.1:9: connect: connection refused', 'reportsSent': 0, 'lastSendAt': None, 'upSeen': False, 'target': None}
+{"time":"2026-11-02T07:10:38.152095972Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"lonely","tenant":"ux3-sidecar","instance":"7ca58fcefa3f","endpoint":"http://127.0.0.1:9","probe":"auto"}
+{"time":"2026-11-02T07:10:38.155210501Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9/v1/health/reports: Post \"http://127.0.0.1:9/v1/health/reports\": dial tcp 127.0.0.1:9: connect: connection refused",
+cleaned up containers

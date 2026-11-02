@@ -1,0 +1,33 @@
+# the feed's load-error state: markup now and at iteration 2 (908598a); read-only
+== frontend/src/outages/OutageFeed.tsx (now)
+142-          <EmptyState icon="users" title="Choose a tenant" message="The feed is per tenant. Enter one at the top of the page." />
+143:        ) : feed.error ? (
+144-          <EmptyState
+145-            icon="alert-triangle"
+146-            iconClassName="text-critical"
+147-            title="Couldn't load the feed"
+148-            message={feed.error}
+149-            action={
+150-              <Button size="sm" icon="refresh" onClick={feed.refresh}>
+151-                Try again
+152-              </Button>
+153-            }
+154-          />
+== 908598a:frontend/src/outages/OutageFeed.tsx
+136:        ) : feed.error ? (
+137-          <EmptyState
+138-            icon="alert-triangle"
+139-            iconClassName="text-critical"
+140-            title="Couldn't load the feed"
+141-            message={feed.error}
+142-            action={
+== frontend/src/ui/EmptyState.tsx (now): no role, no aria-live
+20:  return (
+21:    <div className={cx('flex h-full flex-col items-center justify-center gap-3 text-center', compact ? 'p-6' : 'p-10', className)}>
+22:      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary">
+25:      <div className="max-w-md">
+29:      {action && <div className="mt-1 flex items-center gap-2">{action}</div>}
+== for comparison, the publish banner and the card error
+frontend/src/outages/OutageCard.tsx:149:            {error && <p className="text-caption text-critical-fg" role="alert">{error}</p>}
+frontend/src/outages/PublishOutageForm.tsx:282:        <div role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-tint px-4 py-3 text-sm text-
+frontend/src/outages/PublishOutageForm.tsx:300:        <div ref={banner} tabIndex={-1} role="alert" className="flex items-start gap-2.5 rounded-md bg-critical-t

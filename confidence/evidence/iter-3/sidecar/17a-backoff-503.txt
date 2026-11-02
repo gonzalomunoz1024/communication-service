@@ -1,0 +1,47 @@
+start 07:06:20.045 (defaults: CS_INTERVAL 15s, CS_HEARTBEAT 30s, CS_RETRY_DELAY 2s, CS_REPORT_TIMEOUT 10s)
+07:06:53.458 two accepted reports (first + heartbeat); service now answers 503
+07:10:53.526 service answers 202 again (after 240 s)
+== every request the stub received (gap = time since the previous arrival)
+  #00 07:06:20.041         answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #01 07:06:52.511  +32.5s answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #02 07:07:25.567  +33.1s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #03 07:07:43.448  +17.9s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #04 07:07:59.691  +16.2s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #05 07:08:15.495  +15.8s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #06 07:08:33.097  +17.6s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #07 07:08:49.699  +16.6s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #08 07:09:17.286  +27.6s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #09 07:09:45.103  +27.8s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #10 07:10:13.169  +28.1s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #11 07:10:42.483  +29.3s answer=503 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #12 07:11:09.228  +26.7s answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+  #13 07:11:40.872  +31.6s answer=202 status=UP leaving=None msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}}
+== gaps between attempts while the service answered 503 (from the first refused attempt to the first accepted one)
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+    att=[x for x in r if f(x['at'])>=down]
+                         ^^^^^^^^^^^^^^^^
+TypeError: can't compare offset-naive and offset-aware datetimes
+== sidecar log: WARN lines (backoff steps) and DEBUG/INFO reported lines
+{"t":"07:07:25.567","in":"1s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:07:43.449","in":"2s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:07:59.691","in":"4s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:08:15.495","in":"8s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:08:33.098","in":"16s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:08:49.699","in":"30s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:09:17.287","in":"30s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:09:45.103","in":"30s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:10:13.169","in":"30s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:10:42.483","in":"30s","error":"post http://172.17.0.1:19320/v1/health/reports: HTTP 503 {\"stub\":\"answered 503\"}"}
+{"t":"07:06:20.042","level":"INFO","status":"UP"}
+{"t":"07:06:52.511","level":"DEBUG","status":"UP"}
+{"t":"07:11:09.228","level":"DEBUG","status":"UP"}
+{"t":"07:11:40.872","level":"DEBUG","status":"UP"}
+== /status during recovery
+target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=4 lastSendAt=07:11:40.871 sendError=None
+end 07:11:45.751
+
+== analysis recomputed from the request lines above (the inline analysis failed on a timezone parse in my script)
+  refused attempts: 10 (first 33.1 s after the last accepted report: the heartbeat)
+  gaps from each refused attempt to the next attempt: [17.9, 16.2, 15.8, 17.6, 16.6, 27.6, 27.8, 28.1, 29.3, 26.7]  max 29.3 s (cap 30 s)
+  first accepted attempt: 15.7 s after the service answered 202 again, 26.7 s after the last refused attempt

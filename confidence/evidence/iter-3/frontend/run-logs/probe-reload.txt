@@ -1,0 +1,4 @@
+== 2026-11-02T07:19:42Z start: node probe-reload.js (commit e3968c4)
+{"ui":"http://127.0.0.1:3200","getsAfterReload":2,"streamsAfterReload":1}
+{"ui":"http://127.0.0.1:3205","getsAfterReload":1,"streamsAfterReload":1}
+EXIT 0 (5 s)

@@ -1,0 +1,32 @@
+# 08 - SpotBugs gate (effort max, confidence medium, config/spotbugs/exclude.xml) and a LOW-confidence look
+
+## Gate, run 1 (spotbugsMain executed inside check --rerun-tasks, exit 0; build.gradle.kts spotbugs block + exclude.xml)
+main.html: 2955 lines of code analyzed, 	in 92 classes, 	in 23 packages.
+main.xml: 92 <Jar> class entries, 0 BugInstance (FindBugsSummary total_classes=0 is the XML writer's summary quirk, as in iteration 2; the HTML and the Jar list show 92 classes analysed)
+
+## Exclusion filter changes 908598a..4a0e84e (iteration 3)
+@@ -13,6 +13,7 @@
++      <Class name="com.atlas.communication.config.MongoReadinessIndicator"/>
+
+Context of the added line (the EI_EXPOSE_REP2 constructor-injection Match):
+10-  <Match>
+11-    <Bug pattern="EI_EXPOSE_REP2"/>
+12-    <Method name="&lt;init&gt;"/>
+13-    <Or>
+14-      <Class name="com.atlas.communication.common.adapters.outbound.MongoCommunicationEventsAdapter"/>
+15-      <Class name="com.atlas.communication.config.ClientIdWebFilter"/>
+16:      <Class name="com.atlas.communication.config.MongoReadinessIndicator"/>
+17-      <Class name="com.atlas.communication.feed.application.FeedUseCase"/>
+18-      <Class name="com.atlas.communication.health.adapters.outbound.WebClientHealthProbeAdapter"/>
+
+Judgement: MongoReadinessIndicator takes the injected ReactiveMongoOperations (and a Duration) in its constructor (MongoReadinessIndicator.java:31, a Spring singleton collaborator), the same pattern the Match already lists for 5 other classes; justified, nothing else excluded.
+
+## LOW confidence (verifier-only init script scripts/spotbugs-low.init.gradle; ignoreFailures, XML to the scratchpad; repository unchanged), exit 0 (gradle-initscripts.txt)
+total_classes 92 total_size 2955 bugs 6 (all priority 3)
+   URF_UNREAD_FIELD P3 common.adapters.outbound.CommunicationDocument line 67
+   URF_UNREAD_FIELD P3 common.adapters.outbound.CommunicationEventDocument line 34
+   UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR P3 common.adapters.outbound.CommunicationEventDocument line 40
+   UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR P3 common.adapters.outbound.CommunicationEventDocument line 122
+   UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR P3 common.adapters.outbound.CommunicationEventDocument line 178
+   REC_CATCH_EXCEPTION P3 health.adapters.outbound.WebClientHealthProbeAdapter line 77
+Same 6 P3 findings as iteration 2 (Spring Data document fields written by reflection; REC_CATCH_EXCEPTION in WebClientHealthProbeAdapter.parse, which turns any parse failure into 'no document'). None is a defect.

@@ -1,0 +1,44 @@
+### STEP 1: 9001 plain 404, 9002 /healthz 200, 9003 Actuator document, 9004 raw TCP: the Actuator port wins
+  [07:11:06.045] target found after 0.1s
+target=http://127.0.0.1:9003/actuator/health lastTarget=http://127.0.0.1:9003/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=07:11:05.991 sendError=None
+### STEP 2: stop the Actuator app (9003): rediscovery falls to /healthz on 9002
+  [07:11:06.286] 9003 stopped
+  [07:11:11.573] target 9002 after 5.3s
+target=http://127.0.0.1:9002/healthz lastTarget=http://127.0.0.1:9002/healthz upSeen=True last=UP msg=None comps=None sent=3 lastSendAt=07:11:11.289 sendError=None
+### STEP 3: stop 9002: '/' on 9001 (a 404 proves the server is up)
+  [07:11:11.700] 9002 stopped
+  [07:11:16.947] target 9001 / after 5.3s
+target=http://127.0.0.1:9001/ lastTarget=http://127.0.0.1:9001/ upSeen=True last=UP msg=None comps=None sent=5 lastSendAt=07:11:16.696 sendError=None
+### STEP 4: stop 9001: TCP connect to 9004
+  [07:11:17.115] 9001 stopped
+  [07:11:22.310] target tcp 9004 after 5.2s
+target=tcp://127.0.0.1:9004 lastTarget=tcp://127.0.0.1:9004 upSeen=True last=UP msg=None comps=None sent=7 lastSendAt=07:11:22.147 sendError=None
+### STEP 5: 9003 back: the pinned-by-discovery target stays tcp:9004 (first target kept while it answers)
+target=tcp://127.0.0.1:9004 lastTarget=tcp://127.0.0.1:9004 upSeen=True last=UP msg=None comps=None sent=7 lastSendAt=07:11:22.147 sendError=None
+### STEP 6: the reports the stub received (status / message per transition)
+{"at":"07:11:05.998","status":"UP","message":null}
+{"at":"07:11:09.011","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:9003/actuator/health)"}
+{"at":"07:11:11.298","status":"UP","message":null}
+{"at":"07:11:14.611","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:9002/healthz)"}
+{"at":"07:11:16.721","status":"UP","message":null}
+{"at":"07:11:19.915","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:9001/)"}
+{"at":"07:11:22.159","status":"UP","message":null}
+  sidecar log:
+{"t":"07:11:05.990","msg":"health sidecar starting","target":null}
+{"t":"07:11:05.997","msg":"health target found","target":"http://127.0.0.1:9003/actuator/health"}
+{"t":"07:11:09.011","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9003/actuator/health"}
+{"t":"07:11:11.298","msg":"health target found","target":"http://127.0.0.1:9002/healthz"}
+{"t":"07:11:14.611","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9002/healthz"}
+{"t":"07:11:16.720","msg":"health target found","target":"http://127.0.0.1:9001/"}
+{"t":"07:11:19.914","msg":"health target gone; will rediscover","target":"http://127.0.0.1:9001/"}
+{"t":"07:11:22.159","msg":"health target found","target":"tcp://127.0.0.1:9004"}
+### STEP 7: CS_IGNORE_PORTS=9003 with 9003 (Actuator) and 9004 (raw TCP) listening: 9003 is skipped (the first sidecar is stopped: one sidecar per pod)
+{"msg":"health target found","target":"tcp://127.0.0.1:9004"}
+### STEP 8: a TLS-only app port (self-signed for localhost): https after the plain-HTTP hint
+  [07:11:33.148] TLS target after 0.0s
+target=https://127.0.0.1:9006/actuator/health lastTarget=https://127.0.0.1:9006/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=07:11:33.107 sendError=None
+### STEP 9: /health answers 302 to /elsewhere (everything else 404): a redirect is an answer, not followed
+  [07:11:34.466] target found after 0.1s
+target=http://127.0.0.1:9007/health lastTarget=http://127.0.0.1:9007/health upSeen=True last=UP msg=None comps=None sent=1 lastSendAt=07:11:34.406 sendError=None
+  (had the 302 been followed, /elsewhere would answer 404 = not UP on a health path, and the target would be '/' instead)
+end 07:11:35.334

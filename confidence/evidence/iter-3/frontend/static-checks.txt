@@ -1,0 +1,133 @@
+# Frontend static checks at e3968c4 (scripts/run-static.sh; full outputs in the scratch folder, relevant lines here)
+commit e3968c4067e44ac0362f33418940ba8fe473dfae 2026-11-02T06:47:26Z node v22.23.4 npm 10.9.9
+01-lint-run1 | exit 0 | 6.9s | npm run lint
+02-typecheck-run1 | exit 0 | 27.6s | npm run typecheck
+03-build-run1 | exit 0 | 7.3s | npm run build -- --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist --emptyOutDir
+04-test-run1 | exit 0 | 17.2s | npm test -- --reporter=verbose
+05-test-run2 | exit 0 | 25.6s | npm test
+06-test-run3 | exit 0 | 16.3s | npm test
+07-coverage | exit 0 | 27.8s | npm run test:coverage -- --coverage.reportsDirectory=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/coverage
+08-audit | exit 0 | 0.7s | npm audit
+09-audit-omit-dev | exit 0 | 0.6s | npm audit --omit=dev
+10-audit-json | exit 0 | 0.6s | npm audit --json
+11-default-tenant-build | exit 0 | 2.2s | env VITE_DEFAULT_TENANT=vf3-default npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-default-tenant --emptyOutDir
+12-xorigin-build | exit 0 | 1.5s | env VITE_API_BASE=http://127.0.0.1:8080 npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-xorigin --emptyOutDir
+13-badclientid-build | exit 0 | 1.2s | env VITE_CLIENT_ID=bad id! npx vite build --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-badclientid --emptyOutDir
+14-lint-run2 | exit 0 | 5.4s | npm run lint
+15-lint-run3 | exit 0 | 5.3s | npm run lint
+16-typecheck-run2 | exit 0 | 5.5s | npm run typecheck
+17-typecheck-run3 | exit 0 | 4.5s | npm run typecheck
+18-build-run2 | exit 0 | 12.0s | npm run build -- --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-run2 --emptyOutDir
+19-build-run3 | exit 0 | 13.4s | npm run build -- --outDir /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/frontend3/dist-run3 --emptyOutDir
+git status --short (frontend/): []
+DONE 2026-11-02T06:50:28Z
+
+## 01-lint-run1
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+## 14-lint-run2
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+## 15-lint-run3
+> @atlas/communication-frontend@0.1.0 lint
+> eslint .
+## 02-typecheck-run1
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+## 16-typecheck-run2
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+## 17-typecheck-run3
+> @atlas/communication-frontend@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+## 03-build-run1
+dist/index.html                   1.25 kB │ gzip:  0.71 kB
+dist/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist/assets/index-Bmkt-yYZ.js   270.34 kB │ gzip: 84.40 kB
+✓ built in 705ms
+## 18-build-run2
+dist-run2/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-run2/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-run2/assets/index-Bmkt-yYZ.js   270.34 kB │ gzip: 84.40 kB
+✓ built in 1.55s
+## 19-build-run3
+dist-run3/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-run3/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-run3/assets/index-Bmkt-yYZ.js   270.34 kB │ gzip: 84.40 kB
+✓ built in 1.10s
+## 11-default-tenant-build
+dist-default-tenant/index.html                   1.25 kB │ gzip:  0.72 kB
+dist-default-tenant/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-default-tenant/assets/index-gGZQKVAy.js   270.35 kB │ gzip: 84.41 kB
+✓ built in 944ms
+## 12-xorigin-build
+dist-xorigin/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-xorigin/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-xorigin/assets/index-CH4EEG5E.js   270.36 kB │ gzip: 84.42 kB
+✓ built in 665ms
+## 13-badclientid-build
+dist-badclientid/index.html                   1.25 kB │ gzip:  0.71 kB
+dist-badclientid/assets/index-DErufLds.css   31.18 kB │ gzip:  7.12 kB
+dist-badclientid/assets/index-B4cKHGON.js   270.35 kB │ gzip: 84.41 kB
+✓ built in 433ms
+## bundles byte-identical across the three builds
+43fe6ad748abfb5a dist/assets/index-Bmkt-yYZ.js
+6957980854814f42 dist/assets/index-DErufLds.css
+43fe6ad748abfb5a dist-run2/assets/index-Bmkt-yYZ.js
+6957980854814f42 dist-run2/assets/index-DErufLds.css
+43fe6ad748abfb5a dist-run3/assets/index-Bmkt-yYZ.js
+6957980854814f42 dist-run3/assets/index-DErufLds.css
+## 04-test-run1
+ ✓ src/test/errors.test.ts > explainError > says the service is unreachable for a failed connection or a proxy error 3ms
+ ✓ src/test/errors.test.ts > explainError > says the service failed, not that it rejected anything, for a 5xx 0ms
+ ✓ src/test/errors.test.ts > client with the service down > turns a failed connection into an ApiError with status 0 1ms
+ Test Files  19 passed (19)
+      Tests  169 passed (169)
+   Duration  16.38s (tests 47%, environment 35%, setup 10%, transform 4%, import 4%)
+## 05-test-run2
+ Test Files  19 passed (19)
+      Tests  169 passed (169)
+   Duration  24.90s (tests 40%, environment 40%, setup 14%, import 3%, transform 2%)
+## 06-test-run3
+ Test Files  19 passed (19)
+      Tests  169 passed (169)
+   Duration  15.51s (tests 44%, environment 42%, setup 11%, import 2%, transform 1%)
+## 07-coverage
+ Test Files  19 passed (19)
+      Tests  169 passed (169)
+   Duration  26.72s (tests 43%, environment 35%, setup 13%, transform 3%, worker 3%, import 2%)
+## 08-audit / 09-audit-omit-dev
+found 0 vulnerabilities
+found 0 vulnerabilities
+## 10-audit-json (metadata)
+{
+"vulnerabilities": {
+"info": 0,
+"low": 0,
+"moderate": 0,
+"high": 0,
+"critical": 0,
+"total": 0
+},
+"dependencies": {
+"prod": 4,
+"dev": 304,
+"optional": 50,
+"peer": 0,
+"peerOptional": 0,
+"total": 307
+}
+}
+## minimatch override still in place (G-2-13)
+42:  "overrides": {
+43-    "minimatch": "^11.0.1"
+44-  }
+45-}
+@atlas/communication-frontend@0.1.0 /home/claude/communication-service/frontend
++-- eslint@9.39.5
+| +-- @eslint/config-array@0.21.2
+| | `-- minimatch@11.0.3 deduped
+| +-- @eslint/eslintrc@3.3.7
+| | `-- minimatch@11.0.3 deduped
+| `-- minimatch@11.0.3 overridden
+`-- typescript-eslint@8.72.1

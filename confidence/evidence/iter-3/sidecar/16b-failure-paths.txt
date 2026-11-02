@@ -1,0 +1,63 @@
+start 07:29:25.534
+### PART B: private backend B (:19302) on its own database container vs3-mongo (:19301); sidecar CS_INTERVAL=5s CS_HEARTBEAT=10s
+  [07:29:33.514] /status: {"last":"UP","obs":"07:29:32.215","tick":"07:29:26.501","n":1,"err":""}
+  [07:29:33.771] docker stop vs3-mongo returned
+  [07:29:33.812] {"last":"UP","obs":"07:29:32.215","tick":"07:29:26.501","n":1,"err":""}
+  [07:29:42.995] {"last":"UP","obs":"07:29:37.681","tick":"07:29:26.501","n":1,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [07:29:33.775] direct report to B (database stopped) -> 503 in 5.027023s body={"error":"database unavailable"}
+  [07:30:14.786] docker start vs3-mongo returned
+  [07:30:14.810] {"last":"UP","obs":"07:30:10.108","tick":"07:29:26.501","n":1,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [07:30:20.929] {"last":"UP","obs":"07:30:20.408","tick":"07:30:20.408","n":2,"err":""}
+  [07:30:32.142] {"last":"UP","obs":"07:30:31.771","tick":"07:30:31.771","n":3,"err":""}
+  [07:30:43.359] {"last":"UP","obs":"07:30:42.429","tick":"07:30:42.429","n":4,"err":""}
+### PART B2: the same database paused (docker pause vs3-mongo)
+  [07:30:45.396] /status before: {"last":"UP","obs":"07:30:42.429","tick":"07:30:42.429","n":4,"err":""}
+  [07:30:45.460] docker pause vs3-mongo returned
+  [07:30:45.481] {"last":"UP","obs":"07:30:42.429","tick":"07:30:42.429","n":4,"err":""}
+  [07:30:59.749] {"last":"UP","obs":"07:30:54.037","tick":"07:30:42.429","n":4,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [07:31:46.685] docker unpause vs3-mongo returned
+  [07:31:46.703] {"last":"UP","obs":"07:31:36.505","tick":"07:30:42.429","n":4,"err":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}"}
+  [07:31:52.853] {"last":"UP","obs":"07:31:52.047","tick":"07:31:52.047","n":5,"err":""}
+  [07:32:04.068] {"last":"UP","obs":"07:32:03.325","tick":"07:32:03.325","n":6,"err":""}
+  sidecar log (B and B2):
+{"t":"07:29:26.504","level":"INFO","msg":"health target found","status":"UP","error":"","in":null}
+{"t":"07:29:42.692","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"1s"}
+{"t":"07:29:53.671","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"2s"}
+{"t":"07:30:04.444","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"4s"}
+{"t":"07:30:15.125","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"8s"}
+{"t":"07:30:59.048","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"1s"}
+{"t":"07:31:09.071","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"2s"}
+{"t":"07:31:20.040","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"4s"}
+{"t":"07:31:30.640","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"8s"}
+{"t":"07:31:41.514","level":"WARN","msg":"report failed; will retry","status":null,"error":"post http://172.17.0.1:19302/v1/health/reports: HTTP 503 {\"error\":\"database unavailable\"}","in":"16s"}
+  (accepted UP reports in B/B2: 6)
+  [07:32:12.486] sidecar stopped (SIGTERM): {"msg":"health sidecar stopped","error":null}
+  direct reports with the database paused again (nothing else sending reports)
+  [07:32:14.569] docker pause vs3-mongo returned
+  [07:32:14.571] direct report 1 -> 503 in 20.026007s body={"error":"database unavailable"}
+  [07:32:34.611] direct report 2 -> 503 in 5.008943s body={"error":"database unavailable"}
+  [07:32:39.634] direct report 3 -> 503 in 5.011411s body={"error":"database unavailable"}
+  [07:32:44.710] docker unpause vs3-mongo returned
+  [07:32:47.714] direct report after unpause -> 202 in 0.014910s body={"id":"faa96224-c6c7-44fa-8c40-dd8cc4bfe5e1","tenantId":"vs3-fpb","service":"direct","policy":{"publisher":"health-monit
+### PART C1: CS_REPORT_TIMEOUT=0s (accepted at start) against a service that never answers (stub :19342, delay 600 s)
+  [07:32:53.153] app DOWN
+  [07:33:13.158] /healthz: ok
+ (HTTP 200)
+  [07:33:13.169] /status: {"last":"UP","obs":"07:32:49.133","tick":"","n":0,"err":""}
+  requests the service received: [{"at":"07:32:49.136","status":"UP"}]
+  docker stop (SIGTERM) returned after 0.1 s, exit 0
+  sidecar log:
+{"t":"07:32:49.135","level":"INFO","msg":"health target found","status":"UP","error":"","in":null}
+{"t":"07:33:13.240","level":"WARN","msg":"leaving report failed","status":null,"error":"post http://172.17.0.1:19342/v1/health/reports: Post \"http://172.17.0.1:19342/v1/health/reports\": context deadline exceeded","in":null}
+{"t":"07:33:13.242","level":"INFO","msg":"health sidecar stopped","status":null,"error":"","in":null}
+### PART C2: CS_PROBE_TIMEOUT=0s (accepted at start), pinned to an app whose /actuator/health never answers; beside it the default 3s
+  [07:33:40.122] hung0 (CS_PROBE_TIMEOUT=0s): /healthz ok
+ (HTTP 200); /status {"target":"http://127.0.0.1:8080/actuator/health","lastReport":null,"reportsSent":0,"sendError":null}
+  [07:33:40.145] hung3 (default 3s):         /status {"last":"UNKNOWN","obs":"07:33:25.337","tick":"07:33:15.112","n":1,"err":""}
+  service view:
+  hung3 id=ee8db2d7 url=None publisher=health-sidecar stale=90 last=UNKNOWN summary='UNKNOWN (1 pod starting, none reporting yet)' unhealthy=0 healthy=0 notice=None
+  hung0 log:
+  hung3 log (first 4):
+{"t":"07:33:23.127","level":"INFO","msg":"reported","status":"UNKNOWN","error":"","in":null}
+  vs3-mongo: running
+end 07:33:40.708

@@ -1,0 +1,32 @@
+### CASE 1: flap damping, default CS_RETRY_DELAY (2s): the app fails exactly one request (own pod and app)
+  [07:11:08.551] one failing answer armed
+  armed failures left unconsumed: 0; statuses reported: UP
+### CASE 2: CS_RETRY_DELAY=0: the same single failure is reported (own pod and app)
+  [07:11:21.148] one failing answer armed
+  armed failures left unconsumed: 0; statuses reported: UP,DOWN,UP
+### CASE 3: pinned targets (discovery off)
+  pin1: target=http://127.0.0.1:8080/ping lastTarget=http://127.0.0.1:8080/ping upSeen=True last=UP msg=None comps=None sent=1 lastSendAt=07:11:29.674 sendError=None
+  pin2: target=tcp://127.0.0.1:8080 lastTarget=tcp://127.0.0.1:8080 upSeen=True last=UP msg=None comps=None sent=1 lastSendAt=07:11:29.869 sendError=None
+  pin3: target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=07:11:30.075 sendError=None
+  pin4: target=http://127.0.0.1:8080/ lastTarget=http://127.0.0.1:8080/ upSeen=True last=UP msg=None comps=None sent=1 lastSendAt=07:11:30.277 sendError=None
+  pin5: target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=07:11:30.499 sendError=None
+### CASE 4: every port ignored, grace 6s: UNKNOWN 'starting', then 'no health target found after 6s'
+  +2s: target=None lastTarget=None upSeen=False last=UNKNOWN msg='starting: waiting for the app to listen' comps=None sent=1 lastSendAt=07:11:35.181 sendError=None
+  +9s: target=None lastTarget=None upSeen=False last=UNKNOWN msg='no health target found after 6s: no listening port answered; set CS_PORT and CS_PATH' comps=None sent=2 lastSendAt=07:11:41.980 sendError=None
+  ign reports: [{"at":"35.184","s":"UNKNOWN","m":"starting: waiting for the app to listen"},{"at":"41.981","s":"UNKNOWN","m":"no health target found after 6s: no listening port answered; set CS_PORT and CS_PATH"}]
+### CASE 5: the sidecar's own endpoints
+  GET /nope -> 000
+  GET /status/x -> 000
+  GET / -> 000
+  POST /healthz -> 000
+  POST /status -> 000
+  /status keys (healthy): 
+  silent client (no request line): server closed after 0.0s, got b''
+### CASE 6: instance id of 253 and 254 characters against private backend A (limit 253)
+  253: {"level":"INFO","msg":"reported","error":""} 
+  254: {"level":"ERROR","msg":"report rejected","error":"report rejected: HTTP 400 {\"error\":\"instance.id: size must be between 0 and 253\"}"} 
+  254 sends in 5 s at a 2 s interval (a permanent rejection waits for the heartbeat): 1
+  instances:   pppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
+end 07:11:52.752
+
+# NOTE (verifier): CASE 5 above printed 000 because this re-run moved the flap sidecar out of vs3-var-pod, so nothing listened on :19360; CASE 5 was re-run on its own pod: 13b-own-endpoints.txt.

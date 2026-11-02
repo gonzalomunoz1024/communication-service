@@ -1,0 +1,50 @@
+### go list -m all (module graph)
+github.com/gonzalomunoz1024/communication-service/sidecar
+exit 0
+### go.mod
+module github.com/gonzalomunoz1024/communication-service/sidecar
+
+go 1.25
+ls: cannot access 'go.sum': No such file or directory
+### the image binary's build info (go version -m)
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar3/work/hs-bin: go1.25.14
+	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+	build	-compiler=gc
+	build	-trimpath=true
+	build	CGO_ENABLED=0
+	build	GOARCH=amd64
+	build	GOOS=linux
+exit 0
+### image config: env and user (no secrets baked in)
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+User=1001
+### govulncheck @latest (what CI runs)
+exit 1
+go: golang.org/x/vuln@v1.9.0 requires go >= 1.26.0; switching to go1.26.10
+govulncheck: fetching vulnerabilities: Get "https://vuln.go.dev/index/modules.json.gz": Forbidden
+exit status 1
+### govulncheck @v1.1.4
+exit 1
+/home/claude/communication-service/sidecar/cmd/health-sidecar/main.go:3:1: package requires newer Go version go1.25 (application built with go1.24)
+
+For details on package patterns, see https://pkg.go.dev/cmd/go#hdr-Package_lists_and_patterns.
+
+exit status 1
+### reachability through the sandbox proxy
+  https://vuln.go.dev/index/db.json.gz -> 000
+  https://proxy.golang.org/golang.org/x/vuln/@v/list -> 200
+### the CI sidecar job's checks (.github/workflows/ci.yml)
+8:66:      - run: npm test
+11:72:    name: Sidecar (vet, tests, manifests, govulncheck, image)
+13:82:          go-version-file: sidecar/go.mod
+14:87:      - uses: imranismail/setup-kustomize@v2
+15:90:      - uses: azure/setup-helm@v4
+17:95:          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+18:98:      - run: go vet ./...
+19:100:      - run: CI=true go test ./...
+20:101:      - name: govulncheck
+21:102:        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+22:104:        run: docker build . -t health-sidecar:ci --build-arg VERSION=ci --build-arg REVISION=${{ github.sha }}
+  gofmt in CI: 0 line(s); -race in CI: 0 line(s)

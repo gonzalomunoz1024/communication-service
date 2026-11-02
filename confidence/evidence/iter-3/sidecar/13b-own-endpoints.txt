@@ -1,0 +1,19 @@
+### the sidecar's own endpoints (:9465 -> 127.0.0.1:19360)
+HTTP/1.1 200 OK
+Content-Type: text/plain
+ok
+HTTP/1.1 200 OK
+Content-Type: application/json
+  GET /nope -> 404
+  GET /status/x -> 404
+  GET / -> 404
+  POST /healthz -> 405 (Allow: GET, HEAD)
+  POST /status -> 405 (Allow: GET, HEAD)
+  /status keys (healthy): ["instance","lastReport","lastSendAt","lastTarget","reportsSent","service","target","tenant","upSeen","version"]
+  /status (healthy):
+{"version":"1.0.0-vs3","service":"own","tenant":"vs3-var","instance":"own-6d4f8b7c9-ab12c","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"vs3-var","service":"own","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T07:22:32.551Z","publisher":"health-sidecar","instance":{"id":"own-6d4f8b7c9-ab12c","sidecar":"1.0.0-vs3"}},"lastSendAt":"2026-11-02T07:22:30.527861614Z","reportsSent":1}
+  /status keys (app DOWN): ["instance","lastReport","lastSendAt","lastTarget","reportsSent","service","target","tenant","upSeen","version"]
+  /status (app DOWN):
+{"version":"1.0.0-vs3","service":"own","tenant":"vs3-var","instance":"own-6d4f8b7c9-ab12c","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"vs3-var","service":"own","status":"DOWN","components":{"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}},"message":"health document reports DOWN","observedAt":"2026-11-02T07:22:34.764Z","publisher":"health-sidecar","instance":{"id":"own-6d4f8b7c9-ab12c","sidecar":"1.0.0-vs3"}},"lastSendAt":"2026-11-02T07:22:34.764718836Z","reportsSent":2}
+  silent client (no request line): server closed after 5.0s, got b''
+end 07:22:46.021

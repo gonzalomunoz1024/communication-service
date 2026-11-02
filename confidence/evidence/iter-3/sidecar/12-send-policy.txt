@@ -1,0 +1,38 @@
+sidecars started at 2026-11-02T07:09:38.709Z (documents set before); window = the 60 s from +6 s
+case             document                                                   sent/60s  every?    level   service: lastStatus | summary
+up               {"status":"UP","components":{"db":{"status":"UP"}}}        2         heartbeat   UP | UP (1 of 1 pod UP)
+down             {"status":"DOWN","components":{"db":{"status":"DOWN"}}}    14        every-probe DOWN | DOWN (0 of 1 pod UP (DOWN: down-7f9c6d5b4-x2k4q)): db DOWN
+warn             {"status":"WARN"}                                          14        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: warn-7f9c6d5b4-x2k4q))
+comp-down        {"status":"UP","components":{"db":{"status":"DOWN"},"ping" 18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-down-7f9c6d5b4-x2k4q)): db DOWN
+comp-warn        {"status":"UP","components":{"cache":{"status":"WARN"}}}   18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-warn-7f9c6d5b4-x2k4q)): cache DEGRADED
+comp-nested      {"status":"UP","components":{"db":{"status":"UP","componen 18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-nested-7f9c6d5b4-x2k4q)): db.replica DOWN
+comp-unknown     {"status":"UP","components":{"discovery":{"status":"UNKNOW 2         heartbeat   UP | UP (1 of 1 pod UP)
+comp-pass        {"status":"UP","components":{"a":{"status":"pass"},"b":{"s 2         heartbeat   UP | UP (1 of 1 pod UP)
+comp-fail        {"status":"UP","components":{"a":{"status":"fail"}}}       18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-fail-7f9c6d5b4-x2k4q)): a DOWN
+comp-notserving  {"status":"UP","components":{"a":{"status":"NOT_SERVING"}, 18        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-notserving-7f9c6d5b4-x2k4q)): a DOWN, b DOWN
+comp-error       {"status":"UP","components":{"a":{"status":"error"},"b":{" 17        every-probe DEGRADED | DEGRADED (0 of 1 pod UP (DEGRADED: comp-error-7f9c6d5b4-x2k4q)): a DOWN, b DOWN
+overall-pass     {"status":"pass","components":{"a":{"status":"PASS"}}}     2         heartbeat   UP | UP (1 of 1 pod UP)
+never-up         (nothing listens; grace 10s)                               2         heartbeat   UNKNOWN | UNKNOWN (1 pod starting, none reporting yet)
+pinned-never-up  (CS_PORT=8080 pinned, app answers DOWN)                    2         heartbeat   UNKNOWN | UNKNOWN (1 pod starting, none reporting yet)
+
+== messages of the UNKNOWN cases (G-3-18): every accepted send, with its time
+ pol12:
+{"t":"07:09:38.471","level":"INFO","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"t":"07:09:51.774","level":"INFO","status":"UNKNOWN","message":"no health target found after 10s: no listening port answered; set CS_PORT and CS_PATH"}
+{"t":"07:10:24.202","level":"DEBUG","status":"UNKNOWN","message":"no health target found after 10s: no listening port answered; set CS_PORT and CS_PATH"}
+ pol13:
+{"t":"07:09:39.720","level":"INFO","status":"UNKNOWN","message":"health target http://127.0.0.1:8080/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME"}
+{"t":"07:10:09.892","level":"DEBUG","status":"UNKNOWN","message":"health target http://127.0.0.1:8080/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME"}
+{"t":"07:10:43.882","level":"DEBUG","status":"UNKNOWN","message":"health target http://127.0.0.1:8080/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME"}
+== the service's notices for this tenant
+  089bfaa1 OUTAGE 'down is down' status=ACTIVE sev=MAJOR publisher=health-sidecar ref=health:00bd834b-ab48-4be7-b286-4616efdd2a6f:1 startsAt=07:09:40
+  3f5a8d60 HEALTH 'comp-error is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:86887610-2f46-4b97-b635-e6700309120f:1 startsAt=07:09:41
+  67cd9239 HEALTH 'comp-fail is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:dde20dad-66a7-4540-b766-796fa6f82935:1 startsAt=07:09:40
+  4e764b04 HEALTH 'comp-notserving is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:ff9a7f32-7d05-4ece-862f-3fcc35d9c3f8:1 startsAt=07:09:40
+  af30cc8c HEALTH 'warn is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:65874fde-1a42-4aad-9aa9-354b6dcc0258:1 startsAt=07:09:40
+  eeb4307a HEALTH 'comp-nested is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:e33e9f97-6c45-41c1-b3dd-7661ee14a34e:1 startsAt=07:09:40
+  c4d53ff1 HEALTH 'comp-down is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:8064f3c9-90d2-4f3c-808f-f1477051d9bb:1 startsAt=07:09:39
+  01e93775 HEALTH 'comp-warn is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:9edfa3ef-ca7b-4c34-9311-81e527112fa0:1 startsAt=07:09:39
+== the instance view of a nested-component case (what the service stored)
+  comp-nested-7f9c6d5b4-x2k4q status=DEGRADED left=False lastSeen=07:10:44.137 msg=None comps=[{"name":"db.replica","status":"DOWN"}] ns=None node=None cluster=None version=None sidecar=1.0.0-vs3
+end 07:10:49.648

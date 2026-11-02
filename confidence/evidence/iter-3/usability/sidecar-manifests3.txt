@@ -1,0 +1,126 @@
+
+### S1 Kustomize classic, the example as shipped
+kustomize exit 0
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+### S2 native: the example pointed at ../component-native (README + the example's own comment)
+kustomize exit 0
+36:      initContainers:
+68:        name: health-sidecar
+80:        restartPolicy: Always
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+### S3 README 'Image' block appended to the example kustomization
+28:      - image: registry.example.com/retail/payments-api:1.4.2
+60:        image: registry.apps.example.com/platform/health-sidecar:1.0.0
+
+### S3b README Debugging: CS_LOG_LEVEL=debug added to the cs-health-sidecar ConfigMap (Kustomize)
+kustomize exit 0
+5:  CS_LOG_LEVEL: debug
+6-  CS_TENANT: retail
+--
+59:        - configMapRef:
+60-            name: cs-health-sidecar
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+
+### S4 helm template on the library chart alone (README: fails by design)
+Error: library charts are not installable
+
+### S5 consuming chart from the README's three pieces, pasted as printed (repository switched to the local copy)
+README deployment lines pasted:
+      containers:
+        - name: my-app
+          image: registry.example.com/my-team/my-app:1.4.2
+        {{- include "cs-health-sidecar.container" . | nindent 8 }}
+README values pasted:
+csHealthSidecar:
+  endpoint: https://communication.apps.example.com
+  tenant: retail
+
+helm dependency build exit 0
+(a) as printed:
+   helm template exit 0
+Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+1 chart(s) linted, 0 chart(s) failed
+(b) the README's warning case: the include without | nindent 8, on its own line
+   helm template exit 1
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/usability3/sidecar-work/helm-noindent.yaml - failed validation: error unmarshalling resource: error converting YAML to JSON: yaml: mapping values are not allowed in this context
+Summary: 1 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 1, Skipped: 0
+Error: 1 chart(s) linted, 1 chart(s) failed
+(c) tenant left empty:
+Error: execution error at (my-app/templates/deployment.yaml:16:12): csHealthSidecar.tenant is required
+
+(d) README image values:
+17:          image: registry.example.com/my-team/my-app:1.4.2
+19:          image: registry.apps.example.com/platform/health-sidecar:1.0.0
+(e) native: the README's initContainers lines
+13:      initContainers:
+14:        {{- include "cs-health-sidecar.initContainer" . | nindent 8 }}
+18:        {{- include "cs-health-sidecar.container" . | nindent 8 }}
+   helm template exit 0
+1
+Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+(f) README Debugging with Helm: CS_LOG_LEVEL in csHealthSidecar.extraEnv as a Kubernetes env list
+   helm template exit 0
+50:            - name: CS_LOG_LEVEL
+51-              value: debug
+Summary: 1 resource found in 1 file - Valid: 1, Invalid: 0, Errors: 0, Skipped: 0
+(g) the same as a map (CS_LOG_LEVEL: debug), the other shape an engineer might guess from 'extraEnv'
+   helm template exit 1
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/usability3/sidecar-work/helm-debug-map.yaml - failed validation: error unmarshalling resource: error converting YAML to JSON: yaml: mapping values are not allowed in this context
+Summary: 1 resource found in 1 file - Valid: 0, Invalid: 0, Errors: 1, Skipped: 0
+   helm lint with the map in values.yaml:
+Error: 1 chart(s) linted, 1 chart(s) failed
+
+### S6 plain YAML: valid? the same container as the Kustomize patch? CS_LOG_LEVEL in its ConfigMap
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+   identical settings (ignoring indentation): True | lines 51 51
+# Fallback for teams that manage plain YAML: the same container pasted into the pod spec.
+# Everything above the "health-sidecar" container is the team's own Deployment.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cs-health-sidecar
+data:
+  CS_ENDPOINT: https://communication.apps.example.com
+  CS_TENANT: retail
+  CS_CLUSTER: ocp-east
+---
+apiVersion: apps/v1
+
+### S7 the image with missing or wrong configuration
+{"time":"2026-11-02T07:04:21.891809644Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit 2
+{"time":"2026-11-02T07:04:22.302910089Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+exit 2
+{"time":"2026-11-02T07:04:22.690459662Z","level":"ERROR","msg":"invalid configuration","error":"CS_LOG_LEVEL must be debug, info, warn or error (got \"verbose\")"}
+exit 2
+{"time":"2026-11-02T07:04:23.741321402Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"x","tenant":"retail","instance":"1354694e3bb4","endpoint":"http://127.0.0.1:9","probe":"auto"}
+{"time":"2026-11-02T07:04:25.746828836Z","level":"WARN","msg":"report failed; will retry","error":"post http://127.0.0.1:9/v1/health/reports: Post \"http://127.0.0.1:9/v1/health/reports\": dial tcp 127.0.0.1:9: connect: connection refused","in":"1s"}
+{"time":"2026-11-02T07:04:27.452809619Z","level":"WARN","msg":"leaving report failed","error":"post http://127.0.0.1:9/v1/health/reports: Post \"http://127.0.0.1:9/v1/health/reports\": dial tcp 127.0.0.1:9: connect: connection refused"}
+{"time":"2026-11-02T07:04:27.928102778Z","level":"ERROR","msg":"invalid configuration","error":"CS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")"}
+exit 2
+{"time":"2026-11-02T07:04:28.348549509Z","level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"fast\"\nCS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")\nCS_LOG_LEVEL must be debug, info, warn or error (got \"loud\")\nCS_ENDPOINT must start with http:// or https://\nCS_TENANT is required\nCS_PORT is required when CS_PROBE=tcp"}
+exit 2
+shell in the image (README: none)?
+docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: "/bin/sh": stat /bin/sh: no such file or directory
+
+### S8 README 'Build' commands on this host (go go1.24.7, go.mod: go 1.25)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar	1.231s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/deploy	4.062s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/agent	0.142s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/config	0.006s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/discover	(cached)
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/probe	2.432s
+ok  	github.com/gonzalomunoz1024/communication-service/sidecar/internal/report	(cached)
+go test exit 0
+go build exit 0
+   binary: 6914340 bytes
+README laptop command (endpoint = private backend A, nothing on 8080 in this namespace -> pinned port never answers):
+{"time":"2026-11-02T07:04:33.954479688Z","level":"INFO","msg":"health sidecar starting","version":"1.0.0","service":"demo","tenant":"ux3-laptop","instance":"vm","endpoint":"http://127.0.0.1:19600","probe":"auto"}
+{"time":"2026-11-02T07:04:35.977690722Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the first healthy answer from http://127.0.0.1:19699/actuator/health"}
+{"time":"2026-11-02T07:04:37.97931297Z","level":"INFO","msg":"leaving report sent"}
+{"time":"2026-11-02T07:04:37.979423667Z","level":"INFO","msg":"health sidecar stopped"}
+
+### S9 image labels and user
+user=1001 exposed={"9465/tcp":{}} version=ci-iter3 revision=6079180 size=16330245

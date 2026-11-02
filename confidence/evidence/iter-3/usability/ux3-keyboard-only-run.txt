@@ -1,0 +1,6 @@
+[form-walk] {"tabsToSubmit":14,"stops":["button[radio] \"Outage\" ring=true","button[radio] \"Major\" ring=true","input \"Title*\" ring=true","textarea \"Details\" ring=true","input \"Affected services\" ring=true","input \"ServiceNow incident\" ring=true","input \"Tenant*\" ring=true","input \"Publisher*\" ring=true","select \"Audience\" ring=true","input \"External reference\" ring=true","button \"Schedule\" ring=true","button[switch] \"Save as draft\" ring=true","button \"Clear\" ring=true","button \"Publish outage\" ring=true"],"noRing":[],"unfilled":[]}
+[after-submit] {"focus":"h2 \"Outage published\" ring=true","heading":"Outage published"}
+[view-in-feed] {"focus":"body \"Outage NotificationsTenantFeed\" ring=false","cards":1}
+[resolve-fails] {"focus":"button \"Resolve\" ring=true","cardError":"The service failed (HTTP 500): unexpected error. Try again; if it keeps happening, tell the service owners."}
+[resolve-retry] {"focus":"div \"All clearNo outage is active f\" ring=true","cards":0,"announced":"Resolved “Keyboard-only notice”. It has left every consumer's feed."}
+first stops: input "Tenant" ring=true | button "Switch to dark mode" ring=true | button[tab] "Feed" ring=true | button[tab] "Publish" ring=true

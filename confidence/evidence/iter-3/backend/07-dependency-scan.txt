@@ -1,0 +1,90 @@
+# 07 - dependency / security scan, 2026-11-02T07:28Z (iteration 3)
+
+## Reachability of vulnerability data (same list as iteration 2, plus container mirrors)
+  https://api.osv.dev/v1/query                                   HTTP 000 (curl exit 56: blocked by the egress proxy)
+  https://api.deps.dev/v3/...                                    HTTP 000 (exit 56)
+  https://ossindex.sonatype.org/api/v3/component-report          HTTP 000 (exit 56)
+  https://grype.anchore.io/databases/v6/latest.json              HTTP 000 (exit 56)
+  https://toolbox-data.anchore.io/grype/databases/listing.json   HTTP 000 (exit 56)
+  https://nvd.nist.gov / services.nvd.nist.gov                   HTTP 000 (exit 56)
+  https://api.github.com/advisories                              HTTP 403 "sessions are bound to their configured repositories"
+  ghcr.io/aquasecurity/trivy (docker pull)                       manifest ok, blob download from pkg-containers.githubusercontent.com: Forbidden
+  mirror.gcr.io/aquasec/trivy:0.58.1 (docker pull)               OK  <- new in iteration 3: Trivy and its database come through Google's mirror
+  mirror.gcr.io/aquasec/trivy-db:2 (Trivy's default DB repo)     OK (131 MiB)
+
+## Scan 1: the SBOM the CI job scans (build/reports/cyclonedx/bom.json; anchore/scan-action, severity-cutoff high, fail-build true)
+$ cp build/reports/cyclonedx/bom.json <scratch>/trivy-in/   (sha256 936b6f37fd1b7c4f87e5..., identical to the run-1 copy; CycloneDX 1.6, 87 components)
+$ docker run --rm --network host -e HTTPS_PROXY -e SSL_CERT_FILE=/ca/ca-bundle.crt -v <ca>:/ca/ca-bundle.crt:ro -v <cache>:/root/.cache \
+    -v <scratch>/trivy-in:/scan:ro mirror.gcr.io/aquasec/trivy:0.58.1 sbom --scanners vuln --format json --output /root/.cache/trivy-sbom-result.json /scan/bom.json
+exit=0
+DB metadata: {"Version":2,"NextUpdate":"2026-11-03T01:14:05.64063672Z","UpdatedAt":"2026-11-02T01:14:05.640637121Z","DownloadedAt":"2026-11-02T07:28:40.748184579Z"}
+Findings: 29 {'HIGH': 10, 'MEDIUM': 16, 'CRITICAL': 3}
+Versions confirmed in BOOT-INF/lib of the boot jar: netty-*-4.1.135.Final, jackson-core/databind-2.21.4, spring-webflux-6.2.19, commons-lang3-3.17.0, log4j-api-2.24.3
+
+| severity | id | package@installed | fixed in | CVSS (ghsa) | published | title | applicability (my analysis, not a triage record) |
+|---|---|---|---|---|---|---|---|
+| CRITICAL | CVE-2026-75595 | netty-handler@4.1.135.Final | 4.2.17.Final, 4.1.137.Final | 9.1 | 2026-08-19 | io.netty/netty-handler: Netty: SNI Routing Bypass via Fragmented TLS ClientHello Causing F | SslClientHelloHandler/SNI: the service terminates no TLS (no server.ssl) -> not reachable as deployed |
+| CRITICAL | CVE-2026-47890 | spring-webflux@6.2.19 | 7.0.9 | 9.8 | 2026-08-27 | org.springframework/spring-webmvc: org.springframework/spring-webflux: Spring Framework: S | SSE with view *fragments*: the stream emits ServerSentEvent<CommunicationEvent>, no Fragment/templates (grep: 0) -> not reachable |
+| CRITICAL | CVE-2026-47892 | spring-webflux@6.2.19 | 7.0.9 | 9.8 | 2026-08-27 | org.springframework/spring-webflux: Spring Framework: Header Predicate Bypass in WebFlux F | functional endpoints (RouterFunction/RequestPredicates): none in src/main (grep: 0), annotated controllers only -> not reachable |
+| HIGH | CVE-2026-89407 | jackson-core@2.21.4 | 2.18.11, 2.21.7, 2.22.3 | 7.5 | 2026-09-22 | com.fasterxml.jackson/jackson-core: tools.jackson.core/jackson-core: Jackson-core: Denial  | stringified-number regex: 2 000 vs 60 000-digit strings in every numeric field answer in 5-21 ms (g-jackson-regex below) -> not reached via the API |
+| HIGH | CVE-2026-89425 | jackson-core@2.21.4 | 2.21.7, 2.22.3, 2.18.11 | 7.5 | 2026-09-23 | com.fasterxml.jackson.core/jackson-core: Jackson-core: Denial of Service via unbounded Str | UTF8DataInputJsonParser (DataInput parsing): WebFlux uses the non-blocking parser, the probe adapter reads Strings -> not reachable |
+| HIGH | CVE-2026-68497 | jackson-databind@2.21.4 | 2.18.10, 2.21.6, 2.22.2 | 7.5 | 2026-09-11 | com.fasterxml.jackson.core/jackson-databind: tools.jackson.core/jackson-databind: jackson- | javax.xml.datatype Duration/XMLGregorianCalendar fields: none in the DTOs -> not reachable |
+| HIGH | CVE-2026-91776 | jackson-databind@2.21.4 | 2.18.11, 2.21.7, 2.22.3 | 7.5 | 2026-09-23 | jackson-databind: com.fasterxml.jackson/jackson-core: jackson-databind: Denial of Service  | @JsonTypeInfo name-based polymorphism: none (grep: 0) -> not reachable |
+| HIGH | CVE-2026-91777 | jackson-databind@2.21.4 | 2.21.7, 2.18.11, 2.22.3 | 7.5 | 2026-09-23 | com.fasterxml.jackson.core/jackson-databind: tools.jackson.core:jackson-databind: Jackson- | @JsonIdentityInfo: none (grep: 0) -> not reachable |
+| HIGH | CVE-2026-59901 | netty-codec@4.1.135.Final | 4.1.136.Final | 8.7 | 2026-07-29 | io.netty/netty-codec-compression: Netty: Infinite loop in netty-codec-compression (bzip2) | Bzip2Decoder: reactor-netty HTTP decompression does not use bzip2 -> not reachable |
+| HIGH | CVE-2026-55831 | netty-codec-http@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 7.5 | 2026-07-21 | io.netty/netty-codec-http: Netty: Denial of Service via SPDY SETTINGS frame processing | SPDY codec: not used by reactor-netty -> not reachable |
+| HIGH | CVE-2026-55833 | netty-codec-http@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 7.5 | 2026-07-21 | netty: io.netty/netty-codec-http: Netty: Denial of Service via SPDY header decompression a | SPDY codec: not used -> not reachable |
+| HIGH | CVE-2026-56745 | netty-codec-http@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 8.7 | 2026-07-21 | netty: io.netty/netty-codec-http: Netty: Denial of Service via memory exhaustion in SPDY-t | SPDY-to-HTTP codec: not used -> not reachable |
+| HIGH | CVE-2026-56819 | netty-codec-http2@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 7.5 | 2026-07-21 | io.netty/netty-codec-http2: Netty: Denial of Service via HTTP/2 DATA frame memory leak | HTTP/2 DelegatingDecompressorFrameListener: HTTP/2 not enabled (no server.http2) -> not reachable as configured |
+| MEDIUM | CVE-2026-19032 | jackson-databind@2.21.4 | 2.18.10, 2.21.6, 2.22.2 | 5.3 | 2026-09-01 | com.fasterxml.jackson.core/jackson-databind: tools.jackson.core/jackson-databind: Jackson- |  |
+| MEDIUM | CVE-2026-54515 | jackson-databind@2.21.4 | 3.1.4, 2.18.9, 2.21.5, 2.22.1 | 5.3 | 2026-06-23 | jackson-databind: jackson-databind: Ignored properties can be unexpectedly modified |  |
+| MEDIUM | CVE-2026-59889 | jackson-databind@2.21.4 | 2.21.5, 2.18.9, 2.22.1 | 6.5 | 2026-07-14 | com.fasterxml.jackson.core/jackson-databind: Jackson-databind: Privilege escalation via im |  |
+| MEDIUM | CVE-2026-77310 | jackson-databind@2.21.4 | 2.18.9, 2.21.5, 2.22.1 | 5.3 | 2026-08-24 | com.fasterxml.jackson.core/jackson-databind: jackson-databind: Server-Side Request Forgery |  |
+| MEDIUM | CVE-2026-83557 | jackson-databind@2.21.4 | 2.18.10, 2.21.6, 2.22.2 | 5.6 | 2026-09-01 | com.fasterxml.jackson.core/jackson-databind: tools.jackson.core/jackson-databind: jackson- |  |
+| MEDIUM | GHSA-mhm7-754m-9p8w | jackson-databind@2.21.4 | 2.18.9, 2.21.5 | 6.5 | 2026-07-21 | jackson-databind: `@JsonView` bypass for creator properties with `@JsonTypeInfo(include=As |  |
+| MEDIUM | CVE-2026-73508 | netty-codec-dns@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 5.3 | 2026-08-13 | io.netty/netty-codec-dns: Netty: Denial of Service via Memory Leak in DNS Record Decoder w |  |
+| MEDIUM | CVE-2026-56746 | netty-codec-http@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 6.5 | 2026-07-21 | io.netty/netty-codec-http: Netty: Security control bypass allows unauthorized requests via |  |
+| MEDIUM | CVE-2026-59898 | netty-codec-http@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 6.3 | 2026-07-29 | io.netty/netty-codec-http: Netty: Protocol version confusion in netty-codec-http (WebSocke |  |
+| MEDIUM | CVE-2026-59899 | netty-codec-http@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 6.9 | 2026-07-29 | io.netty/netty-codec-http: Netty: Memory exhaustion in netty-codec-http (decompression bom |  |
+| MEDIUM | CVE-2026-59903 | netty-codec-http@4.1.135.Final | 4.2.17.Final, 4.1.137.Final | 6.5 | 2026-08-17 | io.netty/netty: Netty: Information disclosure via CORS Vary header overwrite |  |
+| MEDIUM | CVE-2026-59921 | netty-codec-http@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 5.7 | 2026-07-28 | io.netty/netty-codec-http: Netty: CRLF Injection via Multipart Filename in Netty HttpPostR |  |
+| MEDIUM | CVE-2026-59900 | netty-codec-http2@4.1.135.Final | 4.2.16.Final, 4.1.136.Final | 6.9 | 2026-07-29 | io.netty/netty-codec-http2: Netty: Improper header neutralization in netty-codec-http2 |  |
+| MEDIUM | CVE-2026-75596 | netty-handler@4.1.135.Final | 4.2.17.Final, 4.1.137.Final | 6.9 | 2026-08-19 | Netty is an asynchronous, event-driven network application framework.  ... |  |
+| MEDIUM | CVE-2025-48924 | commons-lang3@3.17.0 | 3.18.0 | 6.5 | 2025-07-11 | commons-lang/commons-lang: org.apache.commons/commons-lang3: Uncontrolled Recursion vulner |  |
+| MEDIUM | CVE-2026-49844 | log4j-api@2.24.3 | 2.25.5, 2.26.1 | 6.3 | 2026-07-10 | org.apache.logging.log4j/log4j-api: Apache Log4j API: Malformed JSON output due to imprope |  |
+
+Reading: by the rubric these are open findings (3 CRITICAL, 10 HIGH) in the runtime dependencies the jar ships. None has a
+triage record in the repository (no VEX, no grype ignore list), and the CI step that is supposed to catch them
+(anchore/scan-action, severity-cutoff high, fail-build true) would match the same purls; it could not be run here
+(no Actions runner, grype DB blocked), so "CI would fail" is an inference, not an observation. My reachability notes
+say none of the 13 is reached by this service's code paths as configured; that lowers the risk, not the finding count.
+Fixes available: netty 4.1.137.Final (all netty items), jackson 2.21.7 (all jackson items); spring-webflux: Trivy lists
+7.0.9 only (the 6.2 line's affected range ends at 6.2.19).
+
+## Reachability probe for CVE-2026-89407 (private :19195, my tenant vb3-cve)
+n=  2000 PUT expectedVersion (Long)                           -> 400 in  0.021s (2037 bytes) {"error":"Failed to read HTTP message"}
+n=  2000 POST monitor intervalSeconds (Integer)               -> 400 in  0.007s (2102 bytes) {"error":"Failed to read HTTP message"}
+n=  2000 POST monitor minHealthyPercent (Integer), float-like -> 400 in  0.005s (2106 bytes) {"error":"Failed to read HTTP message"}
+n=  2000 POST report observedAt (Instant)                     -> 400 in  0.019s (2074 bytes) {"error":"observedAt: '1111111111111111111111111111111111111111111111111111111111111111111
+n=  2000 POST report details value (free-form map)            -> 202 in   0.03s (2118 bytes) {"id":"19414615-c1b0-4fed-b9b0-cdeeb517308d","tenantId":"vb3-cve","service":"r","policy":{
+n= 60000 PUT expectedVersion (Long)                           -> 400 in   0.01s (60037 bytes) {"error":"Failed to read HTTP message"}
+n= 60000 POST monitor intervalSeconds (Integer)               -> 400 in  0.006s (60103 bytes) {"error":"Failed to read HTTP message"}
+n= 60000 POST monitor minHealthyPercent (Integer), float-like -> 400 in  0.006s (60107 bytes) {"error":"Failed to read HTTP message"}
+n= 60000 POST report observedAt (Instant)                     -> 400 in   0.01s (60074 bytes) {"error":"observedAt: '1111111111111111111111111111111111111111111111111111111111111111111
+n= 60000 POST report details value (free-form map)            -> 202 in   0.02s (60118 bytes) {"id":"19414615-c1b0-4fed-b9b0-cdeeb517308d","tenantId":"vb3-cve","service":"r","policy":{
+
+## Scan 2 (information): OS packages of the backend image (root Dockerfile, BASE_IMAGE=gcr.io/distroless/java21-debian12:nonroot)
+$ docker run ... -v /var/run/docker.sock:/var/run/docker.sock mirror.gcr.io/aquasec/trivy:0.58.1 image --skip-db-update --scanners vuln --pkg-types os vb3-backend:test
+exit=0  (local base digest sha256:7e37784d94dc... = the tag's current remote digest per 'docker buildx imagetools inspect', so this is today's upstream base)
+java21-debian12:nonroot (in the image): vb3-backend:test (debian 12.13): 108 findings {'MEDIUM': 64, 'LOW': 24, 'CRITICAL': 2, 'HIGH': 12, 'UNKNOWN': 6}
+   libbrotli1: C:CVE-2026-111497
+   libexpat1: H:CVE-2024-28757, H:CVE-2025-59375, H:CVE-2026-25210, H:CVE-2026-45186, H:CVE-2026-66046, H:CVE-2026-76957, H:CVE-2026-77214, H:CVE-2026-93990
+   liblcms2-2: H:CVE-2026-41254
+   libuuid1: H:CVE-2026-53613(no fix), H:CVE-2026-53615(no fix), H:CVE-2026-78410(no fix)
+   zlib1g: C:CVE-2023-45853(no fix)
+java21-debian13:nonroot (remote, for comparison): gcr.io/distroless/java21-debian13:nonroot (debian 13.7): 77 findings {'MEDIUM': 50, 'LOW': 20, 'UNKNOWN': 3, 'HIGH': 4}
+   libuuid1: H:CVE-2026-76642(no fix), H:CVE-2026-78408(no fix), H:CVE-2026-78409(no fix), H:CVE-2026-78410(no fix)
+
+The debian12 distroless line ships packages Debian has already fixed (libexpat1 2.5.0-1+deb12u2 vs fixes in deb12u3-u5,
+libbrotli1 1.0.9-2+b6 vs deb12u1); java21-debian13:nonroot leaves only 4 unfixed libuuid1 HIGHs. The CI does not scan
+the image, so this part is reported for information and does not change the SBOM verdict above.

@@ -1,0 +1,23 @@
+TLS 1.1-only server check: New, TLSv1.0, Cipher is ECDHE-RSA-AES256-SHA     Protocol  : TLSv1.1 
+== no-ca (verification on, private CA unknown)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19336/v1/health/reports: Post "https://172.17.0.1:19336/v1/health/reports": tls: failed to verify certificate: x509: certificate signed by unknown authority'
+== with-ca (CS_CA_FILE mounted read-only)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=07:11:47.176 sendError=None
+== CS_INSECURE_SKIP_VERIFY=yes
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=07:11:47.500 sendError=None
+== CS_INSECURE_SKIP_VERIFY=No (must verify)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19336/v1/health/reports: Post "https://172.17.0.1:19336/v1/health/reports": tls: failed to verify certificate: x509: certificate signed by unknown authority'
+== TLS 1.1-only endpoint (skip-verify on; MinVersion TLS 1.2)
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19338/v1/health/reports: Post "https://172.17.0.1:19338/v1/health/reports": remote error: tls: protocol version not supported'
+== dead HTTPS_PROXY, non-loopback endpoint
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=0 lastSendAt=None sendError='post https://172.17.0.1:19336/v1/health/reports: Post "https://172.17.0.1:19336/v1/health/reports": proxyconnect tcp: dial tcp 172.17.0.1:19399: connect: connection refused'
+== same + NO_PROXY=172.17.0.1
+   target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None sent=1 lastSendAt=07:11:48.701 sendError=None
+== empty CA file: container state exited exit=2
+{"level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: no certificates found in /w/empty-ca.pem"}
+== requests that reached the TLS stub, by service:
+jq: parse error: Invalid numeric literal at line 1, column 7
+== probes are never proxied: the dead-proxy sidecar still reads its app (lastReport UP above, target http://127.0.0.1:8080/...)
+end 07:11:56.253
+
+# NOTE (verifier): the per-service tally line failed (jq parse error) because the script queried the TLS port instead of the stub's control port; the per-case sent/sendError lines above carry the results.

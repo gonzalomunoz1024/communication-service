@@ -1,0 +1,23 @@
+# G-3-29 timeline of failure_flows run 2 (kill scenario): backend A SIGKILLed 07:11:40.6Z (process gone +2045 ms), restarted by the script, B up throughout (stale grace 0, health sweep 1 s)
+# private sidecar e2e3-sidecar: CS_ENDPOINT=A, CS_INTERVAL=3s, CS_HEARTBEAT=10s (not the 30 s default), CS_RETRY_DELAY=1s
+## backend A access log, the pod's reports (client=ve3-app-repo), 07:11:30-07:12:40:
+2026-11-02T07:11:32.471Z  INFO 28846 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (26 ms)
+2026-11-02T07:12:19.502Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (228 ms)
+2026-11-02T07:12:29.477Z  INFO 6560 c.a.c.config.ClientIdWebFilter           : client=ve3-app-repo POST /v1/health/reports -> 202 (28 ms)
+## backend A start (second process):
+2026-11-02T07:12:15.408Z  INFO 6560 o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 19501 (http)
+2026-11-02T07:12:15.446Z  INFO 6560 c.a.c.CommunicationServiceApplication    : Started CommunicationServiceApplication in 6.179 seconds (process running for 6.858)
+## sidecar log 07:11:35-07:12:40 (time level msg retry-step error):
+07:11:45.681 WARN report failed; will retry in=1s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:11:48.903 WARN report failed; will retry in=2s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:11:52.008 WARN report failed; will retry in=4s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:11:55.429 WARN report failed; will retry in=8s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+07:12:05.354 WARN report failed; will retry in=16s rts": dial tcp 172.17.0.1:19501: connect: connection refused
+## note: no INFO line marks the accepted report at 07:12:19.502Z (success after failures without a status change is logged at DEBUG; agent.go send())
+## script verdict lines:
+2026-11-02T07:12:15.924Z PASS F-92 backend A restarted and ready :: ready 7340 ms after the start, 35.4 s after the kill
+2026-11-02T07:12:20.481Z PASS F-74 G-3-29: sidecar retries step 1,2,4,8,16 then 30 s (cap), next report accepted within 30 s of A's readiness :: steps=07:11:45 in=1s, 07:11:48 in=2s, 07:11:52 in=4s, 07:11:55 in=8s, 07:12:05 in=16s; accepted 2 ms after readiness (35.4 s after the kill)
+2026-11-02T07:12:24.482Z PASS F-48 G-3-29: no false OUTAGE on the second node (B, stale grace 0, sweep 1 s) for the pod that could not reach A :: B polls=84 notices opened=[]; longest gap between the pod's accepted reports as B saw it=47.0 s (window 90 s)
+## correction (verifier): the script's "accepted 2 ms after readiness" counts from when its wait began (07:12:20.4Z, after the page checks), not from readiness.
+## From the logs: readiness seen by the script 07:12:15.924Z, Netty started 07:12:15.408Z, report accepted 07:12:19.502Z = 3.6 s after readiness (4.1 s after Netty started),
+## 14.1 s after the 16 s step began (16 s less 12 % jitter, README: "each step less up to 20 % at random"). Silence of the pod as B saw it: 07:11:32.471Z -> 07:12:19.502Z = 47.0 s < 90 s.

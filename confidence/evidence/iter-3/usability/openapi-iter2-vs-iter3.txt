@@ -1,0 +1,25 @@
+# declared @ApiResponse annotations, iteration 2 (908598a) vs iteration 3 (working tree = 4a0e84e code); read-only git show/grep
+== publishing/adapters/inbound/RestControllerPublishingAdapter.java
+-- 908598a:
+45:    @ApiResponse(responseCode = "409", description = "externalRef already used in this 
+80:    @ApiResponse(responseCode = "409", description = "expectedVersion is not the curren
+-- now:
+45:    @ApiResponse(responseCode = "409", description = "externalRef already used in this 
+80:    @ApiResponse(responseCode = "409", description = "expectedVersion is not the curren
+== health/adapters/inbound/RestControllerHealthAdapter.java
+-- 908598a:
+-- now:
+== admin/adapters/inbound/RestControllerAdminAdapter.java
+-- 908598a:
+-- now:
+
+== any 400/201/202/204 declared anywhere (908598a, then now):
+(none at 908598a)
+(none now)
+
+== the success codes the handlers return now
+admin/adapters/inbound/RestControllerAdminAdapter.java:71:        return purge(id).thenReturn(ResponseEntity.noContent().<Void>build());
+health/adapters/inbound/RestControllerHealthAdapter.java:44:                .created(URI.create("/v1/health/monitors/" + saved.id()))
+health/adapters/inbound/RestControllerHealthAdapter.java:72:        return delete(id).thenReturn(ResponseEntity.noContent().<Void>build());
+health/adapters/inbound/RestControllerHealthAdapter.java:85:        return report(command).map(monitor -> ResponseEntity.status(HttpStatus.ACCEPTED).b
+publishing/adapters/inbound/RestControllerPublishingAdapter.java:55:                .created(URI.create("/v1/communications/" + saved.id()))

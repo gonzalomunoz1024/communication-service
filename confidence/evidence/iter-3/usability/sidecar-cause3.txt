@@ -1,0 +1,15 @@
+t=5s :19616 {'target': None, 'upSeen': False, 'reportsSent': 1} | lastReport: UNKNOWN 'starting: waiting for the app to listen'
+t=5s :19618 {'target': 'http://127.0.0.1:8089/actuator/health', 'upSeen': False, 'reportsSent': 1} | lastReport: UNKNOWN 'starting: waiting for the first healthy answer from http://127.0.0.1:8089/actuator/health'
+t=20s :19616 {'target': None, 'upSeen': False, 'reportsSent': 2} | lastReport: UNKNOWN 'no health target found after 10s: no listening port answered; set CS_PORT and CS_PATH'
+t=20s :19618 {'target': 'http://127.0.0.1:8089/actuator/health', 'upSeen': False, 'reportsSent': 2} | lastReport: UNKNOWN 'health target http://127.0.0.1:8089/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME'
+t=40s :19616 {'target': None, 'upSeen': False, 'reportsSent': 4} | lastReport: UNKNOWN 'no health target found after 10s: no listening port answered; set CS_PORT and CS_PATH'
+t=40s :19618 {'target': 'http://127.0.0.1:8089/actuator/health', 'upSeen': False, 'reportsSent': 4} | lastReport: UNKNOWN 'health target http://127.0.0.1:8089/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME'
+{"time":"2026-11-02T07:11:22.954259324Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"nothing-listens","tenant":"ux3-sidecar","instance":"30cd21ca4be4","endpoint":"http://172.17.0.1:19600","probe":"auto"}
+{"time":"2026-11-02T07:11:22.982674865Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-02T07:11:36.183502706Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"no health target found after 10s: no listening port answered; set CS_PORT and CS_PATH"}
+{"time":"2026-11-02T07:11:23.22294105Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"wrong-port","tenant":"ux3-sidecar","instance":"125c7d0d621b","endpoint":"http://172.17.0.1:19600","probe":"auto"}
+{"time":"2026-11-02T07:11:25.244669372Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the first healthy answer from http://127.0.0.1:8089/actuator/health"}
+{"time":"2026-11-02T07:11:35.937348888Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"health target http://127.0.0.1:8089/actuator/health never answered UP since start; check CS_PORT, CS_PATH and CS_SCHEME"}
+nothing-listens UNKNOWN UNKNOWN (1 pod starting, none reporting yet)
+payments-api UP UNKNOWN (no live pod reports)
+wrong-port UNKNOWN UNKNOWN (1 pod starting, none reporting yet)

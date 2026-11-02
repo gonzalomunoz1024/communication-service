@@ -1,0 +1,64 @@
+# 38 - log review: shared backend (:8080, backend-iter3.log) and my private instances
+
+## Shared backend log, 2026-11-02T06:34:18.559Z .. 2026-11-02T07:36:45.557Z, 1479 lines
+ERROR lines: 1; stack-trace lines (^\s+at |Caused by): 74 (all belong to the one ERROR below); WARN lines: 3; access lines client=vb3-verifier (my checks): 607 of 1306
+
+WARN by message:
+      1 c.a.c.h.application.HealthSweepUseCase   : 29 of 30 push-only monitors are silent at once; not declaring them DOWN until
+      1 o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in p
+      1 o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in produ
+
+The ERROR (line 47, trimmed):
+2026-11-02T06:45:54.688Z ERROR 23778 --- [communication-service] [or-http-epoll-4] reactor.core.publisher.Operators         : Operator called default onErrorDropped
+
+org.springframework.web.reactive.function.client.WebClientRequestException: finishConnect(..) failed with error(-111): Connection refused: /127.0.0.1:18555
+	at org.springframework.web.reactive.function.client.ExchangeFunctions$DefaultExchangeFunction.lambda$wrapException$9(ExchangeFunctions.java:139) ~[spring-webflux-6.2.19.jar!/:6.2.19]
+	Suppressed: The stacktrace has been enhanced by Reactor, refer to additional information below: 
+Error has been observed at the following site(s):
+	*__checkpoint ⇢ Request to GET http://127.0.0.1:18555/slow [DefaultWebClient]
+  ... (74 stack-trace lines in all: Reactor and reactor-netty operator frames only, no com.atlas frame)
+Caused by: io.netty.channel.AbstractChannel$AnnotatedConnectException: finishConnect(..) failed with error(-111): Connection refused: /127.0.0.1:18555
+Caused by: java.net.ConnectException: finishConnect(..) failed with error(-111): Connection refused
+
+Whose monitor: be-h-* tenants are an earlier verifier's leftovers in the shared database, pointing at the dead 127.0.0.1:18555 and probed every 30 s; slow-svc has timeoutMs 200 (mongosh: 16 monitors on 18555, two slow-svc with 200 ms). Probes of the same dead targets fail cleanly every 30 s (state 'DOWN (probe failed: finishConnect(..) failed ... Connection refused')); this ERROR appeared once in ~48 min, while the backend answered health reports in 1.7-2.1 s (06:45:05, 06:45:38: the host was busy). Reactor's default onErrorDropped hook logs it: the probe's 200 ms timeout (WebClientHealthProbeAdapter.java:53) already ended the exchange when the connect failure arrived.
+
+Reproduction attempt (private :19195, scripts/check_f_dropped.py, 71 s): monitor with timeoutMs 200 on a listener whose accept queue is full (connect hangs past the timeout) + a closed port, sweep 1 s, 3 forced probes: 0 ERROR, 0 onErrorDropped. Not reproduced on demand: the race needs the refusal to arrive just after the timeout.
+black hole 127.0.0.1:19197: a plain connect -> connect hangs (queue full) - as intended
+forced probes of the hole: [(200, 'DOWN (probe failed: no response within 200ms)'), (200, 'DOWN (probe failed: no response within 200ms)'), (200, 'DOWN (probe failed: no response within 200ms)')]
+monitor states: [["hole", "DOWN (probe failed: no response within 200ms)"], ["refused", "DOWN (probe failed: finishConnect(..) failed with error(-111): Connection refused: /127.0.0.1:19196)"]]
+ERROR lines in private-19195.txt: 0; 'onErrorDropped' occurrences: 0
+  [PASS] F-89-dropped (F-89/F-37): 0 'Operator called default onErrorDropped' ERROR(s) in 71s with a 200 ms probe timeout on a hanging connect; ERROR lines=0
+
+## Private instances (iteration-3 jar unless noted)
+| log | lines | ERROR | WARN | stack-trace lines |
+|---|---|---|---|---|
+| private-19100.txt | 245 | 0 | 3 | 0 |
+| private-19101-run1.txt | 23 | 0 | 2 | 0 |
+| private-19101.txt | 4029 | 0 | 3 | 0 |
+| private-19105.txt | 40 | 0 | 2 | 0 |
+| private-19110.txt | 105 | 0 | 57 | 0 |
+| private-19120.txt | 226 | 0 | 5 | 0 |
+| private-19121.txt (iteration-2 jar, A/B) | 42 | 0 | 8 | 0 |
+| private-19141.txt | 26 | 0 | 2 | 0 |
+| private-19150.txt | 50 | 0 | 2 | 0 |
+| private-19190.txt | 23 | 0 | 2 | 0 |
+| private-19195.txt | 51 | 0 | 2 | 0 |
+
+WARN by message across the private logs:
+     19 .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccess
+     11 o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To
+     11 o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default
+     10 c.a.c.p.application.StatusSweepUseCase   : status sweep skipped: database unavailable: Timed out whi
+      8 c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timed out whi
+      6 c.a.c.h.application.HealthSweepUseCase   : skipping monitor <id> (vb
+      4 c.a.c.h.application.HealthSweepUseCase   : N of M push-only monitors are silent at once; not declari
+      4 c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while
+      4 c.a.c.config.GlobalExceptionHandler      : POST /v1/communications -> 503, database unavailable: Tim
+      3 c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer 
+      3 c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out whil
+      2 c.a.c.config.GlobalExceptionHandler      : POST /v1/health/reports -> 503, database unavailable: Tim
+      1 c.a.c.h.application.HealthSweepUseCase   : health sweep skipped: database unavailable: Timeout while
+      1 c.a.c.h.application.HealthSweepUseCase   : N of M push-only monitors are silent at once; not declar
+      1 c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timeout while 
+
+Reading: 'skipping monitor ... 409 CONFLICT' (6) appears only in private-19121 = the iteration-2 jar; the iteration-3 jar logs a lost probe claim at DEBUG (24b), so G-3-2's 'no WARN for the lost claim' holds in the logs too. Outage WARNs (private-19110) are one line per answered call/skipped sweep without stack traces (33/33b). 0 ERROR on every private instance. The two SpringDoc notices are logged at every start (Swagger UI and /v3/api-docs are on by design, README 'OpenAPI').

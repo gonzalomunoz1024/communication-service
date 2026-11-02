@@ -1,0 +1,10 @@
+$ curl -sN --max-time 17 -i 'http://127.0.0.1:19200/v1/feed/stream?tenantId=vf3-keepalive-1793603483&clientId=vf3-verifier'   (each line prefixed with seconds since the request)
++  0.0s HTTP/1.1 200 OK
++  0.0s transfer-encoding: chunked
++  0.0s Content-Type: text/event-stream;charset=UTF-8
++  0.0s 
++  0.0s :connected
++  0.0s 
++ 15.0s :keepalive
++ 15.0s 
+curl exit 28 (28 = --max-time reached, by design)

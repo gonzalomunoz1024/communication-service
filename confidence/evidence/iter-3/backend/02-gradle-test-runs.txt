@@ -1,0 +1,38 @@
+# 02 - unit + integration suites, three runs (run 1 = check --rerun-tasks; runs 2-3 = test --rerun integrationTest --rerun)
+
+run 2: start 2026-11-02T06:50:39Z | BUILD SUCCESSFUL in 1m 42s | 6 actionable tasks: 2 executed, 4 up-to-date | exit=0 elapsed=104s end 2026-11-02T06:52:23Z
+run 3: start 2026-11-02T06:52:23Z | BUILD SUCCESSFUL in 1m 59s | 6 actionable tasks: 2 executed, 4 up-to-date | exit=0 elapsed=119s end 2026-11-02T06:54:22Z
+
+| run | suite | classes | tests | failures | errors | skipped | time s |
+|---|---|---|---|---|---|---|---|
+| run1 | test | 27 | 251 | 0 | 0 | 0 | 31.1 |
+| run1 | integrationTest | 8 | 46 | 0 | 0 | 0 | 14.0 |
+| run2 | test | 27 | 251 | 0 | 0 | 0 | 22.2 |
+| run2 | integrationTest | 8 | 46 | 0 | 0 | 0 | 17.1 |
+| run3 | test | 27 | 251 | 0 | 0 | 0 | 30.8 |
+| run3 | integrationTest | 8 | 46 | 0 | 0 | 0 | 17.9 |
+
+distinct test cases: 297; passed in all 3 runs: 297; flaky (mixed results): 0; not present in every run: 0
+
+Iteration-3 guarding tests named in iter-3/fixes.md, present and passing 3/3:
+  OK  aStreamOpenedWhileTheDatabaseIsUnreachableEndsWithOneWarningAndNoError (OperationsEndpointsIT)
+  OK  twoInstancesSweepingTheSameDueMonitorProbeItOnceAndTheLoserStaysQuiet (HealthSweepUseCaseTest)
+  OK  claimingTheProbeSlotRecordsTheProbeTimeAndNothingElse (HealthMonitorTest)
+  OK  publisherAndAdminReadsReportTheEffectiveStatusBeforeTheSweeperRuns (CommunicationServiceE2EIT)
+  OK  searchReportsEachItemsEffectiveStatus (AdminUseCaseTest)
+  OK  aNullServiceEntryNamesItsPositionAndTheRule (RestControllerPublishingAdapterTest)
+  OK  anEmptyOrBlankServiceEntryIsRejected (RestControllerPublishingAdapterTest)
+  OK  aMisspelledFieldIs400NamingItAndListingTheKnownOnes (RestControllerPublishingAdapterTest)
+  OK  aReportMayCarryKeysTheServiceDoesNotKnow (RestControllerHealthAdapterTest)
+  OK  publishingRejectsUnknownFieldsWhileHealthReportsAcceptThem (CommunicationServiceE2EIT)
+  OK  anExpiryNotAfterTheStartNamesBothValuesAndAStartThatDefaulted (CommunicationTest)
+  OK  anUpdateWithoutExpectedVersionSaysWhatToSendAndWhatA409Means (RestControllerPublishingAdapterTest)
+  OK  withBothAQueryIdAndALastEventIdHeaderTheStreamResumesAfterTheLaterOne (RestControllerFeedAdapterTest)
+  OK  anAutomatedNoticeReadsAsPlainWordsWithTheTimeToTheSecond (HealthNoticeTest)
+  OK  aNoticeIsUpdatedAndRetiredUnderTheNameItWasPublishedWith (HealthObservationUseCaseTest)
+  OK  anEndNotAfterTheStartNamesBothValuesAndAStartThatDefaulted (CommunicationTest)
+  OK  HealthStatusTest: 3 cases, all 3/3
+  OK  MongoOutageReadinessTest: 1 cases, all 3/3
+  OK  MongoReadinessIndicatorTest: 4 cases, all 3/3
+  OK  GlobalExceptionHandlerMessagesTest: 14 cases, all 3/3
+  OK  ClientIdWebFilterEdgeCasesTest: 4 cases, all 3/3

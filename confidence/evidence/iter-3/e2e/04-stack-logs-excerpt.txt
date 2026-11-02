@@ -1,0 +1,55 @@
+# ./stack.sh logs after each run (full logs in the verifier's scratchpad e2e3/logs/suite-stacklogs-N.txt), trimmed to the lines the report cites
+
+== run 1: 1558 lines; backend ERROR lines: 0; Java stack-trace lines: 0; WARN lines: 18
+-- sidecar DOWN report -> backend opens the OUTAGE (test 03), leaving report (test 05):
+e2e-backend | 2026-11-02T06:51:15.052Z  INFO 1 c.a.c.h.a.HealthObservationUseCase       : monitor e4152eb7-f8f9-463e-982a-80cf696086fd opened OUTAGE 3afa487e-220e-44eb-8565-3b9c8b429f46 for e2e/fakeapp
+e2e-backend | 2026-11-02T06:51:21.578Z  INFO 1 c.a.c.h.a.HealthObservationUseCase       : retired notice 3afa487e-220e-44eb-8565-3b9c8b429f46: recovered: UP (1 of 1 pod UP)
+e2e-sidecar | {"time":"2026-11-02T06:50:57.981226771Z","level":"INFO","msg":"health sidecar starting","version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend
+e2e-sidecar | {"time":"2026-11-02T06:51:12.371003341Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+e2e-sidecar | {"time":"2026-11-02T06:51:51.584106163Z","level":"INFO","msg":"leaving report sent"}
+e2e-sidecar | {"time":"2026-11-02T06:51:52.794858082Z","level":"INFO","msg":"health sidecar starting","version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend
+-- backend WARN kinds (count):
+      4 .c.c.a.o.MongoCommunicationEventsAdapter: event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting f
+      3 c.a.c.config.GlobalExceptionHandler: GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServer
+      2 o.s.core.events.SpringDocAppInitializer: SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springd
+      2 o.s.core.events.SpringDocAppInitializer: SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'spr
+      2 c.a.c.h.application.HealthSweepUseCase: health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+      2 c.a.c.f.a.i.RestControllerFeedAdapter: feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServe
+      2 c.a.c.config.GlobalExceptionHandler: POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPrefe
+      1 c.a.c.config.MongoReadinessIndicator: readiness DOWN: MongoDB did not answer a ping: no answer within # ms
+
+== run 2: 1526 lines; backend ERROR lines: 0; Java stack-trace lines: 0; WARN lines: 19
+-- sidecar DOWN report -> backend opens the OUTAGE (test 03), leaving report (test 05):
+e2e-sidecar | {"time":"2026-11-02T06:53:29.927444369Z","level":"INFO","msg":"health sidecar starting","version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend
+e2e-sidecar | {"time":"2026-11-02T06:53:44.876863521Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+e2e-sidecar | {"time":"2026-11-02T06:54:16.638308048Z","level":"INFO","msg":"leaving report sent"}
+e2e-sidecar | {"time":"2026-11-02T06:54:17.696898869Z","level":"INFO","msg":"health sidecar starting","version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend
+e2e-sidecar | {"time":"2026-11-02T06:54:31.756227075Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+e2e-backend | 2026-11-02T06:53:47.666Z  INFO 1 c.a.c.h.a.HealthObservationUseCase       : monitor 1a03d1ab-a09a-4388-b64b-f70a69d3ccd2 opened OUTAGE 17c72808-ad20-4f51-94f9-621156470c9c for e2e/fakeapp
+-- backend WARN kinds (count):
+      4 .c.c.a.o.MongoCommunicationEventsAdapter: event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting f
+      3 c.a.c.config.GlobalExceptionHandler: POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPrefe
+      3 c.a.c.config.GlobalExceptionHandler: GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServer
+      2 o.s.core.events.SpringDocAppInitializer: SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springd
+      2 o.s.core.events.SpringDocAppInitializer: SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'spr
+      2 c.a.c.h.application.HealthSweepUseCase: health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+      2 c.a.c.f.a.i.RestControllerFeedAdapter: feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServe
+      1 c.a.c.config.MongoReadinessIndicator: readiness DOWN: MongoDB did not answer a ping: no answer within # ms
+
+== run 3: 1519 lines; backend ERROR lines: 0; Java stack-trace lines: 0; WARN lines: 18
+-- sidecar DOWN report -> backend opens the OUTAGE (test 03), leaving report (test 05):
+e2e-sidecar | {"time":"2026-11-02T06:55:36.008836227Z","level":"INFO","msg":"health sidecar starting","version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend
+e2e-sidecar | {"time":"2026-11-02T06:55:48.063118054Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+e2e-sidecar | {"time":"2026-11-02T06:56:23.6128004Z","level":"INFO","msg":"leaving report sent"}
+e2e-sidecar | {"time":"2026-11-02T06:56:24.920852875Z","level":"INFO","msg":"health sidecar starting","version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend
+e2e-sidecar | {"time":"2026-11-02T06:56:41.600536291Z","level":"INFO","msg":"reported","status":"DOWN","message":"health document reports DOWN"}
+e2e-backend | 2026-11-02T06:55:50.781Z  INFO 1 c.a.c.h.a.HealthObservationUseCase       : monitor bd7335dd-b27e-445b-9d04-bfd5aa5e6249 opened OUTAGE e43a28d9-c4fc-4285-a9d0-722d4c6eaa5e for e2e/fakeapp
+-- backend WARN kinds (count):
+      4 .c.c.a.o.MongoCommunicationEventsAdapter: event log poll failed: org.springframework.dao.DataAccessResourceFailureException: Timed out while waiting f
+      3 c.a.c.config.GlobalExceptionHandler: GET /v1/feed -> 503, database unavailable: Timed out while waiting for a server that matches ReadPreferenceServer
+      2 o.s.core.events.SpringDocAppInitializer: SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springd
+      2 o.s.core.events.SpringDocAppInitializer: SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'spr
+      2 c.a.c.h.application.HealthSweepUseCase: health sweep skipped: database unavailable: Timed out while waiting for a server that matches ReadPreferenceSe
+      2 c.a.c.f.a.i.RestControllerFeedAdapter: feed stream closed: database unavailable: Timed out while waiting for a server that matches ReadPreferenceServe
+      2 c.a.c.config.GlobalExceptionHandler: POST /v1/health/reports -> 503, database unavailable: Timed out while waiting for a server that matches ReadPrefe
+      1 c.a.c.config.MongoReadinessIndicator: readiness DOWN: MongoDB did not answer a ping: no answer within # ms

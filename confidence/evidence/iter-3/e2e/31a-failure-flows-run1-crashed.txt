@@ -1,0 +1,19 @@
+## kill: SIGKILL backend A under a streaming page (2026-11-02T07:09:47.424Z)
+2026-11-02T07:09:48.964Z PASS F-60 a notice published over HTTP arrives live (gives the page a last event id) :: 508 ms
+2026-11-02T07:09:50.244Z PASS F-61 SIGKILL: the proxy ends the browser's stream and the badge says Reconnecting within a second :: process gone after 1146 ms; Reconnecting after 6 ms
+2026-11-02T07:09:50.509Z PASS F-57 backend down: a page opened meanwhile says 'Couldn't load the feed' + 'The service is unreachable right now…' + Try again (no bare 502) :: Couldn't load the feed The service is unreachable right now. Check that communication-service is running, then try again. Try again
+2026-11-02T07:09:50.622Z PASS F-92 the second node keeps serving while A is dead (publish via B -> 201) :: id=2f14bfdd-8ec6-4c77-8b51-9e9d45e5eab8 at +1.5 s
+2026-11-02T07:10:17.086Z FAIL RUN scenario kill crashed :: ReferenceError: since is not defined
+    at Object.kill (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2e3/scripts/failure_flows.js:111:20)
+    at async main (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2e3/scripts/failure_flows.js:213:34)
+## mongo: stop the database under A and B (2026-11-02T07:10:17.088Z)
+2026-11-02T07:10:32.115Z FAIL RUN scenario mongo crashed :: locator.waitFor: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for getByText('Live', { exact: true }) to be visible[22m
+
+    at openFeed (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2e3/scripts/failure_flows.js:38:49)
+    at async Object.mongo (/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/e2e3/scripts/failure_flows.js:151:3)
+    at async main (/tmp/claude-0/-home-claude-communication-
+2026-11-02T07:10:32.116Z PASS F-92 no uncaught page errors during the failure flows :: 
+## summary: 5 pass, 2 fail at 2026-11-02T07:10:32.185Z
+failure exit=2

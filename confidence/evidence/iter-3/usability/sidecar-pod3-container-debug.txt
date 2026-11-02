@@ -1,0 +1,5 @@
+{"time":"2026-11-02T07:10:11.112383953Z","level":"INFO","msg":"health sidecar starting","version":"ci-iter3","service":"payments-api","tenant":"ux3-sidecar","instance":"payments-api-7f9c6d5b4-ux3aa","endpoint":"http://172.17.0.1:19600","probe":"auto"}
+{"time":"2026-11-02T07:10:11.135780394Z","level":"INFO","msg":"reported","status":"UNKNOWN","message":"starting: waiting for the app to listen"}
+{"time":"2026-11-02T07:10:14.308234719Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+{"time":"2026-11-02T07:10:14.323772632Z","level":"INFO","msg":"reported","status":"UP","message":""}
+{"time":"2026-11-02T07:10:27.318321566Z","level":"DEBUG","msg":"reported","status":"UP","message":""}

@@ -1,0 +1,86 @@
+
+### 1. UBI registry reachability (expected blocked)
+$ curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://registry.access.redhat.com/v2/
+curl: (56) CONNECT tunnel failed, response 403
+000
+exit=56
+$ docker pull registry.access.redhat.com/ubi9/ubi-micro:9.5
+Error response from daemon: failed to resolve reference "registry.access.redhat.com/ubi9/ubi-micro:9.5": failed to do request: Head "https://registry.access.redhat.com/v2/ubi9/ubi-micro/manifests/9.5": Forbidden
+exit=1
+
+### 2. docker build from the repository Dockerfile (bases substituted)
+$ docker build -t health-sidecar:vs3 --build-arg GO_IMAGE=local/go-toolset:1.25 --build-arg BASE_IMAGE=gcr.io/distroless/static-debian12:nonroot --build-arg VERSION=1.0.0-vs3 --build-arg REVISION=e3968c4067e44ac0362f33418940ba8fe473dfae /home/claude/communication-service/sidecar
+exit=0
+#5 DONE 0.0s
+#6 [build 1/6] FROM docker.io/local/go-toolset:1.25@sha256:2a192339db1a915e4145899b2fa83e5b509e8430abcc130f26bca7cd556a6526
+#6 DONE 0.0s
+#7 [internal] load build context
+#7 DONE 0.0s
+#8 [build 2/6] WORKDIR /opt/app-root/src
+#9 [build 3/6] COPY --chown=1001:0 go.mod ./
+#10 [build 4/6] COPY --chown=1001:0 cmd ./cmd
+#11 [build 5/6] COPY --chown=1001:0 internal ./internal
+#12 [build 6/6] RUN go build -ldflags="-s -w -X main.version=1.0.0-vs3" -o /tmp/health-sidecar ./cmd/health-sidecar
+#12 DONE 28.5s
+#13 [stage-1 2/3] COPY --from=build /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt
+#14 [stage-1 3/3] COPY --from=build /tmp/health-sidecar /usr/local/bin/health-sidecar
+#14 DONE 0.1s
+#15 naming to docker.io/library/health-sidecar:vs3 done
+#15 DONE 0.7s
+
+### 3. image config
+User=1001 Entrypoint=["/usr/local/bin/health-sidecar"] Cmd=null ExposedPorts={"9465/tcp":{}} Env=["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"] WorkingDir=/home/nonroot Size=16330349
+{
+  "org.opencontainers.image.description": "Probes the app in its pod and reports health to the communication service",
+  "org.opencontainers.image.revision": "e3968c4067e44ac0362f33418940ba8fe473dfae",
+  "org.opencontainers.image.source": "https://github.com/gonzalomunoz1024/communication-service",
+  "org.opencontainers.image.title": "health-sidecar",
+  "org.opencontainers.image.version": "1.0.0-vs3"
+}
+go-toolset image Go: go version go1.25.14 linux/amd64
+
+### 4. binary
+-rwxr-xr-x 1 root root 6824120 Nov  2 06:53 /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar3/bin/health-sidecar-vs3
+/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar3/bin/health-sidecar-vs3: go1.25.14
+	path	github.com/gonzalomunoz1024/communication-service/sidecar/cmd/health-sidecar
+	mod	github.com/gonzalomunoz1024/communication-service/sidecar	(devel)	
+	build	-buildmode=exe
+	build	-compiler=gc
+	build	-trimpath=true
+	build	CGO_ENABLED=0
+	build	GOARCH=amd64
+	build	GOOS=linux
+	build	GOAMD64=v1
+readelf NEEDED/INTERP:
+0
+0
+strings has main.version=1.0.0-vs3:
+1
+
+### 5. image filesystem (non-distroless entries, setuid, owner/mode of what the Dockerfile adds)
+-rw-r--r-- 0/0              64 1970-01-01 00:00 etc/group
+-rw-r--r-- 0/0             149 1970-01-01 00:00 etc/passwd
+-rw-r--r-- 0/0          224449 2026-11-02 05:22 etc/pki/tls/certs/ca-bundle.crt
+-rwxr-xr-x 0/0         6824120 2026-11-02 06:53 usr/local/bin/health-sidecar
+setuid/setgid files: 1
+shells: 0
+CA bundle certs: 150
+tests/deploy/README in image: 3
+
+### 6. docker history (layers the Dockerfile adds)
+0B	ENTRYPOINT ["/usr/local/bin/health-sidecar"]
+0B	EXPOSE [9465/tcp]
+0B	USER 1001
+6.84MB	COPY /tmp/health-sidecar /usr/local/bin/health-sidecar # buildkit
+246kB	COPY /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/tls/certs/ca-bundle.crt # buildkit
+0B	LABEL org.opencontainers.image.title=health-sidecar org.opencontainers.image.description=Probes the app in its pod and reports health to the communication service org.
+0B	ARG REVISION=e3968c4067e44ac0362f33418940ba8fe473dfae
+0B	ARG VERSION=1.0.0-vs3
+319kB	bazel build //common:cacerts_debian12_amd64_tar
+16.4kB	bazel build //common:os_release_debian12
+12.3kB	bazel build //static:nsswitch
+8.19kB	bazel build //common:tmp
+
+### 7. run with no environment: exit 2 naming both required variables
+{"time":"2026-11-02T06:53:38.92259616Z","level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+exit=2

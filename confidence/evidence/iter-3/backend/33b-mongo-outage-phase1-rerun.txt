@@ -1,0 +1,58 @@
+# Database outage phase 1 re-run with corrected expectations (private :19110 on vb3-mongo)
+
+Checks: 14/14 passed
+
+| check | feature | result | detail |
+|---|---|---|---|
+| O-0a | baseline | PASS | GET feed -> 200 in 0.03s |
+| O-0b | baseline | PASS | POST -> 201 in 0.02s |
+| O-1a | F-28/G-2-4/G-3-31 read while stopped | PASS | GET feed -> 503 '{"error":"database unavailable"}' after 5.02s (README: one server-selection-timeout, 5 s) |
+| O-1b | F-28/G-2-4/G-3-31 write while stopped | PASS | POST -> 503 '{"error":"database unavailable"}' after 5.01s |
+| O-1c | F-30/G-3-6 readiness within ~1 s during the outage | PASS | 5 readiness probes: [(503, 'DOWN', 1.01), (503, 'DOWN', 1.01), (503, 'DOWN', 1.01), (503, 'DOWN', 1.01), (503, 'DOWN', 1.06)] |
+| O-1d | F-30 liveness unaffected | PASS | liveness -> 200 after 0.01s |
+| O-1e | F-74 sidecar report during the outage | PASS | POST /v1/health/reports -> 503 {'error': 'database unavailable'} after 5.01s |
+| O-1f | F-18/G-3-1 stream opened during the outage: 200, ': connected', then it ends | PASS | status 200; lines [(0.01, ':connected'), (0.01, '')]; EOF after 5.01s |
+| O-1g | F-89/G-3-1 that stream logs one WARN, no ERROR, no stack trace | PASS | stream-closed WARN 1: ['  WARN 30445 --- [communication-service] [832945532fb2da0] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches Re']; ERROR 0; stack lines 0 |
+| O-1h | F-20/G-3-1 resume requested during the outage | PASS | status 200; lines [(0.0, ':connected'), (0.0, '')]; EOF after 5.01s; WARN 1, ERROR 0 |
+| O-1i | F-89/G-2-4/G-3-6 outage log hygiene | PASS | 36s stopped: ERROR 0, stack lines 0, driver INFO 0, readiness DOWN lines 1 (after 5+ probes), health-sweep WARN 3, status-sweep WARN 4, stream-closed WARN 2, all WARN 20 |
+| O-1j | F-30/G-2-4 recovery without restart | PASS | readiness 200 1.9s after docker start; GET 200 in 0.03s; POST 201 in 0.02s |
+| O-1k | F-89/G-3-6 two readiness lines per outage | PASS | DOWN ['  WARN 30445 --- [communication-service] [     parallel-2] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 1000 ms']; UP ['  INFO 30445 --- [communication-service] [ntLoopGroup-3-1] c.a.c.config.MongoReadinessIndicator     : readiness |
+| O-1l | F-18/F-92 a stream opened before the outage survives it | PASS | frames [('snapshot', 'before'), ('created', 'before'), ('created', 'after recovery')]; keepalive comments 4 |
+
+## Transcript (request -> status body, trimmed)
+
+```
+GET http://localhost:19110/v1/feed?tenantId=vb3-down-1a43cf body= -> 200 {"items":[],"page":0,"size":20,"totalElements":0,"hasNext":false}
+  [PASS] O-0a (baseline): GET feed -> 200 in 0.03s
+POST http://localhost:19110/v1/communications body={"tenantId": "vb3-down-1a43cf", "publisher": "vb3-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "before", "affectedServices": ["svc"]} -> 201 {"id":"93218f83-b2b2-4cc8-bf29-c5fad0a71b5c","tenantId":"vb3-down-1a43cf","publisher":"vb3-sre","type":"OUTAGE","severity":"MAJOR","title":"before","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T07:06:23.126236957Z","createdAt":"2026-11-02T07:06:23.126236957Z","updatedAt":"2026-11-02T07:06:23.126236957Z","version":0,"history":[{"at":"2026-11-02T07:06:23.
+  [PASS] O-0b (baseline): POST -> 201 in 0.02s
+docker stop vb3-mongo -> 0
+GET http://localhost:19110/v1/feed?tenantId=vb3-down-1a43cf body= -> 503 {"error":"database unavailable"}
+  [PASS] O-1a (F-28/G-2-4/G-3-31 read while stopped): GET feed -> 503 '{"error":"database unavailable"}' after 5.02s (README: one server-selection-timeout, 5 s)
+POST http://localhost:19110/v1/communications body={"tenantId": "vb3-down-1a43cf", "publisher": "vb3-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "during", "affectedServices": ["svc"]} -> 503 {"error":"database unavailable"}
+  [PASS] O-1b (F-28/G-2-4/G-3-31 write while stopped): POST -> 503 '{"error":"database unavailable"}' after 5.01s
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+  [PASS] O-1c (F-30/G-3-6 readiness within ~1 s during the outage): 5 readiness probes: [(503, 'DOWN', 1.01), (503, 'DOWN', 1.01), (503, 'DOWN', 1.01), (503, 'DOWN', 1.01), (503, 'DOWN', 1.06)]
+GET http://localhost:19110/actuator/health/liveness body= -> 200 {"status":"UP"}
+  [PASS] O-1d (F-30 liveness unaffected): liveness -> 200 after 0.01s
+POST http://localhost:19110/v1/health/reports body={"tenantId": "vb3-down-1a43cf", "service": "s", "status": "UP"} -> 503 {"error":"database unavailable"}
+  [PASS] O-1e (F-74 sidecar report during the outage): POST /v1/health/reports -> 503 {'error': 'database unavailable'} after 5.01s
+  [PASS] O-1f (F-18/G-3-1 stream opened during the outage: 200, ': connected', then it ends): status 200; lines [(0.01, ':connected'), (0.01, '')]; EOF after 5.01s
+  [PASS] O-1g (F-89/G-3-1 that stream logs one WARN, no ERROR, no stack trace): stream-closed WARN 1: ['  WARN 30445 --- [communication-service] [832945532fb2da0] c.a.c.f.a.i.RestControllerFeedAdapter    : feed stream closed: database unavailable: Timed out while waiting for a server that matches Re']; ERROR 0; stack lines 0
+  [PASS] O-1h (F-20/G-3-1 resume requested during the outage): status 200; lines [(0.0, ':connected'), (0.0, '')]; EOF after 5.01s; WARN 1, ERROR 0
+  [PASS] O-1i (F-89/G-2-4/G-3-6 outage log hygiene): 36s stopped: ERROR 0, stack lines 0, driver INFO 0, readiness DOWN lines 1 (after 5+ probes), health-sweep WARN 3, status-sweep WARN 4, stream-closed WARN 2, all WARN 20
+phase 1 other WARN lines (first 8): ["  WARN 30445 --- [communication-service] [832945532fb2da0] c.a.c.config.GlobalExceptionHandler      : GET /v1/feed -> 503, database unavailable: Timed out while waiting for a s", "  WARN 30445 --- [communication-service] [832945532fb2da0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll failed: org.springframework.dao.DataAccessResourceFailureEx", "  WARN 30445 --- [communication-service] [832945532fb2da0] c.a.c.config.GlobalExceptionHandler      : POST /v1/communications -> 503, database unavailable: Timed out while wait", "  WARN 30445 --- [communication-service] [832945532fb2da0] .c.c.a.o.MongoCommunicationEventsAdapter : event log poll faile
+phase 1 readiness line: ["  WARN 30445 --- [communication-service] [     parallel-2] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 1000 ms"]
+GET http://localhost:19110/actuator/health/readiness body= -> 503 {"status":"DOWN"}
+GET http://localhost:19110/actuator/health/readiness body= -> 200 {"status":"UP"}
+GET http://localhost:19110/v1/feed?tenantId=vb3-down-1a43cf body= -> 200 {"items":[{"id":"93218f83-b2b2-4cc8-bf29-c5fad0a71b5c","tenantId":"vb3-down-1a43cf","publisher":"vb3-sre","type":"OUTAGE","severity":"MAJOR","title":"before","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T07:06:23.126Z","updatedAt":"2026-11-02T07:06:23.126Z"}],"page":0,"size":20,"totalElements":1,"hasNext":false}
+POST http://localhost:19110/v1/communications body={"tenantId": "vb3-down-1a43cf", "publisher": "vb3-sre", "type": "OUTAGE", "severity": "MAJOR", "title": "after recovery", "affectedServices": ["svc"]} -> 201 {"id":"ce6a5a0e-c4e1-411e-add8-ba8ba680d29a","tenantId":"vb3-down-1a43cf","publisher":"vb3-sre","type":"OUTAGE","severity":"MAJOR","title":"after recovery","affectedServices":["svc"],"audience":"CUSTOMERS","status":"ACTIVE","startsAt":"2026-11-02T07:07:02.880403494Z","createdAt":"2026-11-02T07:07:02.880403494Z","updatedAt":"2026-11-02T07:07:02.880403494Z","version":0,"history":[{"at":"2026-11-02T0
+  [PASS] O-1j (F-30/G-2-4 recovery without restart): readiness 200 1.9s after docker start; GET 200 in 0.03s; POST 201 in 0.02s
+  [PASS] O-1k (F-89/G-3-6 two readiness lines per outage): DOWN ['  WARN 30445 --- [communication-service] [     parallel-2] c.a.c.config.MongoReadinessIndicator     : readiness DOWN: MongoDB did not answer a ping: no answer within 1000 ms']; UP ['  INFO 30445 --- [communication-service] [ntLoopGroup-3-1] c.a.c.config.MongoReadinessIndicator     : readiness UP: MongoDB answers again']
+SSE http://localhost:19110/v1/feed/stream?tenantId=vb3-down-1a43cf hdr=None -> 200, 3 frames, 5 comments
+  [PASS] O-1l (F-18/F-92 a stream opened before the outage survives it): frames [('snapshot', 'before'), ('created', 'before'), ('created', 'after recovery')]; keepalive comments 4
+```

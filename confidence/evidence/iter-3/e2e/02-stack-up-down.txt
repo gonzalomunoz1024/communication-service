@@ -1,0 +1,105 @@
+== run 1
+stack.sh down exit=0
+06:50:05 stack: building the images (sidecar version e3968c4, revision e3968c4067e44ac0362f33418940ba8fe473dfae)
+ Network e2e Creating 
+ Network e2e Creating 
+ Network e2e Created 
+ Network e2e Created 
+ Container e2e-mongo Creating 
+ Container e2e-mongo Created 
+ Container e2e-backend Creating 
+ Container e2e-backend Created 
+ Container e2e-mongo Starting 
+ Container e2e-mongo Started 
+ Container e2e-mongo Waiting 
+ Container e2e-mongo Healthy 
+ Container e2e-backend Starting 
+ Container e2e-backend Started 
+06:50:56 stack: the backend is ready (11 s)
+ Container e2e-mongo Running 
+ Container e2e-backend Running 
+ Container e2e-app Creating 
+ Container e2e-app Created 
+ Container e2e-sidecar Creating 
+ Container e2e-sidecar Created 
+ Container e2e-mongo Waiting 
+ Container e2e-app Starting 
+ Container e2e-app Started 
+ Container e2e-mongo Healthy 
+ Container e2e-sidecar Starting 
+ Container e2e-sidecar Started 
+06:50:58 stack: the fake app answers UP (0 s)
+06:50:59 stack: the sidecar has reported (1 s)
+06:50:59 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+06:50:59 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+stack.sh up exit=0 took 54542 ms
+== run 2
+stack.sh down exit=0
+06:53:03 stack: building the images (sidecar version e3968c4, revision e3968c4067e44ac0362f33418940ba8fe473dfae)
+ Network e2e Creating 
+ Network e2e Creating 
+ Network e2e Created 
+ Network e2e Created 
+ Container e2e-mongo Creating 
+ Container e2e-mongo Created 
+ Container e2e-backend Creating 
+ Container e2e-backend Created 
+ Container e2e-mongo Starting 
+ Container e2e-mongo Started 
+ Container e2e-mongo Waiting 
+ Container e2e-mongo Healthy 
+ Container e2e-backend Starting 
+ Container e2e-backend Started 
+06:53:28 stack: the backend is ready (17 s)
+ Container e2e-backend Running 
+ Container e2e-mongo Running 
+ Container e2e-app Creating 
+ Container e2e-app Created 
+ Container e2e-sidecar Creating 
+ Container e2e-sidecar Created 
+ Container e2e-app Starting 
+ Container e2e-mongo Waiting 
+ Container e2e-app Started 
+ Container e2e-mongo Healthy 
+ Container e2e-sidecar Starting 
+ Container e2e-sidecar Started 
+06:53:30 stack: the fake app answers UP (1 s)
+06:53:31 stack: the sidecar has reported (1 s)
+06:53:31 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+06:53:31 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+stack.sh up exit=0 took 27853 ms
+== run 3
+stack.sh down exit=0
+06:55:20 stack: building the images (sidecar version e3968c4, revision e3968c4067e44ac0362f33418940ba8fe473dfae)
+ Network e2e Creating 
+ Network e2e Creating 
+ Network e2e Created 
+ Network e2e Created 
+ Container e2e-mongo Creating 
+ Container e2e-mongo Created 
+ Container e2e-backend Creating 
+ Container e2e-backend Created 
+ Container e2e-mongo Starting 
+ Container e2e-mongo Started 
+ Container e2e-mongo Waiting 
+ Container e2e-mongo Healthy 
+ Container e2e-backend Starting 
+ Container e2e-backend Started 
+06:55:34 stack: the backend is ready (7 s)
+ Container e2e-backend Running 
+ Container e2e-mongo Running 
+ Container e2e-app Creating 
+ Container e2e-app Created 
+ Container e2e-sidecar Creating 
+ Container e2e-sidecar Created 
+ Container e2e-app Starting 
+ Container e2e-mongo Waiting 
+ Container e2e-app Started 
+ Container e2e-mongo Healthy 
+ Container e2e-sidecar Starting 
+ Container e2e-sidecar Started 
+06:55:36 stack: the fake app answers UP (0 s)
+06:55:37 stack: the sidecar has reported (1 s)
+06:55:37 stack: the backend sees the pod UP (monitor e2e/fakeapp) (0 s)
+06:55:37 stack: up: backend http://127.0.0.1:28080, fake app http://127.0.0.1:28090, sidecar status http://127.0.0.1:28091
+stack.sh up exit=0 took 16783 ms

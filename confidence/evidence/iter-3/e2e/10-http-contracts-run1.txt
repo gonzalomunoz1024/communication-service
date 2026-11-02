@@ -1,0 +1,127 @@
+## core phase on A tenant ve3-http-065855 at 2026-11-02T06:58:55.026Z
+PASS F-01 201 + Location + ACTIVE + audience default :: Location=/v1/communications/01d29149-0f93-4196-b973-715ed48cdeed status=ACTIVE audience=CUSTOMERS version=0
+PASS F-01 future startsAt -> SCHEDULED :: status=SCHEDULED
+PASS F-01 permalink of the active item :: 200 ACTIVE
+PASS F-02 draft stored DRAFT, absent from feed, permalink 404 :: status=DRAFT feed=200 inFeed=False permalink=404
+PASS F-02 POST /publish moves the draft to ACTIVE :: 200 ACTIVE
+PASS F-02 publishing a non-draft is 409 {error} :: 409 {"error":"only DRAFT communications can be published; 30b7bf88-7db9-4f39-941e-3fb7e45e50f0 is ACTIVE"}
+PASS F-06 retire -> 200 RETIRED, note+actor in history :: 200 status=RETIRED last_history={'at': '2026-11-02T06:58:55.320334881Z', 'actor': 've3-ops', 'action': 'ACTIVE -> RETIRED: fixed in prod'}
+PASS F-06 retire again is idempotent 200 RETIRED (history unchanged) :: 200 history 2 -> 2
+PASS F-06 retire without actor -> actor defaults to publisher :: 200 actor=ve3-publisher
+PASS F-06 retire an expired item -> 409 (effective status, before the sweep may have run) :: 409 {"error":"communication 877e491d-a17e-494e-877a-0a6cd18ed372 already expired; retiring would rewrite history"}
+PASS F-07 missing title -> 400 naming title :: 400 {"error":"title: must not be blank"}
+PASS F-07 title 201 chars -> 400 naming title :: 400 {"error":"title: size must be between 0 and 200"}
+PASS F-07 OUTAGE with severity INFO -> 400 naming severity :: 400 {"error":"OUTAGE requires severity MINOR or higher"}
+PASS F-07 MAINTENANCE without endsAt -> 400 naming endsAt :: 400 {"error":"MAINTENANCE requires endsAt"}
+PASS F-07 expiresAt before startsAt -> 400 naming expiresAt :: 400 {"error":"expiresAt 2026-11-02T07:58:57.044Z must be after startsAt 2026-11-02T08:58:57.044Z"}
+PASS F-07 ticket without number -> 400 naming number :: 400 {"error":"ticket.number: must not be blank"}
+PASS F-07 21 affectedServices -> 400 naming affectedServices :: 400 {"error":"affectedServices: size must be between 0 and 20"}
+PASS F-07 missing tenantId -> 400 naming tenantId :: 400 {"error":"tenantId: must not be blank"}
+PASS F-07 missing publisher -> 400 naming publisher :: 400 {"error":"publisher: must not be blank"}
+PASS F-07 body > 16384 bytes -> 400 naming body :: 400 {"error":"body: size must be between 0 and 16384"}
+PASS F-07 affectedServices containing null (G-3-7) -> 400 naming affectedServices[1]: must not be null :: 400 {"error":"affectedServices[1]: must not be null"}
+PASS F-07 affectedServices containing "" (G-3-7) -> 400 naming affectedServices[1]: must not be blank :: 400 {"error":"affectedServices[1]: must not be blank"}
+PASS F-07 affectedServices containing "  " (G-3-7) -> 400 naming affectedServices[0]: must not be blank :: 400 {"error":"affectedServices[0]: must not be blank"}
+PASS F-07 G-3-8: misspelled field sevrity -> 400 naming it and listing the known fields :: 400 {"error":"unknown field 'sevrity'; known fields: affectedServices, audience, body, draft, endsAt, expiresAt, externalRef, publisher, severity, startsAt, tenantId, ticket, title, type"}
+PASS F-07 G-3-9: past expiresAt without startsAt -> 400 naming the value and the defaulted start :: 400 {"error":"expiresAt 2026-10-03T06:58:57.187Z must be after startsAt, which defaulted to now (2026-11-02T06:58:57.196Z)"}
+PASS F-07 G-3-32: endsAt not after startsAt -> 400 naming both values :: 400 {"error":"endsAt 2026-11-02T07:58:57.199Z must be after startsAt 2026-11-02T08:58:57.199Z"}
+PASS F-07 G-3-9: PUT without expectedVersion -> 400 saying what to send and what a 409 means :: 400 {"error":"expectedVersion is required: send the version from your last GET of this notice; a 409 means someone changed it since"}
+PASS F-07 G-3-8: PUT with an unknown field -> 400 naming it :: 400 {"error":"unknown field 'titel'; known fields: actor, affectedServices, audience, body, endsAt, expectedVersion, expiresAt, severity, startsAt, ticket, title"}
+PASS F-07 G-3-8: retire with an unknown field -> 400 naming it (nothing retired) :: 400 {"error":"unknown field 'reason'; known fields: actor, note"}
+PASS F-07 unknown enum -> 400 listing the values :: 400 {"error":"type: 'BOGUS' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"}
+PASS F-07 malformed JSON -> 400 {error} :: 400 {"error":"malformed JSON at line 1, column 19: Unexpected end-of-input within/between Object entries"}
+PASS F-09 ticket normalised + system default + externalRef defaults to the number :: ticket={'system': 'servicenow', 'number': 'INC0077001'} externalRef=INC0077001
+PASS F-09 bad ticket number -> 400 :: 400 {"error":"ticket.number 'ABC' is not a ServiceNow incident number (like INC0012345)"}
+PASS F-09 ticket url must be http(s) -> 400 :: 400 {"error":"ticket.url must be an http(s) link"}
+PASS F-09 PUT attaches a ticket later with audit :: 200 ticket={'system': 'servicenow', 'number': 'INC0077003'} actions=['created (ACTIVE)', 'updated', 'ticket attached: INC0077003']
+PASS F-09 feed item carries the ticket :: 200 ticket={'system': 'servicenow', 'number': 'INC0077003'}
+PASS F-57 duplicate externalRef -> 409 naming the holder and saying permanent :: 409 {"error":"externalRef 'REF-065855' is already used by notice 75daa494-2088-427a-941f-0c7113e980fd in tenant ve3-http-065855. externalRef is a permanent idempotency key: repeat it only to retry the same publish; give a follow-up notice a new value (for example REF-065855-2)."}
+PASS F-57 externalRef stays taken after its holder is retired (permanent key) :: 409 {"error":"externalRef 'REF-065855' is already used by notice 75daa494-2088-427a-941f-0c7113e980fd in tenant ve3-http-065855. externalRef is a permanent idempotency key: repeat it only to retry the sam
+PASS F-09 same externalRef in another tenant -> 201 :: 201
+PASS F-14 default feed lists all 5, ordered severity desc then startsAt desc :: order=['crit b', 'major a new', 'major a old', 'internal change', 'incident minor'] keys=['hasNext', 'page', 'size', 'totalElements']
+PASS F-14 service filter is an exact match in affectedServices :: ['major a new', 'major a old', 'incident minor']
+PASS F-14 type filter :: ['incident minor']
+PASS F-14 severity is an inclusive minimum :: ['crit b', 'major a new', 'major a old']
+PASS F-14 audience filter :: ['internal change']
+PASS F-14 paging page=1&size=2 -> 2 items (3rd and 4th) :: ['major a old', 'internal change'] meta={'page': 1, 'size': 2, 'totalElements': 5, 'hasNext': True}
+PASS F-14 size=500 is capped (<=100) and answers 200 :: 200 size_meta=100
+PASS F-14 page=-1 -> 400 :: 400 {"error":"page must be >= 0"}
+PASS F-14 blank tenantId -> 400 :: 400 {"error":"tenantId is required"}
+PASS F-14 invalid enum query value -> 400 JSON :: 400 {"error":"type: 'NOPE' is not one of [INCIDENT, CHANGE, OUTAGE, MAINTENANCE, HEALTH]"}
+PASS F-15 item present before expiresAt, gone 0.4 s after it, permalink EXPIRED :: present=True gone=True permalink=EXPIRED publisher-read=EXPIRED
+PASS F-15 G-3-3: publisher GET /v1/communications/{id} and admin search answer EXPIRED right after expiresAt (effective status, no write) :: publisher=EXPIRED admin=EXPIRED admin_http=200
+PASS F-15 SCHEDULED maintenance reads ACTIVE once its start passed, regardless of the stored status :: before=SCHEDULED after=ACTIVE stored_after=ACTIVE
+PASS F-16 only the maintenance within P7D is listed (SCHEDULED), hidden with includeUpcoming=false :: default=['maint in 1 day'] includeUpcoming=false=[]
+PASS F-27 no X-Client-Id -> 401 {error} :: 401 {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}
+PASS F-27 malformed id 'bad id!' -> 400 {error} :: 400 {"error":"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}
+PASS F-27 POST without id -> 401 before any validation :: 401 {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?
+PASS F-27 stream with ?clientId= -> 200 text/event-stream :: 200 text/event-stream;charset=UTF-8
+PASS F-27 stream without any id -> 401 :: 401
+PASS F-27 Swagger UI exempt (no header) :: 302 /swagger-ui/index.html
+PASS F-27 api-docs exempt and list /v1/feed/stream + /v1/health/reports :: 200
+PASS F-27 OPTIONS is not refused for a missing id :: 200 
+PASS F-92 readiness and liveness probes answer 200 UP without a client id :: 200 {'status': 'UP'} / 200 {'status': 'UP'}
+PASS F-92 nothing but health is exposed (/actuator/env) :: 404 {"error":"no such endpoint: GET /actuator/env (the API is documented at /swagger
+## sse phase on A tenant ve3-sse-065855 at 2026-11-02T06:59:04.833Z
+PASS F-18 stream 200 text/event-stream, :connected first, first byte fast :: status=200 first_comment=[(0.0036245960000087507, ':connected')] first_byte=[0.0036200769973220304]
+PASS F-18 live frames created/updated/retired named after the event type, ids increasing, id == data.seq :: names=['created', 'updated', 'retired'] ids=[29, 30, 31] seqs=[29, 30, 31] types=['CREATED', 'UPDATED', 'RETIRED']
+PASS F-18 :keepalive comment within ~15 s :: keepalives=[(15.01, ':keepalive')]
+PASS F-18 a fresh stream sends one snapshot frame per visible item, all stamped with one id :: snapshots=[('33', 'F-20 three'), ('33', 'F-20 two')] other=[]
+PASS F-20 G-2-8: snapshot id (33) >= the created seq of the newest item in it (33) :: created seqs={'1f56fbd5-dd7b-42a7-a772-326067e494b4': 32, '1a212f53-bad2-4780-b7ec-0688d29914f8': 33}
+PASS F-20 G-2-8: resuming from the snapshot id replays nothing (no created re-delivery) :: status=200 frames=[]
+PASS F-20 Last-Event-ID header replays exactly what was missed, in order, no snapshot :: 200 [('retired', 'F-20 two'), ('created', 'F-20 four')]
+PASS F-20 ?lastEventId= query does the same (EventSource path) :: 200 [('retired', 'F-20 two'), ('created', 'F-20 four')]
+PASS F-20 G-3-11: query 33 + header 34 (and the reverse) -> resume after the larger, nothing replayed twice :: query<header: [('created', 'F-20 four')]; query>header: [('created', 'F-20 four')]
+PASS F-20 never-issued id -> fresh snapshot (2 visible items) :: 200 ['snapshot', 'snapshot']
+PASS F-20 non-numeric Last-Event-ID ignored -> 200 with a snapshot :: 200 ['snapshot', 'snapshot']
+PASS F-20 G-2-8 probe 1/3: snapshot id 36 >= created seq 36; resume from it replays nothing :: replayed=[]
+PASS F-20 G-2-8 probe 2/3: snapshot id 37 >= created seq 37; resume from it replays nothing :: replayed=[]
+PASS F-20 G-2-8 probe 3/3: snapshot id 38 >= created seq 38; resume from it replays nothing :: replayed=[]
+## health phase on A tenant ve3-health-065855 at 2026-11-02T07:00:02.316Z
+PASS F-36 first push auto-registers a push-only monitor (202, url absent, publisher from the report) :: 202 url=None publisher=svc-push-team state=UP id=7044caec-bf36-4094-a488-8dc627fc9ef5
+PASS F-36 GET monitors lists it :: 200 ['svc-push']
+PASS F-36 report without status -> 400 :: 400 {"error":"status: must not be blank"}
+PASS F-36 report without tenantId -> 400 :: 400 {"error":"tenantId: must not be blank"}
+PASS F-38 status 'OK' -> UP :: got UP 
+PASS F-38 status 'HEALTHY' -> UP :: got UP 
+PASS F-38 status 'OUT_OF_SERVICE' -> DOWN :: got DOWN 
+PASS F-38 status 'FATAL' -> DOWN :: got DOWN 
+PASS F-38 status 'UNHEALTHY' -> DOWN :: got DOWN 
+PASS F-38 status 'UNKNOWN' -> UNKNOWN :: got UNKNOWN 
+PASS F-38 status 'WARN' -> DEGRADED :: got DEGRADED 
+PASS F-38 status '' -> UNKNOWN or 400 :: got HTTP 400 {"error":"status: must not be blank"}
+PASS F-38 G-3-30: status 'pass' -> UP (the sidecar's vocabulary) :: got UP
+PASS F-38 G-3-30: status 'PASS' -> UP (the sidecar's vocabulary) :: got UP
+PASS F-38 G-3-30: status 'green' -> UP (the sidecar's vocabulary) :: got UP
+PASS F-38 G-3-30: status 'SERVING' -> UP (the sidecar's vocabulary) :: got UP
+PASS F-38 G-3-30: status 'fail' -> DOWN (the sidecar's vocabulary) :: got DOWN
+PASS F-38 G-3-30: status 'FAILED' -> DOWN (the sidecar's vocabulary) :: got DOWN
+PASS F-38 G-3-30: status 'error' -> DOWN (the sidecar's vocabulary) :: got DOWN
+PASS F-38 G-3-30: status 'RED' -> DOWN (the sidecar's vocabulary) :: got DOWN
+PASS F-38 G-3-30: status 'NOT_SERVING' -> DOWN (the sidecar's vocabulary) :: got DOWN
+PASS F-38 G-3-30: UP with components 'pass'/'GREEN' -> UP (no false DEGRADED) :: state=UP summary=UP
+PASS F-38 G-3-30: UP with component 'fail' -> DEGRADED and the component counted DOWN :: state=DEGRADED summary=DEGRADED: db DOWN
+PASS F-36 G-3-8: a health report with keys the service does not know is still accepted (202, lenient by design) :: 202 {"id":"4d76fe2f-c764-40eb-89e4-0d75078d7295","tenantId":"ve3-health-065855","service":"svc-extra-keys","policy":{"publisher":"svc-extra-keys-team","intervalSeco
+PASS F-38 UP overall with a failing nested component -> DEGRADED, flattened to db.primary :: state=DEGRADED summary=DEGRADED: db.primary DOWN
+PASS F-38 legacy details nesting flattened (cache.redis), detail text capped near 200 chars :: summary=DEGRADED: cache.redis DOWN
+PASS F-46 two pods -> 2 instance records ordered by id with lastSeenAt and metadata :: 200 [('pod-a', 'UP', '2026-11-02T07:00:03.053Z'), ('pod-b', 'UP', '2026-11-02T07:00:03.017Z')]
+PASS F-46 repeat report for pod-a upserts (still 2, lastSeenAt advanced) :: [('pod-a', '2026-11-02T07:00:04.190Z'), ('pod-b', '2026-11-02T07:00:03.017Z')]
+PASS F-46 rollup summary '2 of 2 pods UP' :: summary=UP (2 of 2 pods UP)
+PASS F-46 unknown monitor -> 404 :: 404 {"error":"monitor e9f5c153-b587-4f8e-8c27-ed9307c47ed1 not found"}
+PASS F-48 register a push-only monitor with staleAfterSeconds=4 -> 201 :: 201 {"id":"c53497ea-92ea-4bd2-bf9a-1b8941c3c92a","tenantId":"ve3-health-065855","service":"svc-scaled","policy":{"publisher"
+PASS F-48 leaving=true marks the pod left at once and drops it from the rollup :: left=[('z1', True), ('z2', False)] summary=UP (1 of 1 pod UP)
+PASS F-40 G-3-25: the automated notice reads as plain words (no ** markers, times to the second in UTC) :: svc-silent is DOWN as of 2026-11-02 07:00:09 UTC. / 2 pods have not reported since 2026-11-02 07:00:04 UTC (s1, s2). /  / This notice is managed automatically and is retired once the service reports healthy again. | svc-silent is down
+PASS F-48 pods that went silent -> DOWN notice after the window naming them; the scaled-to-zero service gets none :: silent_opened_after=4.6s state=DOWN notice=svc-silent is DOWN as of 2026-11-02 07:00:09 UTC.
+2 pods have not reported since 2026-11-02 07:00:04 UTC (s1, s2).
+
+This notice is managed automatically and is retired once the service reports healthy again. | svc-silent scaled_state=UP scaled_open=None scaled_summary=UNKNOWN (no live pod reports)
+PASS F-50 burst 1: 20 parallel instance reports for svc-burst all 202 :: 202 x20 others=[]
+PASS F-50 burst 2: 20 parallel instance reports for svc-burst all 202 :: 202 x20 others=[]
+PASS F-50 burst 3: 20 parallel instance reports for svc-burst2 all 202 :: 202 x20 others=[]
+PASS F-50 one monitor, 20 pods, '20 of 20 pods UP' :: pods=20 summary=UP (20 of 20 pods UP)
+PASS F-48 cleanup: DELETE 26 monitors -> 204; deleting retires the silent notice :: deletes=[204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204] notice_after_delete=RETIRED
+PASS F-40 G-3-25: the automated notice is published, updated and retired under one name (the monitor's publisher 'ops') :: publisher=ops history=[('ops', 'created (ACTIVE)'), ('ops', 'ACTIVE -> RETIRED: monitor deleted')]
+## fanout phase A<->B tenant ve3-fan-065855 at 2026-11-02T07:00:12.677Z
+PASS F-18 publish on B -> created frame on A and B with the same seq; retire on A -> retired on both :: A=[('created', '41', 1.19), ('retired', '42', 2.68)] B=[('created', '41', 1.23), ('retired', '42', 2.73)]
+PASS F-18 A serves what B stored (shared store) :: ['published on B']
+## summary: 119 pass, 0 fail at 2026-11-02T07:00:18.720Z

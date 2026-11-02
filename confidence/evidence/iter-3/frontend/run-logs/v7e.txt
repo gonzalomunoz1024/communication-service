@@ -1,0 +1,6 @@
+== 2026-11-02T07:20:17Z start: node v7e-db-outage-prod.js (commit e3968c4)
+PASS [F-92] observation: a feed opened while the database is down shows the database wording; over 30 s the stream requests, list GETs, badge texts and backend WARN/ERROR lines are recorded (G-3-1: the service ends each stream with one WARN, no ERROR) :: {"streams":4,"gets":4,"requests":[{"t":56,"kind":"GET"},{"t":56,"kind":"stream"},{"t":8066,"kind":"stream"},{"t":8075,"kind":"GET"},{"t":16076,"kind":"stream"},{"t":16101,"kind":"GET"},{"t":24089,"kind":"stream"},{"t":24099,"kind":"GET"}],"responses":[{"t":62,"kind":"stream","status":200},{"t":5063,"kind":"GET","status":503},{"t":8072,"kind":"stream","status":200},{"t":13087,"kind":"GET","status":
+PASS [F-92] when the database is back the page recovers by itself (no click, no reload): the card is listed again and the badge is Live :: {"msAfterDockerStart":1809,"live":true}
+
+== v7e-db-outage-prod: 2 checks, 0 failed
+EXIT 0 (33 s)

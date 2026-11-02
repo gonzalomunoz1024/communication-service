@@ -1,0 +1,71 @@
+### 1. caller identification (F-27)
+  no X-Client-Id -> 401 {"error":"missing X-Client-Id header: identify the calling system by its repository name (EventSource clients may send ?clientId= instead)"}
+  X-Client-Id 'bad id!' -> 400 {"error":"X-Client-Id must be 1-100 characters: letters, digits, '.', '_', '-' or '/'"}
+  X-Client-Id vs3-ct-repo -> 202
+  OPTIONS without header -> 200
+  GET /swagger-ui.html without header -> 302
+### 2. body rules (F-36)
+  {"tenantId":"vs3-ct","service":"b"} -> 400 {"error":"status: must not be blank"}
+  {"tenantId":"vs3-ct","service":"b","status":" "} -> 400 {"error":"status: must not be blank"}
+  {"service":"b","status":"UP"} -> 400 {"error":"tenantId: must not be blank"}
+  {"tenantId":"vs3-ct","status":"UP"} -> 400 {"error":"service: must not be blank"}
+  {"tenantId":"vs3-ct","service":"b","status":"UP","groups":["liveness"],"extra":1} -> 202 {"id":"2e3183d0-c39a-4b97-8e96-e06f7ebe98da","tenantId":"vs3-ct","service":"b","policy":{"publisher":"health-monitor","intervalSeconds":30,"timeoutMs":5000,"fai
+### 3. vocabulary on the service side (G-3-30 / F-38): each word as the overall status and as a component of an UP report
+  word            overall    component (in an UP report)
+  'UP'            UP         UP
+  'up'            UP         UP
+  'OK'            UP         UP
+  'ok'            UP         UP
+  'PASS'          UP         UP
+  'pass'          UP         UP
+  'HEALTHY'       UP         UP
+  'Healthy'       UP         UP
+  'GREEN'         UP         UP
+  'green'         UP         UP
+  'SERVING'       UP         UP
+  'serving'       UP         UP
+  'DOWN'          DOWN       DEGRADED: c DOWN
+  'down'          DOWN       DEGRADED: c DOWN
+  'FAIL'          DOWN       DEGRADED: c DOWN
+  'fail'          DOWN       DEGRADED: c DOWN
+  'FAILED'        DOWN       DEGRADED: c DOWN
+  'failed'        DOWN       DEGRADED: c DOWN
+  'ERROR'         DOWN       DEGRADED: c DOWN
+  'error'         DOWN       DEGRADED: c DOWN
+  'UNHEALTHY'     DOWN       DEGRADED: c DOWN
+  'OUT_OF_SERVICE' DOWN       DEGRADED: c DOWN
+  'FATAL'         DOWN       DEGRADED: c DOWN
+  'RED'           DOWN       DEGRADED: c DOWN
+  'red'           DOWN       DEGRADED: c DOWN
+  'NOT_SERVING'   DOWN       DEGRADED: c DOWN
+  'not_serving'   DOWN       DEGRADED: c DOWN
+  'UNKNOWN'       UNKNOWN    UP
+  'unknown'       UNKNOWN    UP
+  'WARN'          DEGRADED   DEGRADED: c DEGRADED
+  'DEGRADED'      DEGRADED   DEGRADED: c DEGRADED
+  'PARTIAL'       DEGRADED   DEGRADED: c DEGRADED
+  'foo'           DEGRADED   DEGRADED: c DEGRADED
+  ' pass '        UP         UP
+  '	fail	'                   
+  NBSP-padded 'pass' (U+00A0), component of an UP report:
+   service: DEGRADED: c DEGRADED
+### 4. nested composite + legacy details nesting (F-38)
+  DEGRADED: db.primary DOWN, cache.redis DOWN
+### 5. per-instance records (F-46): pods a, b, a; unknown monitor 404
+  pod-a status=UP left=False lastSeen=07:11:48.808 msg=None comps=null ns=ns1 node=n1 cluster=c1 version=9 sidecar=1.0.0-vs3
+  pod-b status=UP left=False lastSeen=07:11:48.789 msg=None comps=null ns=ns1 node=n1 cluster=c1 version=9 sidecar=1.0.0-vs3
+  unknown monitor -> 404 {"error":"monitor 00000000-0000-0000-0000-000000000000 not found"}
+### 6. concurrent instance reports (F-50): 3 rounds x 20 in parallel for one service
+  round 1:  16 202  2 202202 
+  round 2:  18 202  1 202202 
+  round 3:  18 202  1 202202 
+  fleet: UP (20 of 20 pods UP) version=60
+### 7. silence vs leaving (F-48): two sidecar pods of one service; one SIGTERMed (leaving), one SIGKILLed (silent)
+  silent id=d64299f9 url=None publisher=health-sidecar stale=90 last=UP summary='UP (2 of 2 pods UP)' unhealthy=0 healthy=2 notice=None
+  [07:11:57.779] pod1 sidecar SIGTERM (exit 0)
+  [07:11:57.910] pod2 sidecar SIGKILL (no leaving report)
+  silent-7f9c6d5b4-pod1 status=UP left=True lastSeen=07:11:57.707 msg='instance shutting down' comps=null ns=None node=None cluster=None version=None sidecar=1.0.0-vs3
+  silent-7f9c6d5b4-pod2 status=UP left=False lastSeen=07:11:52.615 msg=None comps=null ns=None node=None cluster=None version=None sidecar=1.0.0-vs3
+  [07:13:27.967] +90s after the SIGKILL: DOWN (1 pod has not reported since 2026-11-02 07:11:57 UTC (silent-7f9c6d5b4-pod2))
+  15c9b56d OUTAGE 'silent is down' status=ACTIVE sev=MAJOR publisher=health-sidecar ref=health:d64299f9-bf2c-48a2-8559-f932914417be:1 startsAt=07:13:28
+end 07:13:29.560

@@ -1,0 +1,11 @@
+### service side (curl, component of an UP report; JSON escapes)
+  "\tfail\t" -> 202, service: DEGRADED: c DOWN
+  " pass " -> 202, service: UP
+  "pass " -> 202, service: DEGRADED: c DEGRADED
+  "pass\u0001" -> 202, service: UP
+  " fail" -> 202, service: DEGRADED: c DEGRADED
+### sidecar side (live, CS_INTERVAL=3s CS_HEARTBEAT=30s, debug): every probe = the sidecar counts the component failing
+  "pass ": accepted sends in 40 s: 2; service: DEGRADED (0 of 1 pod UP (DEGRADED: side-voc0-0)): c DEGRADED
+  "pass\u0001": accepted sends in 40 s: 13; service: UP (1 of 1 pod UP)
+  (every probe at 3 s is ~12 in 40 s; the heartbeat is 2)
+  448a7e03 HEALTH 'side-voc0 is degraded' status=ACTIVE sev=MINOR publisher=health-sidecar ref=health:3bd5f1cb-819e-45f3-b8d2-a584f8e86bb7:1 startsAt=07:15:07

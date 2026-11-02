@@ -1,0 +1,7 @@
+{"k": "n1", "outcome": "Outage published"}
+{"k": "n2-attempt1", "outcome": "409", "banner": "The service rejected this. INC3100001 is already the reference of a notice in tenant ux3-third (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC3100001-2.", "suggestion": "INC3100001-2"}
+{"k": "n2-attempt2-follows-advice", "outcome": "Outage published"}
+{"k": "n3-attempt1", "outcome": "409", "banner": "The service rejected this. INC3100001 is already the reference of a notice in tenant ux3-third (the ServiceNow incident number doubles as the reference). References are permanent, even after a notice is retired, so a follow-up for the same incident needs another External reference, such as INC3100001-2.", "suggestion": "INC3100001-2"}
+{"k": "n3-attempt2-follows-advice", "outcome": "409", "banner": "The service rejected this. INC3100001-2 is already the External reference of a notice in tenant ux3-third. References are permanent, even after a notice is retired, so a follow-up needs another External reference, such as INC3100001-3.", "suggestion": "INC3100001-3"}
+{"k": "n3-attempt3-follows-advice", "outcome": "Outage published"}
+{"k": "refs", "refs": ["INC3100001-3", "INC3100001-2", "INC3100001"]}

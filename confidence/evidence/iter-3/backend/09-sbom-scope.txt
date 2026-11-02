@@ -1,0 +1,33 @@
+# 09 - SBOM scope (G-3-5): build/reports/cyclonedx/bom.json from run 1 vs BOOT-INF/lib of the boot jar
+
+verifySbomScope (run 1, 01): 'SBOM scope: 87 components, none of them a build or test tool'
+Tools the task looks for (build.gradle.kts verifySbomScope): spotbugs, bcel, jacoco, junit, mockito, assertj, flapdoodle, lombok
+
+bom.json: CycloneDX 1.6, 87 components, metadata.component = communication-service
+components matching a build/test tool pattern (wider than the task's list: + byte-buddy-agent, opentest4j, testcontainers): 0 []
+
+BOOT-INF/lib (unzip -Z1 build/libs/*.jar | grep BOOT-INF/lib): 79 jars
+in both: 76
+jars with no SBOM component of the same name-version (3):
+    netty-resolver-dns-native-macos-4.1.135.Final-osx-x86_64
+    netty-transport-native-epoll-4.1.135.Final-linux-x86_64
+    spring-boot-jarmode-tools-3.5.16
+SBOM components with no jar of the same name-version (11):
+    jackson-bom-2.21.4 | library | pkg:maven/com.fasterxml.jackson/jackson-bom@2.21.4?type=pom
+    netty-resolver-dns-native-macos-4.1.135.Final | library | pkg:maven/io.netty/netty-resolver-dns-native-macos@4.1.135.Final?type=jar
+    netty-transport-native-epoll-4.1.135.Final | library | pkg:maven/io.netty/netty-transport-native-epoll@4.1.135.Final?type=jar
+    spring-boot-starter-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter@3.5.16?type=jar
+    spring-boot-starter-actuator-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter-actuator@3.5.16?type=jar
+    spring-boot-starter-data-mongodb-reactive-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter-data-mongodb-reactive@3.5.16?type=jar
+    spring-boot-starter-json-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter-json@3.5.16?type=jar
+    spring-boot-starter-logging-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter-logging@3.5.16?type=jar
+    spring-boot-starter-reactor-netty-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter-reactor-netty@3.5.16?type=jar
+    spring-boot-starter-validation-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter-validation@3.5.16?type=jar
+    spring-boot-starter-webflux-3.5.16 | library | pkg:maven/org.springframework.boot/spring-boot-starter-webflux@3.5.16?type=jar
+
+Reading: the two netty native jars are in the SBOM under the same name-version without their platform classifier
+(osx-x86_64 / linux-x86_64); spring-boot-jarmode-tools is added to the archive by bootJar itself (layer tools), not a
+project dependency, and is the only packaged jar absent from the SBOM; the starters carry
+`Spring-Boot-Jar-Type: dependencies-starter` and are not packaged; jackson-bom is a pom. So the SBOM now describes the
+runtime the jar ships (76 of 79 jars by exact name-version, 2 more by name-version without classifier) and no build or
+test tool (iteration 2 had 166 components with SpotBugs, JaCoCo, JUnit...). G-3-5 closed.

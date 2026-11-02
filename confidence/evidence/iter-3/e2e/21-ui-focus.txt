@@ -1,0 +1,4 @@
+NOTE textboxes whose accessible name is exactly "Tenant" on the Publish tab: 2
+PASS F-56 after publishing, focus is on the confirmation heading; after "Publish another", focus is on the Title field (G-2-10) :: publish=201 afterPublish=h2# role= label= text=Outage published afterAnother=input#_r_1_-title role= label= text= titleId=_r_1_-title
+PASS F-56 "Publish another" keeps tenant and publisher :: 
+## summary: 2 pass, 0 fail

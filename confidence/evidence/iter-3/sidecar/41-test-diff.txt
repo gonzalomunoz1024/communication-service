@@ -1,0 +1,65 @@
+# 41 test diff be19645 (iteration-2 code) .. e3968c4 (iteration-3 code), sidecar tests only — read-only git commands
+$ git diff --numstat be19645..e3968c4 -- "sidecar/**/*_test.go"
+127	0	sidecar/cmd/health-sidecar/main_test.go
+6	5	sidecar/deploy/deploy_test.go
+185	0	sidecar/deploy/helm_test.go
+342	30	sidecar/internal/agent/agent_test.go
+88	0	sidecar/internal/config/config_test.go
+34	0	sidecar/internal/probe/probe_test.go
+exit=0
+
+$ every removed line (git diff ... | grep "^-" | grep -v "^---")
+-// Package deploy holds tests for the Kustomize snippets under deploy/kustomize and for the image
+-// build files. The manifest tests need the kustomize binary and use kubeconform for schema
+-// validation. On a laptop a missing tool skips the check, so `go test ./...` stays green on a
+-// plain checkout; when CI is set (GitHub Actions sets CI=true) a missing tool fails the test
+-// naming it, so a CI image without the tools cannot pass these checks vacuously.
+-	srv    *httptest.Server
+-	port   int
+-		status := app.status
+-// keeps the change-or-heartbeat cadence. Real time through Run: interval 50 ms, heartbeat 10 s,
+-// 300 ms of running.
+-		min, max     int
+-		{"DOWN app: one report per probe", "DOWN", 3, 20},
+-		{"UP app: the first report, then nothing before the heartbeat", "UP", 1, 1},
+-			cfg.Interval, cfg.Heartbeat, cfg.StartupGrace = 50*time.Millisecond, 10*time.Second, 0
+-			h.agent.Now = time.Now // Run's timers are real, so the heartbeat clock must be too
+-			ctx, cancel := context.WithCancel(context.Background())
+-			done := make(chan struct{})
+-			go func() {
+-				h.agent.Run(ctx)
+-				close(done)
+-			}()
+-			time.Sleep(300 * time.Millisecond)
+-			cancel()
+-			select {
+-			case <-done:
+-			case <-time.After(5 * time.Second):
+-				t.Fatal("Run did not return after cancellation")
+-			var sent []report.Report
+-			for _, r := range h.sender.all() {
+-				if r.Instance == nil || !r.Instance.Leaving {
+-					sent = append(sent, r)
+-			if len(sent) < tc.min || len(sent) > tc.max {
+-				t.Fatalf("%d reports in 300 ms at a 50 ms interval, want between %d and %d", len(sent), tc.min, tc.max)
+-				if r.Status != tc.status {
+-					t.Errorf("report %d: status %s, want %s", i, r.Status, tc.status)
+
+removed lines: 35
+
+$ grep -rn "t.Skip" sidecar --include=*_test.go
+sidecar/deploy/deploy_test.go:38:		t.Skip("kustomize not on PATH")
+sidecar/deploy/helm_test.go:37:		t.Skip("helm not on PATH")
+
+$ the skip helper (deploy tests): what happens when CI is set
+sidecar/deploy/deploy_test.go-18-// requireTool finds a tool the test needs. Missing on a laptop it reports false so the caller
+sidecar/deploy/deploy_test.go-19-// can skip; missing when CI is set it fails the test, naming the tool to install.
+sidecar/deploy/deploy_test.go:20:func requireTool(t *testing.T, name string) (string, bool) {
+sidecar/deploy/deploy_test.go-21-	t.Helper()
+sidecar/deploy/deploy_test.go-22-	bin, err := exec.LookPath(name)
+sidecar/deploy/deploy_test.go-23-	if err == nil {
+sidecar/deploy/deploy_test.go-24-		return bin, true
+sidecar/deploy/deploy_test.go-25-	}
+sidecar/deploy/deploy_test.go-26-	if os.Getenv("CI") != "" {
+sidecar/deploy/deploy_test.go-27-		t.Fatalf("%s is not on PATH and CI is set: install %s in the CI image, the manifest tests must not skip there", name, name)
+sidecar/deploy/deploy_test.go-28-	}

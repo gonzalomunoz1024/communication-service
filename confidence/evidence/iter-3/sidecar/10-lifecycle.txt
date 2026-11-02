@@ -1,0 +1,85 @@
+### STEP A: pod with app + sidecar (UID 1000660000:0, read-only, cap-drop ALL, no-new-privileges); discovery and first report
+  [07:05:20.163 +1.0s] status UP with a target after 0.1s
+target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=07:05:20.112 sendError=None
+  [07:05:20.298 +1.1s] monitor auto-registered after 0.1s
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=1 notice=None
+  vs3-app-7f9c6d5b4-ab12c status=UP left=False lastSeen=07:05:20.121 msg=None comps=null ns=vs3-ns node=worker-9 cluster=sandbox version=2.0.0 sidecar=1.0.0-vs3
+### STEP B: app answers DOWN (db DOWN): sidecar DOWN, OUTAGE after failureThreshold=2
+  [07:05:20.489 +1.3s] app set DOWN
+  [07:05:24.913 +5.7s] status DOWN after 4.4s
+target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=DOWN msg='health document reports DOWN' comps={"db":{"details":{"database":"PostgreSQL"},"status":"DOWN"},"ping":{"status":"UP"}} sent=2 lastSendAt=07:05:23.584 sendError=None
+  [07:05:29.300 +10.1s] OUTAGE in the feed after 4.4s
+  b01f55ad OUTAGE 'vs3-app is down' status=ACTIVE sev=MAJOR publisher=health-sidecar ref=health:cd30b0ee-371d-4a81-9f2c-18e7c5d72b19:1 startsAt=07:05:28
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=DOWN summary='DOWN (0 of 1 pod UP (DOWN: vs3-app-7f9c6d5b4-ab12c)): db DOWN' unhealthy=2 healthy=0 notice=b01f55ad-76c7-4546-99d0-018a45bde467
+  vs3-app-7f9c6d5b4-ab12c status=DOWN left=False lastSeen=07:05:28.921 msg='health document reports DOWN' comps=[{"name":"db","status":"DOWN","detail":"database=PostgreSQL"}] ns=vs3-ns node=worker-9 cluster=sandbox version=2.0.0 sidecar=1.0.0-vs3
+  reports sent from DOWN until +15 s after the OUTAGE: 5
+### STEP C: app UP again: UP sent at once, notice retired at the second UP (the heartbeat)
+  [07:05:44.610 +25.4s] app set UP
+  [07:05:45.557 +26.4s] status UP after 1.0s
+  [07:06:14.732 +55.5s] notice retired (feed empty) after 29.2s
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=2 notice=None
+### STEP D: app container stopped (crash), then started again (rediscovery)
+  [07:06:14.923 +55.7s] app container stopped
+  [07:06:19.405 +60.2s] status DOWN 'app is not listening' after 4.5s
+target=None lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=DOWN msg='app is not listening (last target http://127.0.0.1:8080/actuator/health)' comps=None sent=9 lastSendAt=07:06:18.216 sendError=None
+  [07:06:23.935 +64.7s] OUTAGE in the feed after 4.5s
+  a7424e32 OUTAGE 'vs3-app is down' status=ACTIVE sev=MAJOR publisher=health-sidecar ref=health:cd30b0ee-371d-4a81-9f2c-18e7c5d72b19:2 startsAt=07:06:23
+  [07:06:24.146 +64.9s] app container started
+  [07:06:27.193 +68.0s] rediscovered and UP after 3.1s
+target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=11 lastSendAt=07:06:27.072 sendError=None
+  [07:06:59.564 +100.4s] notice retired after 32.3s
+### STEP E: sidecar SIGKILL + restart (liveness restart emulated): UP again, same instance, no notice
+  [07:06:59.722 +100.5s] sidecar killed; exit code 137
+  [07:06:59.958 +100.8s] sidecar started
+  [07:07:00.031 +100.8s] UP after restart after 0.1s
+target=http://127.0.0.1:8080/actuator/health lastTarget=http://127.0.0.1:8080/actuator/health upSeen=True last=UP msg=None comps={"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}} sent=1 lastSendAt=07:06:59.947 sendError=None
+  vs3-app-7f9c6d5b4-ab12c status=UP left=False lastSeen=07:06:59.955 msg=None comps=null ns=vs3-ns node=worker-9 cluster=sandbox version=2.0.0 sidecar=1.0.0-vs3
+  (feed empty)
+### STEP F: a second pod of the same service: rollup over two pods
+  [07:07:01.152 +101.9s] pod2 UP after 0.1s
+  [07:07:01.249 +102.0s] rollup 2 of 2 after 0.1s
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=UP summary='UP (2 of 2 pods UP)' unhealthy=0 healthy=4 notice=None
+  [07:07:01.356 +102.2s] pod2 app DOWN
+  [07:07:05.510 +106.3s] rollup '1 of 2 pods UP' after 4.2s
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 2 pods UP (DOWN: vs3-app-7f9c6d5b4-cd34e))' unhealthy=0 healthy=5 notice=None
+  feed 8 s later (no notice expected: 1 of 2 = minHealthyPercent 50):
+  (feed empty)
+  [07:07:13.613 +114.4s] pod1 app DOWN too
+  [07:07:18.991 +119.8s] OUTAGE with both pods down after 5.4s
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=DOWN summary='DOWN (0 of 2 pods UP (DOWN: vs3-app-7f9c6d5b4-ab12c, vs3-app-7f9c6d5b4-cd34e)): db DOWN' unhealthy=2 healthy=0 notice=b8397ab4-1f3d-422e-aff1-314097473991
+  b8397ab4 OUTAGE 'vs3-app is down' status=ACTIVE sev=MAJOR publisher=health-sidecar ref=health:cd30b0ee-371d-4a81-9f2c-18e7c5d72b19:3 startsAt=07:07:18
+  [07:07:19.111 +119.9s] both UP
+  [07:07:22.486 +123.3s] notice retired after 3.4s
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=UP summary='UP (2 of 2 pods UP)' unhealthy=0 healthy=2 notice=None
+### STEP G: SIGTERM pod2's sidecar: leaving report, left=true, exit 0, time to stop
+  docker stop took 0.14s, exit code 0
+{"level":"INFO","msg":"reported","error":null}
+{"level":"INFO","msg":"leaving report sent","error":null}
+{"level":"INFO","msg":"health sidecar stopped","error":null}
+  vs3-app-7f9c6d5b4-ab12c status=UP left=False lastSeen=07:07:20.893 msg=None comps=null ns=vs3-ns node=worker-9 cluster=sandbox version=2.0.0 sidecar=1.0.0-vs3
+  vs3-app-7f9c6d5b4-cd34e status=UP left=True lastSeen=07:07:22.609 msg='instance shutting down' comps=null ns=vs3-ns node=worker-9 cluster=sandbox version=2.0.0 sidecar=1.0.0-vs3
+  vs3-app id=cd30b0ee url=None publisher=health-sidecar stale=90 last=UP summary='UP (1 of 1 pod UP)' unhealthy=0 healthy=3 notice=None
+### STEP H: log shape (JSON lines, levels, messages)
+ sc1:
+  lines: 14 non-JSON: 0 keys seen: ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'target', 'tenant', 'time', 'version']
+     8  INFO  reported
+     3  INFO  health target found
+     2  INFO  health sidecar starting
+     1  INFO  health target gone; will rediscover
+ sc2:
+  lines: 7 non-JSON: 0 keys seen: ['endpoint', 'instance', 'level', 'message', 'msg', 'probe', 'service', 'status', 'target', 'tenant', 'time', 'version']
+     3  INFO  reported
+     1  INFO  health sidecar starting
+     1  INFO  health sidecar stopped
+     1  INFO  health target found
+     1  INFO  leaving report sent
+ sc1 INFO 'reported' lines:
+{"time":"07:05:20.143","status":"UP","message":""}
+{"time":"07:05:24.612","status":"DOWN","message":"health document reports DOWN"}
+{"time":"07:05:45.452","status":"UP","message":""}
+{"time":"07:06:19.238","status":"DOWN","message":"app is not listening (last target http://127.0.0.1:8080/actuator/health)"}
+{"time":"07:06:27.111","status":"UP","message":""}
+{"time":"07:06:59.969","status":"UP","message":""}
+{"time":"07:07:17.568","status":"DOWN","message":"health document reports DOWN"}
+{"time":"07:07:20.915","status":"UP","message":""}
+### END 07:07:24.095 +124.9s

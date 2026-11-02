@@ -1,0 +1,99 @@
+### 1. required variables and the shape of the error (one ERROR line, every variable at once)
+[no env] env:  -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT is required (the communication service base URL)\nCS_TENANT is required"}
+[endpoint scheme] env: CS_ENDPOINT=ftp://x CS_TENANT=t CS_SERVICE=s -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_ENDPOINT must start with http:// or https://"}
+[several at once] env: CS_ENDPOINT=ftp://x CS_PROBE=grpc CS_SCHEME=ftp CS_INTERVAL=500ms CS_PORT=70000 CS_LOG_LEVEL=loud CS_INSECURE_SKIP_VERIFY=maybe -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")\nCS_LOG_LEVEL must be debug, info, warn or error (got \"loud\")\nCS_ENDPOINT must start with http:// or https://\nCS_TENANT is required\nCS_PROBE must be auto, actuator, http or tcp (got \"grpc\")\nCS_PORT out of range: 70000\nCS_SCHEME must be http or https (got \"ftp\")\nCS_INTER
+### 2. each invalid value alone, with the rest valid
+[CS_PROBE=grpc] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PROBE=grpc -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_PROBE must be auto, actuator, http or tcp (got \"grpc\")\nCS_PORT is required when CS_PROBE=grpc"}
+[CS_PROBE=http] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PROBE=http -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_PORT is required when CS_PROBE=http"}
+[CS_PORT=abc] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PORT=abc -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_PORT: strconv.Atoi: parsing \"abc\": invalid syntax"}
+[CS_PORT=-1] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PORT=-1 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_PORT out of range: -1"}
+[CS_PORT=70000] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PORT=70000 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_PORT out of range: 70000"}
+[CS_SCHEME=ftp] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_SCHEME=ftp -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_SCHEME must be http or https (got \"ftp\")"}
+[CS_INTERVAL=soon] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INTERVAL=soon -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL: time: invalid duration \"soon\""}
+[CS_INTERVAL=999ms] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INTERVAL=999ms -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_INTERVAL must be at least 1s"}
+[CS_HEARTBEAT=1x] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_HEARTBEAT=1x -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_HEARTBEAT: time: unknown unit \"x\" in duration \"1x\""}
+[CS_PROBE_TIMEOUT=3] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PROBE_TIMEOUT=3 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_PROBE_TIMEOUT: time: missing unit in duration \"3\""}
+[CS_REPORT_TIMEOUT=ten] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_REPORT_TIMEOUT=ten -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_REPORT_TIMEOUT: time: invalid duration \"ten\""}
+[CS_STARTUP_GRACE=5mins] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_STARTUP_GRACE=5mins -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_STARTUP_GRACE: time: unknown unit \"mins\" in duration \"5mins\""}
+[CS_RETRY_DELAY=2] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_RETRY_DELAY=2 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_RETRY_DELAY: time: missing unit in duration \"2\""}
+[CS_IGNORE_PORTS=1-2-3] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_IGNORE_PORTS=1-2-3 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_IGNORE_PORTS: bad port range \"1-2-3\""}
+[CS_IGNORE_PORTS=9-1] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_IGNORE_PORTS=9-1 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_IGNORE_PORTS: bad port range \"9-1\""}
+[CS_IGNORE_PORTS=a] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_IGNORE_PORTS=a -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_IGNORE_PORTS: bad port \"a\""}
+[CS_INSECURE_SKIP_VERIFY=maybe] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=maybe -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_INSECURE_SKIP_VERIFY must be true or false (got \"maybe\")"}
+[CS_INSECURE_SKIP_VERIFY=2] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=2 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_INSECURE_SKIP_VERIFY must be true or false (got \"2\")"}
+[CS_INSECURE_SKIP_VERIFY=enabled] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=enabled -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_INSECURE_SKIP_VERIFY must be true or false (got \"enabled\")"}
+[CS_LOG_LEVEL=loud] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=loud -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_LOG_LEVEL must be debug, info, warn or error (got \"loud\")"}
+[CS_LOG_LEVEL=warning] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=warning -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_LOG_LEVEL must be debug, info, warn or error (got \"warning\")"}
+[CS_LOG_LEVEL=trace] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=trace -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_LOG_LEVEL must be debug, info, warn or error (got \"trace\")"}
+[CS_LOG_LEVEL=DEBUG+1] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=DEBUG+1 -> exit=2 lines=1
+{"level":"ERROR","msg":"invalid configuration","error":"CS_LOG_LEVEL must be debug, info, warn or error (got \"DEBUG+1\")"}
+[CS_CA_FILE missing] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_CA_FILE=/nonexistent/ca.pem -> exit=2 lines=1
+{"level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: open /nonexistent/ca.pem: no such file or directory"}
+[CS_CA_FILE without certificates] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_CA_FILE=/tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar3/work/empty-ca.pem -> exit=2 lines=1
+{"level":"ERROR","msg":"cannot build report client","error":"CS_CA_FILE: no certificates found in /tmp/claude-0/-home-claude-communication-service/108be4b6-9bf3-5769-a509-9fa03f369540/scratchpad/sidecar3/work/empty-ca.pem"}
+[CS_SERVICE required when underivable] not reachable from the environment: with POD_NAME and CS_SERVICE empty the hostname is used (section 5, last case); covered by config_test.go only
+### 3. G-3-17: every documented boolean spelling starts (verification state checked against a TLS stub in 14-tls)
+[CS_INSECURE_SKIP_VERIFY='true'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=true -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='TRUE'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=TRUE -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='True'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=True -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='1'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=1 -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='yes'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=yes -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='YES'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=YES -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='on'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=on -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='On'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=On -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='false'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=false -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='FALSE'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=FALSE -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='0'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=0 -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='no'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=no -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='No'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=No -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='off'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=off -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY='OFF'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY=OFF -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_INSECURE_SKIP_VERIFY=' true '] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_INSECURE_SKIP_VERIFY= true  -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+### 4. G-3-14: the documented log levels start, in any case; the level applies from the first line
+[CS_LOG_LEVEL='debug'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=debug -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_LOG_LEVEL='DEBUG'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=DEBUG -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_LOG_LEVEL='info'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=info -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_LOG_LEVEL='Warn'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=Warn -> started, exit after SIGTERM=0; first line: {"level":"WARN","msg":"report failed; will retry","service":null,"instance":null,"probe":null}
+[CS_LOG_LEVEL='error'] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL=error -> started, exit after SIGTERM=0; first line: 
+[CS_LOG_LEVEL=' ERROR '] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_LOG_LEVEL= ERROR  -> started, exit after SIGTERM=0; first line: 
+### 5. DeriveService and defaults (no CS_SERVICE)
+[POD_NAME=payments-api-7f9c6d5b4-x2k4q] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=t CS_LISTEN=127.0.0.1:19398 POD_NAME=payments-api-7f9c6d5b4-x2k4q -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"payments-api","instance":"payments-api-7f9c6d5b4-x2k4q","probe":"auto"}
+[POD_NAME=payments-api-x2k4q] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=t CS_LISTEN=127.0.0.1:19398 POD_NAME=payments-api-x2k4q -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"payments-api","instance":"payments-api-x2k4q","probe":"auto"}
+[POD_NAME=ledger-0] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=t CS_LISTEN=127.0.0.1:19398 POD_NAME=ledger-0 -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"ledger","instance":"ledger-0","probe":"auto"}
+[POD_NAME=web-abcde] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=t CS_LISTEN=127.0.0.1:19398 POD_NAME=web-abcde -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"web-abcde","instance":"web-abcde","probe":"auto"}
+[POD_NAME=bare] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=t CS_LISTEN=127.0.0.1:19398 POD_NAME=bare -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"bare","instance":"bare","probe":"auto"}
+[POD_NAME=my-app-1a2b3c4d5-zzzzz] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=t CS_LISTEN=127.0.0.1:19398 POD_NAME=my-app-1a2b3c4d5-zzzzz -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"my-app-1a2b3c4d5","instance":"my-app-1a2b3c4d5-zzzzz","probe":"auto"}
+[no POD_NAME (hostname vm)] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=t CS_LISTEN=127.0.0.1:19398 -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"vm","instance":"vm","probe":"auto"}
+### 6. edge durations the README does not mention: zero / negative timeouts and delays are accepted
+[CS_REPORT_TIMEOUT=0s] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_REPORT_TIMEOUT=0s -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_REPORT_TIMEOUT=-5s] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_REPORT_TIMEOUT=-5s -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_PROBE_TIMEOUT=0s] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PROBE_TIMEOUT=0s -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_PROBE_TIMEOUT=-1s] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_PROBE_TIMEOUT=-1s -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_RETRY_DELAY=-2s] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_RETRY_DELAY=-2s -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_STARTUP_GRACE=-1m] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_STARTUP_GRACE=-1m -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}
+[CS_HEARTBEAT=-30s] env: CS_ENDPOINT=http://127.0.0.1:19399 CS_TENANT=vs3-cfg CS_SERVICE=cfg CS_LISTEN=127.0.0.1:19398 CS_INTERVAL=1s CS_HEARTBEAT=-30s -> started, exit after SIGTERM=0; first line: {"level":"INFO","msg":"health sidecar starting","service":"cfg","instance":"vm","probe":"auto"}

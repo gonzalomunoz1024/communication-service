@@ -1,0 +1,2 @@
+{"oldest":{"_id":{"high":0,"low":1,"unsigned":false},"at":"2026-11-01T23:27:04.470Z"},"newest":{"_id":{"high":0,"low":2088,"unsigned":false},"at":"2026-11-02T07:07:42.156Z"},"count":2088,"ttl":[{"name":"events_ttl_idx","expireAfterSeconds":86400}]}
+2026-11-02T07:08:29Z

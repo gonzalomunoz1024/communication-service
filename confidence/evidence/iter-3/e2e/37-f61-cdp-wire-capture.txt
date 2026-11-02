@@ -1,0 +1,34 @@
+# F-61/F-20 wire capture (Chrome DevTools Protocol) of the streaming page during failure_flows run 2 (kill scenario); times UTC
+# backend A SIGKILLed 07:11:40.566 ; A ready again 07:12:15.924 ; Vite :19530 proxies /v1 to A; a notice was published via B at 07:11:43.104Z while A was dead
+## stream requests the page made (Network.requestWillBeSent):
+07:11:43.639 2772.10 http://127.0.0.1:19530/v1/feed/stream?tenantId=ve3-kill-mvyx7p18&clientId=communication-frontend
+07:11:44.646 2772.11 http://127.0.0.1:19530/v1/feed/stream?tenantId=ve3-kill-mvyx7p18&clientId=communication-frontend&lastEventId=88
+07:11:46.675 2772.12 http://127.0.0.1:19530/v1/feed/stream?tenantId=ve3-kill-mvyx7p18&clientId=communication-frontend&lastEventId=88
+07:11:50.687 2772.13 http://127.0.0.1:19530/v1/feed/stream?tenantId=ve3-kill-mvyx7p18&clientId=communication-frontend&lastEventId=88
+07:11:58.692 2772.14 http://127.0.0.1:19530/v1/feed/stream?tenantId=ve3-kill-mvyx7p18&clientId=communication-frontend&lastEventId=88
+07:12:08.697 2772.15 http://127.0.0.1:19530/v1/feed/stream?tenantId=ve3-kill-mvyx7p18&clientId=communication-frontend&lastEventId=88
+07:12:18.702 2772.16 http://127.0.0.1:19530/v1/feed/stream?tenantId=ve3-kill-mvyx7p18&clientId=communication-frontend&lastEventId=88
+## their responses (502 = Vite proxy, A down):
+07:11:40.043 2772.9 200
+07:11:43.646 2772.10 502
+07:11:44.675 2772.11 502
+07:11:46.690 2772.12 502
+07:11:50.692 2772.13 502
+07:11:58.697 2772.14 502
+07:12:08.703 2772.15 502
+07:12:18.713 2772.16 200
+## Last-Event-ID request header as sent (Network.requestWillBeSentExtraInfo; null = header absent):
+07:11:43.639 2772.10 88
+07:11:44.656 2772.11 None
+07:11:46.683 2772.12 None
+07:11:50.687 2772.13 None
+07:11:58.692 2772.14 None
+07:12:08.697 2772.15 None
+07:12:18.702 2772.16 None
+07:12:18.718 2772.17 None
+## SSE frames received (Network.eventSourceMessageReceived), request id and data:
+07:11:40.368  {"seq":88,"type":"CREATED","at":"2026-11-02T07:11:40.122Z","communication":{"id":"81b2f2a0-15a9-4b0e-bc8f-1d65
+07:12:18.768  {"seq":89,"type":"CREATED","at":"2026-11-02T07:11:43.104Z","communication":{"id":"1bfc3f5d-3dd8-4fd5-8669-e092
+## GET /v1/feed list loads after the kill: 07:12:18.716
+# reading: 2772.10 is the browser's own EventSource retry (Last-Event-ID: 88 header, no query id); 2772.11-16 are the page's reopens with ?lastEventId=88
+# 1, 2, 4, 8, 10, 10 s apart (10 s cap); 2772.16 got 200 and carried seq 89 (the notice published via B) as a CREATED frame: replay, no snapshot; one list reload.

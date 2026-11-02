@@ -1,0 +1,8 @@
++5.4s feed Live on backend C
++5.8s docker stop vf3-mongo
++10.9s resolve during the outage → 503 after 5057 ms: The service cannot reach its database right now (HTTP 503): database unavailable. It recovers on its own; try again in a moment.
++16.0s GET /v1/feed → 503 {"error":"database unavailable"} after 5019 ms
++72.1s feed reopened during the outage: badges ["Reconnecting","Live","Reconnecting","Live"] stream responses [200,200,200,200]
++72.3s docker start vf3-mongo
++73.9s backend C answers 200 again 1642 ms after mongo started
++75.3s UI after mongo start: card back without a click after 2943 ms, Live=true, via Try again=null

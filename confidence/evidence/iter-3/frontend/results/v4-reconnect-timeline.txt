@@ -1,0 +1,61 @@
++0.2s instance A up: true
++0.3s instance B up: true
++1.3s badge → Waiting for a tenant
++1.4s stream REQUEST #1 ?lastEventId=(none)
++1.4s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++1.5s stream RESPONSE 200
++1.5s stream REQUEST FAILED net::ERR_ABORTED
++1.5s stream REQUEST #2 ?lastEventId=(none)
++1.5s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=(none)
++1.5s stream RESPONSE 200
++1.5s badge → Live
++1.5s SSE frame snapshot id=25 before the drop
++1.6s feed Live with one item
++1.8s SIGKILL instance A (pid 941); last SSE id seen 25
++1.8s A down: true
++1.8s stream REQUEST FAILED net::ERR_INCOMPLETE_CHUNKED_ENCODING
++1.9s badge → Reconnecting
++4.8s stream REQUEST #3 ?lastEventId=(none)
++4.8s CDP wire: stream request ?lastEventId=(none) Last-Event-ID header=25
++4.9s stream RESPONSE 502
++4.9s badge → Reconnecting (1)
++5.9s stream REQUEST #4 ?lastEventId=25
++5.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++5.9s stream RESPONSE 502
++6.0s badge → Reconnecting (2)
++7.9s stream REQUEST #5 ?lastEventId=25
++7.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++7.9s stream RESPONSE 502
++8.0s badge → Reconnecting (3)
++11.9s stream REQUEST #6 ?lastEventId=25
++11.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++11.9s stream RESPONSE 502
++12.0s badge → Reconnecting (4)
++19.9s stream REQUEST #7 ?lastEventId=25
++19.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++19.9s stream RESPONSE 502
++20.0s badge → Reconnecting (5)
++29.9s stream REQUEST #8 ?lastEventId=25
++29.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++29.9s stream RESPONSE 502
++29.9s badge → Reconnecting (6)
++39.9s stream REQUEST #9 ?lastEventId=25
++39.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++39.9s stream RESPONSE 502
++40.0s badge → Reconnecting (7)
++49.9s stream REQUEST #10 ?lastEventId=25
++49.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++49.9s stream RESPONSE 502
++50.1s badge → Reconnecting (8)
++53.8s restarting instance A
++59.9s stream REQUEST #11 ?lastEventId=25
++59.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++59.9s stream RESPONSE 502
++60.0s badge → Reconnecting (9)
++61.3s A up again: true
++69.9s stream REQUEST #12 ?lastEventId=25
++69.9s CDP wire: stream request ?lastEventId=25 Last-Event-ID header=(none)
++70.0s stream RESPONSE 200
++70.1s badge → Live
++70.1s badge Live again: true (8.9 s after A answered)
++70.5s SSE frame created id=26 published after the restart

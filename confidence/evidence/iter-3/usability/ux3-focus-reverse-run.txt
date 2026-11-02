@@ -1,0 +1,28 @@
+forward:
+ button "Switch to dark mode" top=10 bottom=46 header=57 HIDDEN scrollY=0
+ button "Feed6" top=81 bottom=113 header=57 visible scrollY=0
+ input "" top=172 bottom=202 header=57 visible scrollY=0
+ select "Type" top=172 bottom=202 header=57 visible scrollY=0
+ select "Minimum severity" top=172 bottom=202 header=57 visible scrollY=0
+ button "Live updates" top=219 bottom=237 header=57 visible scrollY=0
+ button "Refresh" top=214 bottom=242 header=57 visible scrollY=0
+ button "Resolve" top=446 bottom=476 header=57 visible scrollY=0
+ button "Resolve" top=640 bottom=670 header=57 visible scrollY=0
+ button "Resolve" top=385 bottom=415 header=57 visible scrollY=449
+ button "Resolve" top=579 bottom=609 header=57 visible scrollY=449
+ button "Resolve" top=770 bottom=800 header=57 visible scrollY=452
+ button "Resolve" top=729 bottom=759 header=57 visible scrollY=687
+ body "Outage Notifications" top=-687 bottom=800 header=57 PARTLY scrollY=687
+reverse:
+ button "Resolve" top=535 bottom=565 header=57 visible scrollY=687
+ button "Resolve" top=341 bottom=371 header=57 visible scrollY=687
+ button "Resolve" top=147 bottom=177 header=57 visible scrollY=687
+ button "Resolve" top=385 bottom=415 header=57 visible scrollY=255
+ button "Resolve" top=191 bottom=221 header=57 visible scrollY=255
+ button "Refresh" top=214 bottom=242 header=57 visible scrollY=0
+ button "Live updates" top=219 bottom=237 header=57 visible scrollY=0
+ select "Minimum severity" top=172 bottom=202 header=57 visible scrollY=0
+ select "Type" top=172 bottom=202 header=57 visible scrollY=0
+ input "" top=172 bottom=202 header=57 visible scrollY=0
+ button "Feed6" top=81 bottom=113 header=57 visible scrollY=0
+ button "Switch to dark mode" top=10 bottom=46 header=57 HIDDEN scrollY=0

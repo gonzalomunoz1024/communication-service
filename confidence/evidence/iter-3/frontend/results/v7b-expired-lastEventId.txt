@@ -1,0 +1,13 @@
+tenant vf3-exp-1793603414 on backend C (http://127.0.0.1:19202, db vf3_mongodown)
+publish: 201 201 201
+event seqs of the tenant: 3 4 5
+before deletion: ?lastEventId=2 -> id:3 event:created id:4 event:created id:5 event:created 
+before deletion: ?lastEventId=3 -> id:4 event:created id:5 event:created 
+deleted every event with seq <= 4: {"acknowledged":true,"deletedCount":4}; oldest retained seq is now Long('5') (expected 5)
+after deletion (gap no longer retained): ?lastEventId=3 -> id:5 event:snapshot id:5 event:snapshot id:5 event:snapshot 
+after deletion (gap no longer retained): Last-Event-ID: 3 header -> id:5 event:snapshot id:5 event:snapshot id:5 event:snapshot 
+after deletion (boundary, whole gap retained): ?lastEventId=4 -> id:5 event:created 
+after deletion (nothing missed): ?lastEventId=5 -> 
+never issued: ?lastEventId=999999999 -> id:5 event:snapshot id:5 event:snapshot id:5 event:snapshot 
+expected: ids below oldest-1 and never-issued ids -> three snapshot frames (one per notice, stamped with the head), no created; boundary -> created#5 only; nothing missed -> no frames
+exit 0

@@ -1,0 +1,16 @@
+== container facts (run 1, after up) 2026-11-02T06:50:59Z
+e2e-sidecar image=health-sidecar:e2e user=1000660000:0 readonly=true capdrop=[ALL] secopt=[no-new-privileges:true] netmode=container:e6e8d4088239e32ae0314c892fcd037fc4ef4a52e9a053c2c4fc6dc492f508d3
+e2e-backend image=communication-service:e2e user=65532:65532 readonly=false capdrop=[] secopt=[] netmode=e2e
+e2e-app image=fakeapp:e2e user=65532:65532 readonly=false capdrop=[] secopt=[] netmode=e2e
+e2e-mongo image=mongo:7.0 user= readonly=false capdrop=[] secopt=[] netmode=e2e
+sidecar process: 1000660000          0                   4567                /usr/local/bin/health-sidecar
+Error response from daemon: Couldn't find PID field in ps output
+backend process: 
+health-sidecar:e2e labels version=e3968c4 revision=e3968c4067e44ac0362f33418940ba8fe473dfae user=1001
+git describe: e3968c4 HEAD: e3968c4067e44ac0362f33418940ba8fe473dfae
+sidecar first log line:
+{"time":"2026-11-02T06:50:57.981226771Z","level":"INFO","msg":"health sidecar starting","version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","endpoint":"http://e2e-backend:8080","probe":"auto"}
+{"time":"2026-11-02T06:50:57.984476527Z","level":"INFO","msg":"health target found","target":"http://127.0.0.1:8080/actuator/health","status":"UP"}
+sidecar /status:
+{"version":"e3968c4","service":"fakeapp","tenant":"e2e","instance":"fakeapp-0","target":"http://127.0.0.1:8080/actuator/health","lastTarget":"http://127.0.0.1:8080/actuator/health","upSeen":true,"lastReport":{"tenantId":"e2e","service":"fakeapp","status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},"ping":{"status":"UP"}},"observedAt":"2026-11-02T06:50:57.981Z","publisher":"health-sidecar","instance":{"id":"fakeapp-0","namespace":"e2e","node":"local","sidecar":"e3968c4"}},"lastSendAt":"2026-11-02T06:50:57.981326709Z","reportsSent":1}
+
